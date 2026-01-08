@@ -1,0 +1,30 @@
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+
+from tests_app.permissions import IsTeacherOrAdmin
+
+from .models import Material
+from .serializers import MaterialSerializer
+
+
+class MaterialViewSet(viewsets.ModelViewSet):
+    queryset = Material.objects.all().order_by("-created_at")
+    serializer_class = MaterialSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsTeacherOrAdmin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        role = getattr(user, "role", None)
+        # Student: faqat o'z guruhidagi materiallar
+        if role == "student" and getattr(user, "group_id", None):
+            qs = qs.filter(group_id=user.group_id)
+        # Teacher: o'zi yuklaganlari
+        if role == "teacher":
+            qs = qs.filter(teacher=user)
+        return qs

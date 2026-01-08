@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+.venv/
+backend/venv/
+
+# Django collectstatic output
+backend/staticfiles/
+
+# Node
+frontend/node_modules/
+
+# Env files
+.env
+.env.*
