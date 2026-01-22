@@ -7,6 +7,7 @@ from loguru import logger
 
 MODEL_NAME = os.getenv("FACE_MODEL", "Facenet512")
 DETECTION_BACKEND = os.getenv("DETECTION_BACKEND", "opencv")  # retinaface, mtcnn, opencv, mediapipe, ssd, yolo, dlib, centerface
+ENFORCE_DETECTION = os.getenv("FACE_ENFORCE_DETECTION", "false").lower() in ("1", "true", "yes", "on")
 
 
 def compare_faces(passport_image_bytes, selfie_image_bytes) -> float:
@@ -28,11 +29,15 @@ def compare_faces(passport_image_bytes, selfie_image_bytes) -> float:
             img2_path=selfie_img,
             model_name=MODEL_NAME,
             detector_backend=DETECTION_BACKEND,
-            enforce_detection=False,
+            enforce_detection=ENFORCE_DETECTION,
         )
 
-        distance = result.get("distance", 1.0)
-        confidence = max(0.0, min(1.0, 1 - distance))
+        distance = float(result.get("distance", 1.0))
+        threshold = float(result.get("threshold", 0.0) or 0.0)
+        if threshold > 0:
+            confidence = max(0.0, min(1.0, 1 - (distance / threshold)))
+        else:
+            confidence = max(0.0, min(1.0, 1 - distance))
         return float(confidence)
 
     except Exception as e:

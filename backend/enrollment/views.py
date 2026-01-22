@@ -485,14 +485,14 @@ def _merge_ocr_results(front, back):
     fio = _pick("fio") or (f"{surname} {given_name}".strip() if surname and given_name else None)
     return {
         "passport_id": _pick("passport_id"),
-        "birthdate": _pick("birthdate", prefer_back=True),
+        "birthdate": _pick("birthdate"),
         "fio": fio,
         "surname": surname,
         "name": given_name,
         "patronymic": patronymic,
         "sex": _pick("sex"),
         "citizenship": _pick("citizenship"),
-        "birth_place": _pick("birth_place"),
+        "birth_place": _pick("birth_place", prefer_back=True),
         "card_number": _pick("card_number"),
         "personal_number": _pick("personal_number", prefer_back=True),
         "confidence": round(confidence, 2),

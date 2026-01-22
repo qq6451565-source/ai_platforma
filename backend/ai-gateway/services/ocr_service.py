@@ -108,8 +108,12 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
 
     max_side = int(os.getenv("OCR_MAX_SIDE", "1600"))
     img = _resize_max(img, max_side=max_side)
+    img = _extract_card_region(img)
 
     results = reader.readtext(img, paragraph=False)
+    if len(results) < 10:
+        enhanced = _preprocess_for_ocr(img)
+        results += reader.readtext(enhanced, paragraph=False)
     raw_texts = [text for _, text, _ in results]
     ordered_texts = _ordered_texts(results)
 
@@ -138,6 +142,12 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
             card_number = normalized_card
 
     personal_number = _extract_personal_number(raw_texts, results, ordered_texts)
+    if not personal_number:
+        qr_personal = _extract_qr_personal_number(img)
+        if qr_personal:
+            personal_number = qr_personal
+    if not card_number:
+        card_number = _extract_card_number_from_image(img) or card_number
 
     surname = _clean_name_value(
         _label_value_with_fallback(results, ordered_texts, ["FAMILIYASI", "FAMILIYA", "SURNAME"])
@@ -205,8 +215,9 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         if not personal_number:
             personal_number = mrz_data.get("personal_number") or personal_number
         mrz_birthdate = mrz_data.get("birthdate")
-        if mrz_birthdate and (not birthdate or not _is_plausible_birthdate(birthdate)):
-            birthdate = mrz_birthdate
+        if mrz_birthdate and _is_plausible_birthdate(mrz_birthdate):
+            if not birthdate or not _is_plausible_birthdate(birthdate):
+                birthdate = mrz_birthdate
         if not surname:
             surname = mrz_data.get("surname") or surname
         if not given_name:
@@ -222,6 +233,9 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
 
     patronymic = _normalize_patronymic(patronymic) or patronymic
     fio = _build_full_name(surname, given_name, patronymic) or fio
+
+    if not personal_number:
+        personal_number = _extract_personal_number_from_image(img) or personal_number
 
     return {
         "passport_id": card_number or None,
@@ -250,7 +264,51 @@ def _extract_personal_number(raw_texts, results, ordered_texts):
         normalized_personal = re.sub(r"[^0-9]", "", _normalize_mrz_digits(personal_label.upper()))
         if len(normalized_personal) == 14:
             return normalized_personal
-    return extract_personal_number(raw_texts)
+    return None
+
+
+def _extract_qr_personal_number(img):
+    try:
+        detector = cv2.QRCodeDetector()
+        data, _, _ = detector.detectAndDecode(img)
+    except Exception:
+        return None
+    if not data:
+        return None
+    digits = re.findall(r"\d{14}", re.sub(r"\s+", "", data))
+    return digits[0] if digits else None
+
+
+def _extract_card_number_from_image(img):
+    try:
+        results = reader.readtext(img, detail=1, allowlist="KA40123456789", paragraph=False)
+    except Exception:
+        return None
+    for _, text, _ in results:
+        candidate = _normalize_doc_number(text)
+        if candidate and re.match(r"^[A-Z]{2}\d{7,8}$", candidate):
+            return candidate
+    return None
+
+
+def _extract_personal_number_from_image(img):
+    try:
+        results = reader.readtext(img, detail=1, allowlist="0123456789", paragraph=False)
+    except Exception:
+        return None
+    candidates = []
+    for _, text, conf in results:
+        if not text:
+            continue
+        digits = re.sub(r"[^0-9]", "", text)
+        for seq in re.findall(r"\d{14}", digits):
+            if _is_mrz_date_block(seq):
+                continue
+            candidates.append((conf, seq))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return candidates[0][1]
 
 
 def extract_field(data, pattern):
@@ -397,8 +455,10 @@ def extract_personal_number(texts):
         upper = text.upper()
         normalized = _normalize_mrz_digits(upper)
         digits = re.sub(r"[^0-9]", "", normalized)
-        if len(digits) == 14:
-            return digits
+        for seq in re.findall(r"\d{14}", digits):
+            if _is_mrz_date_block(seq):
+                continue
+            return seq
     return None
 
 
@@ -646,6 +706,14 @@ def _parse_mrz_date(value: str):
     return f"{dd:02d}.{mm:02d}.{year:04d}"
 
 
+def _is_mrz_date_block(seq: str) -> bool:
+    if not seq or len(seq) != 14 or not seq.isdigit():
+        return False
+    birth = _parse_mrz_date(seq[:6])
+    expiry = _parse_mrz_date(seq[7:13])
+    return bool(birth and expiry)
+
+
 def _read_mrz_texts(img):
     try:
         h, w = img.shape[:2]
@@ -654,7 +722,7 @@ def _read_mrz_texts(img):
     if h < 50 or w < 50:
         return []
     texts = []
-    for ratio in (0.55, 0.62, 0.7, 0.78):
+    for ratio in (0.45, 0.55, 0.62, 0.7, 0.78, 0.85):
         y1 = int(h * ratio)
         roi = img[y1:h, :]
         for candidate in _mrz_candidates(roi):
@@ -718,6 +786,79 @@ def _group_mrz_lines(chunks):
 
 def _normalize_mrz_chunk(value):
     return re.sub(r"[^A-Z0-9<]", "", value.upper())
+
+
+def _preprocess_for_ocr(img):
+    try:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    except Exception:
+        return img
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(gray)
+    blur = cv2.GaussianBlur(enhanced, (0, 0), 1.0)
+    sharp = cv2.addWeighted(enhanced, 1.6, blur, -0.6, 0)
+    return cv2.cvtColor(sharp, cv2.COLOR_GRAY2BGR)
+
+
+def _extract_card_region(img):
+    try:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    except Exception:
+        return img
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blur, 60, 180)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return img
+    h, w = gray.shape[:2]
+    min_area = h * w * 0.2
+    best = None
+    best_area = 0
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < min_area:
+            continue
+        peri = cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+        if len(approx) == 4 and area > best_area:
+            best_area = area
+            best = approx
+    if best is None:
+        return img
+    pts = best.reshape(4, 2).astype("float32")
+    rect = _order_points(pts)
+    (tl, tr, br, bl) = rect
+    width_a = np.linalg.norm(br - bl)
+    width_b = np.linalg.norm(tr - tl)
+    max_width = int(max(width_a, width_b))
+    height_a = np.linalg.norm(tr - br)
+    height_b = np.linalg.norm(tl - bl)
+    max_height = int(max(height_a, height_b))
+    if max_width < 10 or max_height < 10:
+        return img
+    dst = np.array(
+        [
+            [0, 0],
+            [max_width - 1, 0],
+            [max_width - 1, max_height - 1],
+            [0, max_height - 1],
+        ],
+        dtype="float32",
+    )
+    matrix = cv2.getPerspectiveTransform(rect, dst)
+    warped = cv2.warpPerspective(img, matrix, (max_width, max_height))
+    return warped
+
+
+def _order_points(pts):
+    rect = np.zeros((4, 2), dtype="float32")
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
+    return rect
 
 
 def _mrz_candidates(roi):
@@ -785,12 +926,12 @@ def _mrz_extract_personal_number(candidates: list[str]):
         normalized = _normalize_mrz_digits(normalized)
         if normalized.startswith("I") and len(normalized) >= 30:
             tail = normalized[15:]
-            match = re.search(r"\d{14}", tail)
-            if match:
-                return match.group(0)
-        match = re.search(r"\d{14}", normalized)
-        if match:
-            return match.group(0)
+            digits = re.sub(r"[^0-9]", "", tail)
+            if len(digits) >= 14:
+                return digits[-14:]
+        digits = re.sub(r"[^0-9]", "", normalized)
+        if len(digits) >= 14:
+            return digits[-14:]
     return None
 
 
@@ -838,14 +979,14 @@ def _parse_td1_mrz(lines):
 
     personal_number = None
     optional1 = _normalize_mrz_digits(line1[15:30])
-    match = re.search(r"\d{14}", optional1)
-    if match:
-        personal_number = match.group(0)
+    digits = re.sub(r"[^0-9]", "", optional1)
+    if len(digits) >= 14:
+        personal_number = digits[-14:]
     else:
         optional2 = _normalize_mrz_digits(line2[18:30])
-        match = re.search(r"\d{14}", optional2)
-        if match:
-            personal_number = match.group(0)
+        digits = re.sub(r"[^0-9]", "", optional2)
+        if len(digits) >= 14:
+            personal_number = digits[-14:]
 
     birthdate = _parse_mrz_date(_normalize_mrz_digits(line2[0:6]))
     sex = line2[7] if len(line2) > 7 else None
