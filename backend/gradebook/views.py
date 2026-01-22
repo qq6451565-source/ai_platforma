@@ -47,13 +47,7 @@ class RecalculateGradebookView(APIView):
         except GradebookEntry.DoesNotExist:
             raise NotFound("GradebookEntry topilmadi.")
 
-        total = (
-            entry.attendance_score
-            + entry.assignment_score
-            + entry.midterm_score
-            + entry.final_score
-        )
-        entry.total_score = total
+        entry.total_score = entry.calculate_total()
         entry.save(update_fields=["total_score"])
 
         return Response(

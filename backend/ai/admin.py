@@ -5,7 +5,16 @@ from .models import AISettings
 
 @admin.register(AISettings)
 class AISettingsAdmin(admin.ModelAdmin):
-    list_display = ("id", "enable_presence", "enable_face_match", "presence_threshold", "face_match_threshold", "updated_at")
+    list_display = (
+        "id",
+        "enable_presence",
+        "enable_face_match",
+        "presence_threshold",
+        "face_match_threshold",
+        "proctor_strict",
+        "proctor_missing_seconds",
+        "updated_at",
+    )
     readonly_fields = ("id", "updated_at")
 
     def has_add_permission(self, request):

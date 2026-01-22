@@ -1,38 +1,36 @@
 import re
 
-from django.core.exceptions import ValidationError
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from directions.models import Direction
-from semesters.models import Semester, SemesterSettings
 
 class Group(models.Model):
     name = models.CharField(max_length=50, unique=True, blank=True)  # AX-24-UZ-1 (auto)
     direction = models.ForeignKey(Direction, on_delete=models.CASCADE)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, blank=True)
     language = models.CharField(max_length=10, choices=[
         ('uz', 'Uzbek'),
         ('ru', 'Russian'),
         ('en', 'English'),
     ], blank=True)
-    year = models.IntegerField()  # masalan: 2024, 2025
+    level = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
 
-    def _direction_code(self) -> str:
+    def _direction_label(self) -> str:
         name = (self.direction.name or "").strip()
         if not name:
             return "DIR"
-        parts = [p for p in re.split(r"\s+", name) if p]
-        code = "".join(p[0] for p in parts).upper()
-        if len(code) < 2:
-            code = (name[:2]).upper()
-        return code[:4]
+        label = re.sub(r"\s+", "-", name)
+        label = re.sub(r"[^\w\-]+", "", label, flags=re.UNICODE)
+        label = re.sub(r"-{2,}", "-", label).strip("-")
+        return label or "DIR"
 
     def _generate_name(self) -> str:
-        code = self._direction_code()
-        year_suffix = str(self.year)[-2:]
+        label = self._direction_label()
         lang = (self.language or "").upper()
         if not lang and getattr(self.direction, "language", ""):
             lang = self.direction.language.upper()
-        prefix = f"{code}-{year_suffix}-{lang or 'XX'}"
+        prefix = f"{label}-{self.level}-{lang or 'XX'}"
         existing = Group.objects.filter(name__startswith=f"{prefix}-").values_list("name", flat=True)
         numbers = []
         for name in existing:
@@ -43,13 +41,27 @@ class Group(models.Model):
         return f"{prefix}-{seq}"
 
     def save(self, *args, **kwargs):
-        if not self.semester_id:
-            self.semester = SemesterSettings.get_active_semester()
-        if not self.semester_id:
-            raise ValidationError({"semester": "Semestr topilmadi. Aktiv semestr sozlang."})
         if not self.language and getattr(self.direction, "language", ""):
             self.language = self.direction.language
-        if not self.name:
+        should_regen = False
+        if self.pk:
+            prev = (
+                Group.objects.filter(pk=self.pk)
+                .values("direction_id", "level", "language")
+                .first()
+            )
+            if prev:
+                prev_lang = prev.get("language") or ""
+                curr_lang = self.language or ""
+                if (
+                    prev.get("direction_id") != self.direction_id
+                    or prev.get("level") != self.level
+                    or prev_lang != curr_lang
+                ):
+                    should_regen = True
+        else:
+            should_regen = True
+        if not self.name or should_regen:
             self.name = self._generate_name()
         super().save(*args, **kwargs)
 

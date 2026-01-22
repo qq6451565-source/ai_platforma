@@ -7,6 +7,7 @@ from .views import (
     FaceMatchView,
     PresenceCheckView,
     AISettingsView,
+    AIHealthView,
 )
 
 
@@ -16,6 +17,7 @@ urlpatterns = [
     # Material bo'yicha savol-javob (AI stub/real)
     path("material/ask/", MaterialAIAnswerView.as_view()),
     path("settings/", AISettingsView.as_view()),
+    path("health/", AIHealthView.as_view()),
     # Registratsiya: pasport OCR va yuz solishtirish
     path("ocr/passport/", PassportOCRView.as_view()),
     path("face/match/", FaceMatchView.as_view()),

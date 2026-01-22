@@ -7,10 +7,11 @@ export type LessonSlot = {
   end_time: string;
   room?: string;
   mode?: string;
+  subject_name?: string;
+  teacher_name?: string;
 };
 
 export type Timetable = {
   id: number;
   group: number;
-  semester: number;
 };

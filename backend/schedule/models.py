@@ -2,27 +2,15 @@ from django.db import models
 
 from groups.models import Group
 from subjects.models import Subject
-from django.core.exceptions import ValidationError
 
-from semesters.models import Semester, SemesterSettings
 from accounts.models import User
 
 
 class Timetable(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, blank=True)
 
     def __str__(self):
-        return f"{self.group.name} / {self.semester.number}"
-
-    def save(self, *args, **kwargs):
-        if not self.semester_id and self.group_id:
-            self.semester = self.group.semester
-        if not self.semester_id:
-            self.semester = SemesterSettings.get_active_semester()
-        if not self.semester_id:
-            raise ValidationError({"semester": "Semestr topilmadi. Aktiv semestr sozlang."})
-        super().save(*args, **kwargs)
+        return f"{self.group.name}"
 
 
 class LessonSlot(models.Model):

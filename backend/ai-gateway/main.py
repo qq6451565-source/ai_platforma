@@ -1,9 +1,12 @@
+import asyncio
 import os
+import sys
 from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header
 from loguru import logger
+from starlette.concurrency import run_in_threadpool
 
 from services.ocr_service import extract_passport_data
 from services.face_service import compare_faces
@@ -12,6 +15,10 @@ from services.presence_service import detect_presence
 load_dotenv()
 
 app = FastAPI(title="AI Gateway", version="1.0.0")
+
+# Reduce noisy WinError 64 accept failures on Windows event loop.
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Security / thresholds
 API_KEY = os.getenv("AI_API_KEY", "default-key")
@@ -31,7 +38,7 @@ def _check_api_key(api_key_form: Optional[str], api_key_header: Optional[str]):
 async def ocr_passport(
     file: UploadFile = File(...),
     api_key: str = Form(None),
-    x_api_key: str = Header(None, convert_underscores=False),
+    x_api_key: str = Header(None),
 ):
     _check_api_key(api_key, x_api_key)
 
@@ -41,7 +48,11 @@ async def ocr_passport(
         if size_mb > MAX_IMAGE_SIZE_MB:
             raise HTTPException(status_code=413, detail="Image too large")
 
-        result = extract_passport_data(contents, ocr_threshold=OCR_CONFIDENCE_THRESHOLD)
+        result = await run_in_threadpool(
+            extract_passport_data,
+            contents,
+            OCR_CONFIDENCE_THRESHOLD,
+        )
         logger.info(f"OCR completed for file: {file.filename}")
         return result
     except Exception as e:
@@ -54,7 +65,7 @@ async def face_match(
     passport_image: UploadFile = File(...),
     selfie_image: UploadFile = File(...),
     api_key: str = Form(None),
-    x_api_key: str = Header(None, convert_underscores=False),
+    x_api_key: str = Header(None),
 ):
     _check_api_key(api_key, x_api_key)
 
@@ -66,7 +77,7 @@ async def face_match(
         if size_mb_passport > MAX_IMAGE_SIZE_MB or size_mb_selfie > MAX_IMAGE_SIZE_MB:
             raise HTTPException(status_code=413, detail="Image too large")
 
-        confidence = compare_faces(passport_contents, selfie_contents)
+        confidence = await run_in_threadpool(compare_faces, passport_contents, selfie_contents)
         verified = confidence >= FACE_MATCH_THRESHOLD
         logger.info(f"Face match completed: verified={verified}, confidence={confidence}")
         return {"verified": verified, "confidence": round(confidence, 4)}
@@ -79,7 +90,7 @@ async def face_match(
 async def face_presence(
     file: UploadFile = File(...),
     api_key: str = Form(None),
-    x_api_key: str = Header(None, convert_underscores=False),
+    x_api_key: str = Header(None),
 ):
     _check_api_key(api_key, x_api_key)
 
@@ -89,7 +100,7 @@ async def face_presence(
         if size_mb > MAX_IMAGE_SIZE_MB:
             raise HTTPException(status_code=413, detail="Image too large")
 
-        present, confidence = detect_presence(contents)
+        present, confidence = await run_in_threadpool(detect_presence, contents)
         if confidence < PRESENCE_THRESHOLD:
             present = False
         logger.info(f"Presence detection completed: present={present}, confidence={confidence}")

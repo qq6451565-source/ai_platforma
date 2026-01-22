@@ -9,7 +9,6 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from tests_app.permissions import IsAdmin
 
 from .serializers import (
-    RegisterSerializer,
     UserSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
@@ -24,37 +23,17 @@ from .serializers import (
     BlacklistedTokenSerializer,
 )
 from .models import User, PassportData, AuditLog
-from .jwt import CustomTokenObtainPairSerializer
 from .audit import log_audit
+from teacher_subject.models import TeacherSubject
 
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        data = request.data.copy()
-        # Ochiq registratsiya faqat student uchun
-        data.pop("role", None)
-        serializer = RegisterSerializer(data=data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        user = serializer.save()
-
-        selfie = request.FILES.get("selfie_image")
-        if selfie:
-            user.face_image = selfie
-            user.save(update_fields=["face_image"])
-
-        refresh = CustomTokenObtainPairSerializer.get_token(user)
         return Response(
-            {
-                "message": "User created",
-                "user_id": user.id,
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            },
-            status=status.HTTP_201_CREATED,
+            {"detail": "Ro'yxatdan o'tish enrollment orqali amalga oshiriladi."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -150,6 +129,27 @@ class AdminUserListView(APIView):
         if role:
             qs = qs.filter(role=role)
         serializer = AdminUserSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class TeacherStudentListView(APIView):
+    """
+    Teacher uchun: o'ziga biriktirilgan guruhlardagi studentlar ro'yxati.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = getattr(request.user, "role", None)
+        if not (request.user.is_superuser or role == "teacher"):
+            raise PermissionDenied("Faqat teacher ko'ra oladi.")
+
+        group_ids = (
+            TeacherSubject.objects.filter(teacher=request.user)
+            .values_list("groups__id", flat=True)
+            .distinct()
+        )
+        qs = User.objects.filter(role="student", group_id__in=group_ids).order_by("id")
+        serializer = UserSerializer(qs, many=True)
         return Response(serializer.data)
 class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("id")

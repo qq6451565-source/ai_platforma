@@ -33,7 +33,7 @@ const AdminLiveRoomsPage = () => {
             options={(lessons || []).map((l) => ({ value: l.id, label: l.topic || `Dars #${l.id}` }))}
           />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Yaratish
         </Button>
       </Form>

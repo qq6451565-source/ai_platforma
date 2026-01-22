@@ -3,13 +3,11 @@ import { Tabs } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import AdminEnrollment from "./Enrollment";
 import EnrollmentWindowsPage from "./EnrollmentWindows";
-import EnrollmentDocumentsPage from "./EnrollmentDocuments";
-import EnrollmentVerificationsPage from "./EnrollmentVerifications";
 
 const EnrollmentHubPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const tabs = ["applicants", "windows", "documents", "verifications"];
+  const tabs = ["applicants", "windows"];
   const getTab = () => {
     const next = new URLSearchParams(location.search).get("tab");
     return next && tabs.includes(next) ? next : "applicants";
@@ -39,9 +37,7 @@ const EnrollmentHubPage = () => {
       destroyInactiveTabPane
       items={[
         { key: "applicants", label: "Arizachilar", children: renderTab("applicants", <AdminEnrollment />) },
-        { key: "windows", label: "Ro'yxat oynalari", children: renderTab("windows", <EnrollmentWindowsPage />) },
-        { key: "documents", label: "Ariza hujjatlari", children: renderTab("documents", <EnrollmentDocumentsPage />) },
-        { key: "verifications", label: "Tekshiruv natijalari", children: renderTab("verifications", <EnrollmentVerificationsPage />) },
+        { key: "windows", label: "Ro'yxatdan o'tish", children: renderTab("windows", <EnrollmentWindowsPage />) },
       ]}
     />
   );

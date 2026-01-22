@@ -31,7 +31,6 @@ import {
   deleteExamAttempt,
   fetchSubjectsAdmin,
   fetchGroupsAdmin,
-  fetchSemesters,
   fetchUsers,
 } from "../../api/admin";
 
@@ -42,13 +41,11 @@ const AdminAssessmentPage = () => {
   const { data: attempts } = useQuery({ queryKey: ["admin-exam-attempts"], queryFn: fetchExamAttempts });
   const { data: subjects } = useQuery({ queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin });
   const { data: groups } = useQuery({ queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin });
-  const { data: semesters } = useQuery({ queryKey: ["admin-semesters"], queryFn: fetchSemesters });
   const { data: teachers } = useQuery({ queryKey: ["admin-teachers"], queryFn: () => fetchUsers("teacher") });
   const { data: students } = useQuery({ queryKey: ["admin-students"], queryFn: () => fetchUsers("student") });
 
   const subjectMap = new Map((subjects || []).map((s) => [s.id, s.name]));
   const groupMap = new Map((groups || []).map((g) => [g.id, g.name]));
-  const semesterMap = new Map((semesters || []).map((s) => [s.id, s.number]));
   const teacherMap = new Map((teachers || []).map((t) => [t.id, `${t.first_name} ${t.last_name}`.trim() || t.username]));
   const studentMap = new Map((students || []).map((s) => [s.id, `${s.first_name} ${s.last_name}`.trim() || s.username]));
   const examTypeMap = new Map((examTypes || []).map((t) => [t.id, t.name]));
@@ -77,7 +74,6 @@ const AdminAssessmentPage = () => {
       createExam({
         subject: vals.subject,
         group: vals.group,
-        semester: vals.semester,
         teacher: vals.teacher,
         exam_type: vals.exam_type,
         duration_minutes: vals.duration_minutes,
@@ -106,7 +102,7 @@ const AdminAssessmentPage = () => {
                   <Form.Item name="name" rules={[{ required: true, message: "Nomi" }]}>
                     <Input placeholder="Masalan: midterm" />
                   </Form.Item>
-                  <Button type="primary" htmlType="submit" loading={typeMut.isLoading}>
+                  <Button type="primary" htmlType="submit" loading={typeMut.isPending}>
                     Qo'shish
                   </Button>
                 </Form>
@@ -155,12 +151,6 @@ const AdminAssessmentPage = () => {
                       options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="semester" label="Semestr" rules={[{ required: true }]}>
-                    <Select
-                      showSearch
-                      options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
-                    />
-                  </Form.Item>
                   <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
                     <Select
                       showSearch
@@ -196,7 +186,7 @@ const AdminAssessmentPage = () => {
                   >
                     <Switch defaultChecked />
                   </Form.Item>
-                  <Button type="primary" htmlType="submit" loading={examMut.isLoading}>
+                  <Button type="primary" htmlType="submit" loading={examMut.isPending}>
                     Qo'shish
                   </Button>
                 </Form>
@@ -213,7 +203,6 @@ const AdminAssessmentPage = () => {
                             examForm.setFieldsValue({
                               subject: e.subject,
                               group: e.group,
-                              semester: e.semester,
                               teacher: e.teacher,
                               exam_type: e.exam_type,
                               duration_minutes: e.duration_minutes,
@@ -316,7 +305,6 @@ const AdminAssessmentPage = () => {
             await updateExam(editExam.id, {
               subject: vals.subject,
               group: vals.group,
-              semester: vals.semester,
               teacher: vals.teacher,
               exam_type: vals.exam_type,
               duration_minutes: vals.duration_minutes,
@@ -342,9 +330,6 @@ const AdminAssessmentPage = () => {
           </Form.Item>
           <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
             <Select options={(groups || []).map((g) => ({ value: g.id, label: g.name }))} />
-          </Form.Item>
-          <Form.Item name="semester" label="Semestr" rules={[{ required: true }]}>
-            <Select options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))} />
           </Form.Item>
           <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
             <Select

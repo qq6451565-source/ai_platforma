@@ -2,13 +2,31 @@ from django.db import models
 
 from accounts.models import User
 from assessment.models import ExamAttempt
+from student_tests.models import StudentTest
 
 
 class ProctorSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    exam_attempt = models.OneToOneField(ExamAttempt, on_delete=models.CASCADE, related_name="proctor_session")
+    exam_attempt = models.OneToOneField(
+        ExamAttempt,
+        on_delete=models.CASCADE,
+        related_name="proctor_session",
+        null=True,
+        blank=True,
+    )
+    student_test = models.OneToOneField(
+        StudentTest,
+        on_delete=models.CASCADE,
+        related_name="proctor_session",
+        null=True,
+        blank=True,
+    )
     verified = models.BooleanField(default=False)
     confidence = models.FloatField(default=0.0)
+    blocked = models.BooleanField(default=False)
+    blocked_reason = models.CharField(max_length=255, blank=True, default="")
+    missing_since = models.DateTimeField(null=True, blank=True)
+    last_present_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 

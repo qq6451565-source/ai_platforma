@@ -78,7 +78,7 @@ const AuthGroupsPage = () => {
         <Form.Item name="permissions" label="Ruxsatlar">
           <Select mode="multiple" options={permOptions} placeholder="Ruxsatlarni tanlang" />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -118,9 +118,16 @@ const AuthGroupsPage = () => {
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        confirmLoading={updateMut.isLoading}
+        confirmLoading={updateMut.isPending}
       >
-        <Form layout="vertical" form={editForm} onFinish={(vals) => updateMut.mutate({ id: editing.id, payload: vals })}>
+        <Form
+          layout="vertical"
+          form={editForm}
+          onFinish={(vals) => {
+            if (!editing) return;
+            updateMut.mutate({ id: editing.id, payload: vals });
+          }}
+        >
           <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
             <Input />
           </Form.Item>

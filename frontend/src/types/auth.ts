@@ -12,12 +12,18 @@ export type LoginPayload = {
 };
 
 export type RegisterPayload = {
-  username?: string; // agar backend avtomatik bersa, yubormasak ham bo'ladi
-  email?: string;
-  password?: string; // agar backend avtomatik bersa, yubormasak ham bo'ladi
   first_name?: string;
   last_name?: string;
+  full_name?: string;
+  email?: string;
   phone?: string;
-  passport_image?: File;
+  passport_front?: File;
+  passport_back?: File;
   selfie_image?: File;
+};
+
+export type RegisterResponse = {
+  detail: string;
+  applicant_id: number;
+  status: "pending" | "verified" | "rejected" | "approved";
 };

@@ -24,7 +24,7 @@ def grade_created_notify(sender, instance, created, **kwargs):
 
 def lesson_created_notify(sender, instance, created, **kwargs):
     if created and getattr(instance, "group", None):
-        students = instance.group.user_set.filter(role="student")
+        students = instance.group.students.filter(role="student")
         for student in students:
             notify_student_email(student, "Yangi dars", f"Yangi dars: {getattr(instance, 'topic', '')}")
 

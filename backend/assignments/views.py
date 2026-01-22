@@ -3,9 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from django.db.models import Q
 
 from tests_app.permissions import IsAdmin, IsTeacher, IsTeacherOrAdmin
+from attendance.models import Attendance
 
+from lessons.models import Lesson
 from .models import Assignment, Submission
 from .serializers import AssignmentSerializer, SubmissionSerializer
 
@@ -26,10 +29,22 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         role = getattr(user, "role", None)
 
         if role == "student":
-            if getattr(user, "group_id", None):
-                qs = qs.filter(teacher_subject__groups__id=user.group_id).distinct()
+            if not getattr(user, "group_id", None):
+                return qs.none()
+            lesson_id = self.request.query_params.get("lesson_id")
+            if lesson_id:
+                try:
+                    Lesson.objects.get(id=lesson_id)
+                except Lesson.DoesNotExist:
+                    return qs.none()
+                qs = qs.filter(
+                    lesson_id=lesson_id,
+                    lesson__group_id=user.group_id,
+                )
+            else:
+                qs = qs.filter(lesson__group_id=user.group_id).distinct()
         if role == "teacher":
-            qs = qs.filter(teacher_subject__teacher=user)
+            qs = qs.filter(lesson__teacher_subject__teacher=user)
         return qs
 
 
@@ -57,6 +72,25 @@ class SubmitAssignmentView(APIView):
     def post(self, request):
         if getattr(request.user, "role", None) != "student":
             raise PermissionDenied("Faqat student topshiriq yuboradi.")
+
+        assignment_id = request.data.get("assignment")
+        if not assignment_id:
+            raise ValidationError({"assignment": "Topshiriq majburiy."})
+        try:
+            assignment = Assignment.objects.select_related("lesson", "lesson__group").get(id=assignment_id)
+        except Assignment.DoesNotExist:
+            raise NotFound("Topshiriq topilmadi.")
+        if not assignment.lesson:
+            raise ValidationError({"assignment": "Topshiriq darsga biriktirilmagan."})
+        if request.user.group_id != assignment.lesson.group_id:
+            raise PermissionDenied("Bu topshiriq sizning guruhingizga tegishli emas.")
+        attended = Attendance.objects.filter(
+            student=request.user,
+            lesson_id=assignment.lesson_id,
+            status="present",
+        ).exists()
+        if not attended:
+            raise PermissionDenied("Darsda qatnashmagansiz.")
 
         serializer = SubmissionSerializer(data=request.data)
         if serializer.is_valid():

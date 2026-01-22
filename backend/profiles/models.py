@@ -3,7 +3,6 @@ from django.db import models
 from accounts.models import User
 from groups.models import Group
 from directions.models import Direction
-from university.models import Department
 
 
 class StudentProfile(models.Model):
@@ -27,9 +26,6 @@ class StudentProfile(models.Model):
 
 class TeacherProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="teacher_profile")
-    department = models.ForeignKey(Department, on_delete=models.PROTECT)
-    position = models.CharField(max_length=255, blank=True, default="")
-    workload = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.user.username

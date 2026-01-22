@@ -25,7 +25,6 @@ import {
   updateLessonSlotAdmin,
   deleteLessonSlotAdmin,
   fetchGroupsAdmin,
-  fetchSemesters,
   fetchSubjectsAdmin,
   fetchUsers,
 } from "../../api/admin";
@@ -43,10 +42,6 @@ const AdminSchedulePage = () => {
   const { data: groups } = useQuery({
     queryKey: ["admin-groups"],
     queryFn: fetchGroupsAdmin,
-  });
-  const { data: semesters } = useQuery({
-    queryKey: ["admin-semesters"],
-    queryFn: fetchSemesters,
   });
   const { data: subjects } = useQuery({
     queryKey: ["admin-subjects"],
@@ -92,11 +87,10 @@ const AdminSchedulePage = () => {
   });
 
   const groupMap = new Map((groups || []).map((g) => [g.id, g.name]));
-  const semesterMap = new Map((semesters || []).map((s) => [s.id, s.number]));
   const subjectMap = new Map((subjects || []).map((s) => [s.id, s.name]));
   const teacherMap = new Map((teachers || []).map((t) => [t.id, `${t.first_name} ${t.last_name}`.trim() || t.username]));
   const timetableMap = new Map(
-    (timetables || []).map((t) => [t.id, `${groupMap.get(t.group) || t.group} / Semestr ${semesterMap.get(t.semester) || t.semester}`])
+    (timetables || []).map((t) => [t.id, `${groupMap.get(t.group) || t.group}`])
   );
 
   return (
@@ -117,16 +111,8 @@ const AdminSchedulePage = () => {
                       options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="semester">
-                    <Select
-                      showSearch
-                      placeholder="Semestr (avto)"
-                      style={{ width: 160 }}
-                      options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
-                    />
-                  </Form.Item>
                   <Form.Item>
-                    <Button type="primary" htmlType="submit" loading={createTimetableMut.isLoading}>
+                    <Button type="primary" htmlType="submit" loading={createTimetableMut.isPending}>
                       Qo'shish
                     </Button>
                   </Form.Item>
@@ -143,7 +129,7 @@ const AdminSchedulePage = () => {
                           type="link"
                           onClick={() => {
                             setEditTimetable(t);
-                            ttForm.setFieldsValue({ group: t.group, semester: t.semester });
+                            ttForm.setFieldsValue({ group: t.group });
                           }}
                         >
                           Tahrirlash
@@ -151,9 +137,9 @@ const AdminSchedulePage = () => {
                         <Popconfirm title="O'chirish?" onConfirm={() => deleteTimetableAdmin(t.id).then(() => qc.invalidateQueries({ queryKey: ["admin-timetables"] }))}>
                           <Button danger type="link">O'chirish</Button>
                         </Popconfirm>,
-                      ]}
+                      ]} 
                     >
-                      {groupMap.get(t.group) || `Guruh #${t.group}`} | Semestr {semesterMap.get(t.semester) || t.semester}
+                      {groupMap.get(t.group) || `Guruh #${t.group}`}
                     </List.Item>
                   )}
                 />
@@ -172,7 +158,7 @@ const AdminSchedulePage = () => {
                       placeholder="Jadval tanlang"
                       options={(timetables || []).map((t) => ({
                         value: t.id,
-                        label: `${groupMap.get(t.group) || t.group} / Semestr ${semesterMap.get(t.semester) || t.semester}`,
+                        label: `${groupMap.get(t.group) || t.group}`,
                       }))}
                     />
                   </Form.Item>
@@ -210,7 +196,7 @@ const AdminSchedulePage = () => {
                       ]}
                     />
                   </Form.Item>
-                  <Button type="primary" htmlType="submit" loading={createSlotMut.isLoading}>
+                  <Button type="primary" htmlType="submit" loading={createSlotMut.isPending}>
                     Qo'shish
                   </Button>
                 </Form>
@@ -283,13 +269,6 @@ const AdminSchedulePage = () => {
               options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
             />
           </Form.Item>
-          <Form.Item name="semester" label="Semestr">
-            <Select
-              showSearch
-              placeholder="Semestr (avto)"
-              options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
-            />
-          </Form.Item>
         </Form>
       </Modal>
 
@@ -328,7 +307,7 @@ const AdminSchedulePage = () => {
               showSearch
               options={(timetables || []).map((t) => ({
                 value: t.id,
-                label: `${groupMap.get(t.group) || t.group} / Semestr ${semesterMap.get(t.semester) || t.semester}`,
+                label: `${groupMap.get(t.group) || t.group}`,
               }))}
             />
           </Form.Item>

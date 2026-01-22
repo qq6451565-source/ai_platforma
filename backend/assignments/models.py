@@ -1,6 +1,7 @@
 from django.db import models
 from teacher_subject.models import TeacherSubject
 from accounts.models import User
+from lessons.models import Lesson
 
 def assignment_file_path(instance, filename):
     return f"assignments/{instance.teacher_subject.teacher.id}/{filename}"
@@ -10,6 +11,7 @@ def submission_file_path(instance, filename):
 
 
 class Assignment(models.Model):
+    lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, null=True, blank=True, related_name="assignments")
     teacher_subject = models.ForeignKey(TeacherSubject, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)

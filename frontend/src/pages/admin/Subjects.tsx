@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, Form, Input, Button, List, message, Empty, Select, Popconfirm, Modal } from "antd";
+import { Card, Form, Input, Button, List, message, Empty, Select, Popconfirm, Modal, Tag } from "antd";
 import { useState } from "react";
-import { fetchSubjectsAdmin, createSubject, deleteSubject, fetchDirections, fetchSemesters, updateSubject } from "../../api/admin";
+import { fetchSubjectsAdmin, createSubject, deleteSubject, fetchDirections, updateSubject } from "../../api/admin";
 
 const SubjectsPage = () => {
   const qc = useQueryClient();
@@ -10,7 +10,7 @@ const SubjectsPage = () => {
     queryFn: fetchSubjectsAdmin,
   });
   const { data: directions } = useQuery({ queryKey: ["admin-directions"], queryFn: fetchDirections });
-  const { data: semesters } = useQuery({ queryKey: ["admin-semesters"], queryFn: fetchSemesters });
+  const directionMap = new Map((directions || []).map((d) => [d.id, d.name]));
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
@@ -31,34 +31,14 @@ const SubjectsPage = () => {
         <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="code" label="Kod" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name="semester" label="Semestr" rules={[{ required: true }]}>
-          <Select
-            showSearch
-            placeholder="Semestr"
-            options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
-          />
-        </Form.Item>
-        <Form.Item name="subject_type" label="Turi">
-          <Select
-            allowClear
-            options={[
-              { value: "required", label: "Majburiy" },
-              { value: "optional", label: "Tanlov" },
-            ]}
-          />
-        </Form.Item>
-        <Form.Item name="directions" label="Yo'nalishlar">
+        <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>
           <Select
             mode="multiple"
-            allowClear
             placeholder="Yo'nalish tanlang"
             options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
           />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -76,10 +56,7 @@ const SubjectsPage = () => {
                   setEditItem(s);
                   editForm.setFieldsValue({
                     name: s.name,
-                    code: s.code,
-                    semester: s.semester,
-                    subject_type: s.subject_type,
-                    directions: s.directions,
+                    directions: s.directions || [],
                   });
                   setEditOpen(true);
                 }}
@@ -97,13 +74,23 @@ const SubjectsPage = () => {
                 <Button danger type="link">
                   O'chirish
                 </Button>
-              </Popconfirm>,
-            ]}
-          >
-            {s.name} ({s.code}) | Semestr #{s.semester}
-          </List.Item>
-        )}
-      />
+            </Popconfirm>,
+          ]}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <strong>{s.name}</strong>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {(s.direction_names && s.direction_names.length
+                ? s.direction_names
+                : (s.directions || []).map((id) => directionMap.get(id) || `Yo'nalish #${id}`)
+              ).map((label) => (
+                <Tag key={`${s.id}-${label}`}>{label}</Tag>
+              ))}
+            </div>
+          </div>
+        </List.Item>
+      )}
+    />
 
       <Modal
         title="Fanni tahrirlash"
@@ -130,29 +117,9 @@ const SubjectsPage = () => {
           <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="code" label="Kod" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="semester" label="Semestr" rules={[{ required: true }]}>
-            <Select
-              showSearch
-              placeholder="Semestr"
-              options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
-            />
-          </Form.Item>
-          <Form.Item name="subject_type" label="Turi">
-            <Select
-              allowClear
-              options={[
-                { value: "required", label: "Majburiy" },
-                { value: "optional", label: "Tanlov" },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="directions" label="Yo'nalishlar">
+          <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>
             <Select
               mode="multiple"
-              allowClear
               placeholder="Yo'nalish tanlang"
               options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
             />

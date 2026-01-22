@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConfigProvider } from "antd";
 
 import App from "./App";
+import "@livekit/components-styles";
 import "./index.css";
 
 const queryClient = new QueryClient();

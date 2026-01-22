@@ -7,6 +7,8 @@ export type AdminUser = {
   email: string;
   first_name: string;
   last_name: string;
+  phone?: string | null;
+  group?: number | null;
   role: string;
   is_active?: boolean;
   is_staff?: boolean;
@@ -25,42 +27,12 @@ export const setUserRole = async (user_id: number, role: "student" | "teacher" |
   return res.data;
 };
 
-// ==== University structure ====
-export type Faculty = { id: number; name: string };
-export type Department = { id: number; name: string; faculty: number; faculty_name?: string };
-
-export const fetchFaculties = async () => (await api.get<Faculty[]>("/api/university/faculties/")).data;
-export const createFaculty = async (name: string) =>
-  (await api.post("/api/university/faculties/", { name })).data;
-export const deleteFaculty = async (id: number) =>
-  (await api.delete(`/api/university/faculties/${id}/`)).data;
-export const updateFaculty = async (id: number, payload: Partial<Faculty>) =>
-  (await api.patch(`/api/university/faculties/${id}/`, payload)).data;
-
-export const fetchDepartments = async () =>
-  (await api.get<Department[]>("/api/university/departments/")).data;
-export const createDepartment = async (payload: { name: string; faculty: number }) =>
-  (await api.post("/api/university/departments/", payload)).data;
-export const deleteDepartment = async (id: number) =>
-  (await api.delete(`/api/university/departments/${id}/`)).data;
-export const updateDepartment = async (id: number, payload: Partial<Department>) =>
-  (await api.patch(`/api/university/departments/${id}/`, payload)).data;
-
-export type Campus = { id: number; name: string; city?: string };
-export const fetchCampuses = async () => (await api.get<Campus[]>("/api/university/campuses/")).data;
-export const createCampus = async (payload: { name: string; city?: string }) =>
-  (await api.post("/api/university/campuses/", payload)).data;
-export const deleteCampus = async (id: number) => (await api.delete(`/api/university/campuses/${id}/`)).data;
-export const updateCampus = async (id: number, payload: Partial<Campus>) =>
-  (await api.patch(`/api/university/campuses/${id}/`, payload)).data;
-
 // ==== Groups ====
 export type AdminGroup = {
   id: number;
   name: string;
   direction?: number;
-  semester?: number;
-  year?: number;
+  level?: number;
   language?: string;
 };
 export const fetchGroupsAdmin = async () => (await api.get<AdminGroup[]>("/api/groups/")).data;
@@ -70,8 +42,8 @@ export const deleteGroupAdmin = async (id: number) => (await api.delete(`/api/gr
 export const updateGroupAdmin = async (id: number, payload: Partial<AdminGroup>) =>
   (await api.patch(`/api/groups/${id}/`, payload)).data;
 
-// ==== Directions / Semesters / Subjects ====
-export type Direction = { id: number; name: string; language?: string; degree?: number };
+// ==== Directions / Subjects ====
+export type Direction = { id: number; name: string; language?: string; degree?: string };
 export const fetchDirections = async () => (await api.get<Direction[]>("/api/directions/")).data;
 export const createDirection = async (payload: Partial<Direction>) =>
   (await api.post("/api/directions/", payload)).data;
@@ -79,26 +51,11 @@ export const deleteDirection = async (id: number) => (await api.delete(`/api/dir
 export const updateDirection = async (id: number, payload: Partial<Direction>) =>
   (await api.patch(`/api/directions/${id}/`, payload)).data;
 
-export type Semester = { id: number; number: number };
-export const fetchSemesters = async () => (await api.get<Semester[]>("/api/semesters/")).data;
-export const createSemester = async (payload: { number: number }) =>
-  (await api.post("/api/semesters/", payload)).data;
-export const deleteSemester = async (id: number) => (await api.delete(`/api/semesters/${id}/`)).data;
-export const updateSemester = async (id: number, payload: Partial<Semester>) =>
-  (await api.patch(`/api/semesters/${id}/`, payload)).data;
-export type SemesterSettings = { id: number; active_semester: number | null; updated_at?: string };
-export const fetchSemesterSettings = async () =>
-  (await api.get<SemesterSettings>("/api/semesters/settings/")).data;
-export const updateSemesterSettings = async (payload: Partial<SemesterSettings>) =>
-  (await api.patch("/api/semesters/settings/", payload)).data;
-
 export type Subject = {
   id: number;
   name: string;
-  code: string;
   directions: number[];
-  semester: number;
-  subject_type: string;
+  direction_names?: string[];
 };
 export const fetchSubjectsAdmin = async () => (await api.get<Subject[]>("/api/subjects/")).data;
 export const createSubject = async (payload: Partial<Subject>) =>
@@ -158,52 +115,51 @@ export const deleteAnnouncementAdmin = async (id: number) =>
 export type EnrollmentItem = {
   id: number;
   full_name?: string;
+  phone?: string;
+  email?: string;
+  passport_id?: string | null;
+  card_number?: string | null;
+  personal_number?: string | null;
+  surname?: string | null;
+  name?: string | null;
+  patronymic?: string | null;
+  sex?: string | null;
+  citizenship?: string | null;
+  birth_place?: string | null;
+  birth_date?: string | null;
+  direction_choice?: number | null;
+  created_at?: string;
   documents?: {
     passport_front?: string;
     passport_back?: string;
     face_image?: string;
   };
-  verifications?: { verified: boolean; confidence: number }[];
+  verifications?: {
+    verified: boolean;
+    confidence: number;
+    created_at?: string;
+    events_json?: any[];
+  }[];
   status?: string;
 };
 
 export const fetchEnrollment = async () => (await api.get<EnrollmentItem[]>("/api/enrollment/applicants/")).data;
-export const approveEnrollment = async (id: number, payload: { group_id: number; admission_year?: number }) =>
+export type ApproveEnrollmentPayload = {
+  role: "student" | "teacher";
+  group_id?: number;
+  subject_id?: number;
+  group_ids?: number[];
+  admission_year?: number;
+};
+export const approveEnrollment = async (id: number, payload: ApproveEnrollmentPayload) =>
   (await api.post(`/api/enrollment/approve/${id}/`, payload)).data;
 export const rejectEnrollment = async (id: number) =>
   (await api.post(`/api/enrollment/reject/${id}/`)).data;
-// Degrees & study modes
-export type Degree = { id: number; name: string };
-export type StudyMode = { id: number; name: string };
-
-export const fetchDegrees = async () => (await api.get<Degree[]>("/api/university/degrees/")).data;
-export const createDegree = async (name: string) =>
-  (await api.post("/api/university/degrees/", { name })).data;
-export const deleteDegree = async (id: number) =>
-  (await api.delete(`/api/university/degrees/${id}/`)).data;
-export const updateDegree = async (id: number, payload: Partial<Degree>) =>
-  (await api.patch(`/api/university/degrees/${id}/`, payload)).data;
-
-export const fetchStudyModes = async () => (await api.get<StudyMode[]>("/api/university/study-modes/")).data;
-export const createStudyMode = async (name: string) =>
-  (await api.post("/api/university/study-modes/", { name })).data;
-export const deleteStudyMode = async (id: number) =>
-  (await api.delete(`/api/university/study-modes/${id}/`)).data;
-export const updateStudyMode = async (id: number, payload: Partial<StudyMode>) =>
-  (await api.patch(`/api/university/study-modes/${id}/`, payload)).data;
-
-// ==== Curriculum ====
-export type Curriculum = { id: number; direction: number; semester: number; subjects: number[] };
-export const fetchCurriculums = async () => (await api.get<Curriculum[]>("/api/curriculum/")).data;
-export const createCurriculum = async (payload: Partial<Curriculum>) =>
-  (await api.post("/api/curriculum/", payload)).data;
-export const updateCurriculum = async (id: number, payload: Partial<Curriculum>) =>
-  (await api.patch(`/api/curriculum/${id}/`, payload)).data;
-export const deleteCurriculum = async (id: number) =>
-  (await api.delete(`/api/curriculum/${id}/`)).data;
+export const reverifyEnrollment = async (id: number) =>
+  (await api.post(`/api/enrollment/reverify/${id}/`)).data;
 
 // ==== Schedule (timetables/lesson slots) ====
-export type AdminTimetable = { id: number; group: number; semester: number; group_name?: string; semester_number?: number };
+export type AdminTimetable = { id: number; group: number; group_name?: string };
 export const fetchTimetablesAdmin = async () => (await api.get<AdminTimetable[]>("/api/schedule/timetables/")).data;
 export const createTimetableAdmin = async (payload: Partial<AdminTimetable>) =>
   (await api.post("/api/schedule/timetables/", payload)).data;
@@ -224,7 +180,6 @@ export type AdminLessonSlot = {
   subject_name?: string;
   teacher_name?: string;
   group_name?: string;
-  semester_number?: number;
 };
 export const fetchLessonSlotsAdmin = async () => (await api.get<AdminLessonSlot[]>("/api/schedule/lesson-slots/")).data;
 export const createLessonSlotAdmin = async (payload: Partial<AdminLessonSlot>) =>
@@ -240,7 +195,6 @@ export type Exam = {
   id: number;
   subject: number;
   group: number;
-  semester: number;
   teacher: number;
   exam_type: number;
   duration_minutes: number;
@@ -310,11 +264,8 @@ export type GradebookEntry = {
   id: number;
   student: number;
   subject: number;
-  semester: number;
-  attendance_score: number;
   assignment_score: number;
   midterm_score: number;
-  final_score: number;
   total_score: number;
 };
 export const fetchGradebookEntries = async () => (await api.get<GradebookEntry[]>("/api/gradebook/entries/")).data;
@@ -358,9 +309,6 @@ export type StudentProfile = {
 export type TeacherProfile = {
   id: number;
   user: number;
-  department: number;
-  position?: string;
-  workload?: number;
 };
 export const fetchStudentProfiles = async () => (await api.get<StudentProfile[]>("/api/profiles/students/")).data;
 export const createStudentProfile = async (payload: Partial<StudentProfile>) =>
@@ -394,11 +342,25 @@ export const fetchAISettings = async () => (await api.get<AISettings>("/api/ai/s
 export const updateAISettings = async (payload: Partial<AISettings>) =>
   (await api.patch("/api/ai/settings/", payload)).data;
 
+export type AIHealth = {
+  status: string;
+  enabled: boolean;
+  base_url?: string | null;
+  api_key_set: boolean;
+  timeout: number;
+  gateway?: Record<string, any>;
+};
+export const fetchAIHealth = async () => (await api.get<AIHealth>("/api/ai/health/")).data;
+
 // ==== Student tests (admin) ====
 export type StudentTestRecord = {
   id: number;
   student: number;
   test: number;
+  test_title?: string;
+  lesson_topic?: string;
+  subject_name?: string;
+  group_name?: string;
   started_at?: string;
   finished_at?: string;
   current_question_index?: number;
@@ -478,6 +440,7 @@ export type PassportData = {
   extracted_fullname?: string;
   front_image?: string;
   back_image?: string;
+  selfie_image?: string;
 };
 export const fetchPassportData = async () =>
   (await api.get<PassportData[]>("/api/accounts/admin/passports/")).data;
@@ -594,10 +557,6 @@ export const deleteLiveParticipant = async (id: number) =>
 // ==== Enrollment windows/documents/verifications ====
 export type EnrollmentWindow = {
   id: number;
-  direction: number;
-  faculty: number;
-  start_at: string;
-  end_at: string;
   is_active: boolean;
 };
 export const fetchEnrollmentWindows = async () =>

@@ -44,7 +44,7 @@ const AdminAnnouncementsPage = () => {
         >
           <Input.TextArea rows={3} />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Saqlash
         </Button>
       </Form>

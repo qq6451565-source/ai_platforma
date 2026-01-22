@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db import models
+from django.conf import settings
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -211,6 +212,40 @@ class AISettingsView(APIView):
 
     def put(self, request):
         return self.patch(request)
+
+
+class AIHealthView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        enabled = getattr(settings, "AI_ENABLED", False)
+        base_url = getattr(settings, "AI_BASE_URL", None)
+        api_key_set = bool(getattr(settings, "AI_API_KEY", None))
+        timeout = getattr(settings, "AI_TIMEOUT", 5)
+
+        payload = {
+            "enabled": enabled,
+            "base_url": base_url,
+            "api_key_set": api_key_set,
+            "timeout": timeout,
+        }
+
+        if not enabled:
+            payload["status"] = "disabled"
+            return Response(payload, status=status.HTTP_200_OK)
+
+        if not base_url:
+            payload["status"] = "unconfigured"
+            return Response(payload, status=status.HTTP_200_OK)
+
+        health = clients.health_check()
+        if not health:
+            payload["status"] = "unreachable"
+            return Response(payload, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        payload["status"] = "ok"
+        payload["gateway"] = health
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class PassportOCRView(APIView):

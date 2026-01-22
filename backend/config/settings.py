@@ -2,11 +2,47 @@ from pathlib import Path
 from datetime import timedelta
 import os
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional in dev
+    load_dotenv = None
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-test-key'
-DEBUG = True
-ALLOWED_HOSTS = []
+def load_local_env(path: Path) -> None:
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+if load_dotenv:
+    load_dotenv(BASE_DIR / ".env")
+else:
+    load_local_env(BASE_DIR / ".env")
+
+
+def get_env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def get_env_list(name: str, default: list[str] | None = None) -> list[str]:
+    value = os.getenv(name)
+    if value is None:
+        return default or []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-test-key")
+DEBUG = get_env_bool("DEBUG", True)
+ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", [])
 
 INSTALLED_APPS = [
     # Django
@@ -90,9 +126,12 @@ REST_FRAMEWORK = {
     },
 }
 
+JWT_ACCESS_MINUTES = int(os.getenv("JWT_ACCESS_MINUTES", "30"))
+JWT_REFRESH_DAYS = int(os.getenv("JWT_REFRESH_DAYS", "7"))
+
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=JWT_ACCESS_MINUTES),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=JWT_REFRESH_DAYS),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -101,19 +140,15 @@ SIMPLE_JWT = {
     'TOKEN_REFRESH_SERIALIZER': 'accounts.jwt.CustomTokenRefreshSerializer',
 }
 
-CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
+DEFAULT_CORS_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-]
+CORS_ALLOW_ALL_ORIGINS = get_env_bool("CORS_ALLOW_ALL_ORIGINS", False)
+CORS_ALLOWED_ORIGINS = get_env_list("CORS_ALLOWED_ORIGINS", DEFAULT_CORS_ORIGINS)
+CSRF_TRUSTED_ORIGINS = get_env_list("CSRF_TRUSTED_ORIGINS", CORS_ALLOWED_ORIGINS)
 
 # Templates
 TEMPLATES = [
@@ -168,3 +203,10 @@ AI_ENABLED = os.getenv("AI_ENABLED", "false").lower() == "true"
 AI_BASE_URL = os.getenv("AI_BASE_URL")
 AI_API_KEY = os.getenv("AI_API_KEY")
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "5"))
+AI_RETRY = int(os.getenv("AI_RETRY", "1"))
+
+# LiveKit (live dars WebRTC)
+LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://127.0.0.1:7880")
+LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
+LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "devsecret_very_long_32_chars_minimum")
+LIVEKIT_TOKEN_TTL = int(os.getenv("LIVEKIT_TOKEN_TTL", "3600"))

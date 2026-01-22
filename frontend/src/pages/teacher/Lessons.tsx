@@ -1,217 +1,206 @@
-import { Button, Form, Input, DatePicker, List, Skeleton, Typography, message, Select, Popconfirm, Modal, Empty } from "antd";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchLessons, createLesson, deleteLesson, updateLesson } from "../../api/lessons";
+import { Button, Card, List, Modal, Space } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLessons } from "../../api/lessons";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import { fetchTeacherSubjects } from "../../api/teacherSubjects";
-import { fetchGroups } from "../../api/groups";
 
 const TeacherLessons = () => {
-  const qc = useQueryClient();
   const { data: lessons, isLoading } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
   });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: groups } = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
-  const [form] = Form.useForm();
-  const [submitting, setSubmitting] = useState(false);
-  const [filterGroup, setFilterGroup] = useState<number | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editItem, setEditItem] = useState<any>(null);
-  const [editLoading, setEditLoading] = useState(false);
-  const [editForm] = Form.useForm();
+  const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
+  const [dayOpen, setDayOpen] = useState(false);
+  const weekdayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
 
-  const onFinish = async (values: any) => {
-    setSubmitting(true);
-    try {
-      await createLesson({
-        teacher_subject: Number(values.teacher_subject),
-        group: Number(values.group),
-        topic: values.topic,
-        start_time: values.start_time.toISOString(),
-        end_time: values.end_time.toISOString(),
-      });
-      message.success("Dars yaratildi");
-      form.resetFields();
-      await qc.invalidateQueries({ queryKey: ["lessons"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
-    } finally {
-      setSubmitting(false);
+  const lessonsByDate = (lessons || []).reduce<Record<string, any[]>>((acc, lesson) => {
+    const key = lesson.start_time ? dayjs(lesson.start_time).format("YYYY-MM-DD") : "";
+    if (!key) return acc;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(lesson);
+    return acc;
+  }, {});
+
+  const weekStart = selectedDate.subtract((selectedDate.day() + 6) % 7, "day");
+  const weekDays = Array.from({ length: 7 }, (_, idx) => weekStart.add(idx, "day"));
+  const weekLabel = `${weekStart.format("DD.MM")} - ${weekStart.add(6, "day").format("DD.MM.YYYY")}`;
+  const monthLabel = selectedDate.format("MM.YYYY");
+  const monthStart = selectedDate.startOf("month");
+  const monthEnd = selectedDate.endOf("month");
+  const gridStart = monthStart.subtract((monthStart.day() + 6) % 7, "day");
+  const monthEndIndex = (monthEnd.day() + 6) % 7;
+  const gridEnd = monthEnd.add(6 - monthEndIndex, "day");
+  const monthDays = Array.from({ length: gridEnd.diff(gridStart, "day") + 1 }, (_, idx) =>
+    gridStart.add(idx, "day")
+  );
+  const selectedKey = selectedDate.format("YYYY-MM-DD");
+  const selectedLessons = (lessonsByDate[selectedKey] || [])
+    .slice()
+    .sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
+
+  const getLiveStatus = (lesson: any) => {
+    if (!lesson?.start_time || !lesson?.end_time) {
+      return { canJoin: false, label: "Jadval yo'q" };
     }
+    const start = dayjs(lesson.start_time);
+    const end = dayjs(lesson.end_time);
+    const now = dayjs();
+    if (now.isBefore(start)) return { canJoin: false, label: "Boshlanishini kuting" };
+    if (now.isAfter(end)) return { canJoin: false, label: "Dars tugagan" };
+    return { canJoin: true, label: "Live darsga o'tish" };
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Mening darslarim</Typography.Title>
-      <Form
-        layout="vertical"
-        form={form}
-        onFinish={onFinish}
-        style={{ maxWidth: 520, marginBottom: 24 }}
-      >
-        <Form.Item name="teacher_subject" label="TeacherSubject" rules={[{ required: true }]}>
-          <Select
-            showSearch
-            options={(teacherSubjects || []).map((ts) => ({
-              value: ts.id,
-              label: `TS #${ts.id} (subj ${ts.subject}, groups ${ts.groups.join(",")})`,
-            }))}
-          />
-        </Form.Item>
-        <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-          <Select
-            showSearch
-            options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-          />
-        </Form.Item>
-        <Form.Item name="topic" label="Mavzu" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name="start_time" label="Boshlanish" rules={[{ required: true }]}>
-          <DatePicker showTime style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item name="end_time" label="Tugash" rules={[{ required: true }]}>
-          <DatePicker showTime style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={submitting}>
-            Yaratish
-          </Button>
-        </Form.Item>
-      </Form>
-
-      {isLoading ? (
-        <Skeleton active />
-      ) : (
-        <>
-          <div style={{ marginBottom: 12, maxWidth: 240 }}>
-            <Select
-              allowClear
-              placeholder="Guruh bo'yicha filter"
-              style={{ width: "100%" }}
-              onChange={(v) => setFilterGroup(v ?? null)}
-              options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-            />
+    <Card title="Dars jadvali" style={{ marginBottom: 16 }} loading={isLoading}>
+      <div className="lesson-calendar">
+        <div className="lesson-calendar__left">
+          <div className="lesson-week">
+            <div className="lesson-week__header">
+              <div>
+                <div className="lesson-week__title">{viewMode === "week" ? "Hafta" : "Oy"}</div>
+                <div className="lesson-week__range">{viewMode === "week" ? weekLabel : monthLabel}</div>
+              </div>
+              <div className="lesson-week__controls">
+                <Button
+                  size="small"
+                  type="text"
+                  onClick={() =>
+                    setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
+                  }
+                >
+                  {"<"}
+                </Button>
+                <Button
+                  size="small"
+                  type="text"
+                  onClick={() =>
+                    setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
+                  }
+                >
+                  {">"}
+                </Button>
+                <Button size="small" onClick={() => setSelectedDate(dayjs())}>
+                  Bugun
+                </Button>
+                <Button
+                  size="small"
+                  type={viewMode === "week" ? "primary" : "default"}
+                  onClick={() => setViewMode("week")}
+                >
+                  Hafta
+                </Button>
+                <Button
+                  size="small"
+                  type={viewMode === "month" ? "primary" : "default"}
+                  onClick={() => setViewMode("month")}
+                >
+                  Oy
+                </Button>
+              </div>
+            </div>
+            <div className="lesson-week__grid-wrap">
+              <div className={viewMode === "week" ? "lesson-week__grid" : "lesson-month__grid"}>
+                {(viewMode === "week" ? weekDays : monthDays).map((day) => {
+                  const key = day.format("YYYY-MM-DD");
+                  const dayLessons = (lessonsByDate[key] || [])
+                    .slice()
+                    .sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
+                  const isToday = day.isSame(dayjs(), "day");
+                  const isSelected = day.isSame(selectedDate, "day");
+                  const isOutside = viewMode === "month" && day.month() !== selectedDate.month();
+                  return (
+                    <div
+                      key={key}
+                      className={`lesson-week__day${viewMode === "month" ? " lesson-month__day" : ""}${
+                        isToday ? " is-today" : ""
+                      }${isSelected ? " is-selected" : ""}${isOutside ? " is-outside" : ""}`}
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setDayOpen(true);
+                      }}
+                    >
+                      <div className={`lesson-week__day-header${viewMode === "month" ? " lesson-month__day-header" : ""}`}>
+                        <div className="lesson-week__weekday">{weekdayNames[day.day()]}</div>
+                        <div className="lesson-week__date">
+                          {viewMode === "month" ? day.format("D") : day.format("DD.MM")}
+                        </div>
+                      </div>
+                      <div className={`lesson-week__items${viewMode === "month" ? " lesson-month__items" : ""}`}>
+                        {dayLessons.map((item) => {
+                          const subjectLabel = item.subject_name || "Fan";
+                          const groupLabel = item.group_name || `Guruh #${item.group}`;
+                          const timeLabel =
+                            item.start_time && item.end_time
+                              ? `${dayjs(item.start_time).format("HH:mm")} - ${dayjs(item.end_time).format("HH:mm")}`
+                              : "-";
+                          return (
+                            <div key={item.id} className="lesson-week__chip">
+                              <div className="lesson-week__chip-title">
+                                {subjectLabel} - {groupLabel}
+                              </div>
+                              <div className="lesson-week__chip-time">{timeLabel}</div>
+                            </div>
+                          );
+                        })}
+                        {!dayLessons.length && <div className="lesson-week__empty">Bo'sh</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-          {(() => {
-            const filtered = (lessons || []).filter((l) => (filterGroup ? l.group === filterGroup : true));
-            if (!filtered.length) return <Empty description="Ma'lumot yo'q" />;
-            return (
-              <List
-                dataSource={filtered}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        key="edit"
-                        type="link"
-                        onClick={() => {
-                          setEditItem(item);
-                          editForm.setFieldsValue({
-                            teacher_subject: item.teacher_subject,
-                            group: item.group,
-                            topic: item.topic,
-                            start_time: dayjs(item.start_time),
-                            end_time: dayjs(item.end_time),
-                          });
-                          setEditOpen(true);
-                        }}
-                      >
-                        Tahrirlash
-                      </Button>,
-                      <Popconfirm
-                        key="delete"
-                        title="O'chirish?"
-                        onConfirm={async () => {
-                          try {
-                            await deleteLesson(item.id);
-                            message.success("O'chirildi");
-                            await qc.invalidateQueries({ queryKey: ["lessons"] });
-                          } catch {
-                            message.error("O'chirishda xato");
-                          }
-                        }}
-                      >
-                        <Button danger type="link">
-                          O'chirish
-                        </Button>
-                      </Popconfirm>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={`${item.subject_name || ""} | ${item.topic}`}
-                      description={`${item.group_name || ""} | ${new Date(item.start_time).toLocaleString()} - ${new Date(
-                        item.end_time
-                      ).toLocaleTimeString()}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            );
-          })()}
-        </>
-      )}
-
+        </div>
+      </div>
       <Modal
-        title="Darsni tahrirlash"
-        open={editOpen}
-        onCancel={() => setEditOpen(false)}
-        onOk={async () => {
-          if (!editItem) return;
-          setEditLoading(true);
-          try {
-            const vals = await editForm.validateFields();
-            await updateLesson(editItem.id, {
-              teacher_subject: Number(vals.teacher_subject),
-              group: Number(vals.group),
-              topic: vals.topic,
-              start_time: vals.start_time.toISOString(),
-              end_time: vals.end_time.toISOString(),
-            });
-            message.success("Yangilandi");
-            setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["lessons"] });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
-          } finally {
-            setEditLoading(false);
-          }
-        }}
-        confirmLoading={editLoading}
+        title={`Kundagi darslar: ${selectedDate.format("DD.MM.YYYY")}`}
+        open={dayOpen}
+        onCancel={() => setDayOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setDayOpen(false)}>
+            Yopish
+          </Button>,
+        ]}
+        bodyStyle={{ maxHeight: 460, overflowY: "auto" }}
       >
-        <Form layout="vertical" form={editForm}>
-          <Form.Item name="teacher_subject" label="TeacherSubject" rules={[{ required: true }]}>
-            <Select
-              showSearch
-              options={(teacherSubjects || []).map((ts) => ({
-                value: ts.id,
-                label: `TS #${ts.id} (subj ${ts.subject}, groups ${ts.groups.join(",")})`,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-            <Select
-              showSearch
-              options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-            />
-          </Form.Item>
-          <Form.Item name="topic" label="Mavzu" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="start_time" label="Boshlanish" rules={[{ required: true }]}>
-            <DatePicker showTime style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="end_time" label="Tugash" rules={[{ required: true }]}>
-            <DatePicker showTime style={{ width: "100%" }} />
-          </Form.Item>
-        </Form>
+        <List
+          dataSource={selectedLessons}
+          locale={{ emptyText: "Bu kunda dars yo'q" }}
+          renderItem={(item) => {
+            const subjectLabel = item.subject_name || "Fan";
+            const groupLabel = item.group_name || `Guruh #${item.group}`;
+            const timeLabel =
+              item.start_time && item.end_time
+                ? `${dayjs(item.start_time).format("HH:mm")} - ${dayjs(item.end_time).format("HH:mm")}`
+                : "-";
+            const liveStatus = getLiveStatus(item);
+            return (
+              <List.Item
+                actions={[
+                  <Button
+                    key="live"
+                    size="small"
+                    type={liveStatus.canJoin ? "primary" : "default"}
+                    disabled={!liveStatus.canJoin}
+                    onClick={() => navigate(`/app/live/${item.id}`)}
+                  >
+                    {liveStatus.label}
+                  </Button>,
+                ]}
+              >
+                <Space direction="vertical" size={0}>
+                  <div>{`${subjectLabel} - ${groupLabel}`}</div>
+                  <div style={{ fontSize: 12, color: "#6a7280" }}>{timeLabel}</div>
+                </Space>
+              </List.Item>
+            );
+          }}
+        />
       </Modal>
-    </div>
+    </Card>
   );
 };
 

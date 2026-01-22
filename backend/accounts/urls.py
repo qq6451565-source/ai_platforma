@@ -6,6 +6,7 @@ from .views import (
     ChangePasswordView,
     AdminSetRoleView,
     AdminUserListView,
+    TeacherStudentListView,
     LogoutView,
     AdminUserViewSet,
     AuditLogViewSet,
@@ -34,4 +35,5 @@ urlpatterns = [
     path('logout/', LogoutView.as_view()),
     path('admin/set-role/', AdminSetRoleView.as_view()),
     path('list/', AdminUserListView.as_view()),
+    path('teacher/students/', TeacherStudentListView.as_view()),
 ] + router.urls

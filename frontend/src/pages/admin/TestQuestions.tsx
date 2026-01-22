@@ -81,7 +81,7 @@ const TestQuestionsPage = () => {
             <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
         </Space>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -119,7 +119,7 @@ const TestQuestionsPage = () => {
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        confirmLoading={updateMut.isLoading}
+        confirmLoading={updateMut.isPending}
       >
         <Form layout="vertical" form={editForm} onFinish={(vals) => updateMut.mutate({ id: editing.id, payload: vals })}>
           <Form.Item name="test" label="Test" rules={[{ required: true }]}>

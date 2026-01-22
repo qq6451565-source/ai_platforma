@@ -10,5 +10,5 @@ from django.urls import path
 from .consumers import LiveLessonConsumer
 
 websocket_urlpatterns = [
-    path("ws/live/<str:room_id>/", LiveLessonConsumer.as_asgi()),
+    path("ws/live/<str:room>/", LiveLessonConsumer.as_asgi()),
 ]

@@ -127,7 +127,7 @@ const EnrollmentVerificationsPage = () => {
         <Form.Item name="events_json" label="events_json (JSON)" initialValue="[]">
           <Input.TextArea rows={3} />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -177,7 +177,7 @@ const EnrollmentVerificationsPage = () => {
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        confirmLoading={updateMut.isLoading}
+        confirmLoading={updateMut.isPending}
       >
         <Form layout="vertical" form={editForm} onFinish={onUpdate}>
           <Form.Item name="applicant" label="Arizachi" rules={[{ required: true }]}>

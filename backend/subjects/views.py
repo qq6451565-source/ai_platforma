@@ -26,7 +26,7 @@ class SubjectViewSet(viewsets.ModelViewSet):
         if role == "student" and getattr(user, "group_id", None):
             group = user.group
             if group:
-                qs = qs.filter(directions=group.direction, semester=group.semester)
+                qs = qs.filter(directions=group.direction)
             else:
                 qs = qs.none()
         if role == "teacher":

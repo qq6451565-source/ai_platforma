@@ -16,7 +16,7 @@ class CurriculumSerializer(serializers.ModelSerializer):
         direction = attrs.get("direction") or getattr(self.instance, "direction", None)
         subjects = attrs.get("subjects")
         if direction is not None and subjects is not None:
-            invalid = Subject.objects.filter(id__in=subjects).exclude(directions=direction)
+            invalid = Subject.objects.filter(id__in=subjects).exclude(direction=direction)
             if invalid.exists():
                 names = ", ".join(invalid.values_list("name", flat=True))
                 raise serializers.ValidationError(

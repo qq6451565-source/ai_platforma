@@ -2,8 +2,6 @@
 from django.db import models
 from lessons.models import Lesson
 from accounts.models import User
-from lessons.models import Lesson
-from accounts.models import User
 
 class LiveRoom(models.Model):
     lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='live_room')
@@ -14,7 +12,8 @@ class LiveRoom(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"LiveRoom {self.room_name} ({self.lesson.topic})"
+        label = self.lesson.topic if getattr(self.lesson, "topic", None) else f"Lesson {self.lesson_id}"
+        return f"LiveRoom {self.room_name} ({label})"
 
 
 class LiveParticipant(models.Model):
@@ -23,6 +22,11 @@ class LiveParticipant(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
     is_teacher = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["room", "user"], name="unique_live_participant"),
+        ]
 
     def __str__(self):
         return f"{self.user.username} in {self.room.room_name}"

@@ -7,7 +7,6 @@ import {
   deleteGroupAdmin,
   AdminGroup,
   fetchDirections,
-  fetchSemesters,
   updateGroupAdmin,
 } from "../../api/admin";
 
@@ -21,14 +20,11 @@ const GroupsPage = () => {
     queryKey: ["admin-directions"],
     queryFn: fetchDirections,
   });
-  const { data: semesters } = useQuery({
-    queryKey: ["admin-semesters"],
-    queryFn: fetchSemesters,
-  });
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
   const [editLoading, setEditLoading] = useState(false);
+  const directionMap = new Map((directions || []).map((d) => [d.id, d.name]));
 
   const createMut = useMutation({
     mutationFn: (vals: Partial<AdminGroup>) => createGroupAdmin(vals),
@@ -51,7 +47,7 @@ const GroupsPage = () => {
     <Card title="Guruhlar" style={{ marginBottom: 16 }}>
       <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
         <Form.Item name="name">
-          <Input placeholder="Guruh nomi (bo'sh qoldirsangiz avtomatik)" />
+          <Input placeholder="Guruh nomi (ixtiyoriy)" />
         </Form.Item>
         <Form.Item name="direction" rules={[{ required: true, message: "Yo'nalish" }]}>
           <Select
@@ -59,14 +55,6 @@ const GroupsPage = () => {
             placeholder="Yo'nalish"
             style={{ width: 160 }}
             options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
-          />
-        </Form.Item>
-        <Form.Item name="semester">
-          <Select
-            allowClear
-            placeholder="Semestr (avto)"
-            style={{ width: 140 }}
-            options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
           />
         </Form.Item>
         <Form.Item name="language">
@@ -80,11 +68,18 @@ const GroupsPage = () => {
             ]}
           />
         </Form.Item>
-        <Form.Item name="year" rules={[{ required: true, message: "Yil" }]}>
-          <Input type="number" placeholder="Yil" />
+        <Form.Item name="level" rules={[{ required: true, message: "Bosqich" }]}>
+          <Select
+            placeholder="Bosqich"
+            style={{ width: 120 }}
+            options={Array.from({ length: 10 }, (_, i) => ({
+              value: i + 1,
+              label: `${i + 1}-bosqich`,
+            }))}
+          />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
             Qo'shish
           </Button>
         </Form.Item>
@@ -104,9 +99,8 @@ const GroupsPage = () => {
                   editForm.setFieldsValue({
                     name: g.name,
                     direction: g.direction,
-                    semester: g.semester,
                     language: g.language,
-                    year: g.year,
+                    level: g.level,
                   });
                   setEditOpen(true);
                 }}
@@ -120,10 +114,8 @@ const GroupsPage = () => {
               </Popconfirm>,
             ]}
           >
-            {g.name} {g.year ? `(Yil: ${g.year})` : ""}{" "}
-            {g.direction ? `| Yo'nalish #${g.direction}` : ""}{" "}
-            {g.semester ? `| Semestr #${g.semester}` : ""}{" "}
-            {g.language ? `| ${g.language}` : ""}
+            {g.name} | {directionMap.get(g.direction) || `Yo'nalish #${g.direction}`} |{" "}
+            {g.level}-bosqich {g.language ? `| ${g.language}` : ""}
           </List.Item>
         )}
       />
@@ -151,20 +143,13 @@ const GroupsPage = () => {
       >
         <Form layout="vertical" form={editForm}>
           <Form.Item name="name" label="Guruh nomi">
-            <Input placeholder="Bo'sh qoldirsangiz avtomatik" />
+            <Input placeholder="Guruh nomi (ixtiyoriy)" />
           </Form.Item>
           <Form.Item name="direction" label="Yo'nalish" rules={[{ required: true }]}>
             <Select
               allowClear
               placeholder="Yo'nalish"
               options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
-            />
-          </Form.Item>
-          <Form.Item name="semester" label="Semestr">
-            <Select
-              allowClear
-              placeholder="Semestr (avto)"
-              options={(semesters || []).map((s) => ({ value: s.id, label: `Semestr ${s.number}` }))}
             />
           </Form.Item>
           <Form.Item name="language" label="Til">
@@ -177,8 +162,13 @@ const GroupsPage = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item name="year" label="Yil" rules={[{ required: true }]}>
-            <Input type="number" />
+          <Form.Item name="level" label="Bosqich" rules={[{ required: true }]}>
+            <Select
+              options={Array.from({ length: 10 }, (_, i) => ({
+                value: i + 1,
+                label: `${i + 1}-bosqich`,
+              }))}
+            />
           </Form.Item>
         </Form>
       </Modal>

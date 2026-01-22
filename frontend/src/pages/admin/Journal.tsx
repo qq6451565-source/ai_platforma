@@ -74,12 +74,11 @@ const AdminJournalPage = () => {
             }))}
           />
         </Form.Item>
-        <Form.Item name="attendance" label="Davomat" rules={[{ required: true }]}>
+        <Form.Item name="attendance" label="Holat" rules={[{ required: true }]}>
           <Select
             options={[
-              { value: "present", label: "Kelgan" },
-              { value: "absent", label: "Kelmagan" },
-              { value: "late", label: "Kech qolgan" },
+              { value: "present", label: "Bor" },
+              { value: "absent", label: "Yoq" },
             ]}
           />
         </Form.Item>
@@ -89,7 +88,7 @@ const AdminJournalPage = () => {
         <Form.Item name="comment" label="Izoh">
           <Input.TextArea rows={3} />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -109,7 +108,7 @@ const AdminJournalPage = () => {
                     lesson: r.lesson,
                     group: r.group,
                     student: r.student,
-                    attendance: r.attendance,
+                    attendance: r.attendance === "absent" ? "absent" : "present",
                     grade: r.grade,
                     comment: r.comment,
                   });
@@ -123,7 +122,7 @@ const AdminJournalPage = () => {
             ]}
           >
             {lessonMap.get(r.lesson) || `Dars #${r.lesson}`} | {studentMap.get(r.student) || `Student #${r.student}`} |{" "}
-            {groupMap.get(r.group) || `Guruh #${r.group}`} | {r.attendance}
+            {groupMap.get(r.group) || `Guruh #${r.group}`} | {r.attendance === "absent" ? "Yoq" : "Bor"}
           </List.Item>
         )}
       />
@@ -164,12 +163,11 @@ const AdminJournalPage = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="attendance" label="Davomat" rules={[{ required: true }]}>
+          <Form.Item name="attendance" label="Holat" rules={[{ required: true }]}>
             <Select
               options={[
-                { value: "present", label: "Kelgan" },
-                { value: "absent", label: "Kelmagan" },
-                { value: "late", label: "Kech qolgan" },
+                { value: "present", label: "Bor" },
+                { value: "absent", label: "Yoq" },
               ]}
             />
           </Form.Item>

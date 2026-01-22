@@ -10,4 +10,5 @@ def schedule_live_reminder(sender, instance, created, **kwargs):
     if created and instance.started_at:
         eta = instance.started_at - timedelta(minutes=10)
         if eta > timezone.now():
-            send_live_reminder.apply_async((instance.id,), eta=eta)
+            if hasattr(send_live_reminder, "apply_async"):
+                send_live_reminder.apply_async((instance.id,), eta=eta)

@@ -112,7 +112,7 @@ const EnrollmentDocumentsPage = () => {
             <Button>Yuklash</Button>
           </Upload>
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>

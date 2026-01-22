@@ -101,6 +101,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from tests_app.permissions import IsAdmin
 
+from accounts.models import User
 from .models import StudentProfile, TeacherProfile
 from .serializers import StudentProfileSerializer, TeacherProfileSerializer
 
@@ -115,6 +116,14 @@ class AdminOnlyViewSet(viewsets.ModelViewSet):
 class StudentProfileViewSet(AdminOnlyViewSet):
     queryset = StudentProfile.objects.all()
     serializer_class = StudentProfileSerializer
+
+    def perform_create(self, serializer):
+        profile = serializer.save()
+        User.objects.filter(id=profile.user_id).update(group_id=profile.group_id)
+
+    def perform_update(self, serializer):
+        profile = serializer.save()
+        User.objects.filter(id=profile.user_id).update(group_id=profile.group_id)
 
 
 class TeacherProfileViewSet(AdminOnlyViewSet):

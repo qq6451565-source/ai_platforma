@@ -3,7 +3,6 @@ from django.db import models
 from accounts.models import User
 from subjects.models import Subject
 from groups.models import Group
-from semesters.models import Semester
 
 
 class ExamType(models.Model):
@@ -16,7 +15,6 @@ class ExamType(models.Model):
 class Exam(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     group = models.ForeignKey(Group, on_delete=models.PROTECT)
-    semester = models.ForeignKey(Semester, on_delete=models.PROTECT)
     teacher = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={"role": "teacher"})
     exam_type = models.ForeignKey(ExamType, on_delete=models.PROTECT)
 

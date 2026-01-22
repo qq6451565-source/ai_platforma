@@ -20,14 +20,7 @@ class SemesterViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        user = self.request.user
-        role = getattr(user, "role", None)
-        if role == "student" and getattr(user, "group_id", None):
-            return qs.filter(id=user.group.semester_id)
-        if role == "teacher":
-            return qs.filter(group__teachersubject__teacher=user).distinct()
-        return qs
+        return super().get_queryset()
 
 
 class SemesterSettingsView(APIView):

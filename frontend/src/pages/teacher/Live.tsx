@@ -1,71 +1,43 @@
-import { Button, Card, Form, InputNumber, List, Skeleton, Typography, message } from "antd";
+import { Button, Card, List, Skeleton, Typography, message } from "antd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchLessons } from "../../api/lessons";
-import { createLiveRoom, joinLiveLesson } from "../../api/live";
+import { createLiveRoom } from "../../api/live";
 
 const TeacherLive = () => {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data: lessons, isLoading } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
   });
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<number | null>(null);
   const [joining, setJoining] = useState<number | null>(null);
 
-  const onCreate = async (values: { lesson_id: number }) => {
-    setCreating(true);
+  const handleStart = async (lessonId: number) => {
+    setCreating(lessonId);
     try {
-      const resp = await createLiveRoom(values.lesson_id);
-      const link = resp.jitsi_url || resp.ws_url;
-      message.success(
-        <span>
-          Room yaratildi:{" "}
-          <a href={link} target="_blank" rel="noreferrer">
-            {link}
-          </a>
-        </span>
-      );
+      await createLiveRoom(lessonId);
+      message.success("Live xona yaratildi");
       await qc.invalidateQueries({ queryKey: ["lessons"] });
+      navigate(`/app/live/${lessonId}`);
     } catch (err: any) {
       message.error(err?.response?.data?.error || "Xato");
     } finally {
-      setCreating(false);
+      setCreating(null);
     }
   };
 
   const handleJoin = async (lessonId: number) => {
     setJoining(lessonId);
-    try {
-      const resp = await joinLiveLesson(lessonId);
-      const link = resp.jitsi_url || resp.ws_url;
-      window.open(link, "_blank");
-    } catch (err: any) {
-      message.error(err?.response?.data?.error || "Room topilmadi");
-    } finally {
-      setJoining(null);
-    }
+    navigate(`/app/live/${lessonId}`);
+    setJoining(null);
   };
 
   return (
     <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Live darslar (teacher)</Typography.Title>
-      <Card style={{ marginBottom: 16 }}>
-        <Form layout="inline" onFinish={onCreate}>
-          <Form.Item
-            label="Lesson ID"
-            name="lesson_id"
-            rules={[{ required: true, message: "Lesson ID kiriting" }]}
-          >
-            <InputNumber />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={creating}>
-              Yaratish
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+      <Typography.Title level={4}>Live darslar</Typography.Title>
       <Card>
         {isLoading ? (
           <Skeleton active />
@@ -76,12 +48,20 @@ const TeacherLive = () => {
               <List.Item
                 actions={[
                   <Button
+                    key="start"
+                    type="link"
+                    onClick={() => handleStart(item.id)}
+                    loading={creating === item.id}
+                  >
+                    Boshlash
+                  </Button>,
+                  <Button
                     key="join"
                     type="link"
                     onClick={() => handleJoin(item.id)}
                     loading={joining === item.id}
                   >
-                    Join
+                    Kirish
                   </Button>,
                 ]}
               >

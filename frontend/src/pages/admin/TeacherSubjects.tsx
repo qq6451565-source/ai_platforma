@@ -72,7 +72,7 @@ const TeacherSubjectsPage = () => {
             options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
           />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>

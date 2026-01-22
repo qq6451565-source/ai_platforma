@@ -7,4 +7,5 @@ export type User = {
   role: string;
   phone?: string | null;
   face_image?: string | null;
+  group?: number | null;
 };

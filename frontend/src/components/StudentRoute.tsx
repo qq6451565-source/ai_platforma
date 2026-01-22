@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Spin } from "antd";
 
 type Props = {
-  role?: "student" | "teacher" | "admin";
+  role?: string;
   loading?: boolean;
   children?: ReactNode;
 };

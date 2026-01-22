@@ -84,7 +84,7 @@ const TestOptionsPage = () => {
         <Form.Item name="is_correct" label="To'g'ri javob" valuePropName="checked">
           <Switch />
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -129,7 +129,7 @@ const TestOptionsPage = () => {
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        confirmLoading={updateMut.isLoading}
+        confirmLoading={updateMut.isPending}
       >
         <Form layout="vertical" form={editForm} onFinish={(vals) => updateMut.mutate({ id: editing.id, payload: vals })}>
           <Form.Item name="question" label="Savol" rules={[{ required: true }]}>

@@ -12,7 +12,7 @@ const AuthTokensPage = () => {
   });
   const { data: users } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: fetchUsers,
+    queryFn: () => fetchUsers(),
   });
 
   const userOptions = useMemo(
@@ -45,7 +45,7 @@ const AuthTokensPage = () => {
           <Select placeholder="Foydalanuvchi" style={{ width: 240 }} options={userOptions} />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
             Token yaratish
           </Button>
         </Form.Item>

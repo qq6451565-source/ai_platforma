@@ -15,9 +15,8 @@ class JournalRecord(models.Model):
     attendance = models.CharField(
         max_length=20,
         choices=[
-            ('present', 'Kelgan'),
-            ('absent', 'Kelmagan'),
-            ('late', 'Kech qolgan')
+            ('present', 'Bor'),
+            ('absent', 'Yoq')
         ],
         default='present'
     )

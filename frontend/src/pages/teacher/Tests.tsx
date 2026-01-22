@@ -9,19 +9,19 @@ import {
   Typography,
   message,
   Select,
-  Space,
-  Divider,
   Card,
   Empty,
   Modal,
+  Upload,
 } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTests, createTest } from "../../api/tests";
-import { useState } from "react";
+import { fetchTests, uploadTest, deleteTest, updateTest, fetchTest } from "../../api/tests";
+import { useMemo, useState } from "react";
 import dayjs from "dayjs";
+import { fetchLessons } from "../../api/lessons";
+import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
-import { fetchGroups } from "../../api/groups";
-import { deleteTest, updateTest } from "../../api/tests";
 
 const TeacherTests = () => {
   const qc = useQueryClient();
@@ -29,40 +29,84 @@ const TeacherTests = () => {
     queryKey: ["tests"],
     queryFn: fetchTests,
   });
+  const { data: lessons } = useQuery({ queryKey: ["lessons"], queryFn: fetchLessons });
+  const { data: teacherSubjects } = useQuery({
+    queryKey: ["teacher-subjects"],
+    queryFn: fetchTeacherSubjects,
+  });
   const { data: subjects } = useQuery({ queryKey: ["subjects"], queryFn: fetchSubjects });
-  const { data: groups } = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const [filterSubject, setFilterSubject] = useState<number | null>(null);
-  const [filterGroup, setFilterGroup] = useState<number | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
   const [editLoading, setEditLoading] = useState(false);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<any>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+
+  const subjectCards = useMemo(() => {
+    const subjectNameById = new Map((subjects || []).map((s) => [s.id, s.name]));
+    const map = new Map<string, { name: string; count: number }>();
+
+    (teacherSubjects || []).forEach((ts) => {
+      const name = subjectNameById.get(ts.subject);
+      if (!name) return;
+      if (!map.has(name)) map.set(name, { name, count: 0 });
+    });
+
+    (lessons || []).forEach((lesson) => {
+      if (!lesson.subject_name) return;
+      if (!map.has(lesson.subject_name)) map.set(lesson.subject_name, { name: lesson.subject_name, count: 0 });
+    });
+
+    (tests || []).forEach((test) => {
+      if (!test.subject_name) return;
+      const entry = map.get(test.subject_name) || { name: test.subject_name, count: 0 };
+      entry.count += 1;
+      map.set(test.subject_name, entry);
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [lessons, tests, teacherSubjects, subjects]);
+
+  const filteredLessons = useMemo(() => {
+    if (!selectedSubject) return [];
+    return (lessons || []).filter((lesson) => lesson.subject_name === selectedSubject);
+  }, [lessons, selectedSubject]);
+
+  const filteredTests = useMemo(() => {
+    if (!selectedSubject) return [];
+    return (tests || []).filter((test) => test.subject_name === selectedSubject);
+  }, [tests, selectedSubject]);
 
   const onFinish = async (values: any) => {
+    const file = fileList[0]?.originFileObj as File | undefined;
+    if (!file) {
+      message.error("Word faylni yuklang (.doc yoki .docx).");
+      return;
+    }
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith(".doc") && !lower.endsWith(".docx")) {
+      message.error("Faqat .doc yoki .docx fayl qabul qilinadi.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createTest({
+      await uploadTest({
         title: values.title,
-        description: values.description,
-        subject: values.subject ? Number(values.subject) : undefined,
-        group: values.group ? Number(values.group) : undefined,
+        lesson: Number(values.lesson),
+        file,
         time_limit_minutes: values.time_limit_minutes,
-        pass_score: values.pass_score,
+        total_score: values.total_score,
         is_active: values.is_active,
-        questions: (values.questions || []).map((q: any, idx: number) => ({
-          text: q.text,
-          order: q.order ?? idx + 1,
-          points: q.points ?? 1,
-          options: (q.options || []).map((o: any) => ({
-            text: o.text,
-            is_correct: o.is_correct || false,
-          })),
-        })),
       });
-      message.success("Test yaratildi");
+      message.success("Test Word fayldan yaratildi");
       form.resetFields();
+      setFileList([]);
       await qc.invalidateQueries({ queryKey: ["tests"] });
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Xatolik");
@@ -71,202 +115,196 @@ const TeacherTests = () => {
     }
   };
 
+  const openView = async (id: number) => {
+    setViewOpen(true);
+    setViewLoading(true);
+    try {
+      const data = await fetchTest(id);
+      setViewItem(data);
+    } catch {
+      message.error("Testni yuklab bo'lmadi");
+      setViewOpen(false);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography.Title level={4}>Testlar</Typography.Title>
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        style={{ maxWidth: 520, marginBottom: 24 }}
-        initialValues={{ is_active: true, time_limit_minutes: 20, pass_score: 60 }}
-      >
-        <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Izoh">
-          <Input.TextArea rows={2} />
-        </Form.Item>
-        <Form.Item name="subject" label="Fan">
-          <Select
-            showSearch
-            allowClear
-            options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))}
-          />
-        </Form.Item>
-        <Form.Item name="group" label="Guruh">
-          <Select
-            showSearch
-            allowClear
-            options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-          />
-        </Form.Item>
-        <Form.Item name="time_limit_minutes" label="Vaqt (min)">
-          <InputNumber style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item name="pass_score" label="Pass score">
-          <InputNumber style={{ width: "100%" }} />
-        </Form.Item>
-        <Form.Item name="is_active" label="Active" valuePropName="checked">
-          <Switch />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={submitting}>
-            Yaratish
-          </Button>
-        </Form.Item>
-
-        <Divider> Savollar </Divider>
-        <Form.List name="questions">
-          {(fields, { add, remove }) => (
-            <>
-            {fields.map((field, index) => (
-                <Card
-                  key={field.key}
-                  size="small"
-                  title={`Savol ${index + 1}`}
-                  extra={
-                    <Button danger type="link" onClick={() => remove(field.name)}>
-                      O'chirish
-                    </Button>
-                  }
-                  style={{ marginBottom: 12 }}
-                >
-                  <Form.Item
-                    {...field}
-                    name={[field.name, "text"]}
-                    label="Savol matni"
-                    rules={[{ required: true, message: "Savol matni kerak" }]}
-                  >
-                    <Input.TextArea rows={2} />
-                  </Form.Item>
-                  <Form.Item {...field} name={[field.name, "order"]} label="Tartib">
-                    <InputNumber style={{ width: "100%" }} />
-                  </Form.Item>
-                  <Form.Item {...field} name={[field.name, "points"]} label="Ball">
-                    <InputNumber style={{ width: "100%" }} />
-                  </Form.Item>
-
-                  <Form.List name={[field.name, "options"]}>
-                    {(optFields, { add: addOpt, remove: removeOpt }) => (
-                      <>
-                        {optFields.map((opt) => (
-                          <Space key={opt.key} align="baseline" style={{ display: "flex", marginBottom: 8 }}>
-                            <Form.Item
-                              {...opt}
-                              name={[opt.name, "text"]}
-                              rules={[{ required: true, message: "Variant matni kerak" }]}
-                            >
-                              <Input placeholder="Variant" />
-                            </Form.Item>
-                            <Form.Item {...opt} name={[opt.name, "is_correct"]} valuePropName="checked">
-                              <Switch checkedChildren="To'g'ri" unCheckedChildren="Noto'g'ri" />
-                            </Form.Item>
-                            <Button danger type="link" onClick={() => removeOpt(opt.name)}>
-                              O'chirish
-                            </Button>
-                          </Space>
-                        ))}
-                        <Button type="dashed" onClick={() => addOpt()} block>
-                          Variant qo'shish
-                        </Button>
-                      </>
-                    )}
-                  </Form.List>
-                </Card>
-              ))}
-              <Button type="dashed" onClick={() => add()} block>
-                Savol qo'shish
-              </Button>
-            </>
-          )}
-        </Form.List>
-      </Form>
+      {selectedSubject ? (
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          style={{ maxWidth: 520, marginBottom: 24 }}
+          initialValues={{ is_active: true, time_limit_minutes: 20, total_score: 100 }}
+        >
+          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="lesson" label="Dars" rules={[{ required: true, message: "Dars tanlang" }]}>
+            <Select
+              showSearch
+              allowClear
+              notFoundContent="Dars topilmadi"
+              options={filteredLessons.map((l) => ({
+                value: l.id,
+                label: `${l.subject_name || "Fan"} | ${l.group_name || `Guruh #${l.group}`} | ${dayjs(
+                  l.start_time
+                ).format("DD.MM HH:mm")}`,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item name="time_limit_minutes" label="Vaqt (min)">
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item
+            name="total_score"
+            label="Umumiy ball"
+            rules={[{ required: true, message: "Umumiy ball kiriting" }]}
+          >
+            <InputNumber style={{ width: "100%" }} min={1} />
+          </Form.Item>
+          <Form.Item name="is_active" label="Active" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item label="Test fayli (.doc/.docx)" required>
+            <Upload
+              accept=".doc,.docx"
+              beforeUpload={() => false}
+              fileList={fileList}
+              maxCount={1}
+              onChange={({ fileList: next }) => setFileList(next.slice(-1))}
+            >
+              <Button>Fayl tanlash</Button>
+            </Upload>
+            <Typography.Text type="secondary">
+              Har savolda 4 ta variant bo'lishi kerak, to'g'ri javob * bilan belgilanadi.
+            </Typography.Text>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={submitting}>
+              Yaratish
+            </Button>
+          </Form.Item>
+        </Form>
+      ) : null}
 
       {isLoading ? (
         <Skeleton active />
       ) : (
         <>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-            <Select
-              allowClear
-              placeholder="Fan bo'yicha filter"
-              style={{ minWidth: 180 }}
-              onChange={(v) => setFilterSubject(v ?? null)}
-              options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))}
-            />
-            <Select
-              allowClear
-              placeholder="Guruh bo'yicha filter"
-              style={{ minWidth: 180 }}
-              onChange={(v) => setFilterGroup(v ?? null)}
-              options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-            />
-          </div>
-          {(() => {
-            const filtered = (tests || []).filter(
-              (t) =>
-                (filterSubject ? t.subject === filterSubject : true) &&
-                (filterGroup ? t.group === filterGroup : true)
-            );
-            if (!filtered.length) return <Empty description="Ma'lumot yo'q" />;
-            return (
+          {!selectedSubject ? (
+            subjectCards.length ? (
               <List
-                dataSource={filtered}
-                pagination={{ pageSize: 5 }}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        key="edit"
-                        type="link"
-                        onClick={() => {
-                          setEditItem(item);
-                          editForm.setFieldsValue({
-                            title: item.title,
-                            description: item.description,
-                            subject: item.subject,
-                            group: item.group,
-                            time_limit_minutes: item.time_limit_minutes,
-                            pass_score: item.pass_score,
-                            is_active: item.is_active,
-                          });
-                          setEditOpen(true);
-                        }}
-                      >
-                        Tahrirlash
-                      </Button>,
-                      <Button
-                        danger
-                        type="link"
-                        key="delete"
-                        onClick={async () => {
-                          try {
-                            await deleteTest(item.id);
-                            message.success("O'chirildi");
-                            await qc.invalidateQueries({ queryKey: ["tests"] });
-                          } catch {
-                            message.error("O'chirishda xato");
-                          }
-                        }}
-                      >
-                        O'chirish
-                      </Button>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.title}
-                      description={`Fan: ${item.subject_name || item.subject || "-"} | Guruh: ${
-                        item.group_name || item.group || "-"
-                      } | Pass: ${item.pass_score ?? "-"} | Vaqt: ${item.time_limit_minutes ?? "-"} min | ${
-                        item.is_active ? "Active" : "Inactive"
-                      } | ${item.created_at ? dayjs(item.created_at).format("YYYY-MM-DD HH:mm") : ""}`}
-                    />
+                grid={{ gutter: 12, column: 3 }}
+                dataSource={subjectCards}
+                renderItem={(subject) => (
+                  <List.Item>
+                    <Card
+                      hoverable
+                      onClick={() => {
+                        setSelectedSubject(subject.name);
+                        form.resetFields();
+                      }}
+                    >
+                      <Typography.Text strong>{subject.name}</Typography.Text>
+                      <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta test</div>
+                    </Card>
                   </List.Item>
                 )}
               />
-            );
-          })()}
+            ) : (
+              <Empty description="Ma'lumot yo'q" />
+            )
+          ) : (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+                <Typography.Title level={5} style={{ margin: 0 }}>
+                  {selectedSubject}
+                </Typography.Title>
+              </div>
+              {filteredTests.length ? (
+                <List
+                  dataSource={filteredTests}
+                  pagination={{ pageSize: 5 }}
+                  renderItem={(item) => (
+                    <List.Item
+                      actions={[
+                        <Button key="view" type="link" onClick={() => openView(item.id)}>
+                          Ko'rish
+                        </Button>,
+                        <Button
+                          key="edit"
+                          type="link"
+                          onClick={() => {
+                            setEditItem(item);
+                            editForm.setFieldsValue({
+                              title: item.title,
+                              description: item.description,
+                              lesson: item.lesson,
+                              time_limit_minutes: item.time_limit_minutes,
+                              total_score: item.total_score,
+                              is_active: item.is_active,
+                            });
+                            setEditOpen(true);
+                          }}
+                        >
+                          Tahrirlash
+                        </Button>,
+                        <Button
+                          danger
+                          type="link"
+                          key="delete"
+                          onClick={async () => {
+                            try {
+                              await deleteTest(item.id);
+                              message.success("O'chirildi");
+                              await qc.invalidateQueries({ queryKey: ["tests"] });
+                            } catch {
+                              message.error("O'chirishda xato");
+                            }
+                          }}
+                        >
+                          O'chirish
+                        </Button>,
+                      ]}
+                    >
+                      <div style={{ width: "100%" }}>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "140px 1fr",
+                            rowGap: 6,
+                            columnGap: 12,
+                          }}
+                        >
+                          <span style={{ color: "#94a3b8" }}>Sarlavha</span>
+                          <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
+                          <span style={{ color: "#94a3b8" }}>Fan</span>
+                          <span>{item.subject_name || item.subject || "-"}</span>
+                          <span style={{ color: "#94a3b8" }}>Dars</span>
+                          <span>{item.lesson_topic || "-"}</span>
+                          <span style={{ color: "#94a3b8" }}>Guruh</span>
+                          <span>{item.group_name || item.group || "-"}</span>
+                          <span style={{ color: "#94a3b8" }}>Vaqt</span>
+                          <span>{item.time_limit_minutes ?? "-"} min</span>
+                          <span style={{ color: "#94a3b8" }}>Umumiy ball</span>
+                          <span>{item.total_score ?? "-"}</span>
+                          <span style={{ color: "#94a3b8" }}>Holat</span>
+                          <span>{item.is_active ? "Active" : "Inactive"}</span>
+                        </div>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              ) : (
+                <Empty description="Ma'lumot yo'q" />
+              )}
+            </>
+          )}
         </>
       )}
 
@@ -282,10 +320,9 @@ const TeacherTests = () => {
             await updateTest(editItem.id, {
               title: vals.title,
               description: vals.description,
-              subject: vals.subject ? Number(vals.subject) : undefined,
-              group: vals.group ? Number(vals.group) : undefined,
+              lesson: vals.lesson ? Number(vals.lesson) : undefined,
               time_limit_minutes: vals.time_limit_minutes,
-              pass_score: vals.pass_score,
+              total_score: vals.total_score,
               is_active: vals.is_active,
             });
             message.success("Yangilandi");
@@ -306,30 +343,85 @@ const TeacherTests = () => {
           <Form.Item name="description" label="Izoh">
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Form.Item name="subject" label="Fan">
+          <Form.Item name="lesson" label="Dars">
             <Select
               allowClear
               showSearch
-              options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))}
-            />
-          </Form.Item>
-          <Form.Item name="group" label="Guruh">
-            <Select
-              allowClear
-              showSearch
-              options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
+                            options={(selectedSubject ? filteredLessons : lessons || []).map((l) => ({
+                              value: l.id,
+                              label: `${l.subject_name || "Fan"} | ${l.group_name || `Guruh #${l.group}`} | ${dayjs(
+                                l.start_time
+                              ).format("DD.MM HH:mm")}`,
+                            }))}
             />
           </Form.Item>
           <Form.Item name="time_limit_minutes" label="Vaqt (min)">
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="pass_score" label="Pass score">
-            <InputNumber style={{ width: "100%" }} />
+          <Form.Item
+            name="total_score"
+            label="Umumiy ball"
+            rules={[{ required: true, message: "Umumiy ball kiriting" }]}
+          >
+            <InputNumber style={{ width: "100%" }} min={1} />
           </Form.Item>
           <Form.Item name="is_active" label="Active" valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="Testni ko'rish"
+        open={viewOpen}
+        onCancel={() => setViewOpen(false)}
+        footer={null}
+        width={700}
+      >
+        {viewLoading ? (
+          <Skeleton active />
+        ) : viewItem ? (
+          <div>
+            <div style={{ marginBottom: 12 }}>
+              <Typography.Text type="secondary">Sarlavha: </Typography.Text>
+              <Typography.Text strong>{viewItem.title}</Typography.Text>
+            </div>
+            {viewItem.questions?.length ? (
+              <List
+                dataSource={viewItem.questions}
+                renderItem={(q: any, idx: number) => (
+                  <List.Item>
+                    <div style={{ width: "100%" }}>
+                      <Typography.Text strong>
+                        {idx + 1}. {q.text}
+                      </Typography.Text>
+                      <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                        {(q.options || []).map((opt: any) => (
+                          <div
+                            key={opt.id}
+                            style={{
+                              padding: "6px 10px",
+                              borderRadius: 6,
+                              border: "1px solid #1f2937",
+                              background: opt.is_correct ? "rgba(34,197,94,0.12)" : "transparent",
+                              color: opt.is_correct ? "#22c55e" : "#cbd5f5",
+                            }}
+                          >
+                            {opt.text}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <Empty description="Savollar topilmadi" />
+            )}
+          </div>
+        ) : (
+          <Empty description="Ma'lumot yo'q" />
+        )}
       </Modal>
     </div>
   );

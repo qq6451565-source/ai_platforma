@@ -1,13 +1,16 @@
 from django.utils import timezone
+from django.db.models import Q, Sum
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
 from tests_app.models import Test, Question, Option
 from tests_app.permissions import IsTeacherOrAdmin
 from tests_app.serializers import QuestionStudentSerializer
+from ai.models import AISettings
+from attendance.models import Attendance
 from .models import StudentTest, StudentAnswer
 from .serializers import StudentTestSerializer, StudentAnswerSerializer
 
@@ -19,13 +22,49 @@ def _get_next_question(test: Test, index: int):
     return qs[index]
 
 
+def _ensure_proctor_ok(student_test: StudentTest):
+    ai_settings = AISettings.get_active()
+    if not ai_settings.proctor_strict:
+        return
+    session = getattr(student_test, "proctor_session", None)
+    if not session:
+        raise ValidationError({"detail": "Proktor sessiya topilmadi."})
+    if session.blocked:
+        raise ValidationError({"detail": "Proktor bloklangan. Davom etish mumkin emas."})
+    if not session.verified:
+        raise ValidationError({"detail": "Yuz tasdiqlanmagan. Proktor tekshiruvini bajaring."})
+
+
 class StudentTestAdminViewSet(viewsets.ModelViewSet):
-    queryset = StudentTest.objects.all()
+    queryset = StudentTest.objects.select_related(
+        "test",
+        "test__subject",
+        "test__group",
+        "test__lesson",
+        "test__lesson__teacher_subject",
+        "test__lesson__teacher_subject__subject",
+        "test__lesson__group",
+    )
     serializer_class = StudentTestSerializer
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        return [IsAuthenticated(), IsTeacherOrAdmin()]
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [IsAuthenticated(), IsTeacherOrAdmin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        role = getattr(user, "role", None)
+        if role == "student":
+            return qs.filter(student=user)
+        if role == "teacher":
+            return qs.filter(
+                Q(test__lesson__teacher_subject__teacher=user) |
+                Q(test__lesson__isnull=True, test__teacher=user)
+            )
+        return qs
 
 
 class StudentAnswerAdminViewSet(viewsets.ModelViewSet):
@@ -53,6 +92,25 @@ class StartStudentTestView(APIView):
         except Test.DoesNotExist:
             raise NotFound("Test topilmadi yoki active emas.")
 
+        if test.group_id and getattr(request.user, "group_id", None) != test.group_id:
+            raise PermissionDenied("Bu test sizning guruhingizga tegishli emas.")
+        if test.lesson_id:
+            attended = Attendance.objects.filter(
+                student=request.user,
+                lesson_id=test.lesson_id,
+                status="present",
+            ).exists()
+            if not attended:
+                raise ValidationError({"detail": "Darsda qatnashmagansiz."})
+        elif test.subject_id:
+            attended_subject = Attendance.objects.filter(
+                student=request.user,
+                lesson__teacher_subject__subject_id=test.subject_id,
+                status="present",
+            ).exists()
+            if not attended_subject:
+                raise ValidationError({"detail": "Bu fan bo'yicha qatnashuv yo'q."})
+
         student_test, created = StudentTest.objects.get_or_create(
             student=request.user,
             test=test,
@@ -72,7 +130,7 @@ class StartStudentTestView(APIView):
 
         return Response({
             "student_test_id": student_test.id,
-            "question": QuestionStudentSerializer(q).data
+            "question": QuestionStudentSerializer(q, context={"student_test_id": student_test.id}).data
         }, status=201 if created else 200)
 
 
@@ -90,6 +148,8 @@ class AnswerStudentTestView(APIView):
 
         if st.is_finished:
             return Response({"detail": "Test yakunlangan."}, status=400)
+
+        _ensure_proctor_ok(st)
 
         question_id = request.data.get("question_id")
         option_id = request.data.get("option_id")
@@ -124,7 +184,7 @@ class AnswerStudentTestView(APIView):
 
         return Response({
             "student_test_id": st.id,
-            "question": QuestionStudentSerializer(next_q).data
+            "question": QuestionStudentSerializer(next_q, context={"student_test_id": st.id}).data
         }, status=200)
 
 
@@ -146,27 +206,34 @@ class FinishStudentTestView(APIView):
                 "score_percent": st.score_percent
             }, status=200)
 
-        total = st.test.questions.count()
-        if total == 0:
+        total_questions = st.test.questions.count()
+        if total_questions == 0:
             st.is_finished = True
             st.finished_at = timezone.now()
             st.score_percent = 0.0
             st.save(update_fields=["is_finished", "finished_at", "score_percent"])
-            return Response({"score_percent": 0.0, "passed": False}, status=200)
+            return Response({"score_percent": 0.0}, status=200)
 
-        correct = st.answers.filter(is_correct=True).count()
-        score = (correct / total) * 100.0
+        total_points = st.test.questions.aggregate(total=Sum("points")).get("total") or 0
+        if total_points == 0:
+            st.is_finished = True
+            st.finished_at = timezone.now()
+            st.score_percent = 0.0
+            st.save(update_fields=["is_finished", "finished_at", "score_percent"])
+            return Response({"score_percent": 0.0}, status=200)
+
+        correct_points = (
+            st.answers.filter(is_correct=True).aggregate(total=Sum("question__points")).get("total") or 0
+        )
+        score = (float(correct_points) / float(total_points)) * 100.0
 
         st.is_finished = True
         st.finished_at = timezone.now()
         st.score_percent = score
         st.save(update_fields=["is_finished", "finished_at", "score_percent"])
-
-        passed = score >= st.test.pass_score
         return Response({
             "student_test_id": st.id,
-            "total_questions": total,
-            "correct": correct,
+            "total_questions": total_questions,
+            "correct": st.answers.filter(is_correct=True).count(),
             "score_percent": round(score, 2),
-            "passed": passed
         }, status=200)

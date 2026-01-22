@@ -4,7 +4,7 @@ import { Spin } from "antd";
 
 type Props = {
   isTeacher: boolean;
-  role?: "student" | "teacher" | "admin";
+  role?: string;
   loading?: boolean;
   children?: ReactNode;
 };

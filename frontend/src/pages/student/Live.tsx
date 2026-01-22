@@ -1,10 +1,11 @@
-import { Button, Card, List, Skeleton, Typography, message } from "antd";
+import { Button, Card, List, Skeleton, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { joinLiveLesson } from "../../api/live";
 import { fetchLessons } from "../../api/lessons";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const StudentLive = () => {
+  const navigate = useNavigate();
   const { data: lessons, isLoading } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
@@ -13,23 +14,8 @@ const StudentLive = () => {
 
   const handleJoin = async (lessonId: number) => {
     setJoining(lessonId);
-    try {
-      const resp = await joinLiveLesson(lessonId);
-      const link = resp.jitsi_url || resp.ws_url;
-      message.success(
-        <span>
-          Live link:{" "}
-          <a href={link} target="_blank" rel="noreferrer">
-            {link}
-          </a>
-        </span>
-      );
-      window.open(link, "_blank");
-    } catch (err: any) {
-      message.error(err?.response?.data?.error || "Room topilmadi");
-    } finally {
-      setJoining(null);
-    }
+    navigate(`/app/live/${lessonId}`);
+    setJoining(null);
   };
 
   return (
@@ -50,7 +36,7 @@ const StudentLive = () => {
                     onClick={() => handleJoin(item.id)}
                     loading={joining === item.id}
                   >
-                    Join
+                    Kirish
                   </Button>,
                 ]}
               >

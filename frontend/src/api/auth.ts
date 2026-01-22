@@ -1,5 +1,5 @@
 import api from "./client";
-import type { AuthTokens, LoginPayload, RegisterPayload } from "../types/auth";
+import type { AuthTokens, LoginPayload, RegisterPayload, RegisterResponse } from "../types/auth";
 
 export async function login(payload: LoginPayload): Promise<AuthTokens> {
   const res = await api.post<AuthTokens>("/api/token/", payload);
@@ -7,19 +7,18 @@ export async function login(payload: LoginPayload): Promise<AuthTokens> {
 }
 
 // Ochiq registratsiya: form-data (rasmlar bilan)
-export async function register(payload: RegisterPayload): Promise<AuthTokens> {
+export async function register(payload: RegisterPayload): Promise<RegisterResponse> {
   const form = new FormData();
-  if (payload.username) form.append("username", payload.username);
-  if (payload.email) form.append("email", payload.email);
-  if (payload.password) form.append("password", payload.password);
+  if (payload.full_name) form.append("full_name", payload.full_name);
   if (payload.first_name) form.append("first_name", payload.first_name);
   if (payload.last_name) form.append("last_name", payload.last_name);
+  if (payload.email) form.append("email", payload.email);
   if (payload.phone) form.append("phone", payload.phone);
-  if (payload.passport_image) form.append("passport_image", payload.passport_image);
+  if (payload.passport_front) form.append("passport_front", payload.passport_front);
+  if (payload.passport_back) form.append("passport_back", payload.passport_back);
   if (payload.selfie_image) form.append("selfie_image", payload.selfie_image);
 
-  // Backenddagi register endpoint: /api/accounts/register/
-  const res = await api.post<AuthTokens>("/api/accounts/register/", form, {
+  const res = await api.post<RegisterResponse>("/api/enrollment/register/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;

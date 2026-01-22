@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { register } from "../api/auth";
-import { saveTokens } from "../utils/token";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -17,19 +16,20 @@ const RegisterPage = () => {
     first_name: string;
     last_name: string;
     phone: string;
-    passport_image: UploadFile[];
+    passport_front: UploadFile[];
+    passport_back: UploadFile[];
     selfie_image: UploadFile[];
   }) => {
     setLoading(true);
     try {
-      const tokens = await register({
+      await register({
         ...values,
-        passport_image: values.passport_image?.[0]?.originFileObj as File | undefined,
+        passport_front: values.passport_front?.[0]?.originFileObj as File | undefined,
+        passport_back: values.passport_back?.[0]?.originFileObj as File | undefined,
         selfie_image: values.selfie_image?.[0]?.originFileObj as File | undefined,
       });
-      saveTokens(tokens.access, tokens.refresh);
-      message.success("Ro'yxatdan o'tdingiz");
-      navigate("/app");
+      message.success("Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.");
+      navigate("/login");
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Ro'yxatdan o'tish muvaffaqiyatsiz");
     } finally {
@@ -80,13 +80,24 @@ const RegisterPage = () => {
         </Form.Item>
         <Form.Item
           label="Passport surati"
-          name="passport_image"
+          name="passport_front"
           valuePropName="fileList"
           getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
           rules={[{ required: true, message: "Passport rasmini yuklang" }]}
         >
           <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-            <Button icon={<IdcardOutlined />}>Passport rasmini yuklash</Button>
+            <Button icon={<IdcardOutlined />}>Passport old tomonini yuklash</Button>
+          </Upload>
+        </Form.Item>
+        <Form.Item
+          label="Passport orqa tomoni"
+          name="passport_back"
+          valuePropName="fileList"
+          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+          rules={[{ required: true, message: "Passport orqa tomonini yuklang" }]}
+        >
+          <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
+            <Button icon={<IdcardOutlined />}>Passport orqa tomonini yuklash</Button>
           </Upload>
         </Form.Item>
         <Form.Item

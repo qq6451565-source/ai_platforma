@@ -48,6 +48,8 @@
 # ]
 
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -67,9 +69,7 @@ urlpatterns = [
 
     # Education structure
     path('api/directions/', include('directions.urls')),
-    path('api/semesters/', include('semesters.urls')),
     path('api/subjects/', include('subjects.urls')),
-    path('api/curriculum/', include('curriculum.urls')),
     path('api/groups/', include('groups.urls')),
     path('api/teacher-subject/', include('teacher_subject.urls')),
 
@@ -100,8 +100,7 @@ urlpatterns = [
     # Group_chat
     path('api/chat/', include('group_chat.urls')),
 
-    # University core
-    path('api/university/', include('university.urls')),
+    # University core (removed structure endpoints)
     path('api/profiles/', include('profiles.urls')),
     path('api/enrollment/', include('enrollment.urls')),
     path('api/schedule/', include('schedule.urls')),
@@ -116,3 +115,6 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

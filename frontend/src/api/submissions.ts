@@ -9,15 +9,11 @@ export async function fetchMySubmissions(): Promise<Submission[]> {
 export async function submitAssignment(payload: {
   assignment: number;
   file?: File;
-  comment?: string;
 }) {
   const form = new FormData();
   form.append("assignment", String(payload.assignment));
-  if (payload.comment) form.append("comment", payload.comment);
   if (payload.file) form.append("file", payload.file);
-  const res = await api.post("/api/assignments/submit/", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await api.post("/api/assignments/submit/", form);
   return res.data;
 }
 

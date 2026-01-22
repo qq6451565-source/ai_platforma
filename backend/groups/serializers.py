@@ -1,14 +1,12 @@
 from rest_framework import serializers
 from .models import Group
 
-class GroupSerializer(serializers.ModelSerializer):
-    semester_number = serializers.IntegerField(source="semester.number", read_only=True)
 
+class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ['id', 'name', 'direction', 'semester', 'semester_number', 'language', 'year']
+        fields = ['id', 'name', 'direction', 'language', 'level']
         extra_kwargs = {
             "name": {"required": False, "allow_blank": True},
             "language": {"required": False, "allow_blank": True},
-            "semester": {"required": False},
         }

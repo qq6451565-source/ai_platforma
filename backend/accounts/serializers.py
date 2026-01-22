@@ -1,4 +1,5 @@
 from django.contrib.auth.models import Group, Permission
+from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
@@ -9,7 +10,7 @@ from .models import User, PassportData, AuditLog
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'phone', 'face_image']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'phone', 'face_image', 'group']
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -21,6 +22,8 @@ class AdminUserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "email",
+            "phone",
+            "group",
             "role",
             "is_active",
             "is_staff",
@@ -77,7 +80,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             base = (validated_data.get("email") or "user").split("@")[0]
             username = f"{base}{User.objects.count()+1}"
         if not password:
-            password = User.objects.make_random_password()
+            password = get_random_string(12)
 
         user = User.objects.create_user(
             username=username,
@@ -101,6 +104,8 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "email",
+            "phone",
+            "group",
             "role",
             "is_active",
             "is_staff",
@@ -138,10 +143,19 @@ class PassportDataSerializer(serializers.ModelSerializer):
             "user_username",
             "passport_series",
             "passport_number",
+            "card_number",
+            "personal_number",
             "birth_date",
             "extracted_fullname",
+            "surname",
+            "name",
+            "patronymic",
+            "sex",
+            "citizenship",
+            "birth_place",
             "front_image",
             "back_image",
+            "selfie_image",
         ]
 
 

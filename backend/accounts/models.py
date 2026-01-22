@@ -41,10 +41,19 @@ class PassportData(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="passport")
     passport_series = models.CharField(max_length=10)
     passport_number = models.CharField(max_length=10)
+    card_number = models.CharField(max_length=20, null=True, blank=True)
+    personal_number = models.CharField(max_length=20, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     extracted_fullname = models.CharField(max_length=150, null=True, blank=True)
+    surname = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    patronymic = models.CharField(max_length=100, null=True, blank=True)
+    sex = models.CharField(max_length=20, null=True, blank=True)
+    citizenship = models.CharField(max_length=50, null=True, blank=True)
+    birth_place = models.CharField(max_length=255, null=True, blank=True)
     front_image = models.ImageField(upload_to="passport/")
     back_image = models.ImageField(upload_to="passport/")
+    selfie_image = models.ImageField(upload_to="passport/selfie/", null=True, blank=True)
 
     def __str__(self):
         return f"Passport {self.user.username}"

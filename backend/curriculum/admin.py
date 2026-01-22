@@ -1,4 +1,3 @@
 from django.contrib import admin
-from .models import Curriculum
 
-admin.site.register(Curriculum)
+# O'quv reja modeli admin paneldan olib tashlandi.

@@ -1,10 +1,54 @@
-import { Alert, Button, Form, Input, List, Select, Skeleton, Upload, Typography, message, Modal, Popconfirm, Empty } from "antd";
+import {
+  Alert,
+  Button,
+  Card,
+  Form,
+  Input,
+  List,
+  Select,
+  Skeleton,
+  Upload,
+  Typography,
+  message,
+  Modal,
+  Popconfirm,
+  Empty,
+  Tag,
+} from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchMaterials, createMaterial, deleteMaterial, updateMaterial } from "../../api/materials";
 import { fetchSubjects } from "../../api/subjects";
 import { fetchGroups } from "../../api/groups";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
+import type { Material, MaterialResource } from "../../types/material";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://127.0.0.1:8000";
+const toAbsoluteUrl = (url?: string | null) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
+  if (url.startsWith("/")) return `${API_BASE}${url}`;
+  return `${API_BASE}/media/${url}`;
+};
+const isVideo = (url?: string) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
+const allowedExtensions = new Set(["doc", "docx", "xls", "xlsx", "ppt", "pptx", "mp4", "webm"]);
+const allowedExtensionsLabel = "doc, docx, xls, xlsx, ppt, pptx, mp4, webm";
+const acceptExtensions = Array.from(allowedExtensions)
+  .map((ext) => `.${ext}`)
+  .join(",");
+const isAllowedFile = (file: File) => {
+  const ext = file.name.split(".").pop()?.toLowerCase() || "";
+  return !!ext && allowedExtensions.has(ext);
+};
+const extractFiles = (list: UploadFile[]) =>
+  list
+    .map((item) => item.originFileObj ?? (item as unknown as File))
+    .filter((item): item is File => item instanceof File);
 
 const TeacherMaterials = () => {
   const qc = useQueryClient();
@@ -20,14 +64,13 @@ const TeacherMaterials = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
-  const [file, setFile] = useState<File | undefined>();
-  const [editFile, setEditFile] = useState<File | null | undefined>(undefined);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [editOpen, setEditOpen] = useState(false);
-  const [editItem, setEditItem] = useState<any>(null);
+  const [editItem, setEditItem] = useState<Material | null>(null);
   const [editForm] = Form.useForm();
   const [editLoading, setEditLoading] = useState(false);
+  const [editFileList, setEditFileList] = useState<UploadFile[]>([]);
   const [filterSubject, setFilterSubject] = useState<number | null>(null);
-  const [filterGroup, setFilterGroup] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<number | null>(null);
 
   const teacherSubjectMap = useMemo(() => {
@@ -46,25 +89,32 @@ const TeacherMaterials = () => {
   }, [teacherSubjectMap]);
 
   const subjectOptions = useMemo(
-    () => (subjects || []).filter((s) => allowedSubjectIds.includes(s.id)).map((s) => ({
-      value: s.id,
-      label: `${s.name} (${s.code})`,
-    })),
+    () =>
+      (subjects || [])
+        .filter((s) => allowedSubjectIds.includes(s.id))
+        .map((s) => ({ value: s.id, label: `${s.name}` })),
     [subjects, allowedSubjectIds]
   );
   const groupOptions = useMemo(() => {
     const allowed = selectedSubject ? Array.from(teacherSubjectMap.get(selectedSubject) || []) : allowedGroupIds;
-    return (groups || []).filter((g) => allowed.includes(g.id)).map((g) => ({
-      value: g.id,
-      label: `${g.name} (${g.year})`,
-    }));
+    return (groups || [])
+      .filter((g) => allowed.includes(g.id))
+      .map((g) => ({ value: g.id, label: `${g.name} (${g.level}-bosqich)` }));
   }, [groups, allowedGroupIds, selectedSubject, teacherSubjectMap]);
-  const filterGroupOptions = useMemo(() => {
-    return (groups || []).filter((g) => allowedGroupIds.includes(g.id)).map((g) => ({
-      value: g.id,
-      label: `${g.name} (${g.year})`,
+  const activeSubjectName =
+    subjectOptions.find((opt) => opt.value === filterSubject)?.label || "Fan";
+
+  const subjectCards = useMemo(() => {
+    const counts = new Map<number, number>();
+    (materials || []).forEach((m) => {
+      counts.set(m.subject, (counts.get(m.subject) || 0) + 1);
+    });
+    return subjectOptions.map((opt) => ({
+      id: opt.value,
+      name: opt.label,
+      count: counts.get(opt.value) || 0,
     }));
-  }, [groups, allowedGroupIds]);
+  }, [materials, subjectOptions]);
 
   const getErrorMessage = (err: any) => {
     const data = err?.response?.data;
@@ -82,18 +132,21 @@ const TeacherMaterials = () => {
   };
 
   const onFinish = async (values: any) => {
+    const files = extractFiles(fileList);
+    if (!files.length) {
+      message.warning("Fayl majburiy.");
+      return;
+    }
     setSubmitting(true);
     try {
       await createMaterial({
         title: values.title,
-        description: values.description,
-        subject: values.subject,
-        group: values.group,
-        material_type: values.material_type,
-        file,
+        subject: filterSubject ?? undefined,
+        groups: values.groups,
+        files,
       });
       message.success("Material yaratildi");
-      setFile(undefined);
+      setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["materials"] });
     } catch (err: any) {
@@ -103,6 +156,49 @@ const TeacherMaterials = () => {
     }
   };
 
+  const renderFileLinks = (resources: MaterialResource[]) => {
+    const files = resources.filter((r) => r.resource_type === "file" && r.file);
+    if (!files.length) return "-";
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {files.map((res) => {
+          const fileUrl = toAbsoluteUrl(res.file);
+          const name = res.title || fileUrl.split("/").pop() || "Fayl";
+          return (
+            <a key={res.id ?? res.file} href={fileUrl} target="_blank" rel="noreferrer">
+              {name}
+            </a>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderResources = (resources: MaterialResource[]) => {
+    if (!resources.length) return null;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {resources.map((res) => {
+          const label = res.title || res.file || res.resource_type;
+          if (res.resource_type === "file" && res.file) {
+            const fileUrl = toAbsoluteUrl(res.file);
+            return (
+              <div key={res.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {isVideo(fileUrl) ? (
+                  <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 6 }} />
+                ) : null}
+                <a href={fileUrl} target="_blank" rel="noreferrer">
+                  Yuklab olish
+                </a>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Typography.Title level={4}>Materiallar</Typography.Title>
@@ -110,152 +206,200 @@ const TeacherMaterials = () => {
         <Alert
           type="warning"
           message="Sizga fan/guruh biriktirilmagan"
-          description="Material qo‘shish uchun admin tomonidan o‘qituvchi–fan–guruh biriktirilsin."
+          description="Material qo'shish uchun admin tomonidan o'qituvchi-fan-guruh biriktirilsin."
           showIcon
           style={{ marginBottom: 16 }}
         />
       ) : null}
-      <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 520, marginBottom: 24 }}>
-        <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
-          <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Izoh">
-          <Input.TextArea rows={2} />
-        </Form.Item>
-        <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
-          <Select
-            showSearch
-            options={subjectOptions}
-            onChange={(v) => {
-              setSelectedSubject(v ?? null);
-              form.setFieldValue("group", undefined);
-            }}
-          />
-        </Form.Item>
-        <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-          <Select
-            showSearch
-            options={groupOptions}
-          />
-        </Form.Item>
-        <Form.Item name="material_type" label="Turi" rules={[{ required: true }]}>
-          <Select
-            options={[
-              { value: "pdf", label: "PDF" },
-              { value: "ppt", label: "PPT" },
-              { value: "doc", label: "DOC" },
-              { value: "video", label: "Video" },
-              { value: "audio", label: "Audio" },
-              { value: "image", label: "Image" },
-              { value: "other", label: "Other" },
-            ]}
-          />
-        </Form.Item>
-        <Form.Item label="Fayl">
-          <Upload
-            beforeUpload={(f) => {
-              setFile(f);
-              return false;
-            }}
-            maxCount={1}
-          >
-            <Button>Fayl yuklash</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={submitting} disabled={!allowedSubjectIds.length}>
-            Yaratish
-          </Button>
-        </Form.Item>
-      </Form>
+      {filterSubject ? (
+        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 24 }}>
+          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Fan">
+            <Input value={activeSubjectName} disabled />
+          </Form.Item>
+          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
+            <Select
+              mode="multiple"
+              showSearch
+              options={groupOptions}
+              placeholder="Bir yoki bir nechta guruh tanlang"
+            />
+          </Form.Item>
+          <Form.Item label="Fayllar">
+            <Upload
+              multiple
+              fileList={fileList}
+              beforeUpload={(f) => {
+                if (!isAllowedFile(f)) {
+                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  return Upload.LIST_IGNORE;
+                }
+                return false;
+              }}
+              onChange={({ fileList: nextList }) => setFileList(nextList)}
+              accept={acceptExtensions}
+            >
+              <Button>Fayl(lar) yuklash</Button>
+            </Upload>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={submitting} disabled={!allowedSubjectIds.length}>
+              Yaratish
+            </Button>
+          </Form.Item>
+        </Form>
+      ) : null}
 
       {isLoading ? (
         <Skeleton active />
       ) : (
         <>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-            <Select
-              allowClear
-              placeholder="Fan bo'yicha filter"
-              style={{ minWidth: 180 }}
-              onChange={(v) => setFilterSubject(v ?? null)}
-              options={subjectOptions}
-            />
-            <Select
-              allowClear
-              placeholder="Guruh bo'yicha filter"
-              style={{ minWidth: 180 }}
-              onChange={(v) => setFilterGroup(v ?? null)}
-              options={filterGroupOptions}
-            />
-          </div>
-          {(() => {
-            const filtered = (materials || []).filter(
-              (m) =>
-                (filterSubject ? m.subject === filterSubject : true) &&
-                (filterGroup ? m.group === filterGroup : true)
-            );
-            if (!filtered.length) return <Empty description="Ma'lumot yo'q" />;
-            return (
+          {!filterSubject ? (
+            subjectCards.length ? (
               <List
-                dataSource={filtered}
-                pagination={{ pageSize: 5 }}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        key="edit"
-                        type="link"
-                        onClick={() => {
-                          setEditItem(item);
-                          editForm.setFieldsValue({
-                            title: item.title,
-                            description: item.description,
-                            subject: item.subject,
-                            group: item.group,
-                            material_type: item.material_type,
-                          });
-                          setEditFile(undefined);
-                          setEditOpen(true);
-                        }}
-                      >
-                        Tahrirlash
-                      </Button>,
-                      <Popconfirm
-                        key="delete"
-                        title="O'chirish?"
-                        onConfirm={async () => {
-                          try {
-                            await deleteMaterial(item.id);
-                            message.success("O'chirildi");
-                            await qc.invalidateQueries({ queryKey: ["materials"] });
-                          } catch {
-                            message.error("O'chirishda xato");
-                          }
-                        }}
-                      >
-                        <Button danger type="link">
-                          O'chirish
-                        </Button>
-                      </Popconfirm>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.title}
-                      description={`${item.material_type || ""} | Fan: ${
-                        item.subject_name || item.subject
-                      } | Guruh: ${item.group_name || ""}`}
-                    />
-                    {item.file ? (
-                      <a href={item.file} target="_blank" rel="noreferrer">
-                        Yuklab olish
-                      </a>
-                    ) : null}
+                grid={{ gutter: 12, column: 3 }}
+                dataSource={subjectCards}
+                renderItem={(subject) => (
+                  <List.Item>
+                    <Card
+                      hoverable
+                      onClick={() => {
+                        setFilterSubject(subject.id);
+                        setSelectedSubject(subject.id);
+                        form.setFieldValue("groups", undefined);
+                        setFileList([]);
+                      }}
+                    >
+                      <Typography.Text strong>{subject.name}</Typography.Text>
+                      <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta material</div>
+                    </Card>
                   </List.Item>
                 )}
               />
-            );
-          })()}
+            ) : (
+              <Empty description="Ma'lumot yo'q" />
+            )
+          ) : (
+            (() => {
+              const subjectName =
+                subjectCards.find((s) => s.id === filterSubject)?.name || `Fan #${filterSubject}`;
+              const filtered = (materials || []).filter((m) => m.subject === filterSubject);
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <Button
+                      onClick={() => {
+                        setFilterSubject(null);
+                        setSelectedSubject(null);
+                      }}
+                    >
+                      Orqaga
+                    </Button>
+                    <Typography.Title level={5} style={{ margin: 0 }}>
+                      {subjectName}
+                    </Typography.Title>
+                  </div>
+                  {filtered.length ? (
+                    <List
+                      dataSource={filtered}
+                      pagination={{ pageSize: 5 }}
+                      renderItem={(item) => (
+                        <List.Item
+                          actions={[
+                            <Button
+                              key="edit"
+                              type="link"
+                              onClick={() => {
+                                setEditItem(item);
+                                editForm.setFieldsValue({
+                                  title: item.title,
+                                  subject: item.subject,
+                                  groups: item.group_ids || [],
+                                });
+                                setEditFileList([]);
+                                setEditOpen(true);
+                              }}
+                            >
+                              Tahrirlash
+                            </Button>,
+                            <Popconfirm
+                              key="delete"
+                              title="O'chirish?"
+                              onConfirm={async () => {
+                                try {
+                                  await deleteMaterial(item.id);
+                                  message.success("O'chirildi");
+                                  await qc.invalidateQueries({ queryKey: ["materials"] });
+                                } catch {
+                                  message.error("O'chirishda xato");
+                                }
+                              }}
+                            >
+                              <Button danger type="link">
+                                O'chirish
+                              </Button>
+                            </Popconfirm>,
+                          ]}
+                        >
+                          {(() => {
+                            const currentResources = (item.resources?.length
+                              ? item.resources
+                              : item.file
+                                ? ([{ id: "legacy-file", resource_type: "file", file: item.file }] as any)
+                                : []) as MaterialResource[];
+                            return (
+                              <div style={{ width: "100%" }}>
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "140px 1fr",
+                                    rowGap: 6,
+                                    columnGap: 12,
+                                    marginBottom: 10,
+                                  }}
+                                >
+                                  <span style={{ color: "#94a3b8" }}>Sarlavha</span>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <strong>{item.title}</strong>
+                                    <Tag color="blue">v{item.current_version || 1}</Tag>
+                                  </div>
+                                  <span style={{ color: "#94a3b8" }}>Fan</span>
+                                  <span>{item.subject_name || `Fan #${item.subject}`}</span>
+                                  <span style={{ color: "#94a3b8" }}>O'qituvchi</span>
+                                  <span>{item.teacher_name || "-"}</span>
+                                  <span style={{ color: "#94a3b8" }}>Guruhlar</span>
+                                  <span>{(item.group_names || []).join(", ") || "-"}</span>
+                                  <span style={{ color: "#94a3b8" }}>Fayl</span>
+                                  {renderFileLinks(currentResources)}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          {item.versions && item.versions.length > 1 ? (
+                            <details style={{ marginTop: 8 }}>
+                              <summary>Versiyalar ({item.versions.length})</summary>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+                                {item.versions.map((ver) => (
+                                  <div key={ver.version}>
+                                    <strong>v{ver.version}</strong>
+                                    {renderResources(ver.resources)}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          ) : null}
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <Empty description="Ma'lumot yo'q" />
+                  )}
+                </>
+              );
+            })()
+          )}
         </>
       )}
 
@@ -268,13 +412,12 @@ const TeacherMaterials = () => {
           setEditLoading(true);
           try {
             const vals = await editForm.validateFields();
+            const files = extractFiles(editFileList);
             await updateMaterial(editItem.id, {
               title: vals.title,
-              description: vals.description,
               subject: vals.subject,
-              group: vals.group,
-              material_type: vals.material_type,
-              file: editFile === undefined ? undefined : editFile,
+              groups: vals.groups,
+              files,
             });
             message.success("Yangilandi");
             setEditOpen(false);
@@ -291,45 +434,35 @@ const TeacherMaterials = () => {
           <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="description" label="Izoh">
-            <Input.TextArea rows={2} />
-          </Form.Item>
           <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
             <Select
               showSearch
-              options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))}
+              options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name}` }))}
             />
           </Form.Item>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-            <Select
-              showSearch
-              options={(groups || []).map((g) => ({ value: g.id, label: `${g.name} (${g.year})` }))}
-            />
+          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
+            <Select mode="multiple" showSearch options={groupOptions} />
           </Form.Item>
-          <Form.Item name="material_type" label="Turi" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { value: "pdf", label: "PDF" },
-                { value: "ppt", label: "PPT" },
-                { value: "doc", label: "DOC" },
-                { value: "video", label: "Video" },
-                { value: "audio", label: "Audio" },
-                { value: "image", label: "Image" },
-                { value: "other", label: "Other" },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item label="Fayl (ixtiyoriy)">
+          <Form.Item label="Yangi fayl(lar)">
             <Upload
+              multiple
+              fileList={editFileList}
               beforeUpload={(f) => {
-                setEditFile(f);
+                if (!isAllowedFile(f)) {
+                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  return Upload.LIST_IGNORE;
+                }
                 return false;
               }}
-              maxCount={1}
+              onChange={({ fileList: nextList }) => setEditFileList(nextList)}
+              accept={acceptExtensions}
             >
-              <Button>Yangi fayl</Button>
+              <Button>Fayl(lar) yuklash</Button>
             </Upload>
           </Form.Item>
+          <div style={{ fontSize: 12, color: "#6a7280" }}>
+            Yangi fayl qo'shsangiz yangi versiya yaratiladi.
+          </div>
         </Form>
       </Modal>
     </div>

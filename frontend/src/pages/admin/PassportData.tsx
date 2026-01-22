@@ -32,8 +32,10 @@ const buildFormData = (values: any) => {
   if (values.extracted_fullname) fd.append("extracted_fullname", values.extracted_fullname);
   const front = values.front_image?.[0]?.originFileObj;
   const back = values.back_image?.[0]?.originFileObj;
+  const selfie = values.selfie_image?.[0]?.originFileObj;
   if (front) fd.append("front_image", front);
   if (back) fd.append("back_image", back);
+  if (selfie) fd.append("selfie_image", selfie);
   return fd;
 };
 
@@ -45,7 +47,7 @@ const PassportDataPage = () => {
   });
   const { data: users } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: fetchUsers,
+    queryFn: () => fetchUsers(),
   });
 
   const [editOpen, setEditOpen] = useState(false);
@@ -98,6 +100,7 @@ const PassportDataPage = () => {
       extracted_fullname: row.extracted_fullname,
       front_image: [] as UploadFile[],
       back_image: [] as UploadFile[],
+      selfie_image: [] as UploadFile[],
     });
     setEditOpen(true);
   };
@@ -144,7 +147,12 @@ const PassportDataPage = () => {
             <Button>Yuklash</Button>
           </Upload>
         </Form.Item>
-        <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+        <Form.Item name="selfie_image" label="Selfi" valuePropName="fileList" getValueFromEvent={normFile}>
+          <Upload beforeUpload={() => false} maxCount={1}>
+            <Button>Yuklash</Button>
+          </Upload>
+        </Form.Item>
+        <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           Qo'shish
         </Button>
       </Form>
@@ -179,6 +187,11 @@ const PassportDataPage = () => {
             render: (v: string) => (v ? <a href={v}>Ko'rish</a> : "-"),
           },
           {
+            title: "Selfi",
+            dataIndex: "selfie_image",
+            render: (v: string) => (v ? <a href={v}>Ko'rish</a> : "-"),
+          },
+          {
             title: "Amallar",
             render: (_: unknown, r: any) => (
               <Space>
@@ -201,9 +214,16 @@ const PassportDataPage = () => {
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        confirmLoading={updateMut.isLoading}
+        confirmLoading={updateMut.isPending}
       >
-        <Form layout="vertical" form={editForm} onFinish={(vals) => updateMut.mutate({ id: editing.id, vals })}>
+        <Form
+          layout="vertical"
+          form={editForm}
+          onFinish={(vals) => {
+            if (!editing) return;
+            updateMut.mutate({ id: editing.id, vals });
+          }}
+        >
           <Form.Item name="user" label="Foydalanuvchi" rules={[{ required: true }]}>
             <Select options={userOptions} />
           </Form.Item>
@@ -227,6 +247,11 @@ const PassportDataPage = () => {
             </Upload>
           </Form.Item>
           <Form.Item name="back_image" label="Pasport orqasi" valuePropName="fileList" getValueFromEvent={normFile}>
+            <Upload beforeUpload={() => false} maxCount={1}>
+              <Button>Yuklash</Button>
+            </Upload>
+          </Form.Item>
+          <Form.Item name="selfie_image" label="Selfi" valuePropName="fileList" getValueFromEvent={normFile}>
             <Upload beforeUpload={() => false} maxCount={1}>
               <Button>Yuklash</Button>
             </Upload>

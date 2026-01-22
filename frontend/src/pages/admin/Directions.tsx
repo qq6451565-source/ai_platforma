@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, Form, Input, Button, List, message, Empty, Select, Popconfirm, Modal } from "antd";
+import { Card, Form, Input, Button, List, message, Empty, Popconfirm, Modal } from "antd";
 import { useState } from "react";
-import { createDirection, deleteDirection, fetchDirections, fetchDegrees, updateDirection } from "../../api/admin";
+import { createDirection, deleteDirection, fetchDirections, updateDirection } from "../../api/admin";
 
 const DirectionsPage = () => {
   const qc = useQueryClient();
@@ -9,17 +9,13 @@ const DirectionsPage = () => {
     queryKey: ["admin-directions"],
     queryFn: fetchDirections,
   });
-  const { data: degrees } = useQuery({
-    queryKey: ["admin-degrees"],
-    queryFn: fetchDegrees,
-  });
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
   const [editLoading, setEditLoading] = useState(false);
 
   const createMut = useMutation({
-    mutationFn: (vals: { name: string; language?: string; degree?: number }) => createDirection(vals),
+    mutationFn: (vals: { name: string; language?: string }) => createDirection(vals),
     onSuccess: async () => {
       message.success("Yo'nalish qo'shildi");
       await qc.invalidateQueries({ queryKey: ["admin-directions"] });
@@ -36,16 +32,8 @@ const DirectionsPage = () => {
         <Form.Item name="language">
           <Input placeholder="Til (uz/en)" />
         </Form.Item>
-        <Form.Item name="degree">
-          <Select
-            allowClear
-            placeholder="Daraja"
-            style={{ width: 160 }}
-            options={(degrees || []).map((d) => ({ value: d.id, label: d.name }))}
-          />
-        </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={createMut.isLoading}>
+          <Button type="primary" htmlType="submit" loading={createMut.isPending}>
             Qo'shish
           </Button>
         </Form.Item>
@@ -62,7 +50,7 @@ const DirectionsPage = () => {
                 type="link"
                 onClick={() => {
                   setEditItem(d);
-                  editForm.setFieldsValue({ name: d.name, language: d.language, degree: d.degree });
+                  editForm.setFieldsValue({ name: d.name, language: d.language });
                   setEditOpen(true);
                 }}
               >
@@ -82,7 +70,7 @@ const DirectionsPage = () => {
               </Popconfirm>,
             ]}
           >
-            {d.name} {d.language ? `(${d.language})` : ""} {d.degree ? `| Daraja #${d.degree}` : ""}
+            {d.name} {d.language ? `(${d.language})` : ""}
           </List.Item>
         )}
       />
@@ -114,12 +102,6 @@ const DirectionsPage = () => {
           </Form.Item>
           <Form.Item name="language" label="Til">
             <Input />
-          </Form.Item>
-          <Form.Item name="degree" label="Daraja">
-            <Select
-              allowClear
-              options={(degrees || []).map((d) => ({ value: d.id, label: d.name }))}
-            />
           </Form.Item>
         </Form>
       </Modal>
