@@ -8,16 +8,50 @@ import urllib.error
 import urllib.request
 
 from django.conf import settings
+from django.db import OperationalError, ProgrammingError
 
 logger = logging.getLogger(__name__)
 
 
 def _ai_base():
+    ai_settings = _get_ai_settings()
+    if ai_settings and ai_settings.ai_enabled and ai_settings.api_base_url:
+        return ai_settings.api_base_url.rstrip("/")
+
     enabled = getattr(settings, "AI_ENABLED", False)
     base_url = getattr(settings, "AI_BASE_URL", None)
     if enabled and base_url:
         return base_url.rstrip("/")
     return None
+
+
+def _get_ai_settings():
+    try:
+        from ai.models import AISettings
+        return AISettings.get_active()
+    except (OperationalError, ProgrammingError, Exception):
+        return None
+
+
+def _ai_api_key():
+    ai_settings = _get_ai_settings()
+    if ai_settings and ai_settings.api_key:
+        return ai_settings.api_key
+    return getattr(settings, "AI_API_KEY", None)
+
+
+def _ai_timeout():
+    ai_settings = _get_ai_settings()
+    if ai_settings and ai_settings.timeout_seconds:
+        return int(ai_settings.timeout_seconds)
+    return int(getattr(settings, "AI_TIMEOUT", 5))
+
+
+def _ai_retry():
+    ai_settings = _get_ai_settings()
+    if ai_settings is not None:
+        return int(ai_settings.retry_count or 0)
+    return int(getattr(settings, "AI_RETRY", 0))
 
 
 def _post_json(path: str, payload: dict):
@@ -28,12 +62,12 @@ def _post_json(path: str, payload: dict):
     url = f"{base_url}/{path.lstrip('/')}"
     data = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json"}
-    api_key = getattr(settings, "AI_API_KEY", None)
+    api_key = _ai_api_key()
     if api_key:
         headers["X-API-Key"] = api_key
 
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    timeout = getattr(settings, "AI_TIMEOUT", 5)
+    timeout = _ai_timeout()
     return _read_json(req, timeout)
 
 
@@ -44,12 +78,12 @@ def _get_json(path: str):
 
     url = f"{base_url}/{path.lstrip('/')}"
     headers = {}
-    api_key = getattr(settings, "AI_API_KEY", None)
+    api_key = _ai_api_key()
     if api_key:
         headers["X-API-Key"] = api_key
 
     req = urllib.request.Request(url, headers=headers, method="GET")
-    timeout = getattr(settings, "AI_TIMEOUT", 5)
+    timeout = _ai_timeout()
     return _read_json(req, timeout)
 
 
@@ -84,17 +118,17 @@ def _post_multipart(path: str, files: dict, data: dict | None = None):
     body.extend(f"--{boundary}--\r\n".encode("utf-8"))
 
     headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
-    api_key = getattr(settings, "AI_API_KEY", None)
+    api_key = _ai_api_key()
     if api_key:
         headers["X-API-Key"] = api_key
 
     req = urllib.request.Request(url, data=bytes(body), headers=headers, method="POST")
-    timeout = getattr(settings, "AI_TIMEOUT", 5)
+    timeout = _ai_timeout()
     return _read_json(req, timeout)
 
 
 def _read_json(req: urllib.request.Request, timeout: int):
-    retries = max(0, int(getattr(settings, "AI_RETRY", 0)))
+    retries = max(0, _ai_retry())
     last_exc: Exception | None = None
     for attempt in range(retries + 1):
         try:

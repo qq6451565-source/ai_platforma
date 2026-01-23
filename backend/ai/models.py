@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -10,6 +11,18 @@ class AISettings(models.Model):
     - proctor_strict: test paytida verified bo'lmasa javob berishga ruxsat yo'q.
     - proctor_missing_seconds: yuz yo'q bo'lgan maksimal vaqt (soniya).
     """
+
+    ai_enabled = models.BooleanField(default=True)
+    api_base_url = models.CharField(max_length=255, blank=True, null=True)
+    api_key = models.CharField(max_length=255, blank=True, null=True)
+    timeout_seconds = models.PositiveIntegerField(default=10)
+    retry_count = models.PositiveIntegerField(default=1)
+    ocr_confidence_threshold = models.FloatField(default=0.0)
+    max_image_size_mb = models.FloatField(default=8.0)
+
+    face_model = models.CharField(max_length=64, blank=True, null=True)
+    detection_backend = models.CharField(max_length=64, blank=True, null=True)
+    enforce_detection = models.BooleanField(default=False)
 
     enable_presence = models.BooleanField(default=True)
     enable_face_match = models.BooleanField(default=True)
@@ -32,6 +45,16 @@ class AISettings(models.Model):
         obj, _ = cls.objects.get_or_create(
             id=1,
             defaults={
+                "ai_enabled": getattr(settings, "AI_ENABLED", True),
+                "api_base_url": getattr(settings, "AI_BASE_URL", None),
+                "api_key": getattr(settings, "AI_API_KEY", None),
+                "timeout_seconds": int(getattr(settings, "AI_TIMEOUT", 10)),
+                "retry_count": int(getattr(settings, "AI_RETRY", 1)),
+                "ocr_confidence_threshold": 0.0,
+                "max_image_size_mb": 8.0,
+                "face_model": None,
+                "detection_backend": None,
+                "enforce_detection": False,
                 "enable_presence": True,
                 "enable_face_match": True,
                 "presence_threshold": 0.6,

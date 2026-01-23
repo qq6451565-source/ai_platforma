@@ -317,8 +317,8 @@ def _run_ai_verification(document):
     verified = False
     confidence = 0.0
 
-    ai_enabled = getattr(settings, "AI_ENABLED", False)
-    ai_base_url = getattr(settings, "AI_BASE_URL", None)
+    ai_enabled = settings_ai.ai_enabled
+    ai_base_url = settings_ai.api_base_url or getattr(settings, "AI_BASE_URL", None)
     if not (ai_enabled and ai_base_url):
         events.append({"type": "ai", "status": "disabled"})
         VerificationResult.objects.create(

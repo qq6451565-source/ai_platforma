@@ -218,16 +218,26 @@ class AIHealthView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
-        enabled = getattr(settings, "AI_ENABLED", False)
-        base_url = getattr(settings, "AI_BASE_URL", None)
-        api_key_set = bool(getattr(settings, "AI_API_KEY", None))
-        timeout = getattr(settings, "AI_TIMEOUT", 5)
+        ai_settings = AISettings.get_active()
+        enabled = ai_settings.ai_enabled
+        base_url = ai_settings.api_base_url or getattr(settings, "AI_BASE_URL", None)
+        api_key_set = bool(ai_settings.api_key or getattr(settings, "AI_API_KEY", None))
+        timeout = ai_settings.timeout_seconds or getattr(settings, "AI_TIMEOUT", 5)
+        retry_count = ai_settings.retry_count
 
         payload = {
             "enabled": enabled,
             "base_url": base_url,
             "api_key_set": api_key_set,
             "timeout": timeout,
+            "retry_count": retry_count,
+            "ocr_confidence_threshold": ai_settings.ocr_confidence_threshold,
+            "max_image_size_mb": ai_settings.max_image_size_mb,
+            "face_model": ai_settings.face_model,
+            "detection_backend": ai_settings.detection_backend,
+            "enforce_detection": ai_settings.enforce_detection,
+            "presence_threshold": ai_settings.presence_threshold,
+            "face_match_threshold": ai_settings.face_match_threshold,
         }
 
         if not enabled:
