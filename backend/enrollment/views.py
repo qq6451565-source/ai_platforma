@@ -1,5 +1,6 @@
 from datetime import datetime
 from difflib import SequenceMatcher
+import re
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -185,6 +186,68 @@ def _has_digits(value: str | None) -> bool:
     return any(ch.isdigit() for ch in value)
 
 
+def _is_valid_card_number(value: str | None) -> bool:
+    if not value:
+        return False
+    compact = "".join(ch for ch in value if ch.isalnum()).upper()
+    return bool(re.match(r"^[A-Z]{2}\d{7,8}$", compact))
+
+
+def _is_valid_personal_number(value: str | None) -> bool:
+    if not value:
+        return False
+    digits = "".join(ch for ch in value if ch.isdigit())
+    return len(digits) == 14
+
+
+def _is_plausible_birthdate(value) -> bool:
+    if not value:
+        return False
+    try:
+        date_val = value if hasattr(value, "year") else _parse_date(value)
+    except Exception:
+        return False
+    if not date_val:
+        return False
+    today = timezone.now().date()
+    age_days = (today - date_val).days
+    return 365 * 10 <= age_days <= 365 * 120
+
+
+def _looks_like_label(value: str | None) -> bool:
+    if not value:
+        return True
+    upper = value.upper()
+    if any(word in upper for word in ["IDENTITY", "CARD", "PASSPORT", "GUVOHNOMASI", "SHAXS", "DATE", "ISSUE"]):
+        return True
+    return False
+
+
+def _is_invalid_citizenship(value: str | None) -> bool:
+    if not value:
+        return True
+    upper = value.upper()
+    if _looks_like_label(upper):
+        return True
+    if re.fullmatch(r"\d{2}[./-]\d{2}[./-]\d{4}", upper):
+        return True
+    if upper.isdigit():
+        return True
+    return False
+
+
+def _should_update_name(current: str | None, new: str | None) -> bool:
+    if not new:
+        return False
+    if not current:
+        return True
+    if _looks_like_label(current) or _has_digits(current):
+        return True
+    if len(new) > len(current) and _name_similarity(_normalize_name_token(new), _normalize_name_token(current)) < 0.5:
+        return True
+    return False
+
+
 def _normalize_name_token(token: str) -> str:
     return "".join(ch for ch in token.lower() if ch.isalnum())
 
@@ -350,8 +413,9 @@ def _run_ai_verification(document):
         ocr_birth_place = ocr_result.get("birth_place")
         updates = []
 
-        applicant_passport_id = applicant.card_number or applicant.passport_id
-        applicant_passport_id = applicant_passport_id if _has_digits(applicant_passport_id) else None
+        applicant_passport_id = applicant.card_number if _is_valid_card_number(applicant.card_number) else None
+        if not applicant_passport_id and _is_valid_card_number(applicant.passport_id):
+            applicant_passport_id = applicant.passport_id
         passport_match = None
         if applicant_passport_id:
             passport_match = bool(ocr_card_number) and _normalize(ocr_card_number) == _normalize(applicant_passport_id)
@@ -367,7 +431,7 @@ def _run_ai_verification(document):
         birthdate_match = None
         if applicant.birth_date:
             birthdate_match = bool(ocr_birthdate) and ocr_birthdate == applicant.birth_date
-        elif ocr_birthdate:
+        elif ocr_birthdate and _is_plausible_birthdate(ocr_birthdate):
             applicant.birth_date = ocr_birthdate
             birthdate_match = True
             updates.append("birth_date")
@@ -394,31 +458,34 @@ def _run_ai_verification(document):
         }
         )
 
-        if ocr_card_number and not applicant.card_number:
+        if ocr_card_number and (not _is_valid_card_number(applicant.card_number)):
             applicant.card_number = ocr_card_number
             updates.append("card_number")
-        if ocr_card_number and not applicant.passport_id:
+        if ocr_card_number and (not _is_valid_card_number(applicant.passport_id)):
             applicant.passport_id = ocr_card_number
             updates.append("passport_id")
-        if ocr_personal_number and not applicant.personal_number:
+        if ocr_personal_number and (not _is_valid_personal_number(applicant.personal_number)):
             applicant.personal_number = ocr_personal_number
             updates.append("personal_number")
-        if ocr_surname and not applicant.surname:
+        if ocr_surname and _should_update_name(applicant.surname, ocr_surname):
             applicant.surname = ocr_surname
             updates.append("surname")
-        if ocr_given_name and not applicant.name:
+        if ocr_given_name and _should_update_name(applicant.name, ocr_given_name):
             applicant.name = ocr_given_name
             updates.append("name")
-        if ocr_patronymic and not applicant.patronymic:
+        if ocr_patronymic and _should_update_name(applicant.patronymic, ocr_patronymic):
             applicant.patronymic = ocr_patronymic
             updates.append("patronymic")
-        if ocr_sex and not applicant.sex:
+        if ocr_birthdate and _is_plausible_birthdate(ocr_birthdate) and not _is_plausible_birthdate(applicant.birth_date):
+            applicant.birth_date = ocr_birthdate
+            updates.append("birth_date")
+        if ocr_sex and (_looks_like_label(applicant.sex) or not applicant.sex):
             applicant.sex = ocr_sex
             updates.append("sex")
-        if ocr_citizenship and not applicant.citizenship:
+        if ocr_citizenship and _is_invalid_citizenship(applicant.citizenship):
             applicant.citizenship = ocr_citizenship
             updates.append("citizenship")
-        if ocr_birth_place and not applicant.birth_place:
+        if ocr_birth_place and (_looks_like_label(applicant.birth_place) or not applicant.birth_place):
             applicant.birth_place = ocr_birth_place
             updates.append("birth_place")
         if updates:
@@ -469,22 +536,41 @@ def _run_ai_verification(document):
 def _merge_ocr_results(front, back):
     if not front and not back:
         return None
-    def _pick(field, prefer_back=False):
-        if prefer_back:
-            return (back or {}).get(field) or (front or {}).get(field)
-        return (front or {}).get(field) or (back or {}).get(field)
+    def _pick(field, prefer_back=False, validator=None):
+        primary = back if prefer_back else front
+        secondary = front if prefer_back else back
+        for item in (primary, secondary):
+            value = (item or {}).get(field)
+            if validator and value and validator(value):
+                return value
+        for item in (primary, secondary):
+            value = (item or {}).get(field)
+            if value:
+                return value
+        return None
+
+    def _pick_card_number():
+        return _pick("card_number", validator=_is_valid_card_number) or _pick(
+            "passport_id", validator=_is_valid_card_number
+        )
+
+    def _pick_personal_number():
+        return _pick("personal_number", prefer_back=True, validator=_is_valid_personal_number)
+
+    def _pick_name(field):
+        return _pick(field) or None
     confidence = 0.0
     for item in (front, back):
         try:
             confidence = max(confidence, float((item or {}).get("confidence") or 0.0))
         except (TypeError, ValueError):
             continue
-    surname = _pick("surname")
-    given_name = _pick("name")
-    patronymic = _pick("patronymic")
+    surname = _pick_name("surname")
+    given_name = _pick_name("name")
+    patronymic = _pick_name("patronymic")
     fio = _pick("fio") or (f"{surname} {given_name}".strip() if surname and given_name else None)
     return {
-        "passport_id": _pick("passport_id"),
+        "passport_id": _pick_card_number(),
         "birthdate": _pick("birthdate"),
         "fio": fio,
         "surname": surname,
@@ -493,8 +579,8 @@ def _merge_ocr_results(front, back):
         "sex": _pick("sex"),
         "citizenship": _pick("citizenship"),
         "birth_place": _pick("birth_place", prefer_back=True),
-        "card_number": _pick("card_number"),
-        "personal_number": _pick("personal_number", prefer_back=True),
+        "card_number": _pick_card_number(),
+        "personal_number": _pick_personal_number(),
         "confidence": round(confidence, 2),
     }
 

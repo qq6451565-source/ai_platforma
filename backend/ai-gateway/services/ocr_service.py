@@ -95,6 +95,14 @@ _MRZ_LETTER_MAP = str.maketrans(
 )
 
 
+def _parse_card_prefixes(value: str) -> tuple[str, ...]:
+    prefixes = [item.strip().upper() for item in value.split(",") if item.strip()]
+    return tuple(prefixes)
+
+
+_CARD_PREFIXES = _parse_card_prefixes(os.getenv("OCR_CARD_PREFIXES", "KA"))
+
+
 def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
     np_img = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -129,7 +137,7 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
 
     avg_confidence = total_confidence / word_count if word_count > 0 else 0.0
 
-    card_number = _extract_card_number_from_raw(raw_texts)
+    card_number = _normalize_card_number(_extract_card_number_from_raw(raw_texts))
     card_number_label = _label_value_with_fallback(
         results,
         ordered_texts,
@@ -137,17 +145,15 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         value_pattern=r"[A-Z]{2}\s?\d{7,8}",
     )
     if card_number_label:
-        normalized_card = _normalize_doc_number(card_number_label)
-        if normalized_card and re.match(r"^[A-Z]{2}\d{7,8}$", normalized_card):
-            card_number = normalized_card
+        card_number = _normalize_card_number(card_number_label) or card_number
 
-    personal_number = _extract_personal_number(raw_texts, results, ordered_texts)
+    personal_number = _normalize_personal_number(_extract_personal_number(raw_texts, results, ordered_texts))
     if not personal_number:
         qr_personal = _extract_qr_personal_number(img)
         if qr_personal:
-            personal_number = qr_personal
+            personal_number = _normalize_personal_number(qr_personal)
     if not card_number:
-        card_number = _extract_card_number_from_image(img) or card_number
+        card_number = _normalize_card_number(_extract_card_number_from_image(img)) or card_number
 
     surname = _clean_name_value(
         _label_value_with_fallback(results, ordered_texts, ["FAMILIYASI", "FAMILIYA", "SURNAME"])
@@ -166,6 +172,7 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         ["TUGILGAN JOYI", "TUG'ILGAN JOYI", "PLACE OF BIRTH", "BIRTH PLACE"],
         value_pattern=r"[A-Za-z]",
     )
+    birth_place = _clean_place_value(birth_place)
 
     birthdate_label = _label_value_with_fallback(
         results,
@@ -192,9 +199,7 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         ["FUQAROLIGI", "CITIZENSHIP"],
         value_pattern=r"(UZB|OZBEK|UZBEK)",
     )
-    citizenship = _normalize_citizenship(citizenship_label) or _normalize_citizenship(
-        extract_citizenship(raw_texts)
-    )
+    citizenship = _normalize_citizenship(citizenship_label) or _normalize_citizenship(extract_citizenship(raw_texts))
 
     fio = _build_full_name(surname, given_name, patronymic) or extract_name(text_data)
 
@@ -205,24 +210,25 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
     mrz_data = {}
     if need_mrz:
         mrz_texts = _read_mrz_texts(img)
-        if mrz_texts:
-            raw_texts.extend(mrz_texts)
-            mrz_data = extract_mrz_data(mrz_texts)
+        mrz_candidates = list(dict.fromkeys((mrz_texts or []) + raw_texts))
+        if mrz_candidates:
+            raw_texts.extend(mrz_texts or [])
+            mrz_data = extract_mrz_data(mrz_candidates)
 
     if mrz_data:
         if not card_number:
-            card_number = mrz_data.get("card_number") or card_number
+            card_number = _normalize_card_number(mrz_data.get("card_number")) or card_number
         if not personal_number:
-            personal_number = mrz_data.get("personal_number") or personal_number
+            personal_number = _normalize_personal_number(mrz_data.get("personal_number")) or personal_number
         mrz_birthdate = mrz_data.get("birthdate")
         if mrz_birthdate and _is_plausible_birthdate(mrz_birthdate):
             if not birthdate or not _is_plausible_birthdate(birthdate):
                 birthdate = mrz_birthdate
-        if not surname:
+        if not surname or not _is_valid_name_value(surname):
             surname = mrz_data.get("surname") or surname
-        if not given_name:
+        if not given_name or not _is_valid_name_value(given_name):
             given_name = mrz_data.get("name") or given_name
-        if not patronymic:
+        if not patronymic or not _is_valid_name_value(patronymic):
             patronymic = mrz_data.get("patronymic") or patronymic
         if not sex:
             sex = mrz_data.get("sex") or sex
@@ -235,7 +241,15 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
     fio = _build_full_name(surname, given_name, patronymic) or fio
 
     if not personal_number:
-        personal_number = _extract_personal_number_from_image(img) or personal_number
+        personal_number = _normalize_personal_number(_extract_personal_number_from_image(img)) or personal_number
+    if card_number:
+        card_number = _normalize_card_number(card_number) or card_number
+    if personal_number:
+        personal_number = _normalize_personal_number(personal_number) or personal_number
+    if citizenship:
+        citizenship = _normalize_citizenship(citizenship) or citizenship
+    if birthdate and not _is_plausible_birthdate(birthdate):
+        birthdate = None
 
     return {
         "passport_id": card_number or None,
@@ -251,6 +265,53 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         "personal_number": personal_number or None,
         "confidence": round(avg_confidence, 2),
     }
+
+
+def _normalize_card_number(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = _normalize_doc_number(value)
+    if not normalized:
+        return None
+    if _CARD_PREFIXES and not any(normalized.startswith(prefix) for prefix in _CARD_PREFIXES):
+        return None
+    return normalized
+
+
+def _normalize_personal_number(value: str | None) -> str | None:
+    if not value:
+        return None
+    digits = re.sub(r"[^0-9]", "", value)
+    for seq in re.findall(r"\d{14}", digits):
+        if _is_mrz_date_block(seq):
+            continue
+        return seq
+    return None
+
+
+def _is_valid_name_value(value: str | None) -> bool:
+    if not value:
+        return False
+    normalized = _normalize_label(value)
+    if not normalized or normalized in _NAME_STOPWORDS:
+        return False
+    if any(ch.isdigit() for ch in value):
+        return False
+    letters = re.sub(r"[^A-Za-z]", "", value)
+    return len(letters) >= 3
+
+
+def _clean_place_value(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = value.replace("'", "").replace("`", "")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    upper = cleaned.upper()
+    if _normalize_label(upper) in _NAME_STOPWORDS:
+        return None
+    if any(word in upper for word in ("DATE", "ISSUE", "EXPIR", "BERILGAN", "GUVOHNOMASI")):
+        return None
+    return cleaned or None
 
 
 def _extract_personal_number(raw_texts, results, ordered_texts):
@@ -349,8 +410,10 @@ def _clean_name_value(value):
         normalized = _normalize_label(token)
         if not normalized or normalized in _NAME_STOPWORDS:
             continue
+        if any(ch.isdigit() for ch in token):
+            continue
         letters = re.sub(r"[^A-Za-z]", "", token)
-        if len(letters) < 2:
+        if len(letters) < 3:
             continue
         tokens.append(token)
     return " ".join(tokens) if tokens else None
