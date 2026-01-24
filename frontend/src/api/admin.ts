@@ -332,10 +332,22 @@ export const fetchAdminAnalytics = async () => (await api.get<AdminAnalytics>("/
 // ==== AI settings ====
 export type AISettings = {
   id: number;
+  ai_enabled: boolean;
+  api_base_url?: string | null;
+  api_key?: string | null;
+  timeout_seconds: number;
+  retry_count: number;
+  ocr_confidence_threshold: number;
+  max_image_size_mb: number;
+  face_model?: string | null;
+  detection_backend?: string | null;
+  enforce_detection: boolean;
   enable_presence: boolean;
   enable_face_match: boolean;
   presence_threshold: number;
   face_match_threshold: number;
+  proctor_strict: boolean;
+  proctor_missing_seconds: number;
   updated_at?: string;
 };
 export const fetchAISettings = async () => (await api.get<AISettings>("/api/ai/settings/")).data;
