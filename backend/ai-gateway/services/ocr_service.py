@@ -100,7 +100,8 @@ def _parse_card_prefixes(value: str) -> tuple[str, ...]:
     return tuple(prefixes)
 
 
-_CARD_PREFIXES = _parse_card_prefixes(os.getenv("OCR_CARD_PREFIXES", "KA"))
+# Empty => har qanday 2 harf + 7-8 raqamni qabul qiladi
+_CARD_PREFIXES = _parse_card_prefixes(os.getenv("OCR_CARD_PREFIXES", ""))
 
 
 def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
@@ -115,6 +116,8 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         }
 
     max_side = int(os.getenv("OCR_MAX_SIDE", "1600"))
+    min_side = int(os.getenv("OCR_MIN_SIDE", "900"))
+    img = _resize_min(img, min_side=min_side)
     img = _resize_max(img, max_side=max_side)
     img = _extract_card_region(img)
 
@@ -181,6 +184,10 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
         value_pattern=r"\d{2}[./-]\d{2}[./-]\d{4}",
     )
     birthdate = extract_birth_date(text_data, birthdate_label)
+    if not birthdate:
+        extra_dates = _extract_date_candidates(img)
+        if extra_dates:
+            birthdate = extract_birth_date(extra_dates)
     if birthdate and not _is_plausible_birthdate(birthdate):
         birthdate = None
 
@@ -247,7 +254,7 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
     if personal_number:
         personal_number = _normalize_personal_number(personal_number) or personal_number
     if citizenship:
-        citizenship = _normalize_citizenship(citizenship) or citizenship
+        citizenship = _normalize_citizenship(citizenship)
     if birthdate and not _is_plausible_birthdate(birthdate):
         birthdate = None
 
@@ -273,8 +280,9 @@ def _normalize_card_number(value: str | None) -> str | None:
     normalized = _normalize_doc_number(value)
     if not normalized:
         return None
-    if _CARD_PREFIXES and not any(normalized.startswith(prefix) for prefix in _CARD_PREFIXES):
-        return None
+    if _CARD_PREFIXES:
+        if not any(normalized.startswith(prefix) for prefix in _CARD_PREFIXES):
+            return None
     return normalized
 
 
@@ -314,6 +322,29 @@ def _clean_place_value(value: str | None) -> str | None:
     return cleaned or None
 
 
+def _extract_date_candidates(img):
+    try:
+        chunks = reader.readtext(
+            img,
+            detail=1,
+            allowlist="0123456789./-",
+            paragraph=False,
+            text_threshold=0.4,
+            low_text=0.3,
+            contrast_ths=0.05,
+            adjust_contrast=0.7,
+        )
+    except Exception:
+        return []
+    results = []
+    for _, text, conf in chunks:
+        if not text:
+            continue
+        if re.search(r"\d{2}[./-]\d{2}[./-]\d{4}", text):
+            results.append((text, conf))
+    return results
+
+
 def _extract_personal_number(raw_texts, results, ordered_texts):
     personal_label = _label_value_with_fallback(
         results,
@@ -342,7 +373,12 @@ def _extract_qr_personal_number(img):
 
 def _extract_card_number_from_image(img):
     try:
-        results = reader.readtext(img, detail=1, allowlist="KA40123456789", paragraph=False)
+        results = reader.readtext(
+            img,
+            detail=1,
+            allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+            paragraph=False,
+        )
     except Exception:
         return None
     for _, text, _ in results:
@@ -439,9 +475,7 @@ def _normalize_patronymic(value):
 def _extract_card_number_from_raw(texts):
     for text in texts:
         compact = re.sub(r"[^A-Z0-9]", "", text.upper())
-        if "K" not in compact:
-            continue
-        match = re.search(r"(K[4A][0-9A-Z]{7,8})", compact)
+        match = re.search(r"([A-Z]{2}[0-9A-Z]{7,8})", compact)
         if not match:
             continue
         candidate = match.group(1)
@@ -1134,3 +1168,16 @@ def _resize_max(img, max_side=1600):
     new_w = max(1, int(w * scale))
     new_h = max(1, int(h * scale))
     return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+
+def _resize_min(img, min_side=900):
+    try:
+        h, w = img.shape[:2]
+    except Exception:
+        return img
+    if max(h, w) >= min_side:
+        return img
+    scale = min_side / float(max(h, w))
+    new_w = max(1, int(w * scale))
+    new_h = max(1, int(h * scale))
+    return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)

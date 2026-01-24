@@ -450,12 +450,12 @@ def _run_ai_verification(document):
                 "status": "ok",
                 "result": ocr_result,
                 "matches": {
-                "passport_id": passport_match,
-                "birth_date": birthdate_match,
-                "full_name": name_match,
-            },
-            "passed": ocr_passed,
-        }
+                    "passport_id": passport_match,
+                    "birth_date": birthdate_match,
+                    "full_name": name_match,
+                },
+                "passed": ocr_passed,
+            }
         )
 
         if ocr_card_number and (not _is_valid_card_number(applicant.card_number)):
@@ -482,7 +482,11 @@ def _run_ai_verification(document):
         if ocr_sex and (_looks_like_label(applicant.sex) or not applicant.sex):
             applicant.sex = ocr_sex
             updates.append("sex")
-        if ocr_citizenship and _is_invalid_citizenship(applicant.citizenship):
+        if (
+            ocr_citizenship
+            and _is_invalid_citizenship(applicant.citizenship)
+            and not _is_invalid_citizenship(ocr_citizenship)
+        ):
             applicant.citizenship = ocr_citizenship
             updates.append("citizenship")
         if ocr_birth_place and (_looks_like_label(applicant.birth_place) or not applicant.birth_place):
@@ -557,6 +561,9 @@ def _merge_ocr_results(front, back):
     def _pick_personal_number():
         return _pick("personal_number", prefer_back=True, validator=_is_valid_personal_number)
 
+    def _pick_birthdate():
+        return _pick("birthdate", validator=_is_plausible_birthdate)
+
     def _pick_name(field):
         return _pick(field) or None
     confidence = 0.0
@@ -571,7 +578,7 @@ def _merge_ocr_results(front, back):
     fio = _pick("fio") or (f"{surname} {given_name}".strip() if surname and given_name else None)
     return {
         "passport_id": _pick_card_number(),
-        "birthdate": _pick("birthdate"),
+        "birthdate": _pick_birthdate(),
         "fio": fio,
         "surname": surname,
         "name": given_name,
