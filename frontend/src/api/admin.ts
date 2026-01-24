@@ -144,6 +144,10 @@ export type EnrollmentItem = {
 };
 
 export const fetchEnrollment = async () => (await api.get<EnrollmentItem[]>("/api/enrollment/applicants/")).data;
+export const updateEnrollmentApplicant = async (id: number, payload: Partial<EnrollmentItem>) =>
+  (await api.patch(`/api/enrollment/applicants/${id}/`, payload)).data;
+export const deleteEnrollmentApplicant = async (id: number) =>
+  (await api.delete(`/api/enrollment/applicants/${id}/`)).data;
 export type ApproveEnrollmentPayload = {
   role: "student" | "teacher";
   group_id?: number;

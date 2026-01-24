@@ -4,14 +4,17 @@ import {
   Alert,
   Button,
   Card,
+  DatePicker,
   Descriptions,
   Divider,
   Drawer,
   Empty,
   Form,
   Image,
+  Input,
   InputNumber,
   Modal,
+  Popconfirm,
   Select,
   Space,
   Table,
@@ -29,6 +32,8 @@ import {
   fetchGroupsAdmin,
   fetchSubjectsAdmin,
   fetchDirections,
+  updateEnrollmentApplicant,
+  deleteEnrollmentApplicant,
 } from "../../api/admin";
 
 const { Text } = Typography;
@@ -60,8 +65,11 @@ const EnrollmentPage = () => {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [activeApplicant, setActiveApplicant] = useState<EnrollmentItem | null>(null);
   const [approveForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { mutateAsync: approve, isPending: approving } = useMutation({
     mutationFn: (payload: {
@@ -89,6 +97,35 @@ const EnrollmentPage = () => {
       await qc.invalidateQueries({ queryKey: ["admin-enrollment"] });
     },
     onError: () => message.error("Rad etishda xato"),
+  });
+
+  const { mutateAsync: updateApplicant, isPending: updating } = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<EnrollmentItem> }) =>
+      updateEnrollmentApplicant(id, data),
+    onSuccess: async () => {
+      message.success("Yangilandi");
+      await qc.invalidateQueries({ queryKey: ["admin-enrollment"] });
+      setEditOpen(false);
+      setActiveApplicant(null);
+      editForm.resetFields();
+    },
+    onError: () => message.error("Tahrirlashda xato"),
+  });
+
+  const { mutateAsync: removeApplicant, isPending: deleting } = useMutation({
+    mutationFn: (id: number) => deleteEnrollmentApplicant(id),
+    onMutate: (id) => {
+      setDeleteId(id);
+    },
+    onSuccess: async () => {
+      message.success("O'chirildi");
+      await qc.invalidateQueries({ queryKey: ["admin-enrollment"] });
+      setActiveApplicant(null);
+    },
+    onError: () => message.error("O'chirishda xato"),
+    onSettled: () => {
+      setDeleteId(null);
+    },
   });
 
   const refreshEnrollment = async (targetId?: number) => {
@@ -135,6 +172,27 @@ const EnrollmentPage = () => {
     setApproveOpen(true);
   };
 
+  const openEdit = (item: EnrollmentItem) => {
+    setActiveApplicant(item);
+    editForm.setFieldsValue({
+      full_name: item.full_name || "",
+      phone: item.phone || "",
+      email: item.email || "",
+      surname: item.surname || "",
+      name: item.name || "",
+      patronymic: item.patronymic || "",
+      passport_id: item.passport_id || "",
+      card_number: item.card_number || "",
+      personal_number: item.personal_number || "",
+      birth_date: item.birth_date ? dayjs(item.birth_date) : null,
+      sex: item.sex || undefined,
+      citizenship: item.citizenship || "",
+      birth_place: item.birth_place || "",
+      direction_choice: item.direction_choice ?? undefined,
+    });
+    setEditOpen(true);
+  };
+
   const onApprove = async (vals: any) => {
     if (!activeApplicant) return;
     const role = vals.role as "student" | "teacher";
@@ -164,6 +222,27 @@ const EnrollmentPage = () => {
       subject_id: vals.subject_id,
       group_ids: vals.group_ids || [],
     });
+  };
+
+  const onEditSubmit = async (vals: any) => {
+    if (!activeApplicant) return;
+    const payload: Partial<EnrollmentItem> = {
+      full_name: vals.full_name?.trim() || activeApplicant.full_name || "",
+      phone: vals.phone || "",
+      email: vals.email || "",
+      surname: vals.surname || "",
+      name: vals.name || "",
+      patronymic: vals.patronymic || "",
+      passport_id: vals.passport_id || null,
+      card_number: vals.card_number || null,
+      personal_number: vals.personal_number || null,
+      birth_date: vals.birth_date ? vals.birth_date.format("YYYY-MM-DD") : null,
+      sex: vals.sex || "",
+      citizenship: vals.citizenship || "",
+      birth_place: vals.birth_place || "",
+      direction_choice: vals.direction_choice ?? null,
+    };
+    await updateApplicant({ id: activeApplicant.id, data: payload });
   };
 
   return (
@@ -212,6 +291,9 @@ const EnrollmentPage = () => {
                 <Button size="small" onClick={() => openDetails(row)}>
                   Ko'rish
                 </Button>
+                <Button size="small" onClick={() => openEdit(row)}>
+                  Tahrirlash
+                </Button>
                 <Button
                   size="small"
                   type="primary"
@@ -230,6 +312,17 @@ const EnrollmentPage = () => {
                 >
                   Rad etish
                 </Button>
+                <Popconfirm
+                  title="Arizani o'chirishni xohlaysizmi?"
+                  okText="Ha"
+                  cancelText="Yo'q"
+                  okButtonProps={{ loading: deleting && deleteId === row.id }}
+                  onConfirm={() => removeApplicant(row.id)}
+                >
+                  <Button size="small" danger disabled={deleting && deleteId === row.id}>
+                    O'chirish
+                  </Button>
+                </Popconfirm>
               </Space>
             ),
           },
@@ -336,6 +429,72 @@ const EnrollmentPage = () => {
           </>
         ) : null}
       </Drawer>
+
+      <Modal
+        title="Arizani tahrirlash"
+        open={editOpen}
+        onCancel={() => setEditOpen(false)}
+        onOk={() => editForm.submit()}
+        confirmLoading={updating}
+        destroyOnClose
+      >
+        {activeApplicant ? (
+          <Form layout="vertical" form={editForm} onFinish={onEditSubmit}>
+            <Form.Item name="full_name" label="F.I.Sh" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="surname" label="Familiya">
+              <Input />
+            </Form.Item>
+            <Form.Item name="name" label="Ism">
+              <Input />
+            </Form.Item>
+            <Form.Item name="patronymic" label="Otasining ismi">
+              <Input />
+            </Form.Item>
+            <Form.Item name="passport_id" label="Passport ID">
+              <Input />
+            </Form.Item>
+            <Form.Item name="card_number" label="Karta raqami">
+              <Input />
+            </Form.Item>
+            <Form.Item name="personal_number" label="Shaxsiy raqam">
+              <Input />
+            </Form.Item>
+            <Form.Item name="birth_date" label="Tug'ilgan sana">
+              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item name="sex" label="Jinsi">
+              <Select
+                allowClear
+                options={[
+                  { value: "ERKAK", label: "Erkak" },
+                  { value: "AYOL", label: "Ayol" },
+                ]}
+              />
+            </Form.Item>
+            <Form.Item name="citizenship" label="Fuqaroligi">
+              <Input />
+            </Form.Item>
+            <Form.Item name="birth_place" label="Tug'ilgan joy">
+              <Input />
+            </Form.Item>
+            <Form.Item name="phone" label="Telefon">
+              <Input />
+            </Form.Item>
+            <Form.Item name="email" label="Email">
+              <Input />
+            </Form.Item>
+            <Form.Item name="direction_choice" label="Yo'nalish">
+              <Select
+                allowClear
+                options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
+                placeholder="Yo'nalish tanlang"
+              />
+            </Form.Item>
+          </Form>
+        ) : null}
+      </Modal>
 
       <Modal
         title="Arizani tasdiqlash"
