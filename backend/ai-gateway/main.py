@@ -12,7 +12,15 @@ from services.ocr_service import extract_passport_data
 from services.face_service import compare_faces
 from services.presence_service import detect_presence
 
+
 load_dotenv()
+
+# Loguru loglarini faylga va stdout ga yozish (markazlashtirilgan loglar uchun)
+LOG_PATH = os.getenv("LOG_PATH", "/app/logs/ai-gateway.log")
+os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+logger.remove()
+logger.add(sys.stdout, level="INFO", enqueue=True, backtrace=True, diagnose=True)
+logger.add(LOG_PATH, rotation="10 MB", retention="10 days", level="INFO", enqueue=True, backtrace=True, diagnose=True)
 
 app = FastAPI(title="AI Gateway", version="1.0.0")
 
@@ -120,3 +128,4 @@ def health_check():
         "ocr_confidence_threshold": OCR_CONFIDENCE_THRESHOLD,
         "max_image_size_mb": MAX_IMAGE_SIZE_MB,
     }
+

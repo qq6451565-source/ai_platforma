@@ -19,6 +19,8 @@ from lessons.models import Lesson
 from materials.models import Material
 from tests_app.models import Test
 
+
+import secrets
 from .models import AISettings
 from . import clients
 from .serializers import MaterialQuestionSerializer, AISettingsSerializer
@@ -196,6 +198,7 @@ class MaterialAIAnswerView(APIView):
         })
 
 
+
 class AISettingsView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -212,6 +215,16 @@ class AISettingsView(APIView):
 
     def put(self, request):
         return self.patch(request)
+
+    def post(self, request, *args, **kwargs):
+        # API kalitini rotatsiya qilish uchun maxsus endpoint
+        if kwargs.get('action') == 'rotate_api_key':
+            settings = AISettings.get_active()
+            new_key = secrets.token_urlsafe(32)
+            settings.api_key = new_key
+            settings.save()
+            return Response({"api_key": new_key, "message": "API kaliti muvaffaqiyatli yangilandi."})
+        return Response({"detail": "Unknown action."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AIHealthView(APIView):

@@ -94,14 +94,56 @@ _MRZ_LETTER_MAP = str.maketrans(
     }
 )
 
+_CYR_LATIN_MAP = str.maketrans({
+    "\u0410": "A",
+    "\u0412": "B",
+    "\u0415": "E",
+    "\u041A": "K",
+    "\u041C": "M",
+    "\u041D": "H",
+    "\u041E": "O",
+    "\u0420": "P",
+    "\u0421": "C",
+    "\u0422": "T",
+    "\u0425": "X",
+    "\u0423": "Y",
+})
+
+
+def _latinize(value: str) -> str:
+    return value.upper().translate(_CYR_LATIN_MAP)
+
+
 
 def _parse_card_prefixes(value: str) -> tuple[str, ...]:
     prefixes = [item.strip().upper() for item in value.split(",") if item.strip()]
     return tuple(prefixes)
 
 
+def _parse_digit_lengths(value: str) -> tuple[int, ...]:
+    lengths = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            lengths.append(int(item))
+        except ValueError:
+            continue
+    return tuple(lengths or [7])
+
+
 # Empty => har qanday 2 harf + 7-8 raqamni qabul qiladi
 _CARD_PREFIXES = _parse_card_prefixes(os.getenv("OCR_CARD_PREFIXES", ""))
+_CARD_DIGIT_LENGTHS = _parse_digit_lengths(os.getenv("OCR_CARD_DIGITS", "7"))
+
+
+def _card_number_pattern() -> str:
+    if len(_CARD_DIGIT_LENGTHS) == 1:
+        return rf"[A-Z]{{2}}\\s?\\d{{{_CARD_DIGIT_LENGTHS[0]}}}"
+    min_len = min(_CARD_DIGIT_LENGTHS)
+    max_len = max(_CARD_DIGIT_LENGTHS)
+    return rf"[A-Z]{{2}}\\s?\\d{{{min_len},{max_len}}}"
 
 
 def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
@@ -141,16 +183,20 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
     avg_confidence = total_confidence / word_count if word_count > 0 else 0.0
 
     card_number = _normalize_card_number(_extract_card_number_from_raw(raw_texts))
+    if not card_number:
+        card_number = _normalize_card_number(_extract_card_number_from_tokens(ordered_texts)) or card_number
     card_number_label = _label_value_with_fallback(
         results,
         ordered_texts,
         ["KARTA RAQAMI", "CARD NUMBER"],
-        value_pattern=r"[A-Z]{2}\s?\d{7,8}",
+        value_pattern=_card_number_pattern(),
     )
     if card_number_label:
         card_number = _normalize_card_number(card_number_label) or card_number
 
     personal_number = _normalize_personal_number(_extract_personal_number(raw_texts, results, ordered_texts))
+    if not personal_number:
+        personal_number = _normalize_personal_number(_extract_personal_number_from_tokens(ordered_texts)) or personal_number
     if not personal_number:
         qr_personal = _extract_qr_personal_number(img)
         if qr_personal:
@@ -277,7 +323,7 @@ def extract_passport_data(image_bytes, ocr_threshold: float = 0.0):
 def _normalize_card_number(value: str | None) -> str | None:
     if not value:
         return None
-    normalized = _normalize_doc_number(value)
+    normalized = _normalize_doc_number(value, _CARD_DIGIT_LENGTHS)
     if not normalized:
         return None
     if _CARD_PREFIXES:
@@ -382,8 +428,8 @@ def _extract_card_number_from_image(img):
     except Exception:
         return None
     for _, text, _ in results:
-        candidate = _normalize_doc_number(text)
-        if candidate and re.match(r"^[A-Z]{2}\d{7,8}$", candidate):
+        candidate = _normalize_doc_number(text, _CARD_DIGIT_LENGTHS)
+        if candidate:
             return candidate
     return None
 
@@ -473,17 +519,61 @@ def _normalize_patronymic(value):
 
 
 def _extract_card_number_from_raw(texts):
+    pattern = _card_number_pattern().replace("\\s?", "")
     for text in texts:
-        compact = re.sub(r"[^A-Z0-9]", "", text.upper())
-        match = re.search(r"([A-Z]{2}[0-9A-Z]{7,8})", compact)
+        compact = re.sub(r"[^A-Z0-9]", "", _latinize(text))
+        match = re.search(pattern, compact)
         if not match:
             continue
-        candidate = match.group(1)
-        normalized = _normalize_doc_number(candidate)
-        if normalized and re.match(r"^[A-Z]{2}\d{7,8}$", normalized):
+        candidate = match.group(0)
+        normalized = _normalize_doc_number(candidate, _CARD_DIGIT_LENGTHS)
+        if normalized:
             return normalized
     return None
 
+def _extract_card_number_from_tokens(tokens):
+    cleaned = []
+    for token in tokens:
+        if not token:
+            continue
+        cleaned_token = re.sub(r"[^A-Z0-9]", "", _latinize(token))
+        if cleaned_token:
+            cleaned.append(cleaned_token)
+    pattern = _card_number_pattern().replace("\\s?", "")
+    for idx, token in enumerate(cleaned):
+        if re.fullmatch(pattern, token):
+            normalized = _normalize_doc_number(token, _CARD_DIGIT_LENGTHS)
+            if normalized:
+                return normalized
+        if re.fullmatch(r"[A-Z]{2}", token) and idx + 1 < len(cleaned):
+            next_token = cleaned[idx + 1]
+            if re.fullmatch(r"\d{7,8}", next_token):
+                normalized = _normalize_doc_number(token + next_token, _CARD_DIGIT_LENGTHS)
+                if normalized:
+                    return normalized
+    return None
+
+
+def _extract_personal_number_from_tokens(tokens):
+    digits_tokens = []
+    for token in tokens:
+        if not token:
+            continue
+        digits = re.sub(r"[^0-9]", "", token)
+        if digits:
+            digits_tokens.append(digits)
+    for digits in digits_tokens:
+        if len(digits) == 14 and not _is_mrz_date_block(digits):
+            return digits
+    for i in range(len(digits_tokens)):
+        combined = digits_tokens[i]
+        for j in range(i + 1, min(i + 4, len(digits_tokens))):
+            combined += digits_tokens[j]
+            if len(combined) == 14 and not _is_mrz_date_block(combined):
+                return combined
+            if len(combined) > 14:
+                break
+    return None
 
 def _normalize_date_candidate(value):
     if not value:
@@ -593,7 +683,7 @@ def extract_citizenship(texts):
 def _normalize_citizenship(value):
     if not value:
         return None
-    value = value.replace("<", "").strip().upper()
+    value = _latinize(value.replace("<", "").strip())
     if any(word in value for word in ("ISSUE", "EXPIR", "BERILGAN", "DATE")):
         return None
     if re.fullmatch(r"\d{2}[./-]\d{2}[./-]\d{4}", value):
@@ -603,11 +693,11 @@ def _normalize_citizenship(value):
     letters_only = re.sub(r"[^A-Z]", "", value)
     if not letters_only:
         return None
-    if letters_only in {"UZB"}:
+    if letters_only in {"UZB", "UZ"}:
         return "OZBEKISTON"
     if "UZBEK" in letters_only or "OZBEK" in letters_only:
         return "OZBEKISTON"
-    return value
+    return None
 
 
 def _ordered_texts(results):
@@ -985,27 +1075,30 @@ def _normalize_mrz_digits(value: str):
     return value.translate(_MRZ_DIGIT_MAP)
 
 
-def _normalize_doc_number(value: str | None):
+def _normalize_doc_number(value: str | None, allowed_lengths: tuple[int, ...] | None = None):
     if not value:
         return None
-    compact = re.sub(r"[^A-Z0-9]", "", value.upper())
+    value = _latinize(value)
+    compact = re.sub(r"[^A-Z0-9]", "", value)
     if len(compact) < 9:
         return None
     prefix = compact[:2].translate(_MRZ_LETTER_MAP)
     if not prefix.isalpha():
         return None
     digits = _normalize_mrz_digits(compact[2:])
-    if not digits.isdigit():
+    digits = re.sub(r"[^0-9]", "", digits)
+    if not digits:
+        return None
+    if allowed_lengths and len(digits) not in allowed_lengths:
         return None
     return f"{prefix}{digits}"
-
 
 def _mrz_extract_doc_number(candidates: list[str]):
     for text in candidates:
         normalized = re.sub(r"[^A-Z0-9<]", "", text.upper())
         if normalized.startswith("I") and len(normalized) >= 14:
             candidate = normalized[5:14]
-            doc = _normalize_doc_number(candidate)
+            doc = _normalize_doc_number(candidate, _CARD_DIGIT_LENGTHS)
             if doc:
                 return doc
         match = re.search(r"([A-Z]{2})([0-9A-Z]{7,8})", normalized)
@@ -1013,7 +1106,9 @@ def _mrz_extract_doc_number(candidates: list[str]):
             prefix = match.group(1)
             digits = _normalize_mrz_digits(match.group(2))
             if digits.isdigit():
-                return f"{prefix}{digits}"
+                doc = _normalize_doc_number(f"{prefix}{digits}", _CARD_DIGIT_LENGTHS)
+                if doc:
+                    return doc
     return None
 
 
@@ -1065,14 +1160,14 @@ def _parse_td1_mrz(lines):
     if line3:
         line3 = line3.ljust(30, "<")[:30]
 
-    doc_match = re.search(r"(K[4A][0-9A-Z]{7,8})", line1)
+    doc_match = re.search(r"([A-Z]{2}[0-9A-Z]{7,8})", line1)
     doc_number_raw = doc_match.group(1) if doc_match else line1[5:14]
-    card_number = _normalize_doc_number(doc_number_raw)
+    card_number = _normalize_doc_number(doc_number_raw, _CARD_DIGIT_LENGTHS)
     if not card_number:
         combined = f"{line1}{line2}{line3 or ''}"
-        match_card = re.search(r"([A-Z]{2}[0-9A-Z]{7,8})", combined)
+        match_card = re.search(_card_number_pattern().replace("\\s?", ""), combined)
         if match_card:
-            card_number = _normalize_doc_number(match_card.group(1))
+            card_number = _normalize_doc_number(match_card.group(0), _CARD_DIGIT_LENGTHS)
 
     personal_number = None
     optional1 = _normalize_mrz_digits(line1[15:30])
@@ -1181,3 +1276,16 @@ def _resize_min(img, min_side=900):
     new_w = max(1, int(w * scale))
     new_h = max(1, int(h * scale))
     return cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+
+
+
+
+
+
+
+
+
+
+
+
+

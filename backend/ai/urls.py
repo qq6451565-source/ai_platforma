@@ -17,6 +17,7 @@ urlpatterns = [
     # Material bo'yicha savol-javob (AI stub/real)
     path("material/ask/", MaterialAIAnswerView.as_view()),
     path("settings/", AISettingsView.as_view()),
+    path("settings/rotate-api-key/", AISettingsView.as_view(), {"action": "rotate_api_key"}),
     path("health/", AIHealthView.as_view()),
     # Registratsiya: pasport OCR va yuz solishtirish
     path("ocr/passport/", PassportOCRView.as_view()),

@@ -9,6 +9,42 @@ MODEL_NAME = os.getenv("FACE_MODEL", "Facenet512")
 DETECTION_BACKEND = os.getenv("DETECTION_BACKEND", "opencv")  # retinaface, mtcnn, opencv, mediapipe, ssd, yolo, dlib, centerface
 ENFORCE_DETECTION = os.getenv("FACE_ENFORCE_DETECTION", "false").lower() in ("1", "true", "yes", "on")
 
+MIN_FACE_AREA = int(os.getenv("FACE_MIN_AREA", "2500"))
+
+
+def _extract_primary_face(img: np.ndarray) -> np.ndarray:
+    try:
+        faces = DeepFace.extract_faces(
+            img_path=img,
+            detector_backend=DETECTION_BACKEND,
+            enforce_detection=ENFORCE_DETECTION,
+            align=True,
+        )
+    except Exception as exc:
+        logger.warning(f"Face detection failed: {exc}")
+        return img
+    if not faces:
+        return img
+    best = max(
+        faces,
+        key=lambda item: item.get("facial_area", {}).get("w", 0) * item.get("facial_area", {}).get("h", 0),
+    )
+    area = best.get("facial_area") or {}
+    x = int(area.get("x", 0))
+    y = int(area.get("y", 0))
+    w = int(area.get("w", 0))
+    h = int(area.get("h", 0))
+    if w <= 0 or h <= 0 or w * h < MIN_FACE_AREA:
+        return img
+    h_img, w_img = img.shape[:2]
+    x2 = min(w_img, x + w)
+    y2 = min(h_img, y + h)
+    x = max(0, x)
+    y = max(0, y)
+    crop = img[y:y2, x:x2]
+    return crop if crop.size else img
+
+
 
 def compare_faces(passport_image_bytes, selfie_image_bytes) -> float:
     """
@@ -23,6 +59,9 @@ def compare_faces(passport_image_bytes, selfie_image_bytes) -> float:
         if passport_img is None or selfie_img is None:
             logger.error("Image decode failed (passport or selfie is None)")
             return 0.0
+
+        passport_img = _extract_primary_face(passport_img)
+        selfie_img = _extract_primary_face(selfie_img)
 
         result = DeepFace.verify(
             img1_path=passport_img,
