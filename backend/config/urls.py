@@ -51,6 +51,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.routers import DefaultRouter
@@ -61,7 +62,12 @@ from accounts.jwt import CustomTokenObtainPairView
 router = DefaultRouter()
 router.register('announcements', AnnouncementViewSet)
 
+
+def root_health(_request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
+    path('', root_health),
     path('admin/', admin.site.urls),
 
     # Accounts

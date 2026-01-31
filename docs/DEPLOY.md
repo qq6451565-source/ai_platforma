@@ -20,7 +20,7 @@
 - Repo rootida `render.yaml` bor, Render uni o'qiydi.
 - Build/Start:
   - Build: `python -m pip install "pip<24.1" && pip install -r requirements.txt && python manage.py collectstatic --noinput`
-  - Start: `daphne -b 0.0.0.0 -p $PORT config.asgi:application` (WebSocket uchun)
+  - Start: `bash -c "python manage.py migrate && python manage.py ensure_superuser && daphne -b 0.0.0.0 -p $PORT config.asgi:application"` (WebSocket uchun)
 - Python versiya: `backend/runtime.txt` orqali `python-3.11.9` ishlatiladi.
 - Render env (minimal):
   - DEBUG=false
@@ -73,6 +73,15 @@
   - AGORA_TOKEN_TTL
 - Token endpoint:
   - `POST /api/live/agora/token/` (body: `room_id` yoki `lesson_id`)
+
+## 7) Render shelldan foydalanmasdan admin yaratish
+- Render envga quyidagilarni qo'ying:
+  - AUTO_CREATE_SUPERUSER=true
+  - DJANGO_SUPERUSER_USERNAME=admin
+  - DJANGO_SUPERUSER_PASSWORD=strong-password
+  - DJANGO_SUPERUSER_EMAIL=admin@example.com
+  - DJANGO_SUPERUSER_ROLE=admin
+- Deploy paytida superuser avtomatik yaratiladi.
 
 ## 6) Ehtimoliy muammolar
 - Render Free 15 daqiqadan keyin "sleep" qiladi.

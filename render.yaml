@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: python -m pip install "pip<24.1" && pip install -r requirements.txt && python manage.py collectstatic --noinput
-    startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    startCommand: bash -c "python manage.py migrate && python manage.py ensure_superuser && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
     envVars:
       - key: DEBUG
         value: "false"
@@ -41,3 +41,13 @@ services:
         value: "5432"
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: AUTO_CREATE_SUPERUSER
+        value: "true"
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_ROLE
+        value: "admin"
