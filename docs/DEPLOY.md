@@ -21,6 +21,7 @@
 - Build/Start:
   - Build: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
   - Start: `daphne -b 0.0.0.0 -p $PORT config.asgi:application` (WebSocket uchun)
+- Python versiya: `backend/runtime.txt` orqali `python-3.11.9` ishlatiladi.
 - Render env (minimal):
   - DEBUG=false
   - SECRET_KEY=<random>
