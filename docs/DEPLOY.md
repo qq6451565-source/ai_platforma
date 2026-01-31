@@ -81,6 +81,7 @@
   - DJANGO_SUPERUSER_PASSWORD=strong-password
   - DJANGO_SUPERUSER_EMAIL=admin@example.com
   - DJANGO_SUPERUSER_ROLE=admin
+  - DJANGO_SUPERUSER_UPDATE=true (mavjud admin parolini ham yangilaydi)
 - Deploy paytida superuser avtomatik yaratiladi.
 
 ## 6) Ehtimoliy muammolar
