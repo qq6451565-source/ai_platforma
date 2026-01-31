@@ -76,5 +76,5 @@
 
 ## 6) Ehtimoliy muammolar
 - Render Free 15 daqiqadan keyin "sleep" qiladi.
-- `.doc` fayllar uchun `textract` tizim paketi talab qilishi mumkin (masalan, `antiword`).
+- `.doc` fayllar uchun `textract` kerak bo'ladi. Render deploy uchun hozir `textract` o'chirildi, shu sabab `.doc` yuklash vaqtida xatolik qaytadi. `.docx` ishlaydi.
 - CORS/CSRF noto'g'ri bo'lsa frontenddan API ishlamaydi.
