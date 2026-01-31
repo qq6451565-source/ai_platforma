@@ -99,6 +99,7 @@ CHANNEL_LAYERS = {
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -172,12 +173,27 @@ ASGI_APPLICATION = "config.asgi.application"
 WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_HOST = os.getenv("DB_HOST")
+
+if DB_HOST:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': DB_HOST,
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # Static
 STATIC_URL = '/static/'
@@ -210,3 +226,8 @@ LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://127.0.0.1:7880")
 LIVEKIT_API_KEY = os.getenv("LIVEKIT_API_KEY", "devkey")
 LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "devsecret_very_long_32_chars_minimum")
 LIVEKIT_TOKEN_TTL = int(os.getenv("LIVEKIT_TOKEN_TTL", "3600"))
+
+# Agora (RTC)
+AGORA_APP_ID = os.getenv("AGORA_APP_ID")
+AGORA_APP_CERTIFICATE = os.getenv("AGORA_APP_CERTIFICATE")
+AGORA_TOKEN_TTL = int(os.getenv("AGORA_TOKEN_TTL", "3600"))

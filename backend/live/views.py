@@ -20,6 +20,13 @@ from tests_app.permissions import IsAdmin, IsTeacherOrAdmin
 from .models import LiveParticipant, LiveRoom
 from .serializers import LiveParticipantSerializer, LiveRoomSerializer
 
+try:
+    from agora_token_builder import RtcTokenBuilder, Role_Publisher, Role_Subscriber
+except Exception:  # pragma: no cover - optional dependency
+    RtcTokenBuilder = None
+    Role_Publisher = 1
+    Role_Subscriber = 2
+
 
 def _student_group_id(user: User):
     try:
@@ -92,6 +99,34 @@ def _build_livekit_token(user: User, room_name: str) -> str:
         "metadata": metadata,
     }
     return jwt.encode(payload, settings.LIVEKIT_API_SECRET, algorithm="HS256")
+
+
+def _agora_role_for(user: User) -> int:
+    role = getattr(user, "role", None)
+    if user.is_superuser or role in ["admin", "teacher"]:
+        return Role_Publisher
+    return Role_Subscriber
+
+
+def _build_agora_token(user: User, room_name: str) -> str:
+    if not settings.AGORA_APP_ID:
+        raise ValueError("AGORA_APP_ID sozlanmagan.")
+    if not settings.AGORA_APP_CERTIFICATE:
+        raise ValueError("AGORA_APP_CERTIFICATE sozlanmagan.")
+    if RtcTokenBuilder is None:
+        raise ValueError("agora-token-builder o'rnatilmagan.")
+
+    uid = int(getattr(user, "id", 0) or 0)
+    expire_at = int(time.time()) + settings.AGORA_TOKEN_TTL
+    role = _agora_role_for(user)
+    return RtcTokenBuilder.buildTokenWithUid(
+        settings.AGORA_APP_ID,
+        settings.AGORA_APP_CERTIFICATE,
+        room_name,
+        uid,
+        role,
+        expire_at,
+    )
 
 
 def _create_or_reactivate_room(lesson: Lesson):
@@ -243,6 +278,43 @@ class JoinLiveRoomView(APIView):
                 "jitsi_url": room.jitsi_url,
                 "livekit_url": _build_ws_url(),
                 "token": _build_livekit_token(request.user, room.room_name),
+            }
+        )
+
+
+class AgoraTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        lesson_id = request.data.get("lesson_id") or request.data.get("lesson")
+        if room_id:
+            room = get_object_or_404(LiveRoom, id=room_id, is_active=True)
+        elif lesson_id:
+            room = get_object_or_404(LiveRoom, lesson_id=lesson_id, is_active=True)
+        else:
+            return Response(
+                {"error": "room_id yoki lesson_id majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _ensure_user_can_join(request, room.lesson)
+
+        try:
+            token = _build_agora_token(request.user, room.room_name)
+        except ValueError as exc:
+            return Response(
+                {"error": str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(
+            {
+                "app_id": settings.AGORA_APP_ID,
+                "channel": room.room_name,
+                "uid": int(getattr(request.user, "id", 0) or 0),
+                "token": token,
+                "expires_in": settings.AGORA_TOKEN_TTL,
             }
         )
 

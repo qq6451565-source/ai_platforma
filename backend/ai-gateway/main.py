@@ -129,3 +129,8 @@ def health_check():
         "max_image_size_mb": MAX_IMAGE_SIZE_MB,
     }
 
+
+@app.get("/health")
+def health_check_simple():
+    return {"status": "ok"}
+

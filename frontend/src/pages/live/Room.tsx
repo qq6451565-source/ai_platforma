@@ -21,7 +21,7 @@ import { ConnectionState, Track, RoomEvent, type Participant } from "livekit-cli
 import { Button, Spin, Typography, message } from "antd";
 import { useQuery } from "@tanstack/react-query";
 
-import { joinLiveLesson, leaveLiveRoom, endLiveRoom } from "../../api/live";
+import { joinLiveLesson, leaveLiveRoom, endLiveRoom, fetchAgoraToken } from "../../api/live";
 import { sendPresence } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
@@ -680,8 +680,17 @@ const LiveRoomPage = () => {
       setError(null);
       try {
         const info = await joinLiveLesson(Number(lessonId));
+        let agoraInfo = null;
+        try {
+          agoraInfo = await fetchAgoraToken({
+            room_id: info.room_id,
+            lesson_id: Number(lessonId),
+          });
+        } catch {
+          // ignore agora token errors (fallback to LiveKit)
+        }
         if (mounted) {
-          setRoomInfo(info);
+          setRoomInfo({ ...info, agora: agoraInfo });
         }
       } catch (err: any) {
         if (mounted) {
