@@ -19,7 +19,7 @@
 - Render Web Service yarating (repo connect).
 - Repo rootida `render.yaml` bor, Render uni o'qiydi.
 - Build/Start:
-  - Build: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
+  - Build: `python -m pip install "pip<24.1" && pip install -r requirements.txt && python manage.py collectstatic --noinput`
   - Start: `daphne -b 0.0.0.0 -p $PORT config.asgi:application` (WebSocket uchun)
 - Python versiya: `backend/runtime.txt` orqali `python-3.11.9` ishlatiladi.
 - Render env (minimal):

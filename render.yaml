@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: python -m pip install "pip<24.1" && pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
     envVars:
       - key: DEBUG
@@ -39,3 +39,5 @@ services:
         sync: false
       - key: DB_PORT
         value: "5432"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
