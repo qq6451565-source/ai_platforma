@@ -107,7 +107,16 @@ const GroupsPage = () => {
               >
                 Tahrirlash
               </Button>,
-              <Popconfirm title="O'chirish?" onConfirm={() => remove(g.id)}>
+              <Popconfirm
+                title="O'chirish?"
+                onConfirm={() => {
+                  if (g.id == null) {
+                    message.error("Guruh ID topilmadi");
+                    return;
+                  }
+                  remove(g.id);
+                }}
+              >
                 <Button danger type="link">
                   O'chirish
                 </Button>
