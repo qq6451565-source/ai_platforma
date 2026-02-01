@@ -44,6 +44,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-test-key")
 DEBUG = get_env_bool("DEBUG", True)
 ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", [])
 
+TIME_ZONE = "Asia/Tashkent"
+USE_TZ = True
+
 INSTALLED_APPS = [
     # Django
     'django.contrib.admin',
