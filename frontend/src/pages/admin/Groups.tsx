@@ -123,8 +123,11 @@ const GroupsPage = () => {
               </Popconfirm>,
             ]}
           >
-            {g.name} | {directionMap.get(g.direction) || `Yo'nalish #${g.direction}`} |{" "}
-            {g.level}-bosqich {g.language ? `| ${g.language}` : ""}
+            {g.name} |{" "}
+            {g.direction != null
+              ? directionMap.get(g.direction) || `Yo'nalish #${g.direction}`
+              : "Yo'nalish -"}{" "}
+            | {g.level}-bosqich {g.language ? `| ${g.language}` : ""}
           </List.Item>
         )}
       />
