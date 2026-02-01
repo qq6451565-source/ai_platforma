@@ -235,8 +235,15 @@ class JoinLiveLessonView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, lesson_id):
-        room = get_object_or_404(LiveRoom, lesson_id=lesson_id, is_active=True)
-        _ensure_user_can_join(request, room.lesson)
+        role = getattr(request.user, "role", None)
+        if request.user.is_superuser or role in ["admin", "teacher"]:
+            lesson = get_object_or_404(Lesson, id=lesson_id)
+            if role == "teacher":
+                _ensure_teacher_can_access(request, lesson)
+            room, _ = _create_or_reactivate_room(lesson)
+        else:
+            room = get_object_or_404(LiveRoom, lesson_id=lesson_id, is_active=True)
+            _ensure_user_can_join(request, room.lesson)
 
         _get_or_create_participant(
             room,
