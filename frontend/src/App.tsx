@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import StudentRoute from "./components/StudentRoute";
 import { clearTokens } from "./utils/token";
 import { logout } from "./api/auth";
+import { syncLiveRooms } from "./api/live";
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentSchedule from "./pages/student/Schedule";
 import StudentAssignments from "./pages/student/Assignments";
@@ -175,6 +176,27 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
   const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : studentGroup;
+
+  useEffect(() => {
+    if (!user || isLoading) return;
+    const canSync = ["admin", "teacher", "student"].includes(user.role);
+    if (!canSync) return;
+
+    let timer: number | undefined;
+    const runSync = async () => {
+      try {
+        await syncLiveRooms();
+      } catch {
+        // ignore sync errors
+      }
+    };
+
+    runSync();
+    timer = window.setInterval(runSync, 60_000);
+    return () => {
+      if (timer) window.clearInterval(timer);
+    };
+  }, [user, isLoading]);
 
   const selectedPath = location.pathname.startsWith("/app/")
     ? location.pathname.replace("/app/", "")

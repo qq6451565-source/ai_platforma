@@ -44,3 +44,8 @@ export async function fetchAgoraToken(payload: {
   const res = await api.post<AgoraTokenResponse>("/api/live/agora/token/", payload);
   return res.data;
 }
+
+export async function syncLiveRooms() {
+  const res = await api.post("/api/live/sync/");
+  return res.data;
+}

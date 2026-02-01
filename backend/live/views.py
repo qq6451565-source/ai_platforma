@@ -16,6 +16,7 @@ from accounts.models import User
 from lessons.models import Lesson
 from profiles.models import StudentProfile
 from tests_app.permissions import IsAdmin, IsTeacherOrAdmin
+from .tasks import sync_live_rooms
 
 from .models import LiveParticipant, LiveRoom
 from .serializers import LiveParticipantSerializer, LiveRoomSerializer
@@ -324,6 +325,14 @@ class AgoraTokenView(APIView):
                 "expires_in": settings.AGORA_TOKEN_TTL,
             }
         )
+
+
+class SyncLiveRoomsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        result = sync_live_rooms()
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class LeaveLiveRoomView(APIView):

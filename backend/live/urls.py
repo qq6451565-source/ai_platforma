@@ -10,6 +10,7 @@ from .views import (
     LeaveLiveRoomView,
     EndLiveRoomView,
     AgoraTokenView,
+    SyncLiveRoomsView,
 )
 
 router = DefaultRouter()
@@ -25,4 +26,5 @@ urlpatterns = [
     path('room/leave/', LeaveLiveRoomView.as_view(), name='live-room-leave'),
     path('room/end/', EndLiveRoomView.as_view(), name='live-room-end'),
     path('agora/token/', AgoraTokenView.as_view(), name='agora-token'),
+    path('sync/', SyncLiveRoomsView.as_view(), name='live-sync'),
 ]
