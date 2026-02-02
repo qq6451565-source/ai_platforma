@@ -114,12 +114,25 @@ def _build_agora_token(user: User, room_name: str) -> str:
         raise ValueError("AGORA_APP_ID sozlanmagan.")
     if not settings.AGORA_APP_CERTIFICATE:
         raise ValueError("AGORA_APP_CERTIFICATE sozlanmagan.")
-    if RtcTokenBuilder is None:
-        raise ValueError("agora-token-builder o'rnatilmagan.")
 
     uid = int(getattr(user, "id", 0) or 0)
     expire_at = int(time.time()) + settings.AGORA_TOKEN_TTL
     role = _agora_role_for(user)
+
+    if RtcTokenBuilder is None:
+        try:
+            from .agora_fallback import build_token_with_uid as fallback_build_token
+        except Exception as exc:
+            raise ValueError("agora-token-builder o'rnatilmagan.") from exc
+        return fallback_build_token(
+            settings.AGORA_APP_ID,
+            settings.AGORA_APP_CERTIFICATE,
+            room_name,
+            uid,
+            role,
+            expire_at,
+        )
+
     return RtcTokenBuilder.buildTokenWithUid(
         settings.AGORA_APP_ID,
         settings.AGORA_APP_CERTIFICATE,
@@ -127,10 +140,7 @@ def _build_agora_token(user: User, room_name: str) -> str:
         uid,
         role,
         expire_at,
-    )
-
-
-def _create_or_reactivate_room(lesson: Lesson):
+    )\n\ndef _create_or_reactivate_room(lesson: Lesson):
     room_code = f"lesson_{lesson.id}_{uuid.uuid4().hex[:6]}"
     room, created = LiveRoom.objects.get_or_create(
         lesson=lesson,
@@ -369,3 +379,4 @@ class LiveParticipantViewSet(viewsets.ModelViewSet):
     queryset = LiveParticipant.objects.select_related("room", "user").order_by("-joined_at")
     serializer_class = LiveParticipantSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+
