@@ -264,6 +264,10 @@ class JoinLiveLessonView(APIView):
             getattr(request.user, "role", None) == "teacher",
         )
 
+        if room.stage_user_id is None and (request.user.is_superuser or role in ["admin", "teacher"]):
+            room.stage_user = request.user
+            room.save(update_fields=["stage_user"])
+
         return Response(
             {
                 "room_id": room.id,
@@ -290,6 +294,11 @@ class JoinLiveRoomView(APIView):
             request.user,
             getattr(request.user, "role", None) == "teacher",
         )
+
+        role = getattr(request.user, "role", None)
+        if room.stage_user_id is None and (request.user.is_superuser or role in ["admin", "teacher"]):
+            room.stage_user = request.user
+            room.save(update_fields=["stage_user"])
 
         return Response(
             {
@@ -339,6 +348,124 @@ class AgoraTokenView(APIView):
         )
 
 
+
+
+class LiveRoomStateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        room_id = request.query_params.get("room_id")
+        lesson_id = request.query_params.get("lesson_id") or request.query_params.get("lesson")
+        if room_id:
+            room = get_object_or_404(LiveRoom, id=room_id)
+        elif lesson_id:
+            room = get_object_or_404(LiveRoom, lesson_id=lesson_id)
+        else:
+            return Response({"error": "room_id yoki lesson_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        _ensure_user_can_join(request, room.lesson)
+
+        participants = (
+            LiveParticipant.objects.filter(room=room, left_at__isnull=True)
+            .select_related("user")
+            .order_by("-joined_at")
+        )
+        payload = []
+        for p in participants:
+            user = p.user
+            role = getattr(user, "role", None) or ("admin" if user.is_superuser else "user")
+            payload.append(
+                {
+                    "user_id": user.id,
+                    "user_name": user.get_full_name() or user.username,
+                    "role": role,
+                    "is_teacher": p.is_teacher,
+                    "hand_raised": p.hand_raised,
+                }
+            )
+
+        return Response(
+            {
+                "room_id": room.id,
+                "room": room.room_name,
+                "stage_user_id": room.stage_user_id,
+                "allow_ptt": room.allow_ptt,
+                "participants": payload,
+            }
+        )
+
+
+class RaiseHandView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        if not room_id:
+            return Response({"error": "room_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        room = get_object_or_404(LiveRoom, id=room_id)
+        _ensure_user_can_join(request, room.lesson)
+
+        participant = LiveParticipant.objects.filter(room=room, user=request.user, left_at__isnull=True).first()
+        if not participant:
+            return Response({"error": "Ishtirokchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        raised = bool(request.data.get("raised", True))
+        participant.hand_raised = raised
+        participant.save(update_fields=["hand_raised"])
+        return Response({"hand_raised": participant.hand_raised})
+
+
+class SetStageUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        user_id = request.data.get("user_id")
+        if not room_id:
+            return Response({"error": "room_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        room = get_object_or_404(LiveRoom, id=room_id)
+        _ensure_teacher_can_access(request, room.lesson)
+
+        if not user_id:
+            user_id = request.user.id
+
+        participant = (
+            LiveParticipant.objects.filter(room=room, user_id=user_id, left_at__isnull=True)
+            .select_related("user")
+            .first()
+        )
+        if not participant:
+            return Response({"error": "Ishtirokchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        room.stage_user_id = participant.user_id
+        room.save(update_fields=["stage_user"])
+
+        if participant.hand_raised:
+            participant.hand_raised = False
+            participant.save(update_fields=["hand_raised"])
+
+        return Response({"stage_user_id": room.stage_user_id})
+
+
+class PushToTalkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        if not room_id:
+            return Response({"error": "room_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        room = get_object_or_404(LiveRoom, id=room_id)
+        _ensure_teacher_can_access(request, room.lesson)
+
+        enabled = bool(request.data.get("enabled", False))
+        room.allow_ptt = enabled
+        room.save(update_fields=["allow_ptt"])
+        return Response({"allow_ptt": room.allow_ptt})
+
+
 class SyncLiveRoomsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -358,7 +485,16 @@ class LeaveLiveRoomView(APIView):
         participants = LiveParticipant.objects.filter(room=room, user=request.user)
         if not participants.exists():
             return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
-        participants.update(left_at=timezone.now())
+        participants.update(left_at=timezone.now(), hand_raised=False)
+        if room.stage_user_id == request.user.id:
+            next_teacher = (
+                LiveParticipant.objects.filter(room=room, is_teacher=True, left_at__isnull=True)
+                .exclude(user=request.user)
+                .select_related("user")
+                .first()
+            )
+            room.stage_user = next_teacher.user if next_teacher else None
+            room.save(update_fields=["stage_user"])
         return Response({"message": "Left room"})
 
 

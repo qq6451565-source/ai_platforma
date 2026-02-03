@@ -11,6 +11,10 @@ from .views import (
     EndLiveRoomView,
     AgoraTokenView,
     SyncLiveRoomsView,
+    LiveRoomStateView,
+    RaiseHandView,
+    SetStageUserView,
+    PushToTalkView,
 )
 
 router = DefaultRouter()
@@ -26,5 +30,9 @@ urlpatterns = [
     path('room/leave/', LeaveLiveRoomView.as_view(), name='live-room-leave'),
     path('room/end/', EndLiveRoomView.as_view(), name='live-room-end'),
     path('agora/token/', AgoraTokenView.as_view(), name='agora-token'),
+    path('state/', LiveRoomStateView.as_view(), name='live-state'),
+    path('hand/', RaiseHandView.as_view(), name='live-hand'),
+    path('stage/', SetStageUserView.as_view(), name='live-stage'),
+    path('ptt/', PushToTalkView.as_view(), name='live-ptt'),
     path('sync/', SyncLiveRoomsView.as_view(), name='live-sync'),
 ]

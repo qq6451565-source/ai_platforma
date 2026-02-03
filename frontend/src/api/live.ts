@@ -17,6 +17,23 @@ export type AgoraTokenResponse = {
   expires_in: number;
 };
 
+
+export type LiveParticipantState = {
+  user_id: number;
+  user_name: string;
+  role: string;
+  is_teacher: boolean;
+  hand_raised: boolean;
+};
+
+export type LiveRoomState = {
+  room_id: number;
+  room: string;
+  stage_user_id: number | null;
+  allow_ptt: boolean;
+  participants: LiveParticipantState[];
+};
+
 export async function joinLiveLesson(lessonId: number): Promise<JoinLiveResponse> {
   const res = await api.get<JoinLiveResponse>(`/api/live/join/${lessonId}/`);
   return res.data;
@@ -47,5 +64,29 @@ export async function fetchAgoraToken(payload: {
 
 export async function syncLiveRooms() {
   const res = await api.post("/api/live/sync/");
+  return res.data;
+}
+
+
+export async function fetchLiveState(payload: {
+  room_id?: number;
+  lesson_id?: number;
+}): Promise<LiveRoomState> {
+  const res = await api.get<LiveRoomState>("/api/live/state/", { params: payload });
+  return res.data;
+}
+
+export async function raiseHand(roomId: number, raised: boolean) {
+  const res = await api.post("/api/live/hand/", { room_id: roomId, raised });
+  return res.data;
+}
+
+export async function setStageUser(roomId: number, userId?: number | null) {
+  const res = await api.post("/api/live/stage/", { room_id: roomId, user_id: userId });
+  return res.data;
+}
+
+export async function togglePushToTalk(roomId: number, enabled: boolean) {
+  const res = await api.post("/api/live/ptt/", { room_id: roomId, enabled });
   return res.data;
 }

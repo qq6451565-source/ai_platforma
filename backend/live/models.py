@@ -8,6 +8,14 @@ class LiveRoom(models.Model):
     room_name = models.CharField(max_length=100, unique=True)
     jitsi_url = models.URLField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=False)
+    stage_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='stage_rooms',
+    )
+    allow_ptt = models.BooleanField(default=False)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 
@@ -22,6 +30,7 @@ class LiveParticipant(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
     is_teacher = models.BooleanField(default=False)
+    hand_raised = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
