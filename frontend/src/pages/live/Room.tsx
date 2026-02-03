@@ -142,7 +142,14 @@ const LiveRoomPage = () => {
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
-  const localPreviewRef = useRef<HTMLDivElement | null>(null);
+
+  const syncRemoteUsers = useCallback(() => {
+    const client = clientRef.current;
+    if (!client) return;
+    setRemoteUsers([...client.remoteUsers]);
+  }, []);
+
+  const stageVideoRef = useRef<HTMLDivElement | null>(null);
 
   const userRole = user?.role || "student";
   const isTeacher = userRole === "teacher" || userRole === "admin";
@@ -188,26 +195,22 @@ const LiveRoomPage = () => {
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     clientRef.current = client;
 
-    const updateRemoteUsers = () => {
-      setRemoteUsers([...client.remoteUsers]);
-    };
-
     const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: "audio" | "video") => {
       await client.subscribe(user, mediaType);
       if (mediaType === "audio") {
         user.audioTrack?.play();
       }
-      updateRemoteUsers();
+      syncRemoteUsers();
     };
 
     const handleUserUnpublished = (user: IAgoraRTCRemoteUser) => {
       user.audioTrack?.stop();
       user.videoTrack?.stop();
-      updateRemoteUsers();
+      syncRemoteUsers();
     };
 
-    const handleUserJoined = () => updateRemoteUsers();
-    const handleUserLeft = () => updateRemoteUsers();
+    const handleUserJoined = () => syncRemoteUsers();
+    const handleUserLeft = () => syncRemoteUsers();
 
     client.on("user-published", handleUserPublished);
     client.on("user-unpublished", handleUserUnpublished);
@@ -263,6 +266,17 @@ const LiveRoomPage = () => {
         const client = clientRef.current;
         await client.join(appId!, agoraInfo.channel, agoraInfo.token, agoraInfo.uid || null);
 
+        for (const remote of client.remoteUsers) {
+          if ((remote as any).hasAudio) {
+            await client.subscribe(remote, "audio");
+            remote.audioTrack?.play();
+          }
+          if ((remote as any).hasVideo) {
+            await client.subscribe(remote, "video");
+          }
+        }
+        syncRemoteUsers();
+
         const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
         if (cancelled) {
           audioTrack.close();
@@ -305,15 +319,6 @@ const LiveRoomPage = () => {
 
     localTracks.audio.setEnabled(false).then(() => setMicEnabled(false)).catch(() => {});
   }, [isStageUser, userRole, localTracks.audio, allowPtt]);
-
-  useEffect(() => {
-    if (!localTracks.video || !localPreviewRef.current) return;
-    if (isStageUser) return;
-    localTracks.video.play(localPreviewRef.current);
-    return () => {
-      localTracks.video?.stop();
-    };
-  }, [localTracks.video, isStageUser]);
 
   useEffect(() => {
     if (!localTracks.video || userRole !== "student" || !lessonId) return;
@@ -641,12 +646,6 @@ const LiveRoomPage = () => {
               <div className="live-room__empty live-room__empty--small">Hozircha boshqa ishtirokchi yo'q</div>
             )}
           </div>
-          {!isTeacher && !isStageUser && localTracks.video && (
-            <div className="live-room__self-preview">
-              <div className="live-room__panel-title">Siz</div>
-              <div className="live-room__self-video" ref={localPreviewRef} />
-            </div>
-          )}
         </aside>
 
         <div className="live-room__stage">
