@@ -140,7 +140,9 @@ def _build_agora_token(user: User, room_name: str) -> str:
         uid,
         role,
         expire_at,
-    )\n\ndef _create_or_reactivate_room(lesson: Lesson):
+    )
+
+def _create_or_reactivate_room(lesson: Lesson):
     room_code = f"lesson_{lesson.id}_{uuid.uuid4().hex[:6]}"
     room, created = LiveRoom.objects.get_or_create(
         lesson=lesson,
@@ -379,4 +381,6 @@ class LiveParticipantViewSet(viewsets.ModelViewSet):
     queryset = LiveParticipant.objects.select_related("room", "user").order_by("-joined_at")
     serializer_class = LiveParticipantSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+
+
 
