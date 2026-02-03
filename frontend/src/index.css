@@ -312,6 +312,37 @@ a {
 }
 
 @media (max-width: 768px) {
+
+  .lesson-week__grid,
+  .lesson-month__grid {
+    grid-template-columns: repeat(7, minmax(44px, 1fr));
+    min-width: 100%;
+    gap: 6px;
+  }
+
+  .lesson-week__day {
+    height: auto;
+    min-height: 120px;
+    padding: 6px;
+  }
+
+  .lesson-week__items {
+    max-height: 72px;
+  }
+
+  .lesson-week__weekday,
+  .lesson-week__date {
+    font-size: 10px;
+  }
+
+  .lesson-week__chip-title {
+    font-size: 10px;
+  }
+
+  .lesson-week__chip-time {
+    font-size: 9px;
+  }
+
   .app-header {
     flex-wrap: wrap;
     height: auto;
