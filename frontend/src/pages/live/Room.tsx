@@ -167,6 +167,8 @@ const LiveRoomPage = () => {
     return map;
   }, [remoteUsers]);
 
+  const fallbackRemote = useMemo(() => remoteUsers.find((user) => user.videoTrack), [remoteUsers]);
+
   const effectiveStageUserId = stageUserId ?? (isTeacher ? localUserId : null);
   const isStageUser = Boolean(localUserId && effectiveStageUserId === localUserId);
 
@@ -500,13 +502,15 @@ const LiveRoomPage = () => {
 
 
   const stageVideoTrack = useMemo(() => {
-    if (!effectiveStageUserId) return null;
-    if (localUserId && effectiveStageUserId === localUserId) {
-      return screenTrack ?? localTracks.video ?? null;
+    if (effectiveStageUserId) {
+      if (localUserId && effectiveStageUserId === localUserId) {
+        return screenTrack ?? localTracks.video ?? null;
+      }
+      const remote = remoteMap.get(effectiveStageUserId);
+      return remote?.videoTrack ?? null;
     }
-    const remote = remoteMap.get(effectiveStageUserId);
-    return remote?.videoTrack ?? null;
-  }, [effectiveStageUserId, localUserId, localTracks.video, remoteMap, screenTrack]);
+    return fallbackRemote?.videoTrack ?? null;
+  }, [effectiveStageUserId, localUserId, localTracks.video, remoteMap, screenTrack, fallbackRemote]);
 
 
   useEffect(() => {
@@ -542,7 +546,7 @@ const LiveRoomPage = () => {
     : `Live dars #${lessonId}`;
 
   const studentTiles = participants.filter((p) => !p.is_teacher && p.user_id !== effectiveStageUserId);
-  const stageLabel = stageParticipant?.user_name || (isStageUser ? "Siz" : "Markaz");
+  const stageLabel = stageParticipant?.user_name || (isStageUser ? "Siz" : fallbackRemote ? "O'qituvchi" : "Markaz");
 
   const teacherId = participants.find((p) => p.is_teacher)?.user_id;
   const totalCount = participants.length || remoteUsers.length + 1;
