@@ -19,8 +19,8 @@ const StudentLive = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Live darslar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Live darslar</Typography.Title>
       <Card>
         {isLoading ? (
           <Skeleton active />

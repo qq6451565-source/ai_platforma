@@ -105,18 +105,22 @@ const StudentGrades = () => {
   }, [selectedSubject, testsBySubject]);
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Baholar</Typography.Title>
-      <Table
-        columns={columns}
-        loading={isLoading}
-        dataSource={data}
-        pagination={false}
-        onRow={(record) => ({
-          onClick: () => setSelectedSubject(record),
-          className: "clickable-row",
-        })}
-      />
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
+      <div className="table-scroll">
+        <Table
+          columns={columns}
+          loading={isLoading}
+          dataSource={data}
+          pagination={false}
+          size="small"
+          scroll={{ x: 520 }}
+          onRow={(record) => ({
+            onClick: () => setSelectedSubject(record),
+            className: "clickable-row",
+          })}
+        />
+      </div>
 
       <Modal
         title={selectedSubject ? `${selectedSubject.subject_name}` : "Baholar"}

@@ -291,8 +291,8 @@ const StudentTests = () => {
   const canAnswer = !!selectedOption && !sending && (!proctorSessionId || (proctorVerified && !proctorBlocked));
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Test / Imtihonlar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Test / Imtihonlar</Typography.Title>
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
@@ -300,7 +300,7 @@ const StudentTests = () => {
           <Empty description="Testlar yo'q" />
         ) : (
           <List
-            grid={{ gutter: 12, column: 3 }}
+            grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
             dataSource={subjectCards}
             renderItem={(card) => (
               <List.Item>
@@ -314,7 +314,7 @@ const StudentTests = () => {
         )
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div className="page-header-row">
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
@@ -341,14 +341,7 @@ const StudentTests = () => {
                     ]}
                   >
                     <div style={{ width: "100%" }}>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "140px 1fr",
-                          rowGap: 6,
-                          columnGap: 12,
-                        }}
-                      >
+                      <div className="kv-grid">
                         <span style={{ color: "#94a3b8" }}>Sarlavha</span>
                         <strong>{item.title}</strong>
                         <span style={{ color: "#94a3b8" }}>Fan</span>

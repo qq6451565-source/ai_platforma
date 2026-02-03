@@ -42,8 +42,10 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={3}>Student panel</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={3} className="page-title">
+        Student panel
+      </Typography.Title>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card title="Bugungi darslar" bordered={false}>

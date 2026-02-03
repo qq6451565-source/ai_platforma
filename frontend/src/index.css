@@ -247,3 +247,108 @@ a {
 .clickable-row:hover td {
   background: #f5faff;
 }
+
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.app-header__menu {
+  color: #fff;
+}
+
+.app-header__title {
+  color: #fff;
+  font-weight: 600;
+}
+
+.app-header__meta {
+  color: #d9d9d9;
+}
+
+.app-header__actions {
+  margin-left: auto;
+  color: #fff;
+}
+
+.page-shell {
+  padding: 24px;
+}
+
+.page-title {
+  margin: 0 0 16px !important;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-scroll .ant-table {
+  min-width: 520px;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px;
+  }
+
+  .app-header__actions {
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .page-shell {
+    padding: 16px 12px;
+  }
+
+  .page-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kv-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-scroll .ant-table {
+    min-width: 480px;
+  }
+
+  .lesson-week__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lesson-week__controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}

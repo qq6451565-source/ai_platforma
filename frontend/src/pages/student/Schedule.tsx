@@ -55,8 +55,8 @@ const StudentSchedule = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Dars jadvali</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Dars jadvali</Typography.Title>
       {isLoading ? (
         <Skeleton active />
       ) : (

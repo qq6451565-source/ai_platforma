@@ -1,4 +1,4 @@
-import { Layout, Menu, Spin, Popconfirm } from "antd";
+import { Layout, Menu, Spin, Popconfirm, Drawer, Button, Grid } from "antd";
 import {
   CalendarOutlined,
   FileDoneOutlined,
@@ -10,6 +10,7 @@ import {
   ReadOutlined,
   DashboardOutlined,
   SettingOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Navigate, Route, Routes, useLocation, useNavigate, Outlet } from "react-router-dom";
@@ -175,6 +176,8 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
 
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.lg;
   const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : studentGroup;
 
   useEffect(() => {
@@ -202,6 +205,8 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
     ? location.pathname.replace("/app/", "")
     : "";
   const isLiveRoute = selectedPath.startsWith("live/");
+  const showMobileMenu = !isLiveRoute && isMobile;
+  const showSider = !isLiveRoute && !isMobile;
   const selectedKey = useMemo(() => {
     if (!selectedPath.startsWith("admin/")) return selectedPath;
     const params = new URLSearchParams(location.search);
@@ -255,6 +260,7 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
     return "";
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
 
   useEffect(() => {
@@ -263,6 +269,11 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
     if (!nextOpen) return;
     setOpenKeys((prev) => (prev.includes(nextOpen) && prev.length === 1 ? prev : [nextOpen]));
   }, [selectedKey]);
+
+  useEffect(() => {
+    if (!showMobileMenu) return;
+    setMobileMenuOpen(false);
+  }, [selectedKey, showMobileMenu]);
 
   // Rolga mos yo'lga majburlash: admin faqat admin blokida, teacher student blokiga, student teacher blokiga kira olmaydi
   useEffect(() => {
@@ -282,14 +293,22 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {!isLiveRoute && (
-        <Header style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ color: "#fff", fontWeight: 600, marginRight: 24 }}>
+        <Header className="app-header">
+          {showMobileMenu && (
+            <Button
+              type="text"
+              className="app-header__menu"
+              icon={<MenuOutlined />}
+              onClick={() => setMobileMenuOpen(true)}
+            />
+          )}
+          <div className="app-header__title">
             {isAdmin ? "Admin paneli" : isTeacher ? "O'qituvchi paneli" : "Talaba paneli"}
           </div>
-          <div style={{ color: "#d9d9d9" }}>
+          <div className="app-header__meta">
             {isLoading ? <Spin size="small" /> : user ? `${user.first_name} ${user.last_name} (${user.role})` : ""}
           </div>
-          <div style={{ marginLeft: "auto", color: "#fff" }}>
+          <div className="app-header__actions">
             <Popconfirm
               title="Chiqishni tasdiqlaysizmi?"
               okText="Ha"
@@ -311,7 +330,7 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
         </Header>
       )}
       <Layout>
-        {!isLiveRoute && (
+        {showSider && (
           <Sider breakpoint="lg" collapsedWidth="0" width={220}>
             <Menu
               mode="inline"
@@ -323,6 +342,27 @@ const AppLayout = ({ user, isLoading }: AppLayoutProps) => {
               style={{ height: "100%" }}
             />
           </Sider>
+        )}
+        {showMobileMenu && (
+          <Drawer
+            placement="left"
+            open={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            bodyStyle={{ padding: 0 }}
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[selectedKey]}
+              items={items}
+              openKeys={isAdmin ? openKeys : undefined}
+              onOpenChange={(keys) => setOpenKeys(keys as string[])}
+              onClick={(e) => {
+                navigate(`/app/${e.key}`);
+                setMobileMenuOpen(false);
+              }}
+              style={{ height: "100%" }}
+            />
+          </Drawer>
         )}
         <Content style={isLiveRoute ? { padding: 0 } : undefined}>
           <Outlet />

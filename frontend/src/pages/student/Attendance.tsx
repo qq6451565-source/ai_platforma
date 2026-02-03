@@ -37,8 +37,8 @@ const StudentAttendance = () => {
     });
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Davomat</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Davomat</Typography.Title>
       {isLoading ? (
         <Skeleton active />
       ) : !items.length ? (
@@ -53,7 +53,7 @@ const StudentAttendance = () => {
               return (
                 <List.Item>
                   <div style={{ width: "100%" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", rowGap: 6, columnGap: 12 }}>
+                    <div className="kv-grid">
                       <span style={{ color: "#94a3b8" }}>Dars</span>
                       <strong>{lesson?.topic || `Dars #${record.lesson}`}</strong>
                       <span style={{ color: "#94a3b8" }}>Fan</span>

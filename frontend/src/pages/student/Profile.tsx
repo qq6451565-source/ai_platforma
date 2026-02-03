@@ -42,7 +42,7 @@ const StudentProfile = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-shell">
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card title="Profil ma'lumotlari">
