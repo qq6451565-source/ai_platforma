@@ -2,6 +2,7 @@ import { Button, Card, Empty, List, Skeleton, Tag, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchMaterials } from "../../api/materials";
+import { fetchLessons } from "../../api/lessons";
 import type { MaterialResource } from "../../types/material";
 
 const API_BASE =
@@ -54,25 +55,35 @@ const StudentMaterials = () => {
     queryKey: ["materials"],
     queryFn: fetchMaterials,
   });
+  const { data: lessons } = useQuery({
+    queryKey: ["lessons"],
+    queryFn: fetchLessons,
+  });
   const [activeSubject, setActiveSubject] = useState<number | null>(null);
 
   const subjectCards = useMemo(() => {
-    const map = new Map<number, { id: number; name: string; count: number }>();
-    (materials || []).forEach((m) => {
-      if (!m.subject) return;
-      const existing = map.get(m.subject);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        map.set(m.subject, {
-          id: m.subject,
-          name: m.subject_name || `Fan #${m.subject}`,
-          count: 1,
-        });
+    const names = new Map<number, string>();
+    (lessons || []).forEach((lesson: any) => {
+      if (!lesson.subject) return;
+      if (!names.has(lesson.subject)) {
+        names.set(lesson.subject, lesson.subject_name || `Fan #${lesson.subject}`);
       }
     });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [materials]);
+    (materials || []).forEach((m) => {
+      if (!m.subject) return;
+      if (!names.has(m.subject)) {
+        names.set(m.subject, m.subject_name || `Fan #${m.subject}`);
+      }
+    });
+    const counts = new Map<number, number>();
+    (materials || []).forEach((m) => {
+      if (!m.subject) return;
+      counts.set(m.subject, (counts.get(m.subject) || 0) + 1);
+    });
+    return Array.from(names.entries())
+      .map(([id, name]) => ({ id, name, count: counts.get(id) || 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [materials, lessons]);
 
   const renderFileLinks = (resources: MaterialResource[]) => {
     const files = resources.filter((r) => r.resource_type === "file" && r.file);
