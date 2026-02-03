@@ -491,6 +491,25 @@ const LiveRoomPage = () => {
     }
   };
 
+
+  const stageVideoTrack = useMemo(() => {
+    if (!effectiveStageUserId) return null;
+    if (localUserId && effectiveStageUserId === localUserId) {
+      return screenTrack ?? localTracks.video ?? null;
+    }
+    const remote = remoteMap.get(effectiveStageUserId);
+    return remote?.videoTrack ?? null;
+  }, [effectiveStageUserId, localUserId, localTracks.video, remoteMap, screenTrack]);
+
+
+  useEffect(() => {
+    if (!stageVideoTrack || !stageVideoRef.current) return;
+    stageVideoTrack.play(stageVideoRef.current);
+    return () => {
+      stageVideoTrack.stop();
+    };
+  }, [stageVideoTrack]);
+
   if (loading) {
     return (
       <div className="live-room__loading">
@@ -519,25 +538,6 @@ const LiveRoomPage = () => {
   const stageLabel = stageParticipant?.user_name || (isStageUser ? "Siz" : "Markaz");
 
   const teacherId = participants.find((p) => p.is_teacher)?.user_id;
-
-  const stageVideoTrack = useMemo(() => {
-    if (!effectiveStageUserId) return null;
-    if (localUserId && effectiveStageUserId === localUserId) {
-      return screenTrack ?? localTracks.video ?? null;
-    }
-    const remote = remoteMap.get(effectiveStageUserId);
-    return remote?.videoTrack ?? null;
-  }, [effectiveStageUserId, localUserId, localTracks.video, remoteMap, screenTrack]);
-
-
-  useEffect(() => {
-    if (!stageVideoTrack || !stageVideoRef.current) return;
-    stageVideoTrack.play(stageVideoRef.current);
-    return () => {
-      stageVideoTrack.stop();
-    };
-  }, [stageVideoTrack]);
-
   const totalCount = participants.length || remoteUsers.length + 1;
 
   return (
