@@ -149,7 +149,6 @@ const LiveRoomPage = () => {
     setRemoteUsers([...client.remoteUsers]);
   }, []);
 
-  const stageVideoRef = useRef<HTMLDivElement | null>(null);
 
   const userRole = user?.role || "student";
   const isTeacher = userRole === "teacher" || userRole === "admin";
