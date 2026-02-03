@@ -1,7 +1,7 @@
-import { Button, Card, List, Modal, Skeleton, Space, Typography } from "antd";
+import { Button, Card, List, Modal, Skeleton, Space, Typography, Grid } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -15,7 +15,16 @@ const StudentSchedule = () => {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [dayOpen, setDayOpen] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+
   const weekdayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+
+  useEffect(() => {
+    if (isMobile && viewMode !== "week") {
+      setViewMode("week");
+    }
+  }, [isMobile, viewMode]);
 
   const lessonsByDate = (lessons || []).reduce<Record<string, any[]>>((acc, lesson) => {
     const key = lesson.start_time ? dayjs(lesson.start_time).format("YYYY-MM-DD") : "";
@@ -98,13 +107,15 @@ const StudentSchedule = () => {
                     >
                       Hafta
                     </Button>
-                    <Button
-                      size="small"
-                      type={viewMode === "month" ? "primary" : "default"}
-                      onClick={() => setViewMode("month")}
-                    >
-                      Oy
-                    </Button>
+                    {!isMobile && (
+                      <Button
+                        size="small"
+                        type={viewMode === "month" ? "primary" : "default"}
+                        onClick={() => setViewMode("month")}
+                      >
+                        Oy
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="lesson-week__grid-wrap">

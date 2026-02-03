@@ -315,9 +315,13 @@ a {
 
   .lesson-week__grid,
   .lesson-month__grid {
-    grid-template-columns: repeat(7, minmax(44px, 1fr));
+    grid-template-columns: 1fr;
     min-width: 100%;
-    gap: 6px;
+    gap: 10px;
+  }
+
+  .lesson-week__grid-wrap {
+    overflow-x: hidden;
   }
 
   .lesson-week__day {
