@@ -172,10 +172,12 @@ const LiveRoomPage = () => {
     if (!roomInfo?.room_id) return;
     try {
       const data = await fetchLiveState({ room_id: roomInfo.room_id });
-      setStageUserId(data.stage_user_id ?? null);
+      const incomingParticipants = data.participants || [];
+      const teacher = incomingParticipants.find((p) => p.is_teacher);
+      setStageUserId(data.stage_user_id ?? teacher?.user_id ?? null);
       setAllowPtt(Boolean(data.allow_ptt));
-      setParticipants(data.participants || []);
-      const me = data.participants?.find((p) => p.user_id === localUserId);
+      setParticipants(incomingParticipants);
+      const me = incomingParticipants.find((p) => p.user_id === localUserId);
       setHandRaised(Boolean(me?.hand_raised));
     } catch {
       // ignore state errors
