@@ -19,6 +19,7 @@ import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchMaterials, createMaterial, deleteMaterial, updateMaterial } from "../../api/materials";
+import { fetchLessons } from "../../api/lessons";
 import { fetchSubjects } from "../../api/subjects";
 import { fetchGroups } from "../../api/groups";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
@@ -55,6 +56,10 @@ const TeacherMaterials = () => {
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
     queryFn: fetchMaterials,
+  });
+  const { data: lessons } = useQuery({
+    queryKey: ["lessons"],
+    queryFn: fetchLessons,
   });
   const { data: subjects } = useQuery({ queryKey: ["subjects"], queryFn: fetchSubjects });
   const { data: groups } = useQuery({ queryKey: ["groups"], queryFn: fetchGroups });
@@ -105,16 +110,33 @@ const TeacherMaterials = () => {
     subjectOptions.find((opt) => opt.value === filterSubject)?.label || "Fan";
 
   const subjectCards = useMemo(() => {
+    const names = new Map<number, string>();
+    (subjectOptions || []).forEach((opt) => {
+      names.set(opt.value, opt.label as string);
+    });
+    (lessons || []).forEach((lesson: any) => {
+      if (!lesson.subject) return;
+      if (!names.has(lesson.subject)) {
+        names.set(lesson.subject, lesson.subject_name || `Fan #${lesson.subject}`);
+      }
+    });
+    (materials || []).forEach((m) => {
+      if (!m.subject) return;
+      if (!names.has(m.subject)) {
+        names.set(m.subject, m.subject_name || `Fan #${m.subject}`);
+      }
+    });
     const counts = new Map<number, number>();
     (materials || []).forEach((m) => {
+      if (!m.subject) return;
       counts.set(m.subject, (counts.get(m.subject) || 0) + 1);
     });
-    return subjectOptions.map((opt) => ({
-      id: opt.value,
-      name: opt.label,
-      count: counts.get(opt.value) || 0,
+    return Array.from(names.entries()).map(([id, name]) => ({
+      id,
+      name,
+      count: counts.get(id) || 0,
     }));
-  }, [materials, subjectOptions]);
+  }, [materials, subjectOptions, lessons]);
 
   const getErrorMessage = (err: any) => {
     const data = err?.response?.data;
