@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, Col, Form, Input, Row, Upload, message } from "antd";
+import { Avatar, Button, Card, Col, Form, Input, Row, Upload, Typography, message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
@@ -42,7 +42,8 @@ const TeacherProfile = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Profil</Typography.Title>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card title="Profil ma'lumotlari">

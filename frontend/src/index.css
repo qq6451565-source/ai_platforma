@@ -311,7 +311,37 @@ a {
   min-width: 520px;
 }
 
+
+
+.filters-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.detail-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mini-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
 @media (max-width: 768px) {
+
+  .detail-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-card-grid {
+    grid-template-columns: 1fr;
+  }
+
 
   .lesson-week__grid,
   .lesson-month__grid {

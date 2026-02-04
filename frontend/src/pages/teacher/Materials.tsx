@@ -222,8 +222,8 @@ const TeacherMaterials = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Materiallar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Materiallar</Typography.Title>
       {!allowedSubjectIds.length ? (
         <Alert
           type="warning"
@@ -281,7 +281,7 @@ const TeacherMaterials = () => {
           {!filterSubject ? (
             subjectCards.length ? (
               <List
-                grid={{ gutter: 12, column: 3 }}
+                grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
                 dataSource={subjectCards}
                 renderItem={(subject) => (
                   <List.Item>
@@ -310,7 +310,7 @@ const TeacherMaterials = () => {
               const filtered = (materials || []).filter((m) => m.subject === filterSubject);
               return (
                 <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <div className="page-header-row">
                     <Button
                       onClick={() => {
                         setFilterSubject(null);
@@ -373,15 +373,7 @@ const TeacherMaterials = () => {
                                 : []) as MaterialResource[];
                             return (
                               <div style={{ width: "100%" }}>
-                                <div
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "140px 1fr",
-                                    rowGap: 6,
-                                    columnGap: 12,
-                                    marginBottom: 10,
-                                  }}
-                                >
+                                <div className="kv-grid" style={{ marginBottom: 10 }}>
                                   <span style={{ color: "#94a3b8" }}>Sarlavha</span>
                                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                     <strong>{item.title}</strong>

@@ -34,8 +34,8 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={3}>O'qituvchi paneli</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={3} className="page-title">O'qituvchi paneli</Typography.Title>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card title="Bugungi darslar" bordered={false}>

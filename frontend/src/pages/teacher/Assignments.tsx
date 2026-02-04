@@ -147,8 +147,8 @@ const TeacherAssignments = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Topshiriqlar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Topshiriqlar</Typography.Title>
       {!subjectNames.length ? (
         <Alert
           type="warning"
@@ -160,7 +160,7 @@ const TeacherAssignments = () => {
       ) : null}
 
       {!selectedSubject ? (
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div className="card-grid">
           {subjectCards.map((card) => (
             <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
               <div style={{ fontWeight: 600 }}>{card.name}</div>
@@ -170,7 +170,7 @@ const TeacherAssignments = () => {
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div className="page-header-row">
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>

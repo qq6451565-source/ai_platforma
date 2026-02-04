@@ -124,15 +124,15 @@ const TeacherSubmissions = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Yuborilgan topshiriqlar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Yuborilgan topshiriqlar</Typography.Title>
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
         ) : !subjectCards.length ? (
           <Typography.Text>Hali yuborilgan topshiriqlar yo'q.</Typography.Text>
         ) : (
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div className="card-grid">
             {subjectCards.map((card) => (
               <Card
                 key={card.id}
@@ -150,7 +150,7 @@ const TeacherSubmissions = () => {
         )
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div className="page-header-row">
             <Button
               onClick={() => {
                 if (selectedGroupId) {
@@ -176,7 +176,7 @@ const TeacherSubmissions = () => {
             !groupCards.length ? (
               <Empty description="Guruhlar topilmadi" />
             ) : (
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              <div className="card-grid">
                 {groupCards.map((card) => (
                   <Card key={card.id} hoverable onClick={() => setSelectedGroupId(card.id)}>
                     <div style={{ fontWeight: 600 }}>{card.name}</div>

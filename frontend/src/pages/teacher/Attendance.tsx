@@ -165,14 +165,14 @@ const TeacherAttendancePage = () => {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Davomat</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Davomat</Typography.Title>
 
       {!selectedSubject ? (
         loadingLessons ? (
           <Empty description="Yuklanmoqda..." />
         ) : subjectCards.length ? (
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div className="card-grid">
             {subjectCards.map((subject) => (
               <Card key={subject.name} hoverable onClick={() => setSelectedSubject(subject.name)}>
                 <Typography.Text strong>{subject.name}</Typography.Text>
@@ -185,7 +185,7 @@ const TeacherAttendancePage = () => {
         )
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div className="page-header-row">
             <Button
               onClick={() => {
                 setSelectedSubject(null);
@@ -198,7 +198,7 @@ const TeacherAttendancePage = () => {
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
 
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+          <div className="filters-row">
             <Select
               placeholder="Darsni tanlang"
               style={{ minWidth: 280 }}
@@ -227,7 +227,9 @@ const TeacherAttendancePage = () => {
           ) : loadingAttendance ? (
             <Empty description="Davomat yuklanmoqda..." />
           ) : rows.length ? (
-            <Table rowKey="id" columns={columns} dataSource={rows} pagination={{ pageSize: 10 }} />
+            <div className="table-scroll">
+              <Table rowKey="id" columns={columns} dataSource={rows} pagination={{ pageSize: 10 }} scroll={{ x: 720 }} size="small" />
+            </div>
           ) : (
             <Empty description="Talabalar topilmadi" />
           )}

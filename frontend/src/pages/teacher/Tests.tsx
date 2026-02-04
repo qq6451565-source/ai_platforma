@@ -130,8 +130,8 @@ const TeacherTests = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={4}>Testlar</Typography.Title>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Testlar</Typography.Title>
       {selectedSubject ? (
         <Form
           form={form}
@@ -198,7 +198,7 @@ const TeacherTests = () => {
           {!selectedSubject ? (
             subjectCards.length ? (
               <List
-                grid={{ gutter: 12, column: 3 }}
+                grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
                 dataSource={subjectCards}
                 renderItem={(subject) => (
                   <List.Item>
@@ -273,14 +273,7 @@ const TeacherTests = () => {
                       ]}
                     >
                       <div style={{ width: "100%" }}>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "140px 1fr",
-                            rowGap: 6,
-                            columnGap: 12,
-                          }}
-                        >
+                        <div className="kv-grid">
                           <span style={{ color: "#94a3b8" }}>Sarlavha</span>
                           <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
                           <span style={{ color: "#94a3b8" }}>Fan</span>

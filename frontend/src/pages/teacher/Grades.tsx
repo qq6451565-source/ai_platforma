@@ -321,11 +321,13 @@ const TeacherGradesPage = () => {
   );
 
   return (
-    <Card title="Baholar" style={{ marginBottom: 16 }}>
+    <div className="page-shell">
+      <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
+      <Card title="Baholar" style={{ marginBottom: 16 }}>
       {!selectedSubject ? (
         subjectCards.length ? (
           <List
-            grid={{ gutter: 12, column: 3 }}
+            grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
             dataSource={subjectCards}
             renderItem={(subject) => (
               <List.Item>
@@ -340,13 +342,13 @@ const TeacherGradesPage = () => {
         )
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div className="page-header-row">
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {selectedSubject.name}
             </Typography.Title>
           </div>
-          <Space wrap style={{ marginBottom: 12 }}>
+          <Space wrap className="filters-row">
             <Select
               allowClear
               placeholder="Guruh"
@@ -388,16 +390,20 @@ const TeacherGradesPage = () => {
           {isLoading ? (
             <Skeleton active />
           ) : filteredStudents.length ? (
-            <Table
-              columns={tableColumns}
-              dataSource={tableData}
-              pagination={{ pageSize: 10 }}
-              rowKey="key"
-              onRow={(record) => ({
-                onClick: () => openEdit(record.student),
-                className: "clickable-row",
-              })}
-            />
+            <div className="table-scroll">
+              <Table
+                columns={tableColumns}
+                dataSource={tableData}
+                pagination={{ pageSize: 10 }}
+                rowKey="key"
+                scroll={{ x: 720 }}
+                size="small"
+                onRow={(record) => ({
+                  onClick: () => openEdit(record.student),
+                  className: "clickable-row",
+                })}
+              />
+            </div>
           ) : (
             <Empty description="Ma'lumot yo'q" />
           )}
@@ -427,18 +433,11 @@ const TeacherGradesPage = () => {
               <div style={{ display: "grid", gap: 12 }}>
                 {lessonBuckets.map((bucket) => (
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div className="detail-two-col">
                       <div>
                         <Typography.Text type="secondary">Topshiriqlar</Typography.Text>
                         {bucket.submissions.length ? (
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                              gap: 8,
-                              marginTop: 8,
-                            }}
-                          >
+                          <div className="mini-card-grid">
                             {bucket.submissions.map((item: any) => (
                               <Card
                                 key={item.id}
@@ -460,14 +459,7 @@ const TeacherGradesPage = () => {
                       <div>
                         <Typography.Text type="secondary">Testlar</Typography.Text>
                         {bucket.tests.length ? (
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                              gap: 8,
-                              marginTop: 8,
-                            }}
-                          >
+                          <div className="mini-card-grid">
                             {bucket.tests.map((item: any) => (
                               <Card
                                 key={item.id}
@@ -613,6 +605,7 @@ const TeacherGradesPage = () => {
         )}
       </Modal>
     </Card>
+    </div>
   );
 };
 
