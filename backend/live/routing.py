@@ -7,8 +7,9 @@
 
 
 from django.urls import path
-from .consumers import LiveLessonConsumer
+from .consumers import LiveLessonConsumer, FaceVerificationConsumer
 
 websocket_urlpatterns = [
     path("ws/live/<str:room>/", LiveLessonConsumer.as_asgi()),
+    path("ws/face-verify/<str:room>/", FaceVerificationConsumer.as_asgi()),
 ]

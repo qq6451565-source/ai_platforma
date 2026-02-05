@@ -18,8 +18,21 @@ from profiles.models import StudentProfile
 from tests_app.permissions import IsAdmin, IsTeacherOrAdmin
 from .tasks import sync_live_rooms
 
-from .models import LiveParticipant, LiveRoom
-from .serializers import LiveParticipantSerializer, LiveRoomSerializer
+from .models import (
+    LiveParticipant, 
+    LiveRoom,
+    LiveFaceSession,
+    LiveFaceEvent,
+    FaceVerificationSettings,
+)
+from .serializers import (
+    LiveParticipantSerializer, 
+    LiveRoomSerializer,
+    FaceVerificationSettingsSerializer,
+    LiveFaceSessionSerializer,
+    LiveFaceEventSerializer,
+    LiveMonitoringSerializer,
+)
 
 try:
     from agora_token_builder import RtcTokenBuilder, Role_Publisher, Role_Subscriber
@@ -517,6 +530,243 @@ class LiveParticipantViewSet(viewsets.ModelViewSet):
     queryset = LiveParticipant.objects.select_related("room", "user").order_by("-joined_at")
     serializer_class = LiveParticipantSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+
+
+class FaceVerificationSettingsView(APIView):
+    """Get or update face verification settings."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        settings_obj = FaceVerificationSettings.get_settings()
+        serializer = FaceVerificationSettingsSerializer(settings_obj)
+        return Response(serializer.data)
+    
+    def patch(self, request):
+        if not (request.user.is_superuser or request.user.role == 'admin'):
+            raise PermissionDenied("Only admins can update settings")
+        
+        settings_obj = FaceVerificationSettings.get_settings()
+        serializer = FaceVerificationSettingsSerializer(
+            settings_obj, 
+            data=request.data, 
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class StartFaceVerificationView(APIView):
+    """Start face verification session for a participant."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        room_name = request.data.get('room_name')
+        if not room_name:
+            return Response(
+                {"error": "room_name is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            room = LiveRoom.objects.get(room_name=room_name)
+        except LiveRoom.DoesNotExist:
+            return Response(
+                {"error": "Room not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Ensure user can join
+        try:
+            _ensure_user_can_join(request, room.lesson)
+        except PermissionDenied as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get or create participant
+        is_teacher = request.user.role in ['teacher', 'admin'] or request.user.is_superuser
+        participant, _ = _get_or_create_participant(room, request.user, is_teacher)
+        
+        # Get or create session
+        session, created = LiveFaceSession.objects.get_or_create(
+            participant=participant,
+            room=room,
+            user=request.user,
+            defaults={
+                'reference_embedding': request.user.face_embedding,
+                'status': 'active',
+            }
+        )
+        
+        if not created and session.status == 'ended':
+            session.status = 'active'
+            session.save()
+        
+        serializer = LiveFaceSessionSerializer(session)
+        return Response({
+            "session": serializer.data,
+            "created": created,
+        })
+
+
+class AnalyzeFrameView(APIView):
+    """Analyze a single frame (for testing/debugging)."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from .services import FaceVerificationService
+        import base64
+        
+        frame_data = request.data.get('frame_data')
+        if not frame_data:
+            return Response(
+                {"error": "frame_data is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Decode frame
+        try:
+            if "," in frame_data:
+                frame_data = frame_data.split(",", 1)[1]
+            frame_bytes = base64.b64decode(frame_data)
+        except Exception:
+            return Response(
+                {"error": "Invalid frame data"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Analyze with AI
+        result = FaceVerificationService._analyze_face_ai(frame_bytes)
+        
+        if not result:
+            return Response(
+                {"error": "AI analysis failed"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(result)
+
+
+class LiveMonitoringView(APIView):
+    """Real-time monitoring dashboard for admins/teachers."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        room_name = request.query_params.get('room_name')
+        
+        if not room_name:
+            return Response(
+                {"error": "room_name is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            room = LiveRoom.objects.select_related('lesson').get(room_name=room_name)
+        except LiveRoom.DoesNotExist:
+            return Response(
+                {"error": "Room not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Permission check
+        if not (request.user.is_superuser or request.user.role in ['admin', 'teacher']):
+            raise PermissionDenied("Only admins and teachers can access monitoring")
+        
+        if request.user.role == 'teacher':
+            _ensure_teacher_can_access(request, room.lesson)
+        
+        # Get active sessions
+        sessions = LiveFaceSession.objects.filter(
+            room=room,
+            status='active'
+        ).select_related('user').order_by('-last_verification_at')
+        
+        # Count verified participants
+        verified_count = sum(
+            1 for s in sessions 
+            if s.success_count > 0 and s.success_rate >= 70
+        )
+        
+        # Get recent alerts
+        recent_alerts = LiveFaceEvent.objects.filter(
+            room=room,
+            alert_sent=True
+        ).select_related('user').order_by('-created_at')[:20]
+        
+        data = {
+            'room_name': room.room_name,
+            'room_id': room.id,
+            'lesson_topic': room.lesson.topic if hasattr(room.lesson, 'topic') else 'N/A',
+            'is_active': room.is_active,
+            'total_participants': sessions.count(),
+            'verified_participants': verified_count,
+            'sessions': sessions,
+            'recent_alerts': recent_alerts,
+        }
+        
+        serializer = LiveMonitoringSerializer(data)
+        return Response(serializer.data)
+
+
+class FaceSessionListView(APIView):
+    """List face verification sessions for a room."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        room_name = request.query_params.get('room_name')
+        
+        if not room_name:
+            return Response(
+                {"error": "room_name is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            room = LiveRoom.objects.get(room_name=room_name)
+        except LiveRoom.DoesNotExist:
+            return Response(
+                {"error": "Room not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        sessions = LiveFaceSession.objects.filter(
+            room=room
+        ).select_related('user').order_by('-started_at')
+        
+        serializer = LiveFaceSessionSerializer(sessions, many=True)
+        return Response(serializer.data)
+
+
+class FaceEventListView(APIView):
+    """List face verification events for a session or room."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        session_id = request.query_params.get('session_id')
+        room_name = request.query_params.get('room_name')
+        
+        if session_id:
+            events = LiveFaceEvent.objects.filter(
+                session_id=session_id
+            ).order_by('-created_at')
+        elif room_name:
+            try:
+                room = LiveRoom.objects.get(room_name=room_name)
+                events = LiveFaceEvent.objects.filter(
+                    room=room
+                ).order_by('-created_at')[:50]
+            except LiveRoom.DoesNotExist:
+                return Response(
+                    {"error": "Room not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {"error": "session_id or room_name is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = LiveFaceEventSerializer(events, many=True)
+        return Response(serializer.data)
 
 
 

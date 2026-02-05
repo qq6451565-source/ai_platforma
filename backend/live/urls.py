@@ -15,6 +15,12 @@ from .views import (
     RaiseHandView,
     SetStageUserView,
     PushToTalkView,
+    FaceVerificationSettingsView,
+    StartFaceVerificationView,
+    AnalyzeFrameView,
+    LiveMonitoringView,
+    FaceSessionListView,
+    FaceEventListView,
 )
 
 router = DefaultRouter()
@@ -35,4 +41,12 @@ urlpatterns = [
     path('stage/', SetStageUserView.as_view(), name='live-stage'),
     path('ptt/', PushToTalkView.as_view(), name='live-ptt'),
     path('sync/', SyncLiveRoomsView.as_view(), name='live-sync'),
+    
+    # Face verification endpoints
+    path('face/settings/', FaceVerificationSettingsView.as_view(), name='face-settings'),
+    path('face/start/', StartFaceVerificationView.as_view(), name='face-start'),
+    path('face/analyze/', AnalyzeFrameView.as_view(), name='face-analyze'),
+    path('face/monitoring/', LiveMonitoringView.as_view(), name='face-monitoring'),
+    path('face/sessions/', FaceSessionListView.as_view(), name='face-sessions'),
+    path('face/events/', FaceEventListView.as_view(), name='face-events'),
 ]

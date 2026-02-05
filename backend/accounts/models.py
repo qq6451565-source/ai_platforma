@@ -12,6 +12,11 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="student")
     phone = models.CharField(max_length=20, null=True, blank=True)
     face_image = models.ImageField(upload_to="faces/", null=True, blank=True)
+    face_embedding = models.JSONField(
+        null=True, 
+        blank=True,
+        help_text="Face embedding vector for verification"
+    )
     token_version = models.PositiveIntegerField(default=1)
 
     # Student qaysi guruhda o'qishi
