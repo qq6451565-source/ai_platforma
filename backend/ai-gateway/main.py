@@ -9,8 +9,14 @@ from loguru import logger
 from starlette.concurrency import run_in_threadpool
 
 from services.ocr_service import extract_passport_data
-from services.face_service import compare_faces
+from services.face_service import (
+    compare_faces,
+    analyze_faces,
+    check_face_quality,
+    compare_embeddings,
+)
 from services.presence_service import detect_presence
+from services.liveness_service import detect_blink, check_liveness
 
 
 load_dotenv()
@@ -133,4 +139,106 @@ def health_check():
 @app.get("/health")
 def health_check_simple():
     return {"status": "ok"}
+
+
+@app.post("/face/analyze")
+async def face_analyze(
+    file: UploadFile = File(...),
+    api_key: str = Form(None),
+    x_api_key: str = Header(None),
+):
+    """
+    Analyze faces in image and extract embeddings.
+    Used for live verification and registration.
+    """
+    _check_api_key(api_key, x_api_key)
+
+    try:
+        contents = await file.read()
+        size_mb = len(contents) / (1024 * 1024)
+        if size_mb > MAX_IMAGE_SIZE_MB:
+            raise HTTPException(status_code=413, detail="Image too large")
+
+        result = await run_in_threadpool(analyze_faces, contents)
+        logger.info(f"Face analysis completed: {result['faces_detected']} faces detected")
+        return result
+    except Exception as e:
+        logger.error(f"Face analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Face analysis failed")
+
+
+@app.post("/face/quality")
+async def face_quality_check(
+    file: UploadFile = File(...),
+    api_key: str = Form(None),
+    x_api_key: str = Header(None),
+):
+    """
+    Check face image quality for registration.
+    Validates brightness, sharpness, face size, etc.
+    """
+    _check_api_key(api_key, x_api_key)
+
+    try:
+        contents = await file.read()
+        size_mb = len(contents) / (1024 * 1024)
+        if size_mb > MAX_IMAGE_SIZE_MB:
+            raise HTTPException(status_code=413, detail="Image too large")
+
+        result = await run_in_threadpool(check_face_quality, contents)
+        logger.info(f"Face quality check: valid={result['is_valid']}")
+        return result
+    except Exception as e:
+        logger.error(f"Face quality check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Quality check failed")
+
+
+@app.post("/face/liveness")
+async def face_liveness_check(
+    file: UploadFile = File(...),
+    api_key: str = Form(None),
+    x_api_key: str = Header(None),
+):
+    """
+    Check if image is from a live person (anti-spoofing).
+    """
+    _check_api_key(api_key, x_api_key)
+
+    try:
+        contents = await file.read()
+        size_mb = len(contents) / (1024 * 1024)
+        if size_mb > MAX_IMAGE_SIZE_MB:
+            raise HTTPException(status_code=413, detail="Image too large")
+
+        result = await run_in_threadpool(check_liveness, contents)
+        logger.info(f"Liveness check: is_live={result['is_live']}, confidence={result['confidence']}")
+        return result
+    except Exception as e:
+        logger.error(f"Liveness check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Liveness check failed")
+
+
+@app.post("/face/blink")
+async def face_blink_detection(
+    file: UploadFile = File(...),
+    api_key: str = Form(None),
+    x_api_key: str = Header(None),
+):
+    """
+    Detect blink for liveness verification.
+    """
+    _check_api_key(api_key, x_api_key)
+
+    try:
+        contents = await file.read()
+        size_mb = len(contents) / (1024 * 1024)
+        if size_mb > MAX_IMAGE_SIZE_MB:
+            raise HTTPException(status_code=413, detail="Image too large")
+
+        result = await run_in_threadpool(detect_blink, contents)
+        logger.info(f"Blink detection: detected={result['blink_detected']}")
+        return result
+    except Exception as e:
+        logger.error(f"Blink detection failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Blink detection failed")
 
