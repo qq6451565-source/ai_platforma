@@ -12,6 +12,8 @@ backend/staticfiles/
 
 # Node
 frontend/node_modules/
+frontend/dist/
+frontend/stats.html
 
 # Env files
 .env

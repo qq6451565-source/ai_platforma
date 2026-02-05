@@ -1,22 +1,23 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Typography, message } from "antd";
+import { message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import AuthLayout from "../components/AuthLayout";
+import { Link } from "react-router-dom";
 import { login } from "../api/auth";
 import { saveTokens, clearTokens } from "../utils/token";
 import { fetchMe } from "../api/user";
+import { Button, Input, Card } from "../components/ui";
 
 const AdminLoginPage = () => {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ username: '', password: '' });
 
-  const onFinish = async (values: { username: string; password: string }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const tokens = await login(values);
+      const tokens = await login(formData);
       saveTokens(tokens.access, tokens.refresh);
       const me = await fetchMe();
       if (me.role !== "admin") {
@@ -36,28 +37,43 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Admin"
-      extra={
-        <Typography.Text>
-          Oddiy kirish? <Link to="/login">Kirish</Link>
-        </Typography.Text>
-      }
-    >
-      <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
-        <Form.Item label="Username" name="username" rules={[{ required: true, message: "Username kiriting" }]}>
-          <Input prefix={<UserOutlined />} placeholder="username" />
-        </Form.Item>
-        <Form.Item label="Parol" name="password" rules={[{ required: true, message: "Parol kiriting" }]}>
-          <Input.Password prefix={<LockOutlined />} placeholder="******" />
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block loading={loading}>
-            Kirish
+    <div className="flex-center h-screen bg-background p-4 animate-fade-in">
+      <Card
+        className="w-full"
+        style={{ maxWidth: '420px' }}
+        title="Admin tizimi"
+        extra={<Link to="/login" className="body-sm">Oddiy kirish</Link>}
+      >
+        <form onSubmit={handleSubmit} className="d-flex flex-direction-column" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Input
+            label="Username"
+            icon={<UserOutlined />}
+            placeholder="admin_username"
+            value={formData.username}
+            onChange={e => setFormData({ ...formData, username: e.target.value })}
+            required
+          />
+          <Input
+            label="Parol"
+            type="password"
+            icon={<LockOutlined />}
+            placeholder="••••••"
+            value={formData.password}
+            onChange={e => setFormData({ ...formData, password: e.target.value })}
+            required
+          />
+          <Button
+            type="submit"
+            block
+            isLoading={loading}
+            size="lg"
+            className="mt-2"
+          >
+            Admin bo'lib kirish
           </Button>
-        </Form.Item>
-      </Form>
-    </AuthLayout>
+        </form>
+      </Card>
+    </div>
   );
 };
 

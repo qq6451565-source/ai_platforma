@@ -1,243 +1,43 @@
 @import "antd/dist/reset.css";
+@import "./styles/global.css";
 
-* {
-  box-sizing: border-box;
+/* Ant Design Overrides to match our design system */
+.ant-btn-primary {
+  background-color: var(--color-primary);
+  border-radius: var(--radius-md);
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial,
-    "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
-  background: #f5f5f5;
+.ant-btn-primary:hover {
+  background-color: var(--color-primary-dark) !important;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.ant-input, .ant-input-password {
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
 }
 
-#root {
-  min-height: 100vh;
+.ant-card {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
 }
 
+/* Custom classes from previous index.css that might still be used */
 .admin-dashboard {
-  padding: 24px;
+  padding: var(--space-6);
   display: grid;
-  gap: 16px;
-}
-
-.admin-dashboard__section {
-  border-radius: 16px;
-  border: 1px solid #eef1f6;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-  background: #ffffff;
-}
-
-.admin-dashboard__section .ant-card-head {
-  border-bottom: 1px solid #eef1f6;
-  font-weight: 600;
-}
-
-.admin-dashboard__tile {
-  border-radius: 14px;
-  border: 1px solid #edf2f7;
-  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.admin-dashboard__tile:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5f1;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
-}
-
-.admin-dashboard__tile .ant-statistic-title {
-  color: #64748b;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-}
-
-.admin-dashboard__tile .ant-statistic-content {
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.admin-dashboard__tile-title {
-  color: #0f172a;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.2px;
+  gap: var(--space-4);
 }
 
 .lesson-calendar {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.lesson-calendar__left {
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-}
-
-.lesson-week {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.lesson-week__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid #eef1f6;
-  background: #f8faff;
-}
-
-.lesson-week__title {
-  font-weight: 700;
-  font-size: 14px;
-  color: #1f1f1f;
-}
-
-.lesson-week__range {
-  font-size: 12px;
-  color: #6a7280;
-}
-
-.lesson-week__controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.lesson-week__grid-wrap {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.lesson-week__grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
-  gap: 8px;
-  min-width: 840px;
-}
-
-.lesson-month__grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
-  gap: 8px;
-  min-width: 840px;
-  grid-auto-rows: minmax(120px, auto);
-}
-
-.lesson-week__day {
-  border: 1px solid #eef1f6;
-  border-radius: 12px;
-  padding: 8px;
-  height: 180px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.lesson-week__day.is-today {
-  border-color: #91caff;
-  box-shadow: 0 0 0 1px rgba(24, 144, 255, 0.2);
-}
-
-.lesson-week__day.is-selected {
-  border-color: #1677ff;
-}
-
-.lesson-week__day.is-outside {
-  opacity: 0.45;
-}
-
-.lesson-month__day {
-  height: auto;
-  min-height: 120px;
-}
-
-.lesson-week__day-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px dashed #eef1f6;
-}
-
-.lesson-month__day-header {
-  margin-bottom: 6px;
-}
-
-.lesson-week__weekday {
-  font-size: 12px;
-  color: #6a7280;
-}
-
-.lesson-week__date {
-  font-weight: 600;
-  font-size: 12px;
-  color: #1f1f1f;
-}
-
-.lesson-week__items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 110px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.lesson-month__items {
-  max-height: none;
-  overflow: visible;
-}
-.lesson-week__chip {
-  border: none;
-  background: #eef5ff;
-  border-radius: 10px;
-  padding: 6px;
-  text-align: left;
-  cursor: default;
-  transition: background 0.2s ease;
-}
-
-.lesson-week__chip--clickable {
-  cursor: pointer;
-}
-
-.lesson-week__chip--clickable:hover {
-  background: #e6f4ff;
-}
-
-.lesson-week__chip-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: #1d39c4;
-}
-
-.lesson-week__chip-time {
-  font-size: 10px;
-  color: #6a7280;
-  margin-top: 4px;
-}
-
-.lesson-week__empty {
-  font-size: 12px;
-  color: #9aa1ad;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .clickable-row {
@@ -245,175 +45,5 @@ a {
 }
 
 .clickable-row:hover td {
-  background: #f5faff;
-}
-
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-}
-
-.app-header__menu {
-  color: #fff;
-}
-
-.app-header__title {
-  color: #fff;
-  font-weight: 600;
-}
-
-.app-header__meta {
-  color: #d9d9d9;
-}
-
-.app-header__actions {
-  margin-left: auto;
-  color: #fff;
-}
-
-.page-shell {
-  padding: 24px;
-}
-
-.page-title {
-  margin: 0 0 16px !important;
-}
-
-.page-header-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.card-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
-.kv-grid {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  row-gap: 6px;
-  column-gap: 12px;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.table-scroll .ant-table {
-  min-width: 520px;
-}
-
-
-
-.filters-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.detail-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.mini-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-@media (max-width: 768px) {
-
-  .detail-two-col {
-    grid-template-columns: 1fr;
-  }
-
-  .mini-card-grid {
-    grid-template-columns: 1fr;
-  }
-
-
-  .lesson-week__grid,
-  .lesson-month__grid {
-    grid-template-columns: 1fr;
-    min-width: 100%;
-    gap: 10px;
-  }
-
-  .lesson-week__grid-wrap {
-    overflow-x: hidden;
-  }
-
-  .lesson-week__day {
-    height: auto;
-    min-height: 120px;
-    padding: 6px;
-  }
-
-  .lesson-week__items {
-    max-height: 72px;
-  }
-
-  .lesson-week__weekday,
-  .lesson-week__date {
-    font-size: 10px;
-  }
-
-  .lesson-week__chip-title {
-    font-size: 10px;
-  }
-
-  .lesson-week__chip-time {
-    font-size: 9px;
-  }
-
-  .app-header {
-    flex-wrap: wrap;
-    height: auto;
-    padding: 12px;
-  }
-
-  .app-header__actions {
-    margin-left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .page-shell {
-    padding: 16px 12px;
-  }
-
-  .page-header-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .kv-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .table-scroll .ant-table {
-    min-width: 480px;
-  }
-
-  .lesson-week__header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .lesson-week__controls {
-    width: 100%;
-    flex-wrap: wrap;
-  }
+  background: var(--color-secondary-light) !important;
 }

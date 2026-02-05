@@ -1,8 +1,9 @@
-import { Avatar, Button, Card, Col, Form, Input, Row, Upload, message } from "antd";
+import { Avatar, Tabs, Form, Upload, message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
+import { Button, Input, Card } from "../../components/ui";
 
 const StudentProfile = () => {
   const qc = useQueryClient();
@@ -41,36 +42,40 @@ const StudentProfile = () => {
     }
   };
 
-  return (
-    <div className="page-shell">
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={12}>
-          <Card title="Profil ma'lumotlari">
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 12 }}>
-              <Avatar size={64} src={user?.face_image || undefined}>
-                {user?.first_name?.[0]}
-              </Avatar>
-              <Upload
-                beforeUpload={(f) => {
-                  setFile(f);
-                  return false;
-                }}
-                maxCount={1}
-              >
-                <Button>Yangi rasm</Button>
-              </Upload>
-            </div>
-            <Form
-              form={profileForm}
-              layout="vertical"
-              initialValues={{
-                first_name: user?.first_name,
-                last_name: user?.last_name,
-                email: user?.email,
-                phone: user?.phone,
+  const items = [
+    {
+      key: 'profile',
+      label: 'Shaxsiy ma\'lumotlar',
+      children: (
+        <Card>
+          <div className="d-flex items-center mb-6 gap-4">
+            <Avatar size={80} src={user?.face_image || undefined}>
+              {user?.first_name?.[0]}
+            </Avatar>
+            <Upload
+              beforeUpload={(f) => {
+                setFile(f);
+                return false;
               }}
-              onFinish={onSaveProfile}
+              maxCount={1}
+              showUploadList={false}
             >
+              <Button variant="outline" size="sm">Rasm yuklash</Button>
+            </Upload>
+            {file && <span className="caption">{file.name}</span>}
+          </div>
+          <Form
+            form={profileForm}
+            layout="vertical"
+            initialValues={{
+              first_name: user?.first_name,
+              last_name: user?.last_name,
+              email: user?.email,
+              phone: user?.phone,
+            }}
+            onFinish={onSaveProfile}
+          >
+            <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
               <Form.Item label="Ism" name="first_name">
                 <Input />
               </Form.Item>
@@ -83,40 +88,47 @@ const StudentProfile = () => {
               <Form.Item label="Telefon" name="phone">
                 <Input />
               </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loadingProfile}>
-                  Saqlash
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card title="Parolni almashtirish">
-            <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
-              <Form.Item
-                label="Eski parol"
-                name="old_password"
-                rules={[{ required: true, message: "Eski parolni kiriting" }]}
-              >
-                <Input.Password />
-              </Form.Item>
-              <Form.Item
-                label="Yangi parol"
-                name="new_password"
-                rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
-              >
-                <Input.Password />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loadingPass}>
-                  Almashtirish
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
-      </Row>
+            </div>
+            <div className="mt-4">
+              <Button type="submit" isLoading={loadingProfile}>Saqlash</Button>
+            </div>
+          </Form>
+        </Card>
+      )
+    },
+    {
+      key: 'security',
+      label: 'Xavfsizlik',
+      children: (
+        <Card style={{ maxWidth: '500px' }}>
+          <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
+            <Form.Item
+              label="Eski parol"
+              name="old_password"
+              rules={[{ required: true, message: "Eski parolni kiriting" }]}
+            >
+              <Input type="password" />
+            </Form.Item>
+            <Form.Item
+              label="Yangi parol"
+              name="new_password"
+              rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
+            >
+              <Input type="password" />
+            </Form.Item>
+            <div className="mt-4">
+              <Button type="submit" isLoading={loadingPass}>Parolni yangilash</Button>
+            </div>
+          </Form>
+        </Card>
+      )
+    }
+  ];
+
+  return (
+    <div className="page-container animate-fade-in">
+      <h1 className="mb-6">Profil sozlamalari</h1>
+      <Tabs items={items} />
     </div>
   );
 };
