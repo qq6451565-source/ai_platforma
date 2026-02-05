@@ -1,10 +1,11 @@
-import { Button, Card, Col, List, Row, Skeleton, Typography } from "antd";
+import { Skeleton, List } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import { Card, Button } from "../../components/ui";
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const TeacherDashboard = () => {
   const todayLessonIds = new Set(todayLessons.map((lesson) => lesson.id));
   const todayAssignments = (assignments || []).filter((item) => item.lesson && todayLessonIds.has(item.lesson));
   const todayTests = (tests || []).filter((item) => item.lesson && todayLessonIds.has(item.lesson));
+
   const getLiveStatus = (lesson: any) => {
     if (!lesson?.start_time || !lesson?.end_time) {
       return { canJoin: false, label: "Jadval yo'q" };
@@ -34,95 +36,105 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div className="page-shell">
-      <Typography.Title level={3} className="page-title">O'qituvchi paneli</Typography.Title>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={8}>
-          <Card title="Bugungi darslar" bordered={false}>
-            {loadingLessons ? (
-              <Skeleton active />
-            ) : (
-              <List
-                size="small"
-                dataSource={todayLessons}
-                locale={{ emptyText: "Bugun dars yo'q" }}
-                renderItem={(item) => {
-                  const liveStatus = getLiveStatus(item);
-                  return (
-                    <List.Item
-                      style={{ cursor: "pointer" }}
-                      onClick={() => navigate("/app/teacher/lessons")}
-                      actions={[
-                        <Button
-                          key="live"
-                          size="small"
-                          type={liveStatus.canJoin ? "primary" : "default"}
-                          disabled={!liveStatus.canJoin}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            navigate(`/app/live/${item.id}`);
-                          }}
-                        >
-                          {liveStatus.label}
-                        </Button>,
-                      ]}
-                    >
-                      <List.Item.Meta
-                        title={`${item.subject_name || "Fan"} | ${item.topic || "Mavzu"}`}
-                        description={`${item.group_name || `Guruh #${item.group}`} | ${dayjs(item.start_time).format(
-                          "HH:mm"
-                        )} - ${dayjs(item.end_time).format("HH:mm")}`}
-                      />
-                    </List.Item>
-                  );
-                }}
-              />
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card title="Bugungi topshiriqlar" bordered={false}>
-            {loadingAssignments ? (
-              <Skeleton active />
-            ) : (
-              <List
-                size="small"
-                dataSource={todayAssignments}
-                locale={{ emptyText: "Bugun topshiriq yo'q" }}
-                renderItem={(item) => (
-                  <List.Item style={{ cursor: "pointer" }} onClick={() => navigate("/app/teacher/assignments")}>
+    <div className="page-container animate-fade-in">
+      <div className="d-flex justify-between items-center mb-6">
+        <h1 className="m-0">O'qituvchi paneli</h1>
+        <div className="body-sm text-secondary">{dayjs().format('DD.MM.YYYY')}</div>
+      </div>
+
+      <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        <Card title="Bugungi darslar" className="h-full">
+          {loadingLessons ? (
+            <Skeleton active />
+          ) : (
+            <List
+              size="small"
+              dataSource={todayLessons}
+              locale={{ emptyText: "Bugun dars yo'q" }}
+              renderItem={(item) => {
+                const liveStatus = getLiveStatus(item);
+                return (
+                  <List.Item
+                    style={{ cursor: "pointer", padding: '12px 0' }}
+                    onClick={() => navigate("/app/teacher/lessons")}
+                    extra={
+                      <Button
+                        size="sm"
+                        variant={liveStatus.canJoin ? "primary" : "outline"}
+                        disabled={!liveStatus.canJoin}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          navigate(`/app/live/${item.id}`);
+                        }}
+                      >
+                        {liveStatus.label}
+                      </Button>
+                    }
+                  >
                     <List.Item.Meta
-                      title={item.title}
-                      description={`${item.subject || "Fan"} | ${item.group_names?.join(", ") || "Guruh yo'q"}`}
+                      title={<span className="font-bold">{item.subject_name || "Fan"}</span>}
+                      description={
+                        <div>
+                          <div className="text-primary body-sm">{item.topic || "Mavzu ko'rsatilmagan"}</div>
+                          <div className="caption">
+                            {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
+                          </div>
+                        </div>
+                      }
                     />
                   </List.Item>
-                )}
-              />
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} md={8}>
-          <Card title="Bugungi testlar" bordered={false}>
-            {loadingTests ? (
-              <Skeleton active />
-            ) : (
-              <List
-                size="small"
-                dataSource={todayTests}
-                locale={{ emptyText: "Bugun test yo'q" }}
-                renderItem={(item) => (
-                  <List.Item style={{ cursor: "pointer" }} onClick={() => navigate("/app/teacher/tests")}>
-                    <List.Item.Meta
-                      title={item.title}
-                      description={`${item.subject_name || "Fan"} | ${item.lesson_topic || "Mavzu"}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            )}
-          </Card>
-        </Col>
-      </Row>
+                );
+              }}
+            />
+          )}
+        </Card>
+
+        <Card title="Bugungi topshiriqlar" className="h-full">
+          {loadingAssignments ? (
+            <Skeleton active />
+          ) : (
+            <List
+              size="small"
+              dataSource={todayAssignments}
+              locale={{ emptyText: "Bugun topshiriq yo'q" }}
+              renderItem={(item) => (
+                <List.Item
+                  style={{ cursor: "pointer", padding: '12px 0' }}
+                  onClick={() => navigate("/app/teacher/assignments")}
+                >
+                  <List.Item.Meta
+                    title={<span className="font-medium">{item.title}</span>}
+                    description={<span className="caption">{item.subject || "Fan"}</span>}
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+
+        <Card title="Bugungi testlar" className="h-full">
+          {loadingTests ? (
+            <Skeleton active />
+          ) : (
+            <List
+              size="small"
+              dataSource={todayTests}
+              locale={{ emptyText: "Bugun test yo'q" }}
+              renderItem={(item) => (
+                <List.Item
+                  style={{ cursor: "pointer", padding: '12px 0' }}
+                  onClick={() => navigate("/app/teacher/tests")}
+                >
+                  <List.Item.Meta
+                    title={<span className="font-medium">{item.title}</span>}
+                    description={<span className="caption">{item.subject_name || "Fan"}</span>}
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+      </div>
     </div>
   );
 };

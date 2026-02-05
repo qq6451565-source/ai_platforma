@@ -1,0 +1,70 @@
+.desktop-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.desktop-header {
+  height: 64px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.desktop-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+.page-title-header {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.desktop-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.user-role {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.desktop-container {
+  display: flex;
+  flex: 1;
+}
+
+.desktop-content {
+  flex: 1;
+  padding: var(--space-6);
+  background-color: var(--color-background);
+  min-width: 0; /* Prevent overflow issues with flex */
+}

@@ -1,4 +1,4 @@
-import { Card, Col, Row, Skeleton, Statistic, Typography } from "antd";
+import { Skeleton, Statistic, Row, Col } from "antd";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import {
 import { fetchMaterials } from "../../api/materials";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
+import { Card } from "../../components/ui";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -98,102 +99,55 @@ const AdminDashboard = () => {
       value: Array.isArray(lessons) ? lessons.length : 0,
       to: "/app/admin/learning?section=lessons",
     },
-    {
-      key: "materials",
-      title: "Materiallar",
-      value: Array.isArray(materials) ? materials.length : 0,
-      to: "/app/admin/learning?section=materials",
-    },
-    {
-      key: "assignments",
-      title: "Topshiriqlar",
-      value: Array.isArray(assignments) ? assignments.length : 0,
-      to: "/app/admin/learning?section=assignments",
-    },
-    {
-      key: "tests",
-      title: "Testlar",
-      value: Array.isArray(tests) ? tests.length : 0,
-      to: "/app/admin/learning?section=tests",
-    },
-  ];
-  const actionSections = [
-    {
-      key: "enrollment",
-      title: "Qabul",
-      items: [
-        { key: "windows", label: "Ro'yxatdan o'tish", to: "/app/admin/enrollment?tab=windows" },
-        { key: "applicants", label: "Arizachilar", to: "/app/admin/enrollment?tab=applicants" },
-      ],
-    },
-    {
-      key: "university",
-      title: "Akademik",
-      items: [
-        { key: "directions", label: "Yo'nalishlar", to: "/app/admin/university?section=directions" },
-        { key: "subjects", label: "Fanlar", to: "/app/admin/university?section=subjects" },
-        { key: "groups", label: "Guruhlar", to: "/app/admin/university?section=groups" },
-        { key: "teacher-subjects", label: "O'qituvchi-Fan", to: "/app/admin/university?section=teacher-subjects" },
-      ],
-    },
-    {
-      key: "learning",
-      title: "O'quv jarayoni",
-      items: [
-        { key: "lessons", label: "Dars jadvali", to: "/app/admin/learning?section=lessons" },
-        { key: "materials", label: "Materiallar", to: "/app/admin/learning?section=materials" },
-        { key: "assignments", label: "Topshiriqlar", to: "/app/admin/learning?section=assignments" },
-        { key: "tests", label: "Testlar", to: "/app/admin/learning?section=tests" },
-        { key: "attendance", label: "Davomat", to: "/app/admin/learning?section=attendance" },
-        { key: "gradebook", label: "Baholar", to: "/app/admin/learning?section=gradebook" },
-      ],
-    },
   ];
 
   return (
-    <div className="admin-dashboard">
+    <div className="page-container animate-fade-in">
+      <h1 className="mb-6">Boshqaruv paneli</h1>
+      
       {loading ? (
         <Skeleton active />
       ) : (
-        <>
-          <Card title="Asosiy ko'rsatkichlar" className="admin-dashboard__section">
-            <Row gutter={[16, 16]}>
-              {stats.map((stat) => (
-                <Col xs={24} sm={12} md={8} lg={6} key={stat.key}>
-                  <Card
-                    hoverable
-                    onClick={() => navigate(stat.to)}
-                    className="admin-dashboard__tile admin-dashboard__tile--stat"
-                    style={{ height: "100%" }}
-                  >
-                    <Statistic title={stat.title} value={stat.value} />
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-
-          {actionSections.map((section) => (
-            <Card key={section.key} title={section.title} className="admin-dashboard__section">
-              <Row gutter={[16, 16]}>
-                {section.items.map((item) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={item.key}>
-                    <Card
-                      hoverable
-                      onClick={() => navigate(item.to)}
-                      className="admin-dashboard__tile admin-dashboard__tile--action"
-                      style={{ height: "100%" }}
-                    >
-                      <Typography.Text className="admin-dashboard__tile-title">
-                        {item.label}
-                      </Typography.Text>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
+        <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+          {stats.map((stat) => (
+            <Card
+              key={stat.key}
+              hoverable
+              onClick={() => navigate(stat.to)}
+              className="clickable-row"
+            >
+              <Statistic title={stat.title} value={stat.value} />
             </Card>
           ))}
-        </>
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mt-8">
+          <h2 className="mb-4 h4">Tizim bo'limlari</h2>
+          <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <Card title="Qabul">
+               <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=windows")}>Ro'yxatdan o'tish</div>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=applicants")}>Arizachilar</div>
+               </div>
+            </Card>
+            <Card title="Akademik">
+              <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=directions")}>Yo'nalishlar</div>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=subjects")}>Fanlar</div>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=groups")}>Guruhlar</div>
+               </div>
+            </Card>
+            <Card title="O'quv jarayoni">
+              <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=lessons")}>Dars jadvali</div>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=materials")}>Materiallar</div>
+                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=tests")}>Testlar</div>
+               </div>
+            </Card>
+          </div>
+        </div>
       )}
     </div>
   );

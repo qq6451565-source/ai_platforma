@@ -1,10 +1,10 @@
 import { MailOutlined, PhoneOutlined, IdcardOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Typography, message, Upload } from "antd";
+import { Form, message, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import AuthLayout from "../components/AuthLayout";
 import { register } from "../api/auth";
+import { Button, Input, Card } from "../components/ui";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -38,95 +38,95 @@ const RegisterPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Ro'yxatdan o'tish"
-      extra={
-        <Typography.Text>
-          Hisob bor? <Link to="/login">Kirish</Link>
-        </Typography.Text>
-      }
-    >
-      <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false}>
-        <Form.Item
-          label="Ism"
-          name="first_name"
-          rules={[{ required: true, message: "Ismni kiriting" }]}
-        >
-          <Input prefix={<UserOutlined />} placeholder="Ismingiz" />
-        </Form.Item>
-        <Form.Item
-          label="Familiya"
-          name="last_name"
-          rules={[{ required: true, message: "Familiyani kiriting" }]}
-        >
-          <Input prefix={<UserOutlined />} placeholder="Familiyangiz" />
-        </Form.Item>
-        <Form.Item
-          label="Email"
-          name="email"
-          rules={[
-            { required: true, message: "Email kiriting" },
-            { type: "email", message: "Email noto'g'ri" },
-          ]}
-        >
-          <Input prefix={<MailOutlined />} placeholder="email@example.com" />
-        </Form.Item>
-        <Form.Item
-          label="Telefon"
-          name="phone"
-          rules={[{ required: true, message: "Telefon raqamini kiriting" }]}
-        >
-          <Input prefix={<PhoneOutlined />} placeholder="+998901234567" />
-        </Form.Item>
-        <Form.Item
-          label="Passport surati"
-          name="passport_front"
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-          rules={[{ required: true, message: "Passport rasmini yuklang" }]}
-        >
-          <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-            <Button icon={<IdcardOutlined />}>Passport old tomonini yuklash</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item
-          label="Passport orqa tomoni"
-          name="passport_back"
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-          rules={[{ required: true, message: "Passport orqa tomonini yuklang" }]}
-        >
-          <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-            <Button icon={<IdcardOutlined />}>Passport orqa tomonini yuklash</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item
-          label="Selfie / yuz rasmlari"
-          name="selfie_image"
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-          rules={[{ required: true, message: "Selfie rasmini yuklang" }]}
-        >
-          <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-            <Button icon={<IdcardOutlined />}>Selfie yuklash</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item>
+    <div className="flex-center bg-background p-4 animate-fade-in" style={{ minHeight: '100vh', padding: '2rem 1rem' }}>
+      <Card
+        className="w-full"
+        style={{ maxWidth: '500px' }}
+        title="Ro'yxatdan o'tish"
+        extra={<Link to="/login" className="body-sm">Kirish</Link>}
+      >
+        <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false}>
+          <Form.Item
+            label="Ism"
+            name="first_name"
+            rules={[{ required: true, message: "Ismni kiriting" }]}
+          >
+            <Input icon={<UserOutlined />} placeholder="Ismingiz" />
+          </Form.Item>
+          <Form.Item
+            label="Familiya"
+            name="last_name"
+            rules={[{ required: true, message: "Familiyani kiriting" }]}
+          >
+            <Input icon={<UserOutlined />} placeholder="Familiyangiz" />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: "Email kiriting" },
+              { type: "email", message: "Email noto'g'ri" },
+            ]}
+          >
+            <Input icon={<MailOutlined />} placeholder="email@example.com" />
+          </Form.Item>
+          <Form.Item
+            label="Telefon"
+            name="phone"
+            rules={[{ required: true, message: "Telefon raqamini kiriting" }]}
+          >
+            <Input icon={<PhoneOutlined />} placeholder="+998901234567" />
+          </Form.Item>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <Form.Item
+              label="Passport old tomoni"
+              name="passport_front"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+              rules={[{ required: true, message: "Passport rasmini yuklang" }]}
+            >
+              <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
+                <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item
+              label="Passport orqa tomoni"
+              name="passport_back"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+              rules={[{ required: true, message: "Passport orqa tomonini yuklang" }]}
+            >
+              <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
+                <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item
+              label="Selfie rasmi"
+              name="selfie_image"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+              rules={[{ required: true, message: "Selfie rasmini yuklang" }]}
+            >
+              <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
+                <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
+              </Upload>
+            </Form.Item>
+          </div>
+
           <Button
-            type="primary"
-            htmlType="submit"
+            type="submit"
             block
-            loading={loading}
-            disabled={
-              !form.isFieldsTouched(true) ||
-              form.getFieldsError().some(({ errors }) => errors.length)
-            }
+            isLoading={loading}
+            size="lg"
           >
             Ro'yxatdan o'tish
           </Button>
-        </Form.Item>
-      </Form>
-    </AuthLayout>
+        </Form>
+      </Card>
+    </div>
   );
 };
 
