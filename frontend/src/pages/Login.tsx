@@ -44,44 +44,45 @@ const LoginPage = () => {
 
   return (
     <div className="flex-center h-screen bg-background p-4 animate-fade-in">
-      <Card
-        className="w-full"
-        style={{ maxWidth: '420px' }}
-        title="Kirish"
-        extra={<Link to="/register" className="body-sm">Ro'yxatdan o'tish</Link>}
-      >
-        <form onSubmit={handleSubmit} className="d-flex flex-direction-column gap-4" style={{ gap: '1rem', display: 'flex', flexDirection: 'column' }}>
-          <Input
-            label="Username"
-            icon={<UserOutlined />}
-            placeholder="username"
-            value={formData.username}
-            onChange={e => setFormData({ ...formData, username: e.target.value })}
-            required
-          />
-          <Input
-            label="Parol"
-            type="password"
-            icon={<LockOutlined />}
-            placeholder="••••••"
-            value={formData.password}
-            onChange={e => setFormData({ ...formData, password: e.target.value })}
-            required
-          />
-          <Button
-            type="submit"
-            block
-            isLoading={loading}
-            size="lg"
-            className="mt-2"
-          >
-            Kirish
-          </Button>
-          <div className="text-center mt-2">
-            <Link to="/admin-login" className="caption">Admin sifatida kirish</Link>
-          </div>
-        </form>
-      </Card>
+      <div style={{ maxWidth: '420px', width: '100%' }}>
+        <Card
+          className="w-full"
+          title="Kirish"
+          extra={<Link to="/register" className="body-sm">Ro'yxatdan o'tish</Link>}
+        >
+          <form onSubmit={handleSubmit} className="d-flex flex-direction-column gap-4" style={{ gap: '1rem', display: 'flex', flexDirection: 'column' }}>
+            <Input
+              label="Username"
+              icon={<UserOutlined />}
+              placeholder="username"
+              value={formData.username}
+              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              required
+            />
+            <Input
+              label="Parol"
+              type="password"
+              icon={<LockOutlined />}
+              placeholder="••••••"
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+            <Button
+              type="submit"
+              block
+              isLoading={loading}
+              size="lg"
+              className="mt-2"
+            >
+              Kirish
+            </Button>
+            <div className="text-center mt-2">
+              <Link to="/admin-login" className="caption">Admin sifatida kirish</Link>
+            </div>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 };

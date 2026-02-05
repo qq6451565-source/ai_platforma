@@ -110,14 +110,16 @@ const AdminDashboard = () => {
       ) : (
         <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
           {stats.map((stat) => (
-            <Card
+            <div
               key={stat.key}
-              hoverable
-              onClick={() => navigate(stat.to)}
               className="clickable-row"
+              onClick={() => navigate(stat.to)}
+              style={{ cursor: 'pointer' }}
             >
-              <Statistic title={stat.title} value={stat.value} />
-            </Card>
+              <Card hoverable>
+                <Statistic title={stat.title} value={stat.value} />
+              </Card>
+            </div>
           ))}
         </div>
       )}
