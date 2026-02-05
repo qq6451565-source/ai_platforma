@@ -100,27 +100,29 @@ const StudentProfile = () => {
       key: 'security',
       label: 'Xavfsizlik',
       children: (
-        <Card style={{ maxWidth: '500px' }}>
-          <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
-            <Form.Item
-              label="Eski parol"
-              name="old_password"
-              rules={[{ required: true, message: "Eski parolni kiriting" }]}
-            >
-              <Input type="password" />
-            </Form.Item>
-            <Form.Item
-              label="Yangi parol"
-              name="new_password"
-              rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
-            >
-              <Input type="password" />
-            </Form.Item>
-            <div className="mt-4">
-              <Button type="submit" isLoading={loadingPass}>Parolni yangilash</Button>
-            </div>
-          </Form>
-        </Card>
+        <div style={{ maxWidth: '500px', width: '100%' }}>
+          <Card>
+            <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
+              <Form.Item
+                label="Eski parol"
+                name="old_password"
+                rules={[{ required: true, message: "Eski parolni kiriting" }]}
+              >
+                <Input type="password" />
+              </Form.Item>
+              <Form.Item
+                label="Yangi parol"
+                name="new_password"
+                rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
+              >
+                <Input type="password" />
+              </Form.Item>
+              <div className="mt-4">
+                <Button type="submit" isLoading={loadingPass}>Parolni yangilash</Button>
+              </div>
+            </Form>
+          </Card>
+        </div>
       )
     }
   ];

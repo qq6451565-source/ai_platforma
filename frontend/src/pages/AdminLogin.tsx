@@ -38,41 +38,42 @@ const AdminLoginPage = () => {
 
   return (
     <div className="flex-center h-screen bg-background p-4 animate-fade-in">
-      <Card
-        className="w-full"
-        style={{ maxWidth: '420px' }}
-        title="Admin tizimi"
-        extra={<Link to="/login" className="body-sm">Oddiy kirish</Link>}
-      >
-        <form onSubmit={handleSubmit} className="d-flex flex-direction-column" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Input
-            label="Username"
-            icon={<UserOutlined />}
-            placeholder="admin_username"
-            value={formData.username}
-            onChange={e => setFormData({ ...formData, username: e.target.value })}
-            required
-          />
-          <Input
-            label="Parol"
-            type="password"
-            icon={<LockOutlined />}
-            placeholder="••••••"
-            value={formData.password}
-            onChange={e => setFormData({ ...formData, password: e.target.value })}
-            required
-          />
-          <Button
-            type="submit"
-            block
-            isLoading={loading}
-            size="lg"
-            className="mt-2"
-          >
-            Admin bo'lib kirish
-          </Button>
-        </form>
-      </Card>
+      <div style={{ maxWidth: '420px', width: '100%' }}>
+        <Card
+          className="w-full"
+          title="Admin tizimi"
+          extra={<Link to="/login" className="body-sm">Oddiy kirish</Link>}
+        >
+          <form onSubmit={handleSubmit} className="d-flex flex-direction-column" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <Input
+              label="Username"
+              icon={<UserOutlined />}
+              placeholder="admin_username"
+              value={formData.username}
+              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              required
+            />
+            <Input
+              label="Parol"
+              type="password"
+              icon={<LockOutlined />}
+              placeholder="••••••"
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+            <Button
+              type="submit"
+              block
+              isLoading={loading}
+              size="lg"
+              className="mt-2"
+            >
+              Admin bo'lib kirish
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 };

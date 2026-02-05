@@ -7,7 +7,7 @@ import AgoraRTC, {
 } from "agora-rtc-sdk-ng";
 import { Spin, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { AudioOutlined, AudioMutedOutlined, VideoCameraOutlined, StopOutlined, HandOutlined, LogoutOutlined, TeamOutlined } from "@ant-design/icons";
+import { AudioOutlined, AudioMutedOutlined, VideoCameraOutlined, StopOutlined, HighlightOutlined, LogoutOutlined, TeamOutlined } from "@ant-design/icons";
 
 import {
   endLiveRoom,
@@ -225,6 +225,17 @@ const LiveRoomPage = () => {
     handleLeave();
   };
 
+  const handleStageSelect = useCallback(
+    async (userId?: number | null) => {
+      if (!roomInfo?.room_id) return;
+      try {
+        await setStageUser(roomInfo.room_id, userId ?? null);
+        setStageUserId(userId ?? null);
+      } catch {}
+    },
+    [roomInfo?.room_id]
+  );
+
   const stageVideoTrack = useMemo(() => {
     if (effectiveStageUserId) {
       if (localUserId === effectiveStageUserId) return screenTrack ?? localTracks.video;
@@ -272,7 +283,7 @@ const LiveRoomPage = () => {
                    <div className="participant-row-name">{p.user_name}</div>
                    <div className="caption">{p.role}</div>
                 </div>
-                {p.hand_raised && <HandOutlined className="text-warning" />}
+                {p.hand_raised && <HighlightOutlined className="text-warning" />}
               </div>
             ))}
           </div>
@@ -305,7 +316,7 @@ const LiveRoomPage = () => {
            <Button
              variant="ghost"
              className={`control-btn ${handRaised ? 'is-active' : ''}`}
-             icon={<HandOutlined />}
+             icon={<HighlightOutlined />}
              onClick={async () => {
                const next = !handRaised;
                await raiseHand(roomInfo.room_id, next);
