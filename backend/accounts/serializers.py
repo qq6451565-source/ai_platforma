@@ -10,7 +10,22 @@ from .models import User, PassportData, AuditLog
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'role', 'phone', 'face_image', 'group']
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'role',
+            'phone',
+            'patronymic',
+            'birth_year',
+            'passport_series',
+            'passport_front_image',
+            'email_verified',
+            'face_image',
+            'group',
+        ]
 
 
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -34,12 +49,26 @@ class AdminUserSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone', 'face_image']
+        fields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'patronymic',
+            'birth_year',
+            'passport_series',
+            'passport_front_image',
+            'face_image',
+        ]
         extra_kwargs = {
             'email': {'required': False},
             'first_name': {'required': False},
             'last_name': {'required': False},
             'phone': {'required': False},
+            'patronymic': {'required': False},
+            'birth_year': {'required': False},
+            'passport_series': {'required': False},
+            'passport_front_image': {'required': False},
             'face_image': {'required': False},
         }
 

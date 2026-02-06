@@ -1,130 +1,434 @@
-import { MailOutlined, PhoneOutlined, IdcardOutlined, UserOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  PhoneOutlined,
+  IdcardOutlined,
+  CalendarOutlined,
+  SafetyCertificateOutlined,
+} from "@ant-design/icons";
 import { Form, message, Upload } from "antd";
-import type { UploadFile } from "antd/es/upload/interface";
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { register } from "../api/auth";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useGoogleLogin } from "@react-oauth/google";
+import {
+  googleAuth,
+  updateRegistrationProfile,
+  uploadPassportFront,
+  submitFaceVerification,
+  sendEmailVerification,
+  verifyEmailCode,
+} from "../api/auth";
+import { saveTokens } from "../utils/token";
 import { Button, Input, Card } from "../components/ui";
+import "./Register.css";
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [passportFile, setPassportFile] = useState<File | null>(null);
+  const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [faceVerified, setFaceVerified] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailVerifying, setEmailVerifying] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [scanLoading, setScanLoading] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const onFinish = async (values: {
-    email: string;
+  const stepTitles = useMemo(
+    () => [
+      t("register.steps.google"),
+      t("register.steps.personal"),
+      t("register.steps.passport"),
+      t("register.steps.face"),
+    ],
+    [t]
+  );
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        const data = await googleAuth(tokenResponse.access_token);
+        saveTokens(data.access, data.refresh);
+        setUserEmail(data.user?.email || "");
+        setEmailVerified(Boolean(data.user?.email_verified));
+        message.success(t("register.googleSuccess"));
+        setCurrentStep(1);
+      } catch (error: any) {
+        message.error(error?.response?.data?.detail || t("register.googleError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => message.error(t("register.googleError")),
+    scope: "openid profile email",
+  });
+
+  useEffect(() => {
+    if (!passportFile) {
+      setPassportPreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(passportFile);
+    setPassportPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [passportFile]);
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentStep !== 3 && cameraActive) {
+      stopCamera();
+    }
+  }, [currentStep, cameraActive]);
+
+  const handleProfileSubmit = async (values: {
     first_name: string;
     last_name: string;
+    patronymic: string;
+    birth_year: number;
+    passport_series: string;
     phone: string;
-    passport_front: UploadFile[];
-    passport_back: UploadFile[];
-    selfie_image: UploadFile[];
   }) => {
-    setLoading(true);
     try {
-      await register({
+      setLoading(true);
+      await updateRegistrationProfile({
         ...values,
-        passport_front: values.passport_front?.[0]?.originFileObj as File | undefined,
-        passport_back: values.passport_back?.[0]?.originFileObj as File | undefined,
-        selfie_image: values.selfie_image?.[0]?.originFileObj as File | undefined,
+        birth_year: Number(values.birth_year),
       });
-      message.success("Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.");
-      navigate("/login");
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Ro'yxatdan o'tish muvaffaqiyatsiz");
+      message.success(t("register.profileSaved"));
+      setCurrentStep(2);
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.profileError"));
     } finally {
       setLoading(false);
     }
   };
 
+  const handlePassportUpload = async () => {
+    if (!passportFile) {
+      message.warning(t("register.passportRequired"));
+      return;
+    }
+    try {
+      setLoading(true);
+      await uploadPassportFront(passportFile);
+      message.success(t("register.passportUploaded"));
+      setCurrentStep(3);
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.passportError"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+        audio: false,
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+    } catch (error) {
+      message.error(t("register.cameraError"));
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+  };
+
+  const captureSelfie = () => {
+    if (!videoRef.current || !canvasRef.current) return null;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    const arr = dataUrl.split(",");
+    if (arr.length < 2) return null;
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], "selfie.jpg", { type: mime });
+  };
+
+  const handleScan = async () => {
+    const selfie = captureSelfie();
+    if (!selfie) {
+      message.error(t("register.scanError"));
+      return;
+    }
+
+    try {
+      setScanLoading(true);
+      const response = await submitFaceVerification(selfie);
+      if (response.has_embedding) {
+        setFaceVerified(true);
+        message.success(t("register.scanSuccess"));
+      } else {
+        message.warning(t("register.scanError"));
+      }
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.scanError"));
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    try {
+      setEmailSending(true);
+      await sendEmailVerification(userEmail || undefined);
+      message.success(t("register.codeSent"));
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.codeSendError"));
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    try {
+      setEmailVerifying(true);
+      await verifyEmailCode(emailCode);
+      setEmailVerified(true);
+      message.success(t("register.codeVerified"));
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.codeVerifyError"));
+    } finally {
+      setEmailVerifying(false);
+    }
+  };
+
+  const handleFinish = () => {
+    stopCamera();
+    message.success(t("register.completed"));
+    navigate("/app");
+  };
+
   return (
-    <div className="flex-center bg-background p-4 animate-fade-in" style={{ minHeight: '100vh', padding: '2rem 1rem' }}>
-      <div style={{ maxWidth: '500px', width: '100%' }}>
+    <div className="registration-page">
+      <div className="registration-container">
         <Card
-          className="w-full"
-          title="Ro'yxatdan o'tish"
-          extra={<Link to="/login" className="body-sm">Kirish</Link>}
+          className="wizard-card"
+          title={t("register.title")}
+          extra={<Link to="/login" className="body-sm">{t("register.loginLink")}</Link>}
+          hasBeam
         >
-          <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false}>
-            <Form.Item
-              label="Ism"
-              name="first_name"
-              rules={[{ required: true, message: "Ismni kiriting" }]}
-            >
-              <Input icon={<UserOutlined />} placeholder="Ismingiz" />
-            </Form.Item>
-            <Form.Item
-              label="Familiya"
-              name="last_name"
-              rules={[{ required: true, message: "Familiyani kiriting" }]}
-            >
-              <Input icon={<UserOutlined />} placeholder="Familiyangiz" />
-            </Form.Item>
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[
-                { required: true, message: "Email kiriting" },
-                { type: "email", message: "Email noto'g'ri" },
-              ]}
-            >
-              <Input icon={<MailOutlined />} placeholder="email@example.com" />
-            </Form.Item>
-            <Form.Item
-              label="Telefon"
-              name="phone"
-              rules={[{ required: true, message: "Telefon raqamini kiriting" }]}
-            >
-              <Input icon={<PhoneOutlined />} placeholder="+998901234567" />
-            </Form.Item>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <Form.Item
-                label="Passport old tomoni"
-                name="passport_front"
-                valuePropName="fileList"
-                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-                rules={[{ required: true, message: "Passport rasmini yuklang" }]}
+          <div className="wizard-steps">
+            {stepTitles.map((title, index) => (
+              <div
+                key={title}
+                className={`wizard-step ${index === currentStep ? "active" : ""} ${
+                  index < currentStep ? "done" : ""
+                }`}
               >
-                <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-                  <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
-                </Upload>
-              </Form.Item>
+                <div className="step-index">{index + 1}</div>
+                <span>{title}</span>
+              </div>
+            ))}
+          </div>
 
-              <Form.Item
-                label="Passport orqa tomoni"
-                name="passport_back"
-                valuePropName="fileList"
-                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-                rules={[{ required: true, message: "Passport orqa tomonini yuklang" }]}
+          {currentStep === 0 && (
+            <div className="wizard-step-body">
+              <p className="wizard-text">{t("register.googleSubtitle")}</p>
+              <Button
+                type="button"
+                size="lg"
+                block
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => handleGoogleLogin()}
+                isLoading={loading}
               >
-                <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-                  <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
-                </Upload>
-              </Form.Item>
-
-              <Form.Item
-                label="Selfie rasmi"
-                name="selfie_image"
-                valuePropName="fileList"
-                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-                rules={[{ required: true, message: "Selfie rasmini yuklang" }]}
-              >
-                <Upload accept="image/*" beforeUpload={() => false} maxCount={1}>
-                  <Button variant="outline" icon={<IdcardOutlined />} block>Yuklash</Button>
-                </Upload>
-              </Form.Item>
+                {t("register.googleButton")}
+              </Button>
             </div>
+          )}
 
-            <Button
-              type="submit"
-              block
-              isLoading={loading}
-              size="lg"
-            >
-              Ro'yxatdan o'tish
-            </Button>
-          </Form>
+          {currentStep === 1 && (
+            <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
+              <div className="wizard-grid">
+                <Form.Item
+                  label={t("register.firstName")}
+                  name="first_name"
+                  rules={[{ required: true, message: t("register.firstNameRequired") }]}
+                >
+                  <Input icon={<UserOutlined />} placeholder={t("register.firstNamePlaceholder")} />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.lastName")}
+                  name="last_name"
+                  rules={[{ required: true, message: t("register.lastNameRequired") }]}
+                >
+                  <Input icon={<UserOutlined />} placeholder={t("register.lastNamePlaceholder")} />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.patronymic")}
+                  name="patronymic"
+                  rules={[{ required: true, message: t("register.patronymicRequired") }]}
+                >
+                  <Input icon={<UserOutlined />} placeholder={t("register.patronymicPlaceholder")} />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.birthYear")}
+                  name="birth_year"
+                  rules={[{ required: true, message: t("register.birthYearRequired") }]}
+                >
+                  <Input
+                    icon={<CalendarOutlined />}
+                    placeholder="1999"
+                    type="number"
+                    min={1900}
+                    max={new Date().getFullYear()}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.passportSeries")}
+                  name="passport_series"
+                  rules={[{ required: true, message: t("register.passportSeriesRequired") }]}
+                >
+                  <Input icon={<IdcardOutlined />} placeholder="AB123456" />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.phoneNumber")}
+                  name="phone"
+                  rules={[{ required: true, message: t("register.phoneRequired") }]}
+                >
+                  <Input icon={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
+                </Form.Item>
+              </div>
+              <Button type="submit" block isLoading={loading} size="lg">
+                {t("common.next")}
+              </Button>
+            </Form>
+          )}
+
+          {currentStep === 2 && (
+            <div className="wizard-step-body">
+              <p className="wizard-text">{t("register.passportSubtitle")}</p>
+              <Upload
+                accept="image/*"
+                beforeUpload={() => false}
+                maxCount={1}
+                showUploadList={false}
+                onChange={(info) => {
+                  const file = info.fileList?.[0]?.originFileObj as File | undefined;
+                  if (file) {
+                    setPassportFile(file);
+                  } else {
+                    setPassportFile(null);
+                  }
+                }}
+              >
+                <Button variant="outline" icon={<IdcardOutlined />} block>
+                  {t("register.passportUpload")}
+                </Button>
+              </Upload>
+              {passportPreview && (
+                <div className="neon-preview-card">
+                  <img src={passportPreview} alt="passport preview" />
+                </div>
+              )}
+              <div className="wizard-actions">
+                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+                  {t("common.back")}
+                </Button>
+                <Button onClick={handlePassportUpload} isLoading={loading}>
+                  {t("common.next")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="wizard-step-body">
+              <p className="wizard-text">{t("register.faceSubtitle")}</p>
+              <div className="scanner-section">
+                <div className={`scanner-frame ${cameraActive ? "active" : ""}`}>
+                  <video ref={videoRef} className="scanner-video" />
+                  <canvas ref={canvasRef} className="scanner-canvas" />
+                  <div className="scanner-overlay"></div>
+                </div>
+                <div className="scanner-actions">
+                  {!cameraActive ? (
+                    <Button onClick={startCamera}>{t("register.startCamera")}</Button>
+                  ) : (
+                    <Button variant="outline" onClick={stopCamera}>
+                      {t("register.stopCamera")}
+                    </Button>
+                  )}
+                  <Button onClick={handleScan} isLoading={scanLoading} disabled={!cameraActive}>
+                    {t("register.scanNow")}
+                  </Button>
+                </div>
+                {faceVerified && <div className="status-chip success">{t("register.faceVerified")}</div>}
+              </div>
+
+              <div className="email-section">
+                <p className="wizard-text">{t("register.emailSubtitle")}</p>
+                <div className="email-actions">
+                  <Input
+                    placeholder={t("register.emailCodePlaceholder")}
+                    value={emailCode}
+                    onChange={(event) => setEmailCode(event.target.value)}
+                  />
+                  <Button onClick={handleSendEmail} isLoading={emailSending}>
+                    {t("register.sendCode")}
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleVerifyEmail}
+                  isLoading={emailVerifying}
+                  disabled={!emailCode}
+                >
+                  {t("register.verifyCode")}
+                </Button>
+                {emailVerified && <div className="status-chip success">{t("register.emailVerified")}</div>}
+              </div>
+
+              <div className="wizard-actions">
+                <Button variant="ghost" onClick={() => setCurrentStep(2)}>
+                  {t("common.back")}
+                </Button>
+                <Button onClick={handleFinish} disabled={!faceVerified || !emailVerified}>
+                  {t("register.finish")}
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </div>
