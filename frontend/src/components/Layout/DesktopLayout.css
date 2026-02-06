@@ -50,6 +50,22 @@
   gap: var(--space-6);
 }
 
+.user-profile-trigger {
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.user-profile-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-border);
+}
+
 .user-info {
   display: flex;
   flex-direction: column;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { Button } from './ui';
 import { Sidebar } from './Layout/Sidebar';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import './MobileNav.css';
 
 interface MobileNavProps {
@@ -24,8 +25,11 @@ export const MobileNav: React.FC<MobileNavProps> = ({ title, items, user, onLogo
           className="mobile-menu-toggle"
         />
         <div className="mobile-header-title">{title}</div>
-        <div className="mobile-header-user">
-          {user?.first_name?.[0]}{user?.last_name?.[0]}
+        <div className="mobile-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <LanguageSwitcher />
+          <div className="mobile-header-user">
+            {user?.first_name?.[0]}{user?.last_name?.[0]}
+          </div>
         </div>
       </header>
 

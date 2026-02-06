@@ -25,14 +25,29 @@
   z-index: 0;
 }
 
+@property --beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes beamRotate {
+  from {
+    --beam-angle: 0deg;
+  }
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
 .card-beam::before {
   content: '';
   position: absolute;
   inset: -1px;
-  border-radius: calc(var(--radius-lg) + 1px);
+  border-radius: inherit;
   padding: 2px;
   background: conic-gradient(
-    from 0deg,
+    from var(--beam-angle),
     transparent 0deg,
     var(--neon-cyan) 90deg,
     var(--neon-magenta) 180deg,

@@ -10,9 +10,9 @@
   --color-background: #0a0b1e;
   --color-surface: rgba(22, 27, 51, 0.85);
   --color-border: rgba(0, 255, 255, 0.25);
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #b0b3c1;
-  --color-text-muted: #8a8ca0;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
 
   /* Neon Dark Theme Colors */
   --neon-cyan: #00ffff;
@@ -20,8 +20,8 @@
   --neon-midnight: #0a0b1e;
   --neon-deep-purple: #2e1a47;
   --neon-dark-surface: rgba(22, 27, 51, 0.7);
-  --neon-text: #ffffff;
-  --neon-text-dim: #b0b3c1;
+  --neon-text: #f8fafc;
+  --neon-text-dim: #cbd5e1;
   --neon-glow-cyan: rgba(0, 255, 255, 0.5);
   --neon-glow-magenta: rgba(255, 0, 255, 0.5);
 

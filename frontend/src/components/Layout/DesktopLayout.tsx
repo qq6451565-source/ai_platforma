@@ -1,9 +1,16 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Button } from '../ui';
-import { Popconfirm } from 'antd';
+import { Dropdown, Avatar, Menu, Space } from 'antd';
+import { 
+  UserOutlined, 
+  SettingOutlined, 
+  LogoutOutlined,
+  DownOutlined
+} from '@ant-design/icons';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import './DesktopLayout.css';
 
 interface LayoutProps {
@@ -22,6 +29,32 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
   title,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const profileMenuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: t('nav.profile'),
+      onClick: () => navigate(`/app/${user?.role}/profile`),
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: t('nav.settings'),
+      onClick: () => navigate(`/app/${user?.role}/settings`),
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: t('common.logout'),
+      danger: true,
+      onClick: onLogout,
+    },
+  ];
 
   return (
     <div className="desktop-layout">
@@ -32,18 +65,20 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
         </div>
         <div className="desktop-header-right">
           <LanguageSwitcher />
-          <div className="user-info">
-            <span className="user-name">{user?.first_name} {user?.last_name}</span>
-            <span className="user-role">({user?.role})</span>
-          </div>
-          <Popconfirm
-            title={t('auth.logoutConfirm')}
-            onConfirm={onLogout}
-            okText={t('common.yes')}
-            cancelText={t('common.no')}
-          >
-            <Button variant="outline" size="sm">{t('common.logout')}</Button>
-          </Popconfirm>
+          
+          <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="bottomRight">
+            <div className="user-profile-trigger">
+              <div className="user-info">
+                <span className="user-name">{user?.first_name} {user?.last_name}</span>
+                <span className="user-role">({user?.role})</span>
+              </div>
+              <Avatar 
+                icon={<UserOutlined />} 
+                style={{ backgroundColor: 'var(--neon-cyan)', color: 'var(--color-background)' }}
+              />
+              <DownOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
+            </div>
+          </Dropdown>
         </div>
       </header>
       <div className="desktop-container">
