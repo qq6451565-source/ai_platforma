@@ -161,6 +161,21 @@ body {
 }
 
 /* Neon Beam Effect for any card */
+@property --beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes beamRotate {
+  from {
+    --beam-angle: 0deg;
+  }
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
 .neon-card {
   position: relative;
   z-index: 0;
@@ -170,10 +185,10 @@ body {
   content: '';
   position: absolute;
   inset: -1px;
-  border-radius: calc(var(--radius-lg) + 1px);
+  border-radius: inherit;
   padding: 2px;
   background: conic-gradient(
-    from 0deg,
+    from var(--beam-angle),
     transparent 0deg,
     var(--neon-cyan) 90deg,
     var(--neon-magenta) 180deg,
@@ -763,17 +778,63 @@ body {
 }
 
 /* Custom utility classes */
-.admin-dashboard {
-  padding: var(--space-6);
+.badge-neon {
+  padding: 2px 8px;
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.lesson-chip {
+  padding: var(--space-2);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-1);
+}
+
+.lesson-chip:hover {
+  background: rgba(0, 255, 255, 0.05);
+  border-color: var(--neon-cyan);
+}
+
+.lesson-chip-title {
+  display: block;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.lesson-chip-time {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.grid-cards-wrapper {
+  margin-top: var(--space-6);
+}
+
+.lesson-week__grid {
   display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: var(--space-4);
 }
 
-.lesson-calendar {
+.lesson-month__grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+}
+
+@media (max-width: 1024px) {
+  .lesson-week__grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
 
 .clickable-row {

@@ -26,6 +26,12 @@
   color: var(--color-text-primary);
 }
 
+.mobile-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .mobile-header-user {
   width: 32px;
   height: 32px;

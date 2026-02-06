@@ -82,44 +82,46 @@ const StudentSchedule = () => {
         <Skeleton active />
       ) : (
         <>
-          <div className="mb-6">
-            <Space size="middle">
-              <Button
-                size="sm"
-                onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))}
-              >
-                {"<"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))}
-              >
-                {">"}
-              </Button>
-              <Button size="sm" onClick={() => setSelectedDate(dayjs())}>
-                {t('common.today')}
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "week" ? "primary" : "secondary"}
-                onClick={() => setViewMode("week")}
-              >
-                {t('common.week')}
-              </Button>
-              {!isMobile && (
+          <Card className="mb-6">
+            <div className="d-flex justify-between items-center flex-wrap gap-4">
+              <Space size="middle">
                 <Button
                   size="sm"
-                  variant={viewMode === "month" ? "primary" : "secondary"}
-                  onClick={() => setViewMode("month")}
+                  onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))}
                 >
-                  {t('common.month')}
+                  {"<"}
                 </Button>
-              )}
-            </Space>
-            <Typography.Text className="ml-6">
-              {viewMode === "week" ? weekLabel : monthLabel}
-            </Typography.Text>
-          </div>
+                <Button
+                  size="sm"
+                  onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))}
+                >
+                  {">"}
+                </Button>
+                <Button size="sm" onClick={() => setSelectedDate(dayjs())}>
+                  {t('common.today')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === "week" ? "primary" : "secondary"}
+                  onClick={() => setViewMode("week")}
+                >
+                  {t('common.week')}
+                </Button>
+                {!isMobile && (
+                  <Button
+                    size="sm"
+                    variant={viewMode === "month" ? "primary" : "secondary"}
+                    onClick={() => setViewMode("month")}
+                  >
+                    {t('common.month')}
+                  </Button>
+                )}
+              </Space>
+              <Typography.Text className="font-bold text-lg">
+                {viewMode === "week" ? weekLabel : monthLabel}
+              </Typography.Text>
+            </div>
+          </Card>
 
           <div className="grid-cards">
             {(viewMode === "week" ? weekDays : monthDays).map((day) => {
