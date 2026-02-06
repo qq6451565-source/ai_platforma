@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import AdminLoginPage from "./pages/AdminLogin";
+import LandingPage from "./pages/Landing";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentRoute from "./components/StudentRoute";
 import { clearTokens } from "./utils/token";
@@ -176,9 +177,13 @@ const App = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/login/*" element={<LoginPage />} />
       <Route path="/admin-login" element={<AdminLoginPage />} />
+      <Route path="/admin-login/*" element={<AdminLoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register/*" element={<RegisterPage />} />
       <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
         <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
           <Route path="live/:lessonId" element={<LiveRoomPage />} />
@@ -218,7 +223,7 @@ const App = () => {
           <Route index element={<Navigate to={getDefaultRedirect(user?.role)} replace />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
