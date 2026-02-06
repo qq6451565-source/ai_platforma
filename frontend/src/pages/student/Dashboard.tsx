@@ -6,8 +6,10 @@ import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { Card, Button } from "../../components/ui";
+import { useTranslation } from "react-i18next";
 
 const StudentDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: lessons, isLoading: loadingLessons } = useQuery({
     queryKey: ["lessons"],
@@ -34,32 +36,32 @@ const StudentDashboard = () => {
 
   const getLiveStatus = (lesson: any) => {
     if (!lesson?.start_time || !lesson?.end_time) {
-      return { canJoin: false, label: "Jadval yo'q" };
+      return { canJoin: false, label: t('schedule.noSchedule') };
     }
     const start = dayjs(lesson.start_time);
     const end = dayjs(lesson.end_time);
     const now = dayjs();
-    if (now.isBefore(start)) return { canJoin: false, label: "Boshlanishini kuting" };
-    if (now.isAfter(end)) return { canJoin: false, label: "Dars tugagan" };
-    return { canJoin: true, label: "Live darsga o'tish" };
+    if (now.isBefore(start)) return { canJoin: false, label: t('schedule.waitForStart') };
+    if (now.isAfter(end)) return { canJoin: false, label: t('schedule.lessonEnded') };
+    return { canJoin: true, label: t('schedule.joinLive') };
   };
 
   return (
     <div className="page-container animate-fade-in">
       <div className="d-flex justify-between items-center mb-6">
-        <h1 className="m-0">Talaba paneli</h1>
+        <h1 className="m-0 neon-text-gradient">{t('dashboard.title')}</h1>
         <div className="body-sm text-secondary">{dayjs().format('DD.MM.YYYY')}</div>
       </div>
 
       <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <Card title="Bugungi darslar" className="h-full">
+        <Card title={t('dashboard.todayLessons')} className="h-full" hasBeam>
           {loadingLessons ? (
             <Skeleton active />
           ) : (
             <List
               size="small"
               dataSource={todayLessons}
-              locale={{ emptyText: "Bugun dars yo'q" }}
+              locale={{ emptyText: t('dashboard.noLessonsToday') }}
               renderItem={(item) => {
                 const liveStatus = getLiveStatus(item);
                 return (
@@ -69,7 +71,7 @@ const StudentDashboard = () => {
                     extra={
                       <Button
                         size="sm"
-                        variant={liveStatus.canJoin ? "primary" : "outline"}
+                        variant={liveStatus.canJoin ? "neon" : "outline"}
                         disabled={!liveStatus.canJoin}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -81,10 +83,10 @@ const StudentDashboard = () => {
                     }
                   >
                     <List.Item.Meta
-                      title={<span className="font-bold">{item.subject_name || "Fan"}</span>}
+                      title={<span className="font-bold text-primary">{item.subject_name || t('schedule.subject')}</span>}
                       description={
                         <div>
-                          <div className="text-primary body-sm">{item.topic || "Mavzu ko'rsatilmagan"}</div>
+                          <div className="text-secondary body-sm">{item.topic || t('schedule.empty')}</div>
                           <div className="caption">
                             {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
                           </div>
@@ -98,22 +100,22 @@ const StudentDashboard = () => {
           )}
         </Card>
 
-        <Card title="Bugungi topshiriqlar" className="h-full">
+        <Card title={t('dashboard.todayAssignments')} className="h-full" hasBeam>
           {loadingAssignments ? (
             <Skeleton active />
           ) : (
             <List
               size="small"
               dataSource={todayAssignments}
-              locale={{ emptyText: "Bugun topshiriq yo'q" }}
+              locale={{ emptyText: t('dashboard.noAssignmentsToday') }}
               renderItem={(item) => (
                 <List.Item
                   style={{ cursor: "pointer", padding: '12px 0' }}
                   onClick={() => navigate("/app/student/assignments")}
                 >
                   <List.Item.Meta
-                    title={<span className="font-medium">{item.title}</span>}
-                    description={<span className="caption">{item.subject || "Fan"}</span>}
+                    title={<span className="font-medium text-primary">{item.title}</span>}
+                    description={<span className="caption">{item.subject || t('schedule.subject')}</span>}
                   />
                 </List.Item>
               )}
@@ -121,22 +123,22 @@ const StudentDashboard = () => {
           )}
         </Card>
 
-        <Card title="Bugungi testlar" className="h-full">
+        <Card title={t('dashboard.todayTests')} className="h-full" hasBeam>
           {loadingTests ? (
             <Skeleton active />
           ) : (
             <List
               size="small"
               dataSource={todayTests}
-              locale={{ emptyText: "Bugun test yo'q" }}
+              locale={{ emptyText: t('dashboard.noTestsToday') }}
               renderItem={(item) => (
                 <List.Item
                   style={{ cursor: "pointer", padding: '12px 0' }}
                   onClick={() => navigate("/app/student/tests")}
                 >
                   <List.Item.Meta
-                    title={<span className="font-medium">{item.title}</span>}
-                    description={<span className="caption">{item.subject_name || "Fan"}</span>}
+                    title={<span className="font-medium text-primary">{item.title}</span>}
+                    description={<span className="caption">{item.subject_name || t('schedule.subject')}</span>}
                   />
                 </List.Item>
               )}

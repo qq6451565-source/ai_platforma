@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import { Navigate, Route, Routes, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import Landing from "./pages/Landing";
 import LoginPage from "./pages/Login";
@@ -56,69 +57,71 @@ import { useMe } from "./hooks/useMe";
 import { ResponsiveLayout } from "./components/Layout";
 import "./App.css";
 
-const studentGroup = [
-  {
-    label: "Talaba",
-    children: [
-      { key: "student/dashboard", label: "Bosh sahifa", icon: <DashboardOutlined /> },
-      { key: "student/schedule", label: "Dars jadvali", icon: <CalendarOutlined /> },
-      { key: "student/materials", label: "Materiallar", icon: <ReadOutlined /> },
-      { key: "student/assignments", label: "Topshiriqlar", icon: <FileTextOutlined /> },
-      { key: "student/tests", label: "Testlar", icon: <ExperimentOutlined /> },
-      { key: "student/grades", label: "Baholar", icon: <FileDoneOutlined /> },
-      { key: "student/attendance", label: "Davomat", icon: <TeamOutlined /> },
-      { key: "student/profile", label: "Profil", icon: <UserOutlined /> },
-    ],
-  },
-];
-
-const teacherGroup = [
-  {
-    label: "O'qituvchi",
-    children: [
-      { key: "teacher/dashboard", label: "Panel", icon: <DashboardOutlined /> },
-      { key: "teacher/lessons", label: "Dars jadvali", icon: <CalendarOutlined /> },
-      { key: "teacher/assignments", label: "Topshiriqlar", icon: <FileTextOutlined /> },
-      { key: "teacher/tests", label: "Testlar", icon: <ExperimentOutlined /> },
-      { key: "teacher/grades", label: "Baholar", icon: <FileDoneOutlined /> },
-      { key: "teacher/attendance", label: "Davomat", icon: <TeamOutlined /> },
-      { key: "teacher/materials", label: "Materiallar", icon: <ReadOutlined /> },
-      { key: "teacher/submissions", label: "Yuborilganlar", icon: <FileDoneOutlined /> },
-      { key: "teacher/profile", label: "Profil", icon: <UserOutlined /> },
-    ],
-  },
-];
-
-const adminGroup = [
-  {
-    label: "Asosiy",
-    children: [
-      { key: "admin/dashboard", label: "Boshqaruv paneli", icon: <DashboardOutlined /> },
-      { key: "admin/profile", label: "Profil", icon: <UserOutlined /> },
-    ],
-  },
-  {
-    label: "Akademik",
-    children: [
-      { key: "admin/users", label: "Foydalanuvchilar", icon: <TeamOutlined /> },
-      { key: "admin/university", label: "Tuzilma", icon: <BookOutlined /> },
-      { key: "admin/learning", label: "O'quv jarayoni", icon: <CalendarOutlined /> },
-      { key: "admin/enrollment", label: "Qabul", icon: <FileTextOutlined /> },
-    ],
-  },
-  {
-    label: "Tizim",
-    children: [{ key: "admin/ai-settings", label: "AI sozlamalari", icon: <SettingOutlined /> }],
-  },
-];
-
 const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
+
+  const studentGroup = useMemo(() => [
+    {
+      label: t('nav.student'),
+      children: [
+        { key: "student/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
+        { key: "student/schedule", label: t('nav.schedule'), icon: <CalendarOutlined /> },
+        { key: "student/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
+        { key: "student/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
+        { key: "student/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
+        { key: "student/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
+        { key: "student/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
+        { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
+      ],
+    },
+  ], [t]);
+
+  const teacherGroup = useMemo(() => [
+    {
+      label: t('nav.teacher'),
+      children: [
+        { key: "teacher/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
+        { key: "teacher/lessons", label: t('nav.schedule'), icon: <CalendarOutlined /> },
+        { key: "teacher/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
+        { key: "teacher/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
+        { key: "teacher/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
+        { key: "teacher/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
+        { key: "teacher/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
+        { key: "teacher/submissions", label: t('nav.submissions'), icon: <FileDoneOutlined /> },
+        { key: "teacher/profile", label: t('nav.profile'), icon: <UserOutlined /> },
+      ],
+    },
+  ], [t]);
+
+  const adminGroup = useMemo(() => [
+    {
+      label: t('nav.main'),
+      children: [
+        { key: "admin/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
+        { key: "admin/profile", label: t('nav.profile'), icon: <UserOutlined /> },
+      ],
+    },
+    {
+      label: t('nav.academic'),
+      children: [
+        { key: "admin/users", label: t('nav.users'), icon: <TeamOutlined /> },
+        { key: "admin/university", label: t('nav.university'), icon: <BookOutlined /> },
+        { key: "admin/learning", label: t('nav.learning'), icon: <CalendarOutlined /> },
+        { key: "admin/enrollment", label: t('nav.enrollment'), icon: <FileTextOutlined /> },
+      ],
+    },
+    {
+      label: t('nav.system'),
+      children: [{ key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> }],
+    },
+  ], [t]);
+
   const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : studentGroup;
 
   useEffect(() => {
@@ -142,10 +145,10 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   };
 
   const title = useMemo(() => {
-    if (isAdmin) return "Admin paneli";
-    if (isTeacher) return "O'qituvchi paneli";
-    return "Talaba paneli";
-  }, [isAdmin, isTeacher]);
+    if (isAdmin) return t('roles.admin');
+    if (isTeacher) return t('roles.teacher');
+    return t('roles.student');
+  }, [isAdmin, isTeacher, t]);
 
   if (isLiveRoute) return <Outlet />;
 

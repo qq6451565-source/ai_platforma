@@ -13,12 +13,28 @@ html, body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
-  background: linear-gradient(135deg, #0a0b1e 0%, #2e1a47 100%);
+  background: #0a0b1e;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
   background-attachment: fixed;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+/* Override all black text styles */
+body * {
+  color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, div, li, a {
+  color: var(--color-text-primary);
+}
+
+.text-muted, .caption, .user-role {
+  color: var(--color-text-secondary) !important;
 }
 
 a {
