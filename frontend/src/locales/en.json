@@ -78,7 +78,8 @@
     "empty": "Empty",
     "dayLessons": "Day lessons",
     "close": "Close",
-    "noSchedule": "No schedule"
+    "noSchedule": "No schedule",
+    "moreLessons": "more lessons"
   },
   "auth": {
     "login": "Login",

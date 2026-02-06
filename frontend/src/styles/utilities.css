@@ -71,3 +71,79 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--space-6);
 }
+
+.grid-cards-wrapper {
+  width: 100%;
+}
+
+.schedule-week-grid,
+.schedule-month-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.schedule-week-grid {
+  grid-template-columns: repeat(6, minmax(180px, 1fr));
+}
+
+.schedule-month-grid {
+  grid-template-columns: repeat(6, minmax(160px, 1fr));
+}
+
+.badge-neon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 255, 0.15);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+}
+
+.lesson-chip {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(22, 27, 51, 0.7);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.lesson-chip-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.lesson-chip-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1200px) {
+  .schedule-week-grid,
+  .schedule-month-grid {
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .schedule-week-grid,
+  .schedule-month-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .schedule-week-grid,
+  .schedule-month-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: var(--space-4);
+  }
+}

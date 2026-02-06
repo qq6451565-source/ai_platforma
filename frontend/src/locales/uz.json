@@ -78,7 +78,8 @@
     "empty": "Bo'sh",
     "dayLessons": "Kundagi darslar",
     "close": "Yopish",
-    "noSchedule": "Jadval yo'q"
+    "noSchedule": "Jadval yo'q",
+    "moreLessons": "yana dars"
   },
   "auth": {
     "login": "Kirish",
