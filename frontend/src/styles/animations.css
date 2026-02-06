@@ -83,6 +83,43 @@
   }
 }
 
+@keyframes holographicShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes laserScan {
+  0%, 100% {
+    top: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes auroraGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+
 .animate-fade-in { animation: fadeIn var(--transition-base) forwards; }
 .animate-slide-up { animation: slideUp var(--transition-base) forwards; }
 .animate-slide-down { animation: slideDown var(--transition-base) forwards; }
@@ -91,3 +128,6 @@
 .animate-neon-pulse { animation: neonPulse 2s ease-in-out infinite; }
 .animate-border-glow { animation: borderGlow 3s ease-in-out infinite; }
 .animate-float { animation: float 3s ease-in-out infinite; }
+.animate-holographic-shimmer { animation: holographicShimmer 2.5s linear infinite; }
+.animate-laser-scan { animation: laserScan 3s ease-in-out infinite; }
+.animate-aurora-glow { animation: auroraGlow 4s ease-in-out infinite; }
