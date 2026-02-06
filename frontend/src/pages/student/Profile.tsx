@@ -47,7 +47,7 @@ const StudentProfile = () => {
       key: 'profile',
       label: 'Shaxsiy ma\'lumotlar',
       children: (
-        <Card>
+        <Card hasBeam>
           <div className="d-flex items-center mb-6 gap-4">
             <Avatar size={80} src={user?.face_image || undefined}>
               {user?.first_name?.[0]}
@@ -101,7 +101,7 @@ const StudentProfile = () => {
       label: 'Xavfsizlik',
       children: (
         <div style={{ maxWidth: '500px', width: '100%' }}>
-          <Card>
+          <Card hasBeam>
             <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
               <Form.Item
                 label="Eski parol"

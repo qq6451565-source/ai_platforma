@@ -1,9 +1,10 @@
-import { Button, Card, Empty, List, Skeleton, Tag, Typography } from "antd";
+import { Button, Empty, List, Skeleton, Tag, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchMaterials } from "../../api/materials";
 import { fetchLessons } from "../../api/lessons";
 import type { MaterialResource } from "../../types/material";
+import { Card } from "../../components/ui";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -115,9 +116,9 @@ const StudentMaterials = () => {
             dataSource={subjectCards}
             renderItem={(subject) => (
               <List.Item>
-                <Card hoverable onClick={() => setActiveSubject(subject.id)}>
+                <Card hoverable onClick={() => setActiveSubject(subject.id)} hasBeam>
                   <Typography.Text strong>{subject.name}</Typography.Text>
-                  <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta material</div>
+                  <div className="caption" style={{ marginTop: 6 }}>{subject.count} ta material</div>
                 </Card>
               </List.Item>
             )}
@@ -153,19 +154,19 @@ const StudentMaterials = () => {
                         return (
                           <div style={{ width: "100%" }}>
                             <div className="kv-grid" style={{ marginBottom: 10 }}>
-                              <span style={{ color: "#94a3b8" }}>Sarlavha</span>
+                              <span>Sarlavha</span>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <strong>{item.title}</strong>
                               </div>
-                              <span style={{ color: "#94a3b8" }}>Fan</span>
+                              <span>Fan</span>
                               <span>{item.subject_name || `Fan #${item.subject}`}</span>
-                              <span style={{ color: "#94a3b8" }}>O'qituvchi</span>
+                              <span>O'qituvchi</span>
                               <span>{item.teacher_name || "-"}</span>
-                              <span style={{ color: "#94a3b8" }}>Guruhlar</span>
+                              <span>Guruhlar</span>
                               <span>
                                 {(item.group_names || []).join(", ") || item.group_name || "-"}
                               </span>
-                              <span style={{ color: "#94a3b8" }}>Fayl</span>
+                              <span>Fayl</span>
                               {renderFileLinks(currentResources)}
                             </div>
                           </div>
