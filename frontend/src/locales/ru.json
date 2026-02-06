@@ -78,7 +78,8 @@
     "empty": "Пусто",
     "dayLessons": "Уроки дня",
     "close": "Закрыть",
-    "noSchedule": "Нет расписания"
+    "noSchedule": "Нет расписания",
+    "moreLessons": "ещё уроков"
   },
   "auth": {
     "login": "Войти",

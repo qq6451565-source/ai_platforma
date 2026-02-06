@@ -1,24 +1,37 @@
-import { List, Modal, Space, Typography, Grid } from "antd";
+import { List, Modal, Space, Grid } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import dayjs from "dayjs";
 
 const TeacherLessons = () => {
-  const { data: lessons, isLoading } = useQuery({
+  const { t } = useTranslation();
+  const { data: lessons } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
   });
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = dayjs();
+    return today.day() === 0 ? today.add(1, "day") : today;
+  });
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [dayOpen, setDayOpen] = useState(false);
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
-  const weekdayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+  const weekdayNames = [
+    t('days.monday'),
+    t('days.tuesday'),
+    t('days.wednesday'),
+    t('days.thursday'),
+    t('days.friday'),
+    t('days.saturday')
+  ];
+  const normalizeDate = (date: dayjs.Dayjs) => (date.day() === 0 ? date.add(1, "day") : date);
 
   useEffect(() => {
     if (isMobile && viewMode !== "week") {
@@ -34,18 +47,20 @@ const TeacherLessons = () => {
     return acc;
   }, {});
 
-  const weekStart = selectedDate.subtract((selectedDate.day() + 6) % 7, "day");
-  const weekDays = Array.from({ length: 7 }, (_, idx) => weekStart.add(idx, "day"));
-  const weekLabel = `${weekStart.format("DD.MM")} - ${weekStart.add(6, "day").format("DD.MM.YYYY")}`;
+  const daysFromMonday = selectedDate.day() === 0 ? 6 : selectedDate.day() - 1;
+  const weekStart = selectedDate.subtract(daysFromMonday, "day");
+  const weekDays = Array.from({ length: 6 }, (_, idx) => weekStart.add(idx, "day"));
+  const weekLabel = `${weekStart.format("DD.MM")} - ${weekStart.add(5, "day").format("DD.MM.YYYY")}`;
   const monthLabel = selectedDate.format("MM.YYYY");
   const monthStart = selectedDate.startOf("month");
   const monthEnd = selectedDate.endOf("month");
-  const gridStart = monthStart.subtract((monthStart.day() + 6) % 7, "day");
-  const monthEndIndex = (monthEnd.day() + 6) % 7;
-  const gridEnd = monthEnd.add(6 - monthEndIndex, "day");
+  const monthStartOffset = monthStart.day() === 0 ? 6 : monthStart.day() - 1;
+  const monthEndOffset = monthEnd.day() === 0 ? 6 : 6 - monthEnd.day();
+  const gridStart = monthStart.subtract(monthStartOffset, "day");
+  const gridEnd = monthEnd.add(monthEndOffset, "day");
   const monthDays = Array.from({ length: gridEnd.diff(gridStart, "day") + 1 }, (_, idx) =>
     gridStart.add(idx, "day")
-  );
+  ).filter((day) => day.day() !== 0);
   const selectedKey = selectedDate.format("YYYY-MM-DD");
   const selectedLessons = (lessonsByDate[selectedKey] || [])
     .slice()
@@ -53,23 +68,23 @@ const TeacherLessons = () => {
 
   const getLiveStatus = (lesson: any) => {
     if (!lesson?.start_time || !lesson?.end_time) {
-      return { canJoin: false, label: "Jadval yo'q" };
+      return { canJoin: false, label: t('schedule.noSchedule') };
     }
     const start = dayjs(lesson.start_time);
     const end = dayjs(lesson.end_time);
     const now = dayjs();
-    if (now.isBefore(start)) return { canJoin: false, label: "Boshlanishini kuting" };
-    if (now.isAfter(end)) return { canJoin: false, label: "Dars tugagan" };
-    return { canJoin: true, label: "Live darsga o'tish" };
+    if (now.isBefore(start)) return { canJoin: false, label: t('schedule.waitForStart') };
+    if (now.isAfter(end)) return { canJoin: false, label: t('schedule.lessonEnded') };
+    return { canJoin: true, label: t('schedule.joinLive') };
   };
 
   return (
     <div className="page-shell page-container animate-fade-in">
-      <h1 className="page-title neon-text-gradient mb-6">Dars jadvali</h1>
+      <h1 className="page-title neon-text-gradient mb-6">{t('schedule.title')}</h1>
       <Card className="mb-6">
         <div className="d-flex justify-between items-center flex-wrap gap-4">
           <div>
-            <div className="text-secondary body-sm">{viewMode === "week" ? "Hafta" : "Oy"}</div>
+            <div className="text-secondary body-sm">{viewMode === "week" ? t('common.week') : t('common.month')}</div>
             <div className="font-bold text-lg">{viewMode === "week" ? weekLabel : monthLabel}</div>
           </div>
           <Space size="middle">
@@ -78,7 +93,9 @@ const TeacherLessons = () => {
               size="sm"
               variant="ghost"
               onClick={() =>
-                setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
+                setSelectedDate(
+                  normalizeDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
+                )
               }
             >
               {"<"}
@@ -88,13 +105,15 @@ const TeacherLessons = () => {
               size="sm"
               variant="ghost"
               onClick={() =>
-                setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
+                setSelectedDate(
+                  normalizeDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
+                )
               }
             >
               {">"}
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDate(dayjs())}>
-              Bugun
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDate(normalizeDate(dayjs()))}>
+              {t('common.today')}
             </Button>
             <Button
               type="button"
@@ -102,7 +121,7 @@ const TeacherLessons = () => {
               variant={viewMode === "week" ? "primary" : "secondary"}
               onClick={() => setViewMode("week")}
             >
-              Hafta
+              {t('common.week')}
             </Button>
             {!isMobile && (
               <Button
@@ -111,7 +130,7 @@ const TeacherLessons = () => {
                 variant={viewMode === "month" ? "primary" : "secondary"}
                 onClick={() => setViewMode("month")}
               >
-                Oy
+                {t('common.month')}
               </Button>
             )}
           </Space>
@@ -119,7 +138,7 @@ const TeacherLessons = () => {
       </Card>
 
       <div className="grid-cards-wrapper">
-        <div className={viewMode === "week" ? "lesson-week__grid" : "lesson-month__grid"}>
+        <div className={`grid-cards ${viewMode === "week" ? "schedule-week-grid" : "schedule-month-grid"}`}>
           {(viewMode === "week" ? weekDays : monthDays).map((day) => {
             const key = day.format("YYYY-MM-DD");
             const dayLessons = (lessonsByDate[key] || [])
@@ -128,6 +147,7 @@ const TeacherLessons = () => {
             const isToday = day.isSame(dayjs(), "day");
             const isSelected = day.isSame(selectedDate, "day");
             const isOutside = viewMode === "month" && day.month() !== selectedDate.month();
+            const weekdayIndex = day.day() === 0 ? null : day.day() - 1;
             return (
               <Card
                 key={key}
@@ -147,9 +167,9 @@ const TeacherLessons = () => {
                 }}
               >
                 <div className="d-flex justify-between items-center mb-4">
-                  <span className="font-bold">{weekdayNames[day.day()]}</span>
+                  <span className="font-bold">{weekdayIndex !== null ? weekdayNames[weekdayIndex] : ''}</span>
                   {isToday && (
-                    <span className="badge-neon">Bugun</span>
+                    <span className="badge-neon">{t('common.today')}</span>
                   )}
                 </div>
                 <div className="text-2xl font-bold mb-4">
@@ -157,8 +177,8 @@ const TeacherLessons = () => {
                 </div>
                 <div className="d-flex flex-column gap-2">
                   {dayLessons.map((item) => {
-                    const subjectLabel = item.subject_name || "Fan";
-                    const groupLabel = item.group_name || `Guruh #${item.group}`;
+                    const subjectLabel = item.subject_name || t('schedule.subject');
+                    const groupLabel = item.group_name || `${t('schedule.group')} #${item.group}`;
                     const timeLabel =
                       item.start_time && item.end_time
                         ? `${dayjs(item.start_time).format("HH:mm")} - ${dayjs(item.end_time).format("HH:mm")}`
@@ -172,7 +192,7 @@ const TeacherLessons = () => {
                       </div>
                     );
                   })}
-                  {!dayLessons.length && <div className="text-muted body-sm">Bo'sh</div>}
+                  {!dayLessons.length && <div className="text-muted body-sm">{t('schedule.empty')}</div>}
                 </div>
               </Card>
             );
@@ -180,22 +200,22 @@ const TeacherLessons = () => {
         </div>
       </div>
       <Modal
-        title={`Kundagi darslar: ${selectedDate.format("DD.MM.YYYY")}`}
+        title={`${t('schedule.dayLessons')}: ${selectedDate.format("DD.MM.YYYY")}`}
         open={dayOpen}
         onCancel={() => setDayOpen(false)}
         footer={[
           <Button key="close" type="button" variant="secondary" onClick={() => setDayOpen(false)}>
-            Yopish
+            {t('common.close')}
           </Button>,
         ]}
         bodyStyle={{ maxHeight: 460, overflowY: "auto" }}
       >
         <List
           dataSource={selectedLessons}
-          locale={{ emptyText: "Bu kunda dars yo'q" }}
+          locale={{ emptyText: t('schedule.noLessonsToday') }}
           renderItem={(item) => {
-            const subjectLabel = item.subject_name || "Fan";
-            const groupLabel = item.group_name || `Guruh #${item.group}`;
+            const subjectLabel = item.subject_name || t('schedule.subject');
+            const groupLabel = item.group_name || `${t('schedule.group')} #${item.group}`;
             const timeLabel =
               item.start_time && item.end_time
                 ? `${dayjs(item.start_time).format("HH:mm")} - ${dayjs(item.end_time).format("HH:mm")}`
@@ -218,7 +238,7 @@ const TeacherLessons = () => {
               >
                 <Space direction="vertical" size={0}>
                   <div>{`${subjectLabel} - ${groupLabel}`}</div>
-                  <div style={{ fontSize: 12, color: "#6a7280" }}>{timeLabel}</div>
+                  <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{timeLabel}</div>
                 </Space>
               </List.Item>
             );

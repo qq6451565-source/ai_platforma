@@ -16,14 +16,16 @@ const StudentSchedule = () => {
   });
   const navigate = useNavigate();
 
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = dayjs();
+    return today.day() === 0 ? today.add(1, "day") : today;
+  });
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [dayOpen, setDayOpen] = useState(false);
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
   const weekdayNames = [
-    t('days.sunday'),
     t('days.monday'),
     t('days.tuesday'),
     t('days.wednesday'),
@@ -31,6 +33,8 @@ const StudentSchedule = () => {
     t('days.friday'),
     t('days.saturday')
   ];
+
+  const normalizeDate = (date: dayjs.Dayjs) => (date.day() === 0 ? date.add(1, "day") : date);
 
   useEffect(() => {
     if (isMobile && viewMode !== "week") {
@@ -46,18 +50,20 @@ const StudentSchedule = () => {
     return acc;
   }, {});
 
-  const weekStart = selectedDate.subtract((selectedDate.day() + 6) % 7, "day");
-  const weekDays = Array.from({ length: 7 }, (_, idx) => weekStart.add(idx, "day"));
-  const weekLabel = `${weekStart.format("DD.MM")} - ${weekStart.add(6, "day").format("DD.MM.YYYY")}`;
+  const daysFromMonday = selectedDate.day() === 0 ? 6 : selectedDate.day() - 1;
+  const weekStart = selectedDate.subtract(daysFromMonday, "day");
+  const weekDays = Array.from({ length: 6 }, (_, idx) => weekStart.add(idx, "day"));
+  const weekLabel = `${weekStart.format("DD.MM")} - ${weekStart.add(5, "day").format("DD.MM.YYYY")}`;
   const monthLabel = selectedDate.format("MM.YYYY");
   const monthStart = selectedDate.startOf("month");
   const monthEnd = selectedDate.endOf("month");
-  const gridStart = monthStart.subtract((monthStart.day() + 6) % 7, "day");
-  const monthEndIndex = (monthEnd.day() + 6) % 7;
-  const gridEnd = monthEnd.add(6 - monthEndIndex, "day");
+  const monthStartOffset = monthStart.day() === 0 ? 6 : monthStart.day() - 1;
+  const monthEndOffset = monthEnd.day() === 0 ? 6 : 6 - monthEnd.day();
+  const gridStart = monthStart.subtract(monthStartOffset, "day");
+  const gridEnd = monthEnd.add(monthEndOffset, "day");
   const monthDays = Array.from({ length: gridEnd.diff(gridStart, "day") + 1 }, (_, idx) =>
     gridStart.add(idx, "day")
-  );
+  ).filter((day) => day.day() !== 0);
   const selectedKey = selectedDate.format("YYYY-MM-DD");
   const selectedLessons = (lessonsByDate[selectedKey] || [])
     .slice()
@@ -87,17 +93,25 @@ const StudentSchedule = () => {
               <Space size="middle">
                 <Button
                   size="sm"
-                  onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))}
+                  onClick={() =>
+                    setSelectedDate(
+                      normalizeDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
+                    )
+                  }
                 >
                   {"<"}
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))}
+                  onClick={() =>
+                    setSelectedDate(
+                      normalizeDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
+                    )
+                  }
                 >
                   {">"}
                 </Button>
-                <Button size="sm" onClick={() => setSelectedDate(dayjs())}>
+                <Button size="sm" onClick={() => setSelectedDate(normalizeDate(dayjs()))}>
                   {t('common.today')}
                 </Button>
                 <Button
@@ -123,7 +137,7 @@ const StudentSchedule = () => {
             </div>
           </Card>
 
-          <div className="grid-cards">
+          <div className={`grid-cards ${viewMode === "week" ? "schedule-week-grid" : "schedule-month-grid"}`}>
             {(viewMode === "week" ? weekDays : monthDays).map((day) => {
               const key = day.format("YYYY-MM-DD");
               const dayLessons = (lessonsByDate[key] || [])
@@ -131,6 +145,7 @@ const StudentSchedule = () => {
                 .sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
               const isToday = day.isSame(dayjs(), "day");
               const isOutside = viewMode === "month" && day.month() !== selectedDate.month();
+              const weekdayIndex = day.day() === 0 ? null : day.day() - 1;
 
               return (
                 <Card
@@ -151,7 +166,7 @@ const StudentSchedule = () => {
                 >
                   <div className="d-flex justify-between items-center mb-4">
                     <Typography.Text strong>
-                      {weekdayNames[day.day()]}
+                      {weekdayIndex !== null ? weekdayNames[weekdayIndex] : ''}
                     </Typography.Text>
                     {isToday && (
                       <span style={{
@@ -176,22 +191,16 @@ const StudentSchedule = () => {
                   <div className="d-flex flex-column gap-2">
                     {dayLessons.slice(0, 3).map((item) => {
                       const subjectLabel = item.subject_name || t('schedule.subject');
-                      const groupLabel = item.group_name || `${t('schedule.group')} #${item.group}`;
                       const timeLabel =
                         item.start_time && item.end_time
                           ? `${dayjs(item.start_time).format("HH:mm")} - ${dayjs(item.end_time).format("HH:mm")}`
                           : "-";
                       return (
-                        <div key={item.id} style={{
-                          padding: 'var(--space-2)',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '4px',
-                          border: '1px solid var(--color-border)'
-                        }}>
-                          <Typography.Text style={{ display: 'block', fontSize: '13px' }}>
+                        <div key={item.id} className="lesson-chip">
+                          <Typography.Text className="lesson-chip-title">
                             {subjectLabel}
                           </Typography.Text>
-                          <Typography.Text style={{ display: 'block', fontSize: '12px' }}>
+                          <Typography.Text className="lesson-chip-time">
                             {timeLabel}
                           </Typography.Text>
                         </div>
@@ -199,7 +208,7 @@ const StudentSchedule = () => {
                     })}
                     {dayLessons.length > 3 && (
                       <Typography.Text style={{ fontSize: '12px' }}>
-                        +{dayLessons.length - 3} {t('schedule.noLessons')}
+                        +{dayLessons.length - 3} {t('schedule.moreLessons')}
                       </Typography.Text>
                     )}
                     {!dayLessons.length && (
