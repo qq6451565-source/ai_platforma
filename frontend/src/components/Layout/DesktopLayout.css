@@ -6,7 +6,8 @@
 
 .desktop-header {
   height: 64px;
-  background-color: var(--color-surface);
+  background: var(--color-surface);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -15,6 +16,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .desktop-header-left {
@@ -26,8 +28,12 @@
 .logo {
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--color-primary);
+  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   letter-spacing: -0.02em;
+  text-shadow: 0 0 20px var(--neon-glow-cyan);
 }
 
 .page-title-header {
@@ -50,6 +56,7 @@
 .user-name {
   font-weight: 600;
   font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
 }
 
 .user-role {
@@ -65,6 +72,5 @@
 .desktop-content {
   flex: 1;
   padding: var(--space-6);
-  background-color: var(--color-background);
-  min-width: 0; /* Prevent overflow issues with flex */
+  min-width: 0;
 }

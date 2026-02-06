@@ -15,7 +15,7 @@ const AuthLayout: React.FC<Props> = ({ title, extra, children }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #f0f4ff 0%, #f8fbff 100%)",
+        background: "linear-gradient(135deg, #0a0b1e 0%, #2e1a47 100%)",
         padding: 24,
       }}
     >

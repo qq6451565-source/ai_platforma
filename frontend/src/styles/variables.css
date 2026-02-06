@@ -1,27 +1,27 @@
 :root {
-  /* Colors - Neon Dark Theme */
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  /* Neon Dark Theme Colors */
+  --color-primary: #00ffff;
+  --color-primary-dark: #00cccc;
   --color-secondary: #64748b;
-  --color-secondary-light: #f1f5f9;
+  --color-secondary-light: rgba(255, 255, 255, 0.05);
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text-primary: #1e293b;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
+  --color-background: #0a0b1e;
+  --color-surface: rgba(22, 27, 51, 0.7);
+  --color-border: rgba(0, 255, 255, 0.2);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b0b3c1;
+  --color-text-muted: #6b6d80;
 
   /* Neon Dark Theme Colors */
   --neon-cyan: #00ffff;
   --neon-magenta: #ff00ff;
   --neon-midnight: #0a0b1e;
   --neon-deep-purple: #2e1a47;
-  --neon-dark-surface: #1a1b2e;
-  --neon-text: #e0e0ff;
-  --neon-text-dim: #8b8ba8;
+  --neon-dark-surface: rgba(22, 27, 51, 0.7);
+  --neon-text: #ffffff;
+  --neon-text-dim: #b0b3c1;
   --neon-glow-cyan: rgba(0, 255, 255, 0.5);
   --neon-glow-magenta: rgba(255, 0, 255, 0.5);
 

@@ -13,10 +13,12 @@ html, body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
-  background-color: var(--color-background);
+  background: linear-gradient(135deg, #0a0b1e 0%, #2e1a47 100%);
+  background-attachment: fixed;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
 a {
