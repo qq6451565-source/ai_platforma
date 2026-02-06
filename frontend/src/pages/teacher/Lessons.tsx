@@ -74,6 +74,7 @@ const TeacherLessons = () => {
           </div>
           <Space size="middle">
             <Button
+              type="button"
               size="sm"
               variant="ghost"
               onClick={() =>
@@ -83,6 +84,7 @@ const TeacherLessons = () => {
               {"<"}
             </Button>
             <Button
+              type="button"
               size="sm"
               variant="ghost"
               onClick={() =>
@@ -91,10 +93,11 @@ const TeacherLessons = () => {
             >
               {">"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setSelectedDate(dayjs())}>
+            <Button type="button" size="sm" variant="outline" onClick={() => setSelectedDate(dayjs())}>
               Bugun
             </Button>
             <Button
+              type="button"
               size="sm"
               variant={viewMode === "week" ? "primary" : "secondary"}
               onClick={() => setViewMode("week")}
@@ -103,6 +106,7 @@ const TeacherLessons = () => {
             </Button>
             {!isMobile && (
               <Button
+                type="button"
                 size="sm"
                 variant={viewMode === "month" ? "primary" : "secondary"}
                 onClick={() => setViewMode("month")}
@@ -180,7 +184,7 @@ const TeacherLessons = () => {
         open={dayOpen}
         onCancel={() => setDayOpen(false)}
         footer={[
-          <Button key="close" onClick={() => setDayOpen(false)}>
+          <Button key="close" type="button" variant="secondary" onClick={() => setDayOpen(false)}>
             Yopish
           </Button>,
         ]}
@@ -202,8 +206,9 @@ const TeacherLessons = () => {
                 actions={[
                   <Button
                     key="live"
-                    size="small"
-                    type={liveStatus.canJoin ? "primary" : "default"}
+                    type="button"
+                    size="sm"
+                    variant={liveStatus.canJoin ? "primary" : "secondary"}
                     disabled={!liveStatus.canJoin}
                     onClick={() => navigate(`/app/live/${item.id}`)}
                   >
