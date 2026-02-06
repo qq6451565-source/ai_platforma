@@ -2,11 +2,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status, viewsets, mixins
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.models import Group, Permission
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from tests_app.permissions import IsAdmin
+import requests
+from datetime import timedelta
+
+from ai.clients import face_analyze, face_match
 
 from .serializers import (
     UserSerializer,
@@ -22,7 +30,7 @@ from .serializers import (
     OutstandingTokenSerializer,
     BlacklistedTokenSerializer,
 )
-from .models import User, PassportData, AuditLog
+from .models import User, PassportData, AuditLog, EmailVerificationCode
 from .audit import log_audit
 from teacher_subject.models import TeacherSubject
 
@@ -35,6 +43,245 @@ class RegisterView(APIView):
             {"detail": "Ro'yxatdan o'tish enrollment orqali amalga oshiriladi."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+def _build_tokens(user: User) -> dict:
+    refresh = RefreshToken.for_user(user)
+    refresh["role"] = getattr(user, "role", None)
+    refresh["token_version"] = getattr(user, "token_version", 1)
+    refresh["is_staff"] = user.is_staff
+    refresh["is_superuser"] = user.is_superuser
+    access = refresh.access_token
+    return {
+        "access": str(access),
+        "refresh": str(refresh),
+        "role": getattr(user, "role", None),
+        "user_id": user.id,
+        "token_version": getattr(user, "token_version", 1),
+    }
+
+
+def _fetch_google_profile(token: str) -> dict:
+    if not token:
+        raise ValidationError({"token": "Token talab qilinadi."})
+
+    tokeninfo_url = "https://oauth2.googleapis.com/tokeninfo"
+    try:
+        response = requests.get(tokeninfo_url, params={"id_token": token}, timeout=8)
+        if response.ok:
+            data = response.json()
+            if data.get("email"):
+                return data
+
+        response = requests.get(tokeninfo_url, params={"access_token": token}, timeout=8)
+        if response.ok:
+            data = response.json()
+            if data.get("email"):
+                return data
+
+        userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+        response = requests.get(userinfo_url, headers={"Authorization": f"Bearer {token}"}, timeout=8)
+        if response.ok:
+            data = response.json()
+            if data.get("email"):
+                return data
+    except requests.RequestException as exc:
+        raise ValidationError({"token": "Google bilan ulanishda xatolik."}) from exc
+
+    raise ValidationError({"token": "Google tokeni yaroqsiz."})
+
+
+def _read_field_bytes(field_file):
+    if not field_file:
+        return None
+    try:
+        field_file.open("rb")
+        return field_file.read()
+    finally:
+        try:
+            field_file.close()
+        except Exception:
+            pass
+
+
+class GoogleOAuthView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get("token") or request.data.get("credential")
+        profile = _fetch_google_profile(token)
+
+        expected_aud = getattr(settings, "GOOGLE_CLIENT_ID", None)
+        aud = profile.get("aud")
+        if expected_aud and aud and aud != expected_aud:
+            raise ValidationError({"token": "Google tokeni noto'g'ri."})
+
+        email = profile.get("email")
+        if not email:
+            raise ValidationError({"email": "Email topilmadi."})
+
+        user = User.objects.filter(email__iexact=email).first()
+        created = False
+        if not user:
+            base_username = email.split("@")[0]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=profile.get("given_name") or profile.get("first_name") or "",
+                last_name=profile.get("family_name") or profile.get("last_name") or "",
+            )
+            user.set_unusable_password()
+            created = True
+
+        if profile.get("sub") and not user.google_sub:
+            user.google_sub = profile.get("sub")
+
+        if profile.get("given_name") and not user.first_name:
+            user.first_name = profile.get("given_name")
+        if profile.get("family_name") and not user.last_name:
+            user.last_name = profile.get("family_name")
+
+        if created:
+            user.email_verified = bool(profile.get("email_verified"))
+        user.save()
+
+        tokens = _build_tokens(user)
+        return Response(
+            {
+                **tokens,
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class RegistrationProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PassportUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_front_image")
+        if not passport_front:
+            raise ValidationError({"passport_front": "Passport old tomoni talab qilinadi."})
+
+        request.user.passport_front_image = passport_front
+        request.user.save(update_fields=["passport_front_image"])
+        return Response({"detail": "Passport yuklandi."}, status=status.HTTP_200_OK)
+
+
+class FaceVerificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
+        if not selfie:
+            raise ValidationError({"selfie": "Selfie rasmi talab qilinadi."})
+
+        selfie_bytes = selfie.read()
+        analysis = face_analyze(selfie_bytes)
+        embedding = None
+        faces_detected = 0
+
+        if analysis and isinstance(analysis, dict):
+            faces = analysis.get("faces") or []
+            faces_detected = len(faces)
+            if faces:
+                embedding = faces[0].get("embedding")
+
+        if embedding:
+            request.user.face_embedding = embedding
+        selfie.seek(0)
+        request.user.face_image = selfie
+        request.user.save(update_fields=["face_embedding", "face_image"])
+
+        match_result = None
+        passport_bytes = _read_field_bytes(request.user.passport_front_image)
+        if passport_bytes:
+            match_result = face_match(passport_bytes, selfie_bytes)
+
+        return Response(
+            {
+                "detail": "Face verification completed.",
+                "faces_detected": faces_detected,
+                "has_embedding": bool(embedding),
+                "match_result": match_result,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class EmailVerificationSendView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        email = (request.data.get("email") or request.user.email or "").strip()
+        if not email:
+            raise ValidationError({"email": "Email talab qilinadi."})
+
+        code = f"{User.objects.make_random_password(length=6, allowed_chars='0123456789')}"
+        expires_at = timezone.now() + timedelta(minutes=10)
+
+        EmailVerificationCode.objects.create(
+            user=request.user,
+            email=email,
+            code=code,
+            expires_at=expires_at,
+        )
+
+        subject = "Verification Code"
+        message = f"Your verification code is: {code}"
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or getattr(settings, "EMAIL_HOST_USER", None)
+        send_mail(
+            subject,
+            message,
+            from_email,
+            [email],
+            fail_silently=False,
+        )
+
+        return Response({"detail": "Verification code sent."}, status=status.HTTP_200_OK)
+
+
+class EmailVerificationConfirmView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = (request.data.get("code") or "").strip()
+        if not code:
+            raise ValidationError({"code": "Verification code talab qilinadi."})
+
+        now = timezone.now()
+        record = (
+            EmailVerificationCode.objects.filter(user=request.user, is_used=False, expires_at__gt=now)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not record or record.code != code:
+            raise ValidationError({"code": "Verification code noto'g'ri yoki eskirgan."})
+
+        record.is_used = True
+        record.save(update_fields=["is_used"])
+
+        request.user.email_verified = True
+        request.user.save(update_fields=["email_verified"])
+
+        return Response({"detail": "Email verified."}, status=status.HTTP_200_OK)
 
 
 class MeView(APIView):

@@ -172,6 +172,18 @@ def face_match(passport_image: bytes, selfie_image: bytes):
     )
 
 
+def face_analyze(image_bytes: bytes):
+    """
+    Face analysis and embedding extraction.
+    """
+    if not image_bytes:
+        return None
+    return _post_multipart(
+        "face/analyze",
+        {"file": ("selfie.jpg", image_bytes, "image/jpeg")},
+    )
+
+
 def presence_check(session_id: str, frame_bytes: bytes):
     """
     Online dars/imtihonda yuz bor-yo'qligini aniqlash.

@@ -16,6 +16,12 @@ from .views import (
     AuthTokenViewSet,
     OutstandingTokenViewSet,
     BlacklistedTokenViewSet,
+    GoogleOAuthView,
+    RegistrationProfileView,
+    PassportUploadView,
+    FaceVerificationView,
+    EmailVerificationSendView,
+    EmailVerificationConfirmView,
 )
 
 router = DefaultRouter()
@@ -30,6 +36,12 @@ router.register("admin/blacklisted-tokens", BlacklistedTokenViewSet, basename="b
 
 urlpatterns = [
     path('register/', RegisterView.as_view()),
+    path('google/', GoogleOAuthView.as_view()),
+    path('registration/profile/', RegistrationProfileView.as_view()),
+    path('registration/passport/', PassportUploadView.as_view()),
+    path('registration/face/', FaceVerificationView.as_view()),
+    path('registration/email/send/', EmailVerificationSendView.as_view()),
+    path('registration/email/verify/', EmailVerificationConfirmView.as_view()),
     path('me/', MeView.as_view()),
     path('change-password/', ChangePasswordView.as_view()),
     path('logout/', LogoutView.as_view()),

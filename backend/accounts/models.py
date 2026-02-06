@@ -11,9 +11,15 @@ class User(AbstractUser):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="student")
     phone = models.CharField(max_length=20, null=True, blank=True)
+    patronymic = models.CharField(max_length=100, null=True, blank=True)
+    birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    passport_series = models.CharField(max_length=20, null=True, blank=True)
+    passport_front_image = models.ImageField(upload_to="passport/front/", null=True, blank=True)
+    email_verified = models.BooleanField(default=False)
+    google_sub = models.CharField(max_length=255, null=True, blank=True)
     face_image = models.ImageField(upload_to="faces/", null=True, blank=True)
     face_embedding = models.JSONField(
-        null=True, 
+        null=True,
         blank=True,
         help_text="Face embedding vector for verification"
     )
@@ -62,6 +68,18 @@ class PassportData(models.Model):
 
     def __str__(self):
         return f"Passport {self.user.username}"
+
+
+class EmailVerificationCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_codes")
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Email code for {self.user.username}"
 
 
 class AuditLog(models.Model):

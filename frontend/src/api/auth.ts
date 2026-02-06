@@ -1,5 +1,13 @@
 import api from "./client";
-import type { AuthTokens, LoginPayload, RegisterPayload, RegisterResponse } from "../types/auth";
+import type {
+  AuthTokens,
+  LoginPayload,
+  RegisterPayload,
+  RegisterResponse,
+  GoogleAuthResponse,
+  RegistrationProfilePayload,
+  FaceVerificationResponse,
+} from "../types/auth";
 
 export async function login(payload: LoginPayload): Promise<AuthTokens> {
   const res = await api.post<AuthTokens>("/api/token/", payload);
@@ -21,6 +29,44 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
   const res = await api.post<RegisterResponse>("/api/enrollment/register/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
+}
+
+export async function googleAuth(token: string): Promise<GoogleAuthResponse> {
+  const res = await api.post<GoogleAuthResponse>("/api/accounts/google/", { token });
+  return res.data;
+}
+
+export async function updateRegistrationProfile(payload: RegistrationProfilePayload) {
+  const res = await api.patch("/api/accounts/registration/profile/", payload);
+  return res.data;
+}
+
+export async function uploadPassportFront(file: File) {
+  const form = new FormData();
+  form.append("passport_front", file);
+  const res = await api.post("/api/accounts/registration/passport/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+export async function submitFaceVerification(file: File): Promise<FaceVerificationResponse> {
+  const form = new FormData();
+  form.append("selfie_image", file);
+  const res = await api.post<FaceVerificationResponse>("/api/accounts/registration/face/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+export async function sendEmailVerification(email?: string) {
+  const res = await api.post("/api/accounts/registration/email/send/", { email });
+  return res.data;
+}
+
+export async function verifyEmailCode(code: string) {
+  const res = await api.post("/api/accounts/registration/email/verify/", { code });
   return res.data;
 }
 

@@ -27,3 +27,33 @@ export type RegisterResponse = {
   applicant_id: number;
   status: "pending" | "verified" | "rejected" | "approved";
 };
+
+export type GoogleAuthResponse = AuthTokens & {
+  user: {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    patronymic?: string | null;
+    birth_year?: number | null;
+    passport_series?: string | null;
+    phone?: string | null;
+    email_verified?: boolean;
+  };
+};
+
+export type RegistrationProfilePayload = {
+  first_name: string;
+  last_name: string;
+  patronymic: string;
+  birth_year: number;
+  passport_series: string;
+  phone: string;
+};
+
+export type FaceVerificationResponse = {
+  detail: string;
+  faces_detected: number;
+  has_embedding: boolean;
+  match_result?: unknown;
+};
