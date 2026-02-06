@@ -60,6 +60,45 @@
   filter: brightness(0.9);
 }
 
+.btn-neon {
+  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  color: var(--neon-midnight);
+  font-weight: 600;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+.btn-neon:hover:not(:disabled)::before {
+  left: 100%;
+}
+.btn-neon:hover:not(:disabled) {
+  box-shadow: 0 0 20px var(--neon-glow-cyan), 0 0 40px var(--neon-glow-magenta);
+  transform: translateY(-2px);
+}
+
+.btn-glow {
+  background-color: transparent;
+  color: var(--neon-cyan);
+  border: 2px solid var(--neon-cyan);
+  font-weight: 500;
+  transition: all var(--transition-base);
+}
+.btn-glow:hover:not(:disabled) {
+  background-color: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 15px var(--neon-glow-cyan), 0 0 30px var(--neon-glow-cyan), inset 0 0 10px var(--neon-glow-cyan);
+  transform: translateY(-2px);
+}
+
 /* Sizes */
 .btn-sm {
   height: 32px;
