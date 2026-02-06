@@ -220,7 +220,6 @@ const TeacherLessons = () => {
           }}
         />
       </Modal>
-    </Card>
     </div>
   );
 };
