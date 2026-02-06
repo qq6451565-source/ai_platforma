@@ -2,6 +2,8 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Button } from '../ui';
 import { Popconfirm } from 'antd';
+import { LanguageSwitcher } from '../LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 import './DesktopLayout.css';
 
 interface LayoutProps {
@@ -19,6 +21,8 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
   onLogout,
   title,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="desktop-layout">
       <header className="desktop-header">
@@ -27,17 +31,18 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
           <div className="page-title-header">{title}</div>
         </div>
         <div className="desktop-header-right">
+          <LanguageSwitcher />
           <div className="user-info">
             <span className="user-name">{user?.first_name} {user?.last_name}</span>
             <span className="user-role">({user?.role})</span>
           </div>
           <Popconfirm
-            title="Chiqishni tasdiqlaysizmi?"
+            title={t('auth.logoutConfirm')}
             onConfirm={onLogout}
-            okText="Ha"
-            cancelText="Yo'q"
+            okText={t('common.yes')}
+            cancelText={t('common.no')}
           >
-            <Button variant="outline" size="sm">Chiqish</Button>
+            <Button variant="outline" size="sm">{t('common.logout')}</Button>
           </Popconfirm>
         </div>
       </header>
