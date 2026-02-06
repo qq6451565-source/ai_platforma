@@ -6,6 +6,7 @@
   border: 1px solid var(--color-border);
   overflow: hidden;
   transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+  position: relative;
 }
 
 .card:hover {
@@ -17,6 +18,59 @@
   transform: translateY(-4px);
   border-color: rgba(0, 255, 255, 0.5);
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 255, 255, 0.15);
+}
+
+.card-beam {
+  position: relative;
+}
+
+.card-beam::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-lg) + 2px);
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--neon-cyan) 60deg,
+    var(--neon-magenta) 120deg,
+    transparent 180deg,
+    var(--neon-cyan) 240deg,
+    var(--neon-magenta) 300deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beamRotate 3s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-beam .card-beam-effect {
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-lg) + 2px);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--neon-cyan),
+    transparent,
+    var(--neon-magenta),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: borderBeam 2s ease-in-out infinite;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-beam > * {
+  position: relative;
+  z-index: 1;
 }
 
 .card-header {

@@ -8,6 +8,7 @@ interface CardProps {
   footer?: React.ReactNode;
   className?: string;
   hoverable?: boolean;
+  hasBeam?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -17,9 +18,11 @@ export const Card: React.FC<CardProps> = ({
   footer,
   className = '',
   hoverable = false,
+  hasBeam = false,
 }) => {
   return (
-    <div className={`card ${hoverable ? 'card-hover' : ''} ${className}`}>
+    <div className={`card ${hoverable ? 'card-hover' : ''} ${hasBeam ? 'card-beam' : ''} ${className}`}>
+      {hasBeam && <div className="card-beam-effect"></div>}
       {(title || extra) && (
         <div className="card-header">
           {title && <h3 className="h4 m-0">{title}</h3>}

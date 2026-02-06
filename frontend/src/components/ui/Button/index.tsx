@@ -25,6 +25,7 @@ export const Button: React.FC<ButtonProps> = ({
     `btn-${variant}`,
     `btn-${size}`,
     block ? 'btn-block' : '',
+    isLoading ? 'btn-loading' : '',
     className
   ].filter(Boolean).join(' ');
 

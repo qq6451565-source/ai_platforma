@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -8,6 +9,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ items, onItemClick }) => {
+  const { t } = useTranslation();
+
   return (
     <aside className="sidebar">
       <div className="sidebar-content">
@@ -23,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, onItemClick }) => {
                   onClick={onItemClick}
                 >
                   <span className="sidebar-link-icon">{item.icon}</span>
-                  <span className="sidebar-link-text">{item.label}</span>
+                  <span className="sidebar-link-text">{t(`nav.${item.key}`)}</span>
                 </NavLink>
               ))}
             </nav>

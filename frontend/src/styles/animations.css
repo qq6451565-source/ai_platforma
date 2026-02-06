@@ -28,6 +28,21 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes borderBeam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes beamRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-fade-in { animation: fadeIn var(--transition-base) forwards; }
 .animate-slide-up { animation: slideUp var(--transition-base) forwards; }
 .animate-slide-down { animation: slideDown var(--transition-base) forwards; }

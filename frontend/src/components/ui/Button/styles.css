@@ -10,11 +10,18 @@
   gap: var(--space-2);
   white-space: nowrap;
   user-select: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: 0 0 15px var(--neon-glow-cyan), 0 0 30px var(--neon-glow-cyan), inset 0 0 10px var(--neon-glow-cyan);
 }
 
 /* Variants */
@@ -140,4 +147,38 @@
 .btn-block {
   display: flex;
   width: 100%;
+}
+
+.btn-loading {
+  position: relative;
+}
+
+.btn-loading::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-md) + 2px);
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--neon-cyan) 60deg,
+    var(--neon-magenta) 120deg,
+    transparent 180deg,
+    var(--neon-cyan) 240deg,
+    var(--neon-magenta) 300deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beamRotate 1.5s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.btn-loading > * {
+  position: relative;
+  z-index: 1;
 }
