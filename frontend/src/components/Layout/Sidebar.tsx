@@ -26,7 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, onItemClick }) => {
                   onClick={onItemClick}
                 >
                   <span className="sidebar-link-icon">{item.icon}</span>
-                  <span className="sidebar-link-text">{t(`nav.${item.key}`)}</span>
+                  <span className="sidebar-link-text">{item.label}</span>
                 </NavLink>
               ))}
             </nav>

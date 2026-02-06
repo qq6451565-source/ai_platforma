@@ -53,7 +53,15 @@
     "curriculum": "Curriculum",
     "gradebook": "Gradebook",
     "enrollment": "Enrollment",
-    "proctoring": "Proctoring"
+    "proctoring": "Proctoring",
+    "main": "Main",
+    "academic": "Academic",
+    "system": "System",
+    "users": "Users",
+    "university": "University",
+    "learning": "Learning",
+    "aiSettings": "AI Settings",
+    "submissions": "Submissions"
   },
   "schedule": {
     "title": "Schedule",
@@ -102,6 +110,18 @@
     "thursday": "Thursday",
     "friday": "Friday",
     "saturday": "Saturday"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "todayLessons": "Today's Lessons",
+    "todayAssignments": "Today's Assignments",
+    "todayTests": "Today's Tests",
+    "noLessonsToday": "No lessons today",
+    "noAssignmentsToday": "No assignments today",
+    "noTestsToday": "No tests today",
+    "viewSchedule": "View Schedule",
+    "viewAssignments": "View Assignments",
+    "viewTests": "View Tests"
   },
   "roles": {
     "student": "Student",

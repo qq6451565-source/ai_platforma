@@ -53,7 +53,15 @@
     "curriculum": "O'quv dasturi",
     "gradebook": "Baholar kitobi",
     "enrollment": "Ro'yxatdan o'tish",
-    "proctoring": "Nazorat"
+    "proctoring": "Nazorat",
+    "main": "Asosiy",
+    "academic": "Akademik",
+    "system": "Tizim",
+    "users": "Foydalanuvchilar",
+    "university": "Tuzilma",
+    "learning": "O'quv jarayoni",
+    "aiSettings": "AI sozlamalari",
+    "submissions": "Yuborilgan topshiriqlar"
   },
   "schedule": {
     "title": "Dars jadvali",
@@ -102,6 +110,18 @@
     "thursday": "Payshanba",
     "friday": "Juma",
     "saturday": "Shanba"
+  },
+  "dashboard": {
+    "title": "Talaba paneli",
+    "todayLessons": "Bugungi darslar",
+    "todayAssignments": "Bugungi topshiriqlar",
+    "todayTests": "Bugungi testlar",
+    "noLessonsToday": "Bugun dars yo'q",
+    "noAssignmentsToday": "Bugun topshiriq yo'q",
+    "noTestsToday": "Bugun test yo'q",
+    "viewSchedule": "Jadvalni ko'rish",
+    "viewAssignments": "Topshiriqlarni ko'rish",
+    "viewTests": "Testlarni ko'rish"
   },
   "roles": {
     "student": "Talaba",

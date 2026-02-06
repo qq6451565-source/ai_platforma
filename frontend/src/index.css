@@ -151,11 +151,42 @@ body {
   border-radius: var(--radius-lg) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   transition: all var(--transition-base) !important;
+  position: relative;
+  overflow: hidden;
 }
 
 .ant-card:hover {
   border-color: rgba(0, 255, 255, 0.4) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.1) !important;
+}
+
+/* Neon Beam Effect for any card */
+.neon-card {
+  position: relative;
+  z-index: 0;
+}
+
+.neon-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius-lg) + 1px);
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--neon-cyan) 90deg,
+    var(--neon-magenta) 180deg,
+    transparent 270deg,
+    var(--neon-cyan) 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beamRotate 4s linear infinite;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .ant-card-head {

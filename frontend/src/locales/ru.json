@@ -53,7 +53,15 @@
     "curriculum": "Учебная программа",
     "gradebook": "Журнал оценок",
     "enrollment": "Регистрация",
-    "proctoring": "Прокторинг"
+    "proctoring": "Прокторинг",
+    "main": "Главное",
+    "academic": "Академический",
+    "system": "Система",
+    "users": "Пользователи",
+    "university": "Структура",
+    "learning": "Учебный процесс",
+    "aiSettings": "Настройки ИИ",
+    "submissions": "Отправленные задания"
   },
   "schedule": {
     "title": "Расписание",
@@ -102,6 +110,18 @@
     "thursday": "Четверг",
     "friday": "Пятница",
     "saturday": "Суббота"
+  },
+  "dashboard": {
+    "title": "Панель студента",
+    "todayLessons": "Сегодняшние уроки",
+    "todayAssignments": "Сегодняшние задания",
+    "todayTests": "Сегодняшние тесты",
+    "noLessonsToday": "Сегодня нет уроков",
+    "noAssignmentsToday": "Сегодня нет заданий",
+    "noTestsToday": "Сегодня нет тестов",
+    "viewSchedule": "Посмотреть расписание",
+    "viewAssignments": "Посмотреть задания",
+    "viewTests": "Посмотреть тесты"
   },
   "roles": {
     "student": "Студент",
