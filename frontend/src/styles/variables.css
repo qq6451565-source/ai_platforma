@@ -3,16 +3,16 @@
   --color-primary: #00ffff;
   --color-primary-dark: #00cccc;
   --color-secondary: #64748b;
-  --color-secondary-light: rgba(255, 255, 255, 0.05);
+  --color-secondary-light: rgba(255, 255, 255, 0.08);
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-background: #0a0b1e;
-  --color-surface: rgba(22, 27, 51, 0.7);
-  --color-border: rgba(0, 255, 255, 0.2);
+  --color-surface: rgba(22, 27, 51, 0.85);
+  --color-border: rgba(0, 255, 255, 0.25);
   --color-text-primary: #ffffff;
-  --color-text-secondary: #b0b3c1;
-  --color-text-muted: #6b6d80;
+  --color-text-secondary: #c9cbd6;
+  --color-text-muted: #8a8ca0;
 
   /* Neon Dark Theme Colors */
   --neon-cyan: #00ffff;

@@ -9,6 +9,8 @@ interface CardProps {
   className?: string;
   hoverable?: boolean;
   hasBeam?: boolean;
+  style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -19,9 +21,15 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   hoverable = false,
   hasBeam = false,
+  style,
+  onClick,
 }) => {
   return (
-    <div className={`card ${hoverable ? 'card-hover' : ''} ${hasBeam ? 'card-beam' : ''} ${className}`}>
+    <div 
+      className={`card ${hoverable ? 'card-hover' : ''} ${hasBeam ? 'card-beam' : ''} ${className}`}
+      style={style}
+      onClick={onClick}
+    >
       {hasBeam && <div className="card-beam-effect"></div>}
       {(title || extra) && (
         <div className="card-header">

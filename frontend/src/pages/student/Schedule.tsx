@@ -1,10 +1,11 @@
-import { Button, List, Modal, Skeleton, Space, Typography, Grid } from "antd";
+import { List, Modal, Skeleton, Space, Typography, Grid } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Card } from "../../components/ui";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
 import dayjs from "dayjs";
 
 const StudentSchedule = () => {
@@ -84,22 +85,22 @@ const StudentSchedule = () => {
           <div className="mb-6">
             <Space size="middle">
               <Button
-                size="small"
+                size="sm"
                 onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))}
               >
                 {"<"}
               </Button>
               <Button
-                size="small"
+                size="sm"
                 onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))}
               >
                 {">"}
               </Button>
-              <Button size="small" onClick={() => setSelectedDate(dayjs())}>
+              <Button size="sm" onClick={() => setSelectedDate(dayjs())}>
                 {t('common.today')}
               </Button>
               <Button
-                size="small"
+                size="sm"
                 variant={viewMode === "week" ? "primary" : "secondary"}
                 onClick={() => setViewMode("week")}
               >
@@ -107,7 +108,7 @@ const StudentSchedule = () => {
               </Button>
               {!isMobile && (
                 <Button
-                  size="small"
+                  size="sm"
                   variant={viewMode === "month" ? "primary" : "secondary"}
                   onClick={() => setViewMode("month")}
                 >
@@ -237,7 +238,7 @@ const StudentSchedule = () => {
                     actions={[
                       <Button
                         key="live"
-                        size="small"
+                        size="sm"
                         variant={liveStatus.canJoin ? "primary" : "secondary"}
                         disabled={!liveStatus.canJoin}
                         onClick={() => navigate(`/app/live/${item.id}`)}
