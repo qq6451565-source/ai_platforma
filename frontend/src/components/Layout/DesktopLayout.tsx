@@ -66,16 +66,23 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
         </div>
         <div className="desktop-header-right">
           <LanguageSwitcher />
-          
+
           <Dropdown menu={{ items: profileMenuItems }} trigger={['click']} placement="bottomRight">
             <div className="user-profile-trigger">
               <div className="user-info">
                 <span className="user-name">{user?.first_name} {user?.last_name}</span>
                 <span className="user-role">({user?.role})</span>
               </div>
-              <Avatar 
-                icon={<UserOutlined />} 
-                style={{ backgroundColor: 'var(--neon-cyan)', color: 'var(--color-background)' }}
+              <Avatar
+                icon={<UserOutlined />}
+                style={{
+                  backgroundColor: 'var(--neon-cyan)',
+                  color: 'var(--color-background)',
+                  cursor: 'pointer'
+                }}
+                onClick={() => {
+                  navigate(`/app/${user?.role}/settings`);
+                }}
               />
               <DownOutlined style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }} />
             </div>

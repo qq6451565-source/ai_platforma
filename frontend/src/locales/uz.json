@@ -127,5 +127,24 @@
     "student": "Talaba",
     "teacher": "O'qituvchi",
     "admin": "Administrator"
+  },
+  "landing": {
+    "title": "Tasavvurdan Ziyoda",
+    "subtitle": "AI bilan boshqariladigan ta'limning kelajagini tajriba qiling",
+    "subtitleLine2": "Real-time hamkorlik, ilg'or tahlillar va cheksiz imkoniyatlar",
+    "exploreNow": "Hozir kashf eting",
+    "getStarted": "Boshlash",
+    "featureAI": {
+      "title": "AI bilan boshqariladigan",
+      "description": "Ilg'or yuzni tasdiqlash va real-time monitoring"
+    },
+    "featureLightning": {
+      "title": "Tezkor",
+      "description": "Bir zumda fikr-mulohaza va uzluksiz hamkorlik"
+    },
+    "featureAnalytics": {
+      "title": "Aqlli tahlillar",
+      "description": "Keng qamrovli tushunchalar va ishlashni kuzatish"
+    }
   }
 }

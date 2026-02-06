@@ -127,5 +127,24 @@
     "student": "Student",
     "teacher": "Teacher",
     "admin": "Administrator"
+  },
+  "landing": {
+    "title": "Beyond Imagination",
+    "subtitle": "Experience the future of learning with AI-powered education",
+    "subtitleLine2": "Real-time collaboration, advanced analytics, and limitless possibilities",
+    "exploreNow": "Explore Now",
+    "getStarted": "Get Started",
+    "featureAI": {
+      "title": "AI-Powered",
+      "description": "Advanced face verification and real-time monitoring"
+    },
+    "featureLightning": {
+      "title": "Lightning Fast",
+      "description": "Instant feedback and seamless collaboration"
+    },
+    "featureAnalytics": {
+      "title": "Smart Analytics",
+      "description": "Comprehensive insights and performance tracking"
+    }
   }
 }

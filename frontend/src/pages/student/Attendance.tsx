@@ -1,8 +1,9 @@
-import { Card, Empty, List, Skeleton, Tag, Typography } from "antd";
+import { Empty, List, Skeleton, Tag, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAttendance } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
+import { Card } from "../../components/ui";
 
 const StudentAttendance = () => {
   const { data: me } = useMe();
@@ -44,7 +45,7 @@ const StudentAttendance = () => {
       ) : !items.length ? (
         <Empty description="Davomat yozuvlari yo'q" />
       ) : (
-        <Card>
+        <Card hasBeam>
           <List
             dataSource={items}
             renderItem={(record) => {
@@ -54,15 +55,15 @@ const StudentAttendance = () => {
                 <List.Item>
                   <div style={{ width: "100%" }}>
                     <div className="kv-grid">
-                      <span style={{ color: "#94a3b8" }}>Dars</span>
+                      <span>Dars</span>
                       <strong>{lesson?.topic || `Dars #${record.lesson}`}</strong>
-                      <span style={{ color: "#94a3b8" }}>Fan</span>
+                      <span>Fan</span>
                       <span>{lesson?.subject || "-"}</span>
-                      <span style={{ color: "#94a3b8" }}>Guruh</span>
+                      <span>Guruh</span>
                       <span>{lesson?.group || "-"}</span>
-                      <span style={{ color: "#94a3b8" }}>Holat</span>
+                      <span>Holat</span>
                       <Tag color={record.status === "present" ? "green" : "red"}>{statusLabel}</Tag>
-                      <span style={{ color: "#94a3b8" }}>Vaqt</span>
+                      <span>Vaqt</span>
                       <span>{lesson?.start ? new Date(lesson.start).toLocaleString() : "-"}</span>
                     </div>
                   </div>

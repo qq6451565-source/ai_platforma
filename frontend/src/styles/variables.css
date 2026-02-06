@@ -10,9 +10,9 @@
   --color-background: #0a0b1e;
   --color-surface: rgba(22, 27, 51, 0.85);
   --color-border: rgba(0, 255, 255, 0.25);
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #94a3b8;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e2e8f0;
+  --color-text-muted: #cbd5e1;
 
   /* Neon Dark Theme Colors */
   --neon-cyan: #00ffff;

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchGradebook } from "../../api/gradebook";
 import { fetchMySubmissions } from "../../api/submissions";
 import { fetchStudentTestRecords } from "../../api/studentTests";
+import { Card } from "../../components/ui";
 
 const StudentGrades = () => {
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -107,20 +108,22 @@ const StudentGrades = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
-      <div className="table-scroll">
-        <Table
-          columns={columns}
-          loading={isLoading}
-          dataSource={data}
-          pagination={false}
-          size="small"
-          scroll={{ x: 520 }}
-          onRow={(record) => ({
-            onClick: () => setSelectedSubject(record),
-            className: "clickable-row",
-          })}
-        />
-      </div>
+      <Card hasBeam>
+        <div className="table-scroll">
+          <Table
+            columns={columns}
+            loading={isLoading}
+            dataSource={data}
+            pagination={false}
+            size="small"
+            scroll={{ x: 520 }}
+            onRow={(record) => ({
+              onClick: () => setSelectedSubject(record),
+              className: "clickable-row",
+            })}
+          />
+        </div>
+      </Card>
 
       <Modal
         title={selectedSubject ? `${selectedSubject.subject_name}` : "Baholar"}
@@ -130,45 +133,45 @@ const StudentGrades = () => {
       >
         <Divider orientation="left">Topshiriqlar</Divider>
         {currentSubmissions.length ? (
-          <List
-            dataSource={currentSubmissions}
-            renderItem={(item: any) => (
-              <List.Item>
-                <div style={{ flex: 1 }}>
-                  <Typography.Text strong>{item.assignment_title || "Topshiriq"}</Typography.Text>
-                  <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                    {item.lesson_topic || "Dars"}
-                  </div>
+        <List
+          dataSource={currentSubmissions}
+          renderItem={(item: any) => (
+            <List.Item>
+              <div style={{ flex: 1 }}>
+                <Typography.Text strong>{item.assignment_title || "Topshiriq"}</Typography.Text>
+                <div className="caption">
+                  {item.lesson_topic || "Dars"}
                 </div>
-                <div style={{ fontWeight: 600 }}>
-                  {typeof item.grade === "number" ? item.grade : "Baholanmagan"}
-                </div>
-              </List.Item>
-            )}
-          />
+              </div>
+              <div style={{ fontWeight: 600 }}>
+                {typeof item.grade === "number" ? item.grade : "Baholanmagan"}
+              </div>
+            </List.Item>
+          )}
+        />
         ) : (
-          <Empty description="Topshiriqlar yo'q" />
+        <Empty description="Topshiriqlar yo'q" />
         )}
         <Divider orientation="left">Testlar</Divider>
         {currentTests.length ? (
-          <List
-            dataSource={currentTests}
-            renderItem={(item: any) => (
-              <List.Item>
-                <div style={{ flex: 1 }}>
-                  <Typography.Text strong>{item.test_title || "Test"}</Typography.Text>
-                  <div style={{ color: "#94a3b8", fontSize: 12 }}>
-                    {item.lesson_topic || "Dars"}
-                  </div>
+        <List
+          dataSource={currentTests}
+          renderItem={(item: any) => (
+            <List.Item>
+              <div style={{ flex: 1 }}>
+                <Typography.Text strong>{item.test_title || "Test"}</Typography.Text>
+                <div className="caption">
+                  {item.lesson_topic || "Dars"}
                 </div>
-                <div style={{ fontWeight: 600 }}>
-                  {typeof item.score_percent === "number" ? `${item.score_percent}%` : "-"}
-                </div>
-              </List.Item>
-            )}
-          />
+              </div>
+              <div style={{ fontWeight: 600 }}>
+                {typeof item.score_percent === "number" ? `${item.score_percent}%` : "-"}
+              </div>
+            </List.Item>
+          )}
+        />
         ) : (
-          <Empty description="Testlar yo'q" />
+        <Empty description="Testlar yo'q" />
         )}
       </Modal>
     </div>

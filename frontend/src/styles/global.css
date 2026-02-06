@@ -26,14 +26,18 @@ html, body {
 
 /* Override all black text styles */
 body * {
-  color: inherit;
+  color: inherit !important;
 }
 
-h1, h2, h3, h4, h5, h6, p, span, div, li, a {
-  color: var(--color-text-primary);
+h1, h2, h3, h4, h5, h6, p, span, div, li, a, td, th {
+  color: var(--color-text-primary) !important;
 }
 
-.text-muted, .caption, .user-role {
+/* Allow specific secondary text colors */
+.text-secondary, .text-muted, .caption, .user-role,
+.ant-typography-secondary,
+.ant-descriptions-item-label,
+.ant-card-meta-description {
   color: var(--color-text-secondary) !important;
 }
 
