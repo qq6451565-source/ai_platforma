@@ -1,7 +1,8 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Button } from '../ui';
-import { Dropdown, Avatar, Menu, Space } from 'antd';
+import { Dropdown, Avatar, Space } from 'antd';
+import type { MenuProps } from 'antd';
 import { 
   UserOutlined, 
   SettingOutlined, 
@@ -31,7 +32,7 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const profileMenuItems = [
+  const profileMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserOutlined />,
@@ -45,7 +46,7 @@ export const DesktopLayout: React.FC<LayoutProps> = ({
       onClick: () => navigate(`/app/${user?.role}/settings`),
     },
     {
-      type: 'divider',
+      type: 'divider' as const,
     },
     {
       key: 'logout',
