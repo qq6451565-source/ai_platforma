@@ -1,6 +1,8 @@
 .mobile-header {
   height: 64px;
-  background-color: var(--color-primary);
+  background: linear-gradient(90deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
   color: white;
   display: flex;
   align-items: center;
@@ -9,10 +11,11 @@
   top: 0;
   z-index: var(--z-sticky);
   gap: var(--space-4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .mobile-menu-toggle {
-  color: white !important;
+  color: var(--neon-cyan) !important;
   font-size: 1.25rem;
 }
 
@@ -20,18 +23,20 @@
   flex: 1;
   font-weight: 600;
   font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
 }
 
 .mobile-header-user {
   width: 32px;
   height: 32px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--font-size-xs);
   font-weight: 600;
+  color: var(--neon-midnight);
 }
 
 .mobile-sidebar-overlay {
@@ -40,16 +45,18 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   z-index: var(--z-modal);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(5px);
   animation: fadeIn var(--transition-base);
 }
 
 .mobile-sidebar-container {
   width: 280px;
   height: 100%;
-  background-color: var(--color-surface);
+  background: var(--color-surface);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   animation: slideInLeft var(--transition-base);
@@ -79,4 +86,5 @@
   height: auto;
   position: static;
   border-right: none;
+  background: transparent;
 }
