@@ -1,14 +1,17 @@
 /**
- * Face verification status indicator component
+ * Face verification status indicator component with laser scanning effect
  */
 import React from 'react';
 import { Badge, Tooltip } from 'antd';
-import { 
-  CheckCircleOutlined, 
-  CloseCircleOutlined, 
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
   WarningOutlined,
-  LoadingOutlined 
+  LoadingOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined
 } from '@ant-design/icons';
+import './FaceStatusIndicator.css';
 
 export interface FaceStatusIndicatorProps {
   verified?: boolean;
@@ -17,6 +20,7 @@ export interface FaceStatusIndicatorProps {
   event_type?: string;
   loading?: boolean;
   showText?: boolean;
+  enableScanner?: boolean;
 }
 
 export const FaceStatusIndicator: React.FC<FaceStatusIndicatorProps> = ({
@@ -26,62 +30,63 @@ export const FaceStatusIndicator: React.FC<FaceStatusIndicatorProps> = ({
   event_type,
   loading = false,
   showText = true,
+  enableScanner = true,
 }) => {
-  if (loading) {
-    return (
-      <Badge status="processing" text={showText ? 'Verifying...' : undefined}>
-        <LoadingOutlined style={{ fontSize: 16, color: '#1890ff' }} />
-      </Badge>
-    );
-  }
+  const getStatusColor = () => {
+    if (verified) return '#22c55e';
+    if (event_type === 'no_face') return '#faad14';
+    if (event_type === 'multiple_faces') return '#ff4d4f';
+    if (event_type === 'low_confidence') return '#ff4d4f';
+    if (loading) return '#00ffff';
+    return '#d9d9d9';
+  };
 
-  if (verified) {
-    const text = showText 
-      ? `Verified (${Math.round((confidence || 0) * 100)}%)` 
-      : undefined;
-    
-    return (
-      <Tooltip title={`Confidence: ${Math.round((confidence || 0) * 100)}%`}>
-        <Badge status="success" text={text}>
-          <CheckCircleOutlined style={{ fontSize: 16, color: '#52c41a' }} />
-        </Badge>
-      </Tooltip>
-    );
-  }
+  const getStatusIcon = () => {
+    if (loading) return <LoadingOutlined className="face-status-icon-loading" />;
+    if (verified) return <CheckCircleOutlined />;
+    if (event_type === 'no_face') return <EyeInvisibleOutlined />;
+    if (event_type === 'multiple_faces') return <WarningOutlined />;
+    if (event_type === 'low_confidence') return <CloseCircleOutlined />;
+    return <CloseCircleOutlined />;
+  };
 
-  if (event_type === 'no_face') {
-    return (
-      <Tooltip title="No face detected">
-        <Badge status="warning" text={showText ? 'No Face' : undefined}>
-          <WarningOutlined style={{ fontSize: 16, color: '#faad14' }} />
-        </Badge>
-      </Tooltip>
-    );
-  }
+  const getStatusText = () => {
+    if (loading) return 'Verifying...';
+    if (verified) return `Verified (${Math.round((confidence || 0) * 100)}%)`;
+    if (event_type === 'no_face') return 'No Face';
+    if (event_type === 'multiple_faces') return 'Multiple Faces';
+    if (event_type === 'low_confidence') return 'Verification Failed';
+    return 'Not Verified';
+  };
 
-  if (event_type === 'multiple_faces') {
-    return (
-      <Tooltip title={`Multiple faces detected (${faces_detected})`}>
-        <Badge status="error" text={showText ? 'Multiple Faces' : undefined}>
-          <WarningOutlined style={{ fontSize: 16, color: '#ff4d4f' }} />
-        </Badge>
-      </Tooltip>
-    );
-  }
-
-  if (event_type === 'low_confidence') {
-    return (
-      <Tooltip title={`Low confidence (${Math.round((confidence || 0) * 100)}%)`}>
-        <Badge status="error" text={showText ? 'Verification Failed' : undefined}>
-          <CloseCircleOutlined style={{ fontSize: 16, color: '#ff4d4f' }} />
-        </Badge>
-      </Tooltip>
-    );
-  }
+  const getTooltipTitle = () => {
+    if (loading) return 'Face verification in progress';
+    if (verified) return `Confidence: ${Math.round((confidence || 0) * 100)}%`;
+    if (event_type === 'no_face') return 'No face detected';
+    if (event_type === 'multiple_faces') return `Multiple faces detected (${faces_detected})`;
+    if (event_type === 'low_confidence') return `Low confidence (${Math.round((confidence || 0) * 100)}%)`;
+    return 'Face verification not started';
+  };
 
   return (
-    <Badge status="default" text={showText ? 'Not Verified' : undefined}>
-      <CloseCircleOutlined style={{ fontSize: 16, color: '#d9d9d9' }} />
-    </Badge>
+    <div className={`face-status-indicator ${loading ? 'face-status-scanning' : ''}`}>
+      {enableScanner && loading && (
+        <div className="face-scanner-line animate-laser-scan" />
+      )}
+      <Tooltip title={getTooltipTitle()}>
+        <div className="face-status-content">
+          <span
+            className="face-status-icon"
+            style={{ color: getStatusColor() }}
+          >
+            {getStatusIcon()}
+          </span>
+          {showText && (
+            <span className="face-status-text">{getStatusText()}</span>
+          )}
+        </div>
+      </Tooltip>
+    </div>
   );
 };
+

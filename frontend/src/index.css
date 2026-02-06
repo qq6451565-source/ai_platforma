@@ -65,16 +65,20 @@ body {
   color: var(--neon-magenta) !important;
 }
 
-/* Inputs */
+/* Inputs - Neon Cyan Focus States */
 .ant-input,
 .ant-input-password,
 .ant-input-number {
-  background: rgba(22, 27, 51, 0.5) !important;
-  border: 1px solid var(--color-border) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.6) 0%, rgba(22, 27, 51, 0.4) 100%) !important;
+  border: 1px solid rgba(0, 255, 255, 0.15) !important;
   border-radius: var(--radius-md) !important;
   color: var(--color-text-primary) !important;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px) !important;
   transition: all var(--transition-base) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+  will-change: transform, opacity, border-color, box-shadow;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .ant-input::placeholder,
@@ -85,7 +89,8 @@ body {
 .ant-input:hover,
 .ant-input-password:hover,
 .ant-input-number:hover {
-  border-color: var(--neon-cyan) !important;
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 255, 255, 0.15) !important;
 }
 
 .ant-input:focus,
@@ -93,41 +98,100 @@ body {
 .ant-input-number:focus,
 .ant-input-focused {
   border-color: var(--neon-cyan) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1), 0 0 20px rgba(0, 255, 255, 0.2) !important;
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 255, 0.15),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.15),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.8) 0%, rgba(22, 27, 51, 0.6) 100%) !important;
 }
 
 .ant-input-number-handler-wrap {
-  background: rgba(22, 27, 51, 0.5) !important;
-  border-left: 1px solid var(--color-border) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.6) 0%, rgba(22, 27, 51, 0.4) 100%) !important;
+  border-left: 1px solid rgba(0, 255, 255, 0.15) !important;
+  backdrop-filter: blur(10px);
 }
 
 .ant-input-number-handler:hover {
   color: var(--neon-cyan) !important;
+  background: rgba(0, 255, 255, 0.1) !important;
 }
 
-/* Select */
-.ant-select-selector {
-  background: rgba(22, 27, 51, 0.5) !important;
-  border: 1px solid var(--color-border) !important;
+.ant-input-number-focused {
+  border-color: var(--neon-cyan) !important;
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 255, 0.15),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.15) !important;
+}
+
+/* TextArea - Neon Cyan Focus States */
+.ant-input-textarea {
+  background: transparent !important;
+}
+
+.ant-input-textarea textarea {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.6) 0%, rgba(22, 27, 51, 0.4) 100%) !important;
+  border: 1px solid rgba(0, 255, 255, 0.15) !important;
   border-radius: var(--radius-md) !important;
   color: var(--color-text-primary) !important;
-  backdrop-filter: blur(5px) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-base) !important;
+  will-change: transform, opacity, border-color, box-shadow;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.ant-input-textarea textarea:hover {
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 255, 255, 0.15) !important;
+}
+
+.ant-input-textarea textarea:focus {
+  border-color: var(--neon-cyan) !important;
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 255, 0.15),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.15),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.8) 0%, rgba(22, 27, 51, 0.6) 100%) !important;
+}
+
+/* Select - Neon Cyan Focus States */
+.ant-select-selector {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.6) 0%, rgba(22, 27, 51, 0.4) 100%) !important;
+  border: 1px solid rgba(0, 255, 255, 0.15) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--color-text-primary) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-base) !important;
+  will-change: transform, opacity, border-color, box-shadow;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .ant-select:hover .ant-select-selector {
-  border-color: var(--neon-cyan) !important;
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 255, 255, 0.15) !important;
 }
 
 .ant-select-focused .ant-select-selector {
   border-color: var(--neon-cyan) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1), 0 0 20px rgba(0, 255, 255, 0.2) !important;
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 255, 0.15),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.15),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.8) 0%, rgba(22, 27, 51, 0.6) 100%) !important;
 }
 
 .ant-select-dropdown {
-  background: var(--color-surface) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid var(--color-border) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(22, 27, 51, 0.85) 100%) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.1) !important;
 }
 
 .ant-select-item-option {
@@ -219,36 +283,80 @@ body {
   color: var(--color-text-secondary) !important;
 }
 
-/* Table */
+/* Table - Glassmorphic Neon Strips */
 .ant-table-wrapper {
   background: transparent !important;
 }
 
 .ant-table {
-  background: var(--color-surface) !important;
-  backdrop-filter: blur(10px) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.8) 0%, rgba(22, 27, 51, 0.6) 100%) !important;
+  backdrop-filter: blur(15px) !important;
   border-radius: var(--radius-lg) !important;
-  border: 1px solid var(--color-border) !important;
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.ant-table-container {
+  border-radius: var(--radius-lg);
 }
 
 .ant-table-thead > tr > th {
-  background: rgba(0, 255, 255, 0.05) !important;
-  border-bottom: 1px solid var(--color-border) !important;
+  background: linear-gradient(180deg, rgba(0, 255, 255, 0.08) 0%, rgba(0, 255, 255, 0.04) 100%) !important;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.15) !important;
   color: var(--neon-cyan) !important;
   font-weight: 600;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  position: relative;
+  will-change: transform, opacity;
+}
+
+.ant-table-thead > tr > th::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.3) 50%, transparent 100%);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  pointer-events: none;
+}
+
+.ant-table-tbody > tr {
+  transition: all var(--transition-base) !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .ant-table-tbody > tr > td {
-  border-bottom: 1px solid rgba(0, 255, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(0, 255, 255, 0.08) !important;
   color: var(--color-text-primary) !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.02) 50%, transparent 100%) !important;
+  transition: all var(--transition-base) !important;
 }
 
 .ant-table-tbody > tr:hover > td {
-  background: rgba(0, 255, 255, 0.05) !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.08) 50%, transparent 100%) !important;
+  box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.05);
+}
+
+.ant-table-tbody > tr:hover {
+  box-shadow: 0 4px 20px rgba(0, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
 }
 
 .ant-table-pagination.ant-pagination {
   margin: 16px !important;
+  background: rgba(22, 27, 51, 0.3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
 }
 
 /* Pagination */
@@ -446,33 +554,77 @@ body {
   color: var(--color-text-secondary) !important;
 }
 
-/* Message */
+/* Message - Glowing Neon Toast Notifications */
 .ant-message {
   top: 80px !important;
 }
 
 .ant-message-notice-content {
-  background: var(--color-surface) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid var(--color-border) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(34, 197, 94, 0.1) 100%) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 197, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  padding: var(--space-3) var(--space-5) !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.ant-message-notice-content .ant-message-notice-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .ant-message-success .anticon {
-  color: var(--color-success) !important;
+  color: #22c55e !important;
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+  font-size: 16px;
 }
 
 .ant-message-info .anticon {
-  color: var(--neon-cyan) !important;
+  color: #00ffff !important;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  font-size: 16px;
 }
 
 .ant-message-warning .anticon {
-  color: var(--color-warning) !important;
+  color: #f59e0b !important;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+  font-size: 16px;
 }
 
 .ant-message-error .anticon {
-  color: var(--color-error) !important;
+  color: #ef4444 !important;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  font-size: 16px;
+}
+
+/* Message type-specific backgrounds */
+.ant-message-notice-wrapper .ant-message-success .ant-message-notice-content {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(34, 197, 94, 0.15) 100%) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-message-notice-wrapper .ant-message-info .ant-message-notice-content {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(0, 255, 255, 0.15) 100%) !important;
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-message-notice-wrapper .ant-message-warning .ant-message-notice-content {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(245, 158, 11, 0.15) 100%) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.ant-message-notice-wrapper .ant-message-error .ant-message-notice-content {
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(239, 68, 68, 0.15) 100%) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Notification */
@@ -589,21 +741,33 @@ body {
   border: 1px solid var(--color-border) !important;
 }
 
-/* DatePicker */
+/* DatePicker - Neon Cyan Focus States */
 .ant-picker {
-  background: rgba(22, 27, 51, 0.5) !important;
-  border: 1px solid var(--color-border) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.6) 0%, rgba(22, 27, 51, 0.4) 100%) !important;
+  border: 1px solid rgba(0, 255, 255, 0.15) !important;
   border-radius: var(--radius-md) !important;
   color: var(--color-text-primary) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-base) !important;
+  will-change: transform, opacity, border-color, box-shadow;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .ant-picker:hover {
-  border-color: var(--neon-cyan) !important;
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 255, 255, 0.15) !important;
 }
 
 .ant-picker-focused {
   border-color: var(--neon-cyan) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1), 0 0 20px rgba(0, 255, 255, 0.2) !important;
+  box-shadow:
+    0 0 0 3px rgba(0, 255, 255, 0.15),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    0 0 40px rgba(0, 255, 255, 0.15),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.8) 0%, rgba(22, 27, 51, 0.6) 100%) !important;
 }
 
 .ant-picker-input > input {
@@ -615,11 +779,11 @@ body {
 }
 
 .ant-picker-dropdown {
-  background: var(--color-surface) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid var(--color-border) !important;
+  background: linear-gradient(135deg, rgba(22, 27, 51, 0.95) 0%, rgba(22, 27, 51, 0.85) 100%) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(0, 255, 255, 0.2) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.1) !important;
 }
 
 .ant-picker-panel-container {
@@ -633,16 +797,18 @@ body {
 
 .ant-picker-cell {
   color: var(--color-text-primary) !important;
+  transition: all var(--transition-base);
 }
 
 .ant-picker-cell:hover {
   background: rgba(0, 255, 255, 0.1) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
 }
 
 .ant-picker-cell-selected .ant-picker-cell-inner {
   background: var(--neon-cyan) !important;
   border: none !important;
-  box-shadow: 0 0 10px var(--neon-glow-cyan) !important;
+  box-shadow: 0 0 10px var(--neon-glow-cyan), 0 0 20px rgba(0, 255, 255, 0.3) !important;
 }
 
 .ant-picker-cell-in-view {

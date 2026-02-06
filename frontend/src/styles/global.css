@@ -76,29 +76,33 @@ h4, .h4 { font-size: var(--font-size-lg); font-weight: 600; line-height: 1.3; }
 .body-sm { font-size: var(--font-size-sm); }
 .caption { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
 
-/* Scrollbar styling */
+/* Neon Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background);
+  background: rgba(255, 0, 255, 0.05);
+  box-shadow: inset 0 0 10px rgba(255, 0, 255, 0.1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: #00ffff;
   border-radius: var(--radius-full);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 5px rgba(255, 255, 255, 0.3);
+  will-change: transform, opacity;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-secondary);
+  background: #00cccc;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.8), inset 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 768px) {
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
   }
 }
 
@@ -120,4 +124,53 @@ h4, .h4 { font-size: var(--font-size-lg); font-weight: 600; line-height: 1.3; }
 
 .neon-glow-magenta {
   box-shadow: 0 0 20px var(--neon-glow-magenta), 0 0 40px var(--neon-glow-magenta);
+}
+
+/* Holographic Shimmer Effect */
+.holographic-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.1) 25%,
+    rgba(255, 0, 255, 0.2) 50%,
+    rgba(0, 255, 255, 0.1) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  will-change: transform, opacity;
+}
+
+.holographic-shimmer-block {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgba(22, 27, 51, 0.7) 0%,
+    rgba(22, 27, 51, 0.5) 50%,
+    rgba(22, 27, 51, 0.7) 100%
+  );
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.holographic-shimmer-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.15) 25%,
+    rgba(255, 0, 255, 0.25) 50%,
+    rgba(0, 255, 255, 0.15) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: holographicShimmer 2.5s linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
 }

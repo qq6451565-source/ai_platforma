@@ -24,6 +24,7 @@ import { sendPresence } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
 import { Button } from "../../components/ui";
+import { CinemaOutlined, FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
 import "./Room.css";
 
 const appId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
@@ -81,6 +82,7 @@ const LiveRoomPage = () => {
   const [handRaised, setHandRaised] = useState(false);
   const [screenTrack, setScreenTrack] = useState<ILocalVideoTrack | null>(null);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [cinemaMode, setCinemaMode] = useState(false);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
@@ -256,7 +258,10 @@ const LiveRoomPage = () => {
   const studentTiles = participants.filter(p => !p.is_teacher && p.user_id !== effectiveStageUserId);
 
   return (
-    <div className="live-page">
+    <div className={`live-page ${cinemaMode ? 'cinema-mode-active' : ''}`}>
+      {cinemaMode && (
+        <div className="cinema-aurora-glow animate-aurora-glow" />
+      )}
       <div className="live-stage">
         <div ref={stageVideoRef} className="stage-video-container" />
         <div className="stage-overlay">
@@ -268,6 +273,13 @@ const LiveRoomPage = () => {
             <div className="stage-user-label">{stageParticipant?.user_name || (isStageUser ? "Siz" : "Ma'ruzachi")}</div>
           </div>
         </div>
+        <button
+          className="cinema-mode-toggle"
+          onClick={() => setCinemaMode(!cinemaMode)}
+          title={cinemaMode ? "Exit Cinema Mode" : "Enter Cinema Mode"}
+        >
+          {cinemaMode ? <FullscreenExitOutlined /> : <CinemaOutlined />}
+        </button>
       </div>
 
       {showParticipants && (

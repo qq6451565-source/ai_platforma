@@ -1,0 +1,128 @@
+/* Base Holographic Skeleton Styles */
+.holographic-skeleton-text {
+  height: 1em;
+  border-radius: 4px;
+  will-change: transform, opacity;
+}
+
+.holographic-skeleton-circular {
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+
+.holographic-skeleton-rectangular {
+  border-radius: var(--radius-md);
+  will-change: transform, opacity;
+}
+
+/* Card Skeleton */
+.holographic-card-skeleton {
+  padding: var(--space-4);
+  background: rgba(22, 27, 51, 0.5);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(5px);
+  will-change: transform, opacity;
+}
+
+.holographic-card-skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.holographic-card-skeleton-header-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.holographic-card-skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.holographic-card-skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Table Skeleton */
+.holographic-table-skeleton {
+  background: rgba(22, 27, 51, 0.5);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+.holographic-table-header {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+  background: rgba(0, 255, 255, 0.02);
+}
+
+.holographic-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.holographic-table-row {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.05);
+  transition: background var(--transition-fast);
+}
+
+.holographic-table-row:last-child {
+  border-bottom: none;
+}
+
+.holographic-table-row:hover {
+  background: rgba(0, 255, 255, 0.02);
+}
+
+/* List Skeleton */
+.holographic-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.holographic-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: rgba(22, 27, 51, 0.5);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  will-change: transform, opacity;
+}
+
+.holographic-list-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* GPU Acceleration */
+.holographic-shimmer-block,
+.holographic-skeleton-text,
+.holographic-skeleton-circular,
+.holographic-skeleton-rectangular,
+.holographic-card-skeleton,
+.holographic-table-skeleton,
+.holographic-list-item {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
