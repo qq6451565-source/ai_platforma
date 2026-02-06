@@ -7,7 +7,7 @@ import AgoraRTC, {
 } from "agora-rtc-sdk-ng";
 import { Spin, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { AudioOutlined, AudioMutedOutlined, VideoCameraOutlined, StopOutlined, HighlightOutlined, LogoutOutlined, TeamOutlined } from "@ant-design/icons";
+import { AudioOutlined, AudioMutedOutlined, VideoCameraOutlined, StopOutlined, HighlightOutlined, LogoutOutlined, TeamOutlined, ExpandOutlined, FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
 
 import {
   endLiveRoom,
@@ -24,7 +24,6 @@ import { sendPresence } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
 import { Button } from "../../components/ui";
-import { CinemaOutlined, FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
 import "./Room.css";
 
 const appId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
@@ -278,7 +277,7 @@ const LiveRoomPage = () => {
           onClick={() => setCinemaMode(!cinemaMode)}
           title={cinemaMode ? "Exit Cinema Mode" : "Enter Cinema Mode"}
         >
-          {cinemaMode ? <FullscreenExitOutlined /> : <CinemaOutlined />}
+          {cinemaMode ? <FullscreenExitOutlined /> : <ExpandOutlined />}
         </button>
       </div>
 
