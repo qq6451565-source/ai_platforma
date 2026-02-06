@@ -14,6 +14,7 @@ import {
 import { Navigate, Route, Routes, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import Landing from "./pages/Landing";
 import LoginPage from "./pages/Login";
 import RegisterPage from "./pages/Register";
 import AdminLoginPage from "./pages/AdminLogin";
@@ -176,6 +177,7 @@ const App = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/admin-login" element={<AdminLoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -218,7 +220,7 @@ const App = () => {
           <Route index element={<Navigate to={getDefaultRedirect(user?.role)} replace />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

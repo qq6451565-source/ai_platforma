@@ -1,5 +1,5 @@
 :root {
-  /* Colors */
+  /* Colors - Neon Dark Theme */
   --color-primary: #2563eb;
   --color-primary-dark: #1d4ed8;
   --color-secondary: #64748b;
@@ -13,6 +13,17 @@
   --color-text-primary: #1e293b;
   --color-text-secondary: #64748b;
   --color-text-muted: #94a3b8;
+
+  /* Neon Dark Theme Colors */
+  --neon-cyan: #00ffff;
+  --neon-magenta: #ff00ff;
+  --neon-midnight: #0a0b1e;
+  --neon-deep-purple: #2e1a47;
+  --neon-dark-surface: #1a1b2e;
+  --neon-text: #e0e0ff;
+  --neon-text-dim: #8b8ba8;
+  --neon-glow-cyan: rgba(0, 255, 255, 0.5);
+  --neon-glow-magenta: rgba(255, 0, 255, 0.5);
 
   /* Typography */
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
