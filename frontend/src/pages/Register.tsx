@@ -1,24 +1,13 @@
-import {
-  UserOutlined,
-  PhoneOutlined,
-  IdcardOutlined,
-  CalendarOutlined,
-  SafetyCertificateOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, PhoneOutlined, IdcardOutlined, CalendarOutlined } from "@ant-design/icons";
 import { Form, message, Upload } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useGoogleLogin } from "@react-oauth/google";
 import {
-  googleAuth,
   updateRegistrationProfile,
   uploadPassportFront,
   submitFaceVerification,
-  sendEmailVerification,
-  verifyEmailCode,
 } from "../api/auth";
-import { saveTokens } from "../utils/token";
 import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
 
@@ -31,11 +20,6 @@ const RegisterPage = () => {
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
   const [faceVerified, setFaceVerified] = useState(false);
-  const [emailCode, setEmailCode] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [emailSending, setEmailSending] = useState(false);
-  const [emailVerifying, setEmailVerifying] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>("");
   const [scanLoading, setScanLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -43,33 +27,12 @@ const RegisterPage = () => {
 
   const stepTitles = useMemo(
     () => [
-      t("register.steps.google"),
       t("register.steps.personal"),
       t("register.steps.passport"),
       t("register.steps.face"),
     ],
     [t]
   );
-
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setLoading(true);
-        const data = await googleAuth(tokenResponse.access_token);
-        saveTokens(data.access, data.refresh);
-        setUserEmail(data.user?.email || "");
-        setEmailVerified(Boolean(data.user?.email_verified));
-        message.success(t("register.googleSuccess"));
-        setCurrentStep(1);
-      } catch (error: any) {
-        message.error(error?.response?.data?.detail || t("register.googleError"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => message.error(t("register.googleError")),
-    scope: "openid profile email",
-  });
 
   useEffect(() => {
     if (!passportFile) {
@@ -92,7 +55,7 @@ const RegisterPage = () => {
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 3 && cameraActive) {
+    if (currentStep !== 2 && cameraActive) {
       stopCamera();
     }
   }, [currentStep, cameraActive]);
@@ -112,7 +75,7 @@ const RegisterPage = () => {
         birth_year: Number(values.birth_year),
       });
       message.success(t("register.profileSaved"));
-      setCurrentStep(2);
+      setCurrentStep(1);
     } catch (error: any) {
       message.error(error?.response?.data?.detail || t("register.profileError"));
     } finally {
@@ -129,7 +92,7 @@ const RegisterPage = () => {
       setLoading(true);
       await uploadPassportFront(passportFile);
       message.success(t("register.passportUploaded"));
-      setCurrentStep(3);
+      setCurrentStep(2);
     } catch (error: any) {
       message.error(error?.response?.data?.detail || t("register.passportError"));
     } finally {
@@ -207,31 +170,6 @@ const RegisterPage = () => {
     }
   };
 
-  const handleSendEmail = async () => {
-    try {
-      setEmailSending(true);
-      await sendEmailVerification(userEmail || undefined);
-      message.success(t("register.codeSent"));
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.codeSendError"));
-    } finally {
-      setEmailSending(false);
-    }
-  };
-
-  const handleVerifyEmail = async () => {
-    try {
-      setEmailVerifying(true);
-      await verifyEmailCode(emailCode);
-      setEmailVerified(true);
-      message.success(t("register.codeVerified"));
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.codeVerifyError"));
-    } finally {
-      setEmailVerifying(false);
-    }
-  };
-
   const handleFinish = () => {
     stopCamera();
     message.success(t("register.completed"));
@@ -264,29 +202,8 @@ const RegisterPage = () => {
             ))}
           </div>
 
-          {currentStep === 0 && (
-            <div className="wizard-step-body">
-              <p className="wizard-text">{t("register.googleSubtitle")}</p>
-              <Button
-                type="button"
-                size="lg"
-                block
-                icon={<SafetyCertificateOutlined />}
-                onClick={() => handleGoogleLogin()}
-                isLoading={loading}
-                disabled={!isGoogleConfigured}
-              >
-                {t("register.googleButton")}
-              </Button>
-              {!isGoogleConfigured && (
-                <div className="wizard-hint">
-                  {t("register.googleMissing")}
-                </div>
-              )}
-            </div>
-          )}
 
-          {currentStep === 1 && (
+          {currentStep === 0 &
             <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
               <div className="wizard-grid">
                 <Form.Item
@@ -344,7 +261,7 @@ const RegisterPage = () => {
             </Form>
           )}
 
-          {currentStep === 2 && (
+          {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
               <Upload
@@ -371,7 +288,7 @@ const RegisterPage = () => {
                 </div>
               )}
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handlePassportUpload} isLoading={loading}>
@@ -381,7 +298,7 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 2 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
               <div className="scanner-section">
@@ -405,34 +322,11 @@ const RegisterPage = () => {
                 {faceVerified && <div className="status-chip success">{t("register.faceVerified")}</div>}
               </div>
 
-              <div className="email-section">
-                <p className="wizard-text">{t("register.emailSubtitle")}</p>
-                <div className="email-actions">
-                  <Input
-                    placeholder={t("register.emailCodePlaceholder")}
-                    value={emailCode}
-                    onChange={(event) => setEmailCode(event.target.value)}
-                  />
-                  <Button onClick={handleSendEmail} isLoading={emailSending}>
-                    {t("register.sendCode")}
-                  </Button>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={handleVerifyEmail}
-                  isLoading={emailVerifying}
-                  disabled={!emailCode}
-                >
-                  {t("register.verifyCode")}
-                </Button>
-                {emailVerified && <div className="status-chip success">{t("register.emailVerified")}</div>}
-              </div>
-
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(2)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handleFinish} disabled={!faceVerified || !emailVerified}>
+                <Button onClick={handleFinish} disabled={!faceVerified}>
                   {t("register.finish")}
                 </Button>
               </div>
