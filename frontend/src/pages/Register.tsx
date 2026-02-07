@@ -184,6 +184,9 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const isGoogleConfigured = Boolean(googleClientId);
+
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -208,6 +211,30 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
+
+            <div className="wizard-step-body">
+              <p className="wizard-text">{t("register.googleSubtitle")}</p>
+              <Button
+                type="button"
+                size="lg"
+                block
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => handleGoogleLogin()}
+                isLoading={loading}
+                disabled={!isGoogleConfigured}
+              >
+                {t("register.googleButton")}
+              </Button>
+              {!isGoogleConfigured && (
+                <div className="wizard-hint">
+                  {t("register.googleMissing")}
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentStep === 1 && (
+
             <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
               <div className="wizard-grid">
                 <Form.Item
