@@ -189,24 +189,8 @@
   background: rgba(34, 197, 94, 0.1);
 }
 
-.email-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.email-actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.75rem;
-}
-
 @media (max-width: 640px) {
   .wizard-actions {
     flex-direction: column;
-  }
-
-  .email-actions {
-    grid-template-columns: 1fr;
   }
 }
