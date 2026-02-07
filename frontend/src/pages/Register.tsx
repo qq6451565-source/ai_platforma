@@ -9,6 +9,8 @@ import { Form, message, Upload } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { Dispatch, SetStateAction } from "react";
+import type { TFunction } from "i18next";
 import { useGoogleLogin } from "@react-oauth/google";
 import {
   googleAuth,
@@ -24,11 +26,11 @@ import "./Register.css";
 
 type GoogleStepProps = {
   loading: boolean;
-  setLoading: (value: boolean) => void;
-  setUserEmail: (value: string) => void;
-  setEmailVerified: (value: boolean) => void;
-  setCurrentStep: (value: number) => void;
-  t: (key: string) => string;
+  setLoading: Dispatch<SetStateAction<boolean>>;
+  setUserEmail: Dispatch<SetStateAction<string>>;
+  setEmailVerified: Dispatch<SetStateAction<boolean>>;
+  setCurrentStep: Dispatch<SetStateAction<number>>;
+  t: TFunction;
 };
 
 const GoogleStep = ({
