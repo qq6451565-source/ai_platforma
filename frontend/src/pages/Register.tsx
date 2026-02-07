@@ -176,6 +176,9 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const isGoogleConfigured = Boolean(googleClientId);
+
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -199,7 +202,8 @@ const RegisterPage = () => {
             ))}
           </div>
 
-          {currentStep === 0 && (
+
+          {currentStep === 0 &
             <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
               <div className="wizard-grid">
                 <Form.Item
