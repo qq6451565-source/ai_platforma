@@ -22,6 +22,60 @@ import { saveTokens } from "../utils/token";
 import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
 
+type GoogleStepProps = {
+  loading: boolean;
+  setLoading: (value: boolean) => void;
+  setUserEmail: (value: string) => void;
+  setEmailVerified: (value: boolean) => void;
+  setCurrentStep: (value: number) => void;
+  t: (key: string) => string;
+};
+
+const GoogleStep = ({
+  loading,
+  setLoading,
+  setUserEmail,
+  setEmailVerified,
+  setCurrentStep,
+  t,
+}: GoogleStepProps) => {
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setLoading(true);
+        const data = await googleAuth(tokenResponse.access_token);
+        saveTokens(data.access, data.refresh);
+        setUserEmail(data.user?.email || "");
+        setEmailVerified(Boolean(data.user?.email_verified));
+        message.success(t("register.googleSuccess"));
+        setCurrentStep(1);
+      } catch (error: any) {
+        message.error(error?.response?.data?.detail || t("register.googleError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => message.error(t("register.googleError")),
+    scope: "openid profile email",
+  });
+
+  return (
+    <div className="wizard-step-body">
+      <p className="wizard-text">{t("register.googleSubtitle")}</p>
+      <Button
+        type="button"
+        size="lg"
+        block
+        icon={<SafetyCertificateOutlined />}
+        onClick={() => handleGoogleLogin()}
+        isLoading={loading}
+      >
+        {t("register.googleButton")}
+      </Button>
+    </div>
+  );
+};
+
 const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -221,44 +275,6 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
-  const GoogleStep = () => {
-    const handleGoogleLogin = useGoogleLogin({
-      onSuccess: async (tokenResponse) => {
-        try {
-          setLoading(true);
-          const data = await googleAuth(tokenResponse.access_token);
-          saveTokens(data.access, data.refresh);
-          setUserEmail(data.user?.email || "");
-          setEmailVerified(Boolean(data.user?.email_verified));
-          message.success(t("register.googleSuccess"));
-          setCurrentStep(1);
-        } catch (error: any) {
-          message.error(error?.response?.data?.detail || t("register.googleError"));
-        } finally {
-          setLoading(false);
-        }
-      },
-      onError: () => message.error(t("register.googleError")),
-      scope: "openid profile email",
-    });
-
-    return (
-      <div className="wizard-step-body">
-        <p className="wizard-text">{t("register.googleSubtitle")}</p>
-        <Button
-          type="button"
-          size="lg"
-          block
-          icon={<SafetyCertificateOutlined />}
-          onClick={() => handleGoogleLogin()}
-          isLoading={loading}
-        >
-          {t("register.googleButton")}
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -285,7 +301,14 @@ const RegisterPage = () => {
           {currentStep === 0 && (
             <>
               {isGoogleConfigured ? (
-                <GoogleStep />
+                <GoogleStep
+                  loading={loading}
+                  setLoading={setLoading}
+                  setUserEmail={setUserEmail}
+                  setEmailVerified={setEmailVerified}
+                  setCurrentStep={setCurrentStep}
+                  t={t}
+                />
               ) : (
                 <div className="wizard-step-body">
                   <p className="wizard-text">{t("register.googleSubtitle")}</p>
