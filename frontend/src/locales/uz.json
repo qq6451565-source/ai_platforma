@@ -161,6 +161,7 @@
     "googleButton": "Google orqali davom etish",
     "googleSuccess": "Google hisobi muvaffaqiyatli ulandi.",
     "googleError": "Google avtorizatsiyasi xatolik berdi.",
+    "googleMissing": "Google OAuth hali sozlanmagan. Kirishni yoqish uchun VITE_GOOGLE_CLIENT_ID ni kiriting.",
     "profileSaved": "Shaxsiy ma'lumotlar saqlandi.",
     "profileError": "Ma'lumotlarni saqlashda xatolik.",
     "passportSubtitle": "AI tekshiruvi uchun passportning old tomonini yuklang.",
