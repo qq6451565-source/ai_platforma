@@ -238,6 +238,9 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const isGoogleConfigured = Boolean(googleClientId);
+
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -271,9 +274,15 @@ const RegisterPage = () => {
                 icon={<SafetyCertificateOutlined />}
                 onClick={() => handleGoogleLogin()}
                 isLoading={loading}
+                disabled={!isGoogleConfigured}
               >
                 {t("register.googleButton")}
               </Button>
+              {!isGoogleConfigured && (
+                <div className="wizard-hint">
+                  {t("register.googleMissing")}
+                </div>
+              )}
             </div>
           )}
 
