@@ -161,6 +161,7 @@
     "googleButton": "Продолжить с Google",
     "googleSuccess": "Аккаунт Google успешно подключён.",
     "googleError": "Ошибка авторизации Google.",
+    "googleMissing": "Google OAuth ещё не настроен. Укажите VITE_GOOGLE_CLIENT_ID, чтобы включить вход.",
     "profileSaved": "Личные данные сохранены.",
     "profileError": "Не удалось сохранить данные.",
     "passportSubtitle": "Загрузите лицевую сторону паспорта для AI-проверки.",

@@ -51,25 +51,8 @@ const RegisterPage = () => {
     [t]
   );
 
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setLoading(true);
-        const data = await googleAuth(tokenResponse.access_token);
-        saveTokens(data.access, data.refresh);
-        setUserEmail(data.user?.email || "");
-        setEmailVerified(Boolean(data.user?.email_verified));
-        message.success(t("register.googleSuccess"));
-        setCurrentStep(1);
-      } catch (error: any) {
-        message.error(error?.response?.data?.detail || t("register.googleError"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => message.error(t("register.googleError")),
-    scope: "openid profile email",
-  });
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const isGoogleConfigured = Boolean(googleClientId);
 
   useEffect(() => {
     if (!passportFile) {
@@ -238,6 +221,44 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
+  const GoogleStep = () => {
+    const handleGoogleLogin = useGoogleLogin({
+      onSuccess: async (tokenResponse) => {
+        try {
+          setLoading(true);
+          const data = await googleAuth(tokenResponse.access_token);
+          saveTokens(data.access, data.refresh);
+          setUserEmail(data.user?.email || "");
+          setEmailVerified(Boolean(data.user?.email_verified));
+          message.success(t("register.googleSuccess"));
+          setCurrentStep(1);
+        } catch (error: any) {
+          message.error(error?.response?.data?.detail || t("register.googleError"));
+        } finally {
+          setLoading(false);
+        }
+      },
+      onError: () => message.error(t("register.googleError")),
+      scope: "openid profile email",
+    });
+
+    return (
+      <div className="wizard-step-body">
+        <p className="wizard-text">{t("register.googleSubtitle")}</p>
+        <Button
+          type="button"
+          size="lg"
+          block
+          icon={<SafetyCertificateOutlined />}
+          onClick={() => handleGoogleLogin()}
+          isLoading={loading}
+        >
+          {t("register.googleButton")}
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -262,19 +283,25 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
-            <div className="wizard-step-body">
-              <p className="wizard-text">{t("register.googleSubtitle")}</p>
-              <Button
-                type="button"
-                size="lg"
-                block
-                icon={<SafetyCertificateOutlined />}
-                onClick={() => handleGoogleLogin()}
-                isLoading={loading}
-              >
-                {t("register.googleButton")}
-              </Button>
-            </div>
+            <>
+              {isGoogleConfigured ? (
+                <GoogleStep />
+              ) : (
+                <div className="wizard-step-body">
+                  <p className="wizard-text">{t("register.googleSubtitle")}</p>
+                  <Button
+                    type="button"
+                    size="lg"
+                    block
+                    icon={<SafetyCertificateOutlined />}
+                    disabled
+                  >
+                    {t("register.googleButton")}
+                  </Button>
+                  <div className="wizard-hint">{t("register.googleMissing")}</div>
+                </div>
+              )}
+            </>
           )}
 
           {currentStep === 1 && (

@@ -14,6 +14,18 @@ const queryClient = new QueryClient();
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
+const AppWithProviders = () => (
+  <BrowserRouter>
+    {googleClientId ? (
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <App />
+      </GoogleOAuthProvider>
+    ) : (
+      <App />
+    )}
+  </BrowserRouter>
+);
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ConfigProvider
@@ -25,11 +37,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <GoogleOAuthProvider clientId={googleClientId}>
-            <App />
-          </GoogleOAuthProvider>
-        </BrowserRouter>
+        <AppWithProviders />
       </QueryClientProvider>
     </ConfigProvider>
   </React.StrictMode>
