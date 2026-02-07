@@ -161,6 +161,7 @@
     "googleButton": "Continue with Google",
     "googleSuccess": "Google account linked successfully.",
     "googleError": "Google authorization failed.",
+    "googleMissing": "Google OAuth is not configured yet. Set VITE_GOOGLE_CLIENT_ID to enable sign-in.",
     "profileSaved": "Personal details saved.",
     "profileError": "Unable to save personal details.",
     "passportSubtitle": "Upload the front side of your passport for AI verification.",
