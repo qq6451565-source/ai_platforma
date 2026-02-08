@@ -3,22 +3,18 @@ import {
   PhoneOutlined,
   IdcardOutlined,
   CalendarOutlined,
-  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { Form, message, Upload } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useGoogleLogin } from "@react-oauth/google";
 import {
-  googleAuth,
   updateRegistrationProfile,
   uploadPassportFront,
   submitFaceVerification,
   sendEmailVerification,
   verifyEmailCode,
 } from "../api/auth";
-import { saveTokens } from "../utils/token";
 import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
 
@@ -43,33 +39,12 @@ const RegisterPage = () => {
 
   const stepTitles = useMemo(
     () => [
-      t("register.steps.google"),
       t("register.steps.personal"),
       t("register.steps.passport"),
       t("register.steps.face"),
     ],
     [t]
   );
-
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setLoading(true);
-        const data = await googleAuth(tokenResponse.access_token);
-        saveTokens(data.access, data.refresh);
-        setUserEmail(data.user?.email || "");
-        setEmailVerified(Boolean(data.user?.email_verified));
-        message.success(t("register.googleSuccess"));
-        setCurrentStep(1);
-      } catch (error: any) {
-        message.error(error?.response?.data?.detail || t("register.googleError"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => message.error(t("register.googleError")),
-    scope: "openid profile email",
-  });
 
   useEffect(() => {
     if (!passportFile) {
@@ -92,7 +67,7 @@ const RegisterPage = () => {
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 3 && cameraActive) {
+    if (currentStep !== 2 && cameraActive) {
       stopCamera();
     }
   }, [currentStep, cameraActive]);
@@ -100,6 +75,7 @@ const RegisterPage = () => {
   const handleProfileSubmit = async (values: {
     first_name: string;
     last_name: string;
+    email: string;
     patronymic: string;
     birth_year: number;
     passport_series: string;
@@ -111,8 +87,10 @@ const RegisterPage = () => {
         ...values,
         birth_year: Number(values.birth_year),
       });
+      setUserEmail(values.email?.trim() || "");
+      setEmailVerified(false);
       message.success(t("register.profileSaved"));
-      setCurrentStep(2);
+      setCurrentStep(1);
     } catch (error: any) {
       message.error(error?.response?.data?.detail || t("register.profileError"));
     } finally {
@@ -129,7 +107,7 @@ const RegisterPage = () => {
       setLoading(true);
       await uploadPassportFront(passportFile);
       message.success(t("register.passportUploaded"));
-      setCurrentStep(3);
+      setCurrentStep(2);
     } catch (error: any) {
       message.error(error?.response?.data?.detail || t("register.passportError"));
     } finally {
@@ -238,9 +216,6 @@ const RegisterPage = () => {
     navigate("/app");
   };
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-  const isGoogleConfigured = Boolean(googleClientId);
-
   return (
     <div className="registration-page">
       <div className="registration-container">
@@ -265,28 +240,6 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
-            <div className="wizard-step-body">
-              <p className="wizard-text">{t("register.googleSubtitle")}</p>
-              <Button
-                type="button"
-                size="lg"
-                block
-                icon={<SafetyCertificateOutlined />}
-                onClick={() => handleGoogleLogin()}
-                isLoading={loading}
-                disabled={!isGoogleConfigured}
-              >
-                {t("register.googleButton")}
-              </Button>
-              {!isGoogleConfigured && (
-                <div className="wizard-hint">
-                  {t("register.googleMissing")}
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentStep === 1 && (
             <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
               <div className="wizard-grid">
                 <Form.Item
@@ -302,6 +255,20 @@ const RegisterPage = () => {
                   rules={[{ required: true, message: t("register.lastNameRequired") }]}
                 >
                   <Input icon={<UserOutlined />} placeholder={t("register.lastNamePlaceholder")} />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.email")}
+                  name="email"
+                  rules={[
+                    { required: true, message: t("register.emailRequired") },
+                    { type: "email", message: t("register.emailInvalid") },
+                  ]}
+                >
+                  <Input
+                    icon={<UserOutlined />}
+                    placeholder={t("register.emailPlaceholder")}
+                    type="email"
+                  />
                 </Form.Item>
                 <Form.Item
                   label={t("register.patronymic")}
@@ -344,7 +311,7 @@ const RegisterPage = () => {
             </Form>
           )}
 
-          {currentStep === 2 && (
+          {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
               <Upload
@@ -371,7 +338,7 @@ const RegisterPage = () => {
                 </div>
               )}
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handlePassportUpload} isLoading={loading}>
@@ -381,7 +348,7 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {currentStep === 3 && (
+          {currentStep === 2 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
               <div className="scanner-section">
@@ -429,7 +396,7 @@ const RegisterPage = () => {
               </div>
 
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(2)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handleFinish} disabled={!faceVerified || !emailVerified}>

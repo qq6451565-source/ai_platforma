@@ -45,6 +45,7 @@ export type GoogleAuthResponse = AuthTokens & {
 export type RegistrationProfilePayload = {
   first_name: string;
   last_name: string;
+  email?: string;
   patronymic: string;
   birth_year: number;
   passport_series: string;

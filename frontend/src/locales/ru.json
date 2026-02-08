@@ -196,12 +196,15 @@
     "phoneNumber": "Телефон",
     "firstNameRequired": "Введите имя",
     "lastNameRequired": "Введите фамилию",
+    "emailRequired": "Введите email",
+    "emailInvalid": "Некорректный email",
     "patronymicRequired": "Введите отчество",
     "birthYearRequired": "Введите год рождения",
     "passportSeriesRequired": "Введите серию паспорта",
     "phoneRequired": "Введите телефон",
     "firstNamePlaceholder": "Иван",
     "lastNamePlaceholder": "Иванов",
+    "emailPlaceholder": "name@example.com",
     "patronymicPlaceholder": "Отчество",
     "phonePlaceholder": "+998901234567"
   }
