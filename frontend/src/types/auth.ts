@@ -47,7 +47,7 @@ export type RegistrationProfilePayload = {
   last_name: string;
   email?: string;
   patronymic: string;
-  birth_year: number;
+  birth_date: string;
   passport_series: string;
   phone: string;
 };

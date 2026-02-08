@@ -13,6 +13,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, null=True, blank=True)
     patronymic = models.CharField(max_length=100, null=True, blank=True)
     birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     passport_series = models.CharField(max_length=20, null=True, blank=True)
     passport_front_image = models.ImageField(upload_to="passport/front/", null=True, blank=True)
     email_verified = models.BooleanField(default=False)

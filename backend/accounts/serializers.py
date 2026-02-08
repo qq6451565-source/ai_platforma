@@ -20,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
             'phone',
             'patronymic',
             'birth_year',
+            'birth_date',
             'passport_series',
             'passport_front_image',
             'email_verified',
@@ -56,6 +57,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'phone',
             'patronymic',
             'birth_year',
+            'birth_date',
             'passport_series',
             'passport_front_image',
             'face_image',
@@ -67,10 +69,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'phone': {'required': False},
             'patronymic': {'required': False},
             'birth_year': {'required': False},
+            'birth_date': {'required': False},
             'passport_series': {'required': False},
             'passport_front_image': {'required': False},
             'face_image': {'required': False},
         }
+    def update(self, instance, validated_data):
+        birth_date = validated_data.get('birth_date')
+        if birth_date and not validated_data.get('birth_year'):
+            validated_data['birth_year'] = birth_date.year
+        return super().update(instance, validated_data)
+
 
 
 class ChangePasswordSerializer(serializers.Serializer):

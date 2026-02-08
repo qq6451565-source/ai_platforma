@@ -22,6 +22,7 @@ const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const maxBirthDate = new Date().toISOString().split("T")[0];
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [passportFile, setPassportFile] = useState<File | null>(null);
@@ -77,21 +78,23 @@ const RegisterPage = () => {
     last_name: string;
     email: string;
     patronymic: string;
-    birth_year: number;
+    birth_date: string;
     passport_series: string;
     phone: string;
   }) => {
     try {
       setLoading(true);
-      await updateRegistrationProfile({
-        ...values,
-        birth_year: Number(values.birth_year),
-      });
+      await updateRegistrationProfile(values);
       setUserEmail(values.email?.trim() || "");
       setEmailVerified(false);
       message.success(t("register.profileSaved"));
       setCurrentStep(1);
     } catch (error: any) {
+      if (error?.response?.status === 401) {
+        message.error(t("errors.unauthorized"));
+        navigate("/login");
+        return;
+      }
       message.error(error?.response?.data?.detail || t("register.profileError"));
     } finally {
       setLoading(false);
@@ -279,15 +282,13 @@ const RegisterPage = () => {
                 </Form.Item>
                 <Form.Item
                   label={t("register.birthYear")}
-                  name="birth_year"
+                  name="birth_date"
                   rules={[{ required: true, message: t("register.birthYearRequired") }]}
                 >
                   <Input
                     icon={<CalendarOutlined />}
-                    placeholder="1999"
-                    type="number"
-                    min={1900}
-                    max={new Date().getFullYear()}
+                    type="date"
+                    max={maxBirthDate}
                   />
                 </Form.Item>
                 <Form.Item
