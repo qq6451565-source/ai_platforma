@@ -22,6 +22,9 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
   if (payload.last_name) form.append("last_name", payload.last_name);
   if (payload.email) form.append("email", payload.email);
   if (payload.phone) form.append("phone", payload.phone);
+  if (payload.patronymic) form.append("patronymic", payload.patronymic);
+  if (payload.birth_date) form.append("birth_date", payload.birth_date);
+  if (payload.passport_series) form.append("passport_series", payload.passport_series);
   if (payload.passport_front) form.append("passport_front", payload.passport_front);
   if (payload.passport_back) form.append("passport_back", payload.passport_back);
   if (payload.selfie_image) form.append("selfie_image", payload.selfie_image);

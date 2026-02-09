@@ -1,22 +1,21 @@
-import {
-  UserOutlined,
-  PhoneOutlined,
-  IdcardOutlined,
-  CalendarOutlined,
-} from "@ant-design/icons";
-import { Form, message, Upload } from "antd";
+import { CalendarOutlined, IdcardOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
+import { Form, Upload, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  updateRegistrationProfile,
-  uploadPassportFront,
-  submitFaceVerification,
-  sendEmailVerification,
-  verifyEmailCode,
-} from "../api/auth";
+import { register } from "../api/auth";
 import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
+
+type ProfileFormValues = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  patronymic: string;
+  birth_date: string;
+  passport_series: string;
+  phone: string;
+};
 
 const RegisterPage = () => {
   const { t } = useTranslation();
@@ -27,23 +26,15 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [faceVerified, setFaceVerified] = useState(false);
-  const [emailCode, setEmailCode] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [emailSending, setEmailSending] = useState(false);
-  const [emailVerifying, setEmailVerifying] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>("");
-  const [scanLoading, setScanLoading] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const stepTitles = useMemo(
-    () => [
-      t("register.steps.personal"),
-      t("register.steps.passport"),
-      t("register.steps.face"),
-    ],
+    () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
     [t]
   );
 
@@ -73,49 +64,18 @@ const RegisterPage = () => {
     }
   }, [currentStep, cameraActive]);
 
-  const handleProfileSubmit = async (values: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    patronymic: string;
-    birth_date: string;
-    passport_series: string;
-    phone: string;
-  }) => {
-    try {
-      setLoading(true);
-      await updateRegistrationProfile(values);
-      setUserEmail(values.email?.trim() || "");
-      setEmailVerified(false);
-      message.success(t("register.profileSaved"));
-      setCurrentStep(1);
-    } catch (error: any) {
-      if (error?.response?.status === 401) {
-        message.error(t("errors.unauthorized"));
-        navigate("/login");
-        return;
-      }
-      message.error(error?.response?.data?.detail || t("register.profileError"));
-    } finally {
-      setLoading(false);
-    }
+  const handleProfileSubmit = (values: ProfileFormValues) => {
+    setProfileData(values);
+    message.success(t("register.profileSaved"));
+    setCurrentStep(1);
   };
 
-  const handlePassportUpload = async () => {
+  const handlePassportUpload = () => {
     if (!passportFile) {
       message.warning(t("register.passportRequired"));
       return;
     }
-    try {
-      setLoading(true);
-      await uploadPassportFront(passportFile);
-      message.success(t("register.passportUploaded"));
-      setCurrentStep(2);
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.passportError"));
-    } finally {
-      setLoading(false);
-    }
+    setCurrentStep(2);
   };
 
   const startCamera = async () => {
@@ -165,58 +125,50 @@ const RegisterPage = () => {
     return new File([u8arr], "selfie.jpg", { type: mime });
   };
 
-  const handleScan = async () => {
+  const handleScan = () => {
     const selfie = captureSelfie();
     if (!selfie) {
       message.error(t("register.scanError"));
       return;
     }
-
-    try {
-      setScanLoading(true);
-      const response = await submitFaceVerification(selfie);
-      if (response.has_embedding) {
-        setFaceVerified(true);
-        message.success(t("register.scanSuccess"));
-      } else {
-        message.warning(t("register.scanError"));
-      }
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.scanError"));
-    } finally {
-      setScanLoading(false);
-    }
+    setSelfieFile(selfie);
+    setFaceVerified(true);
+    message.success(t("register.scanSuccess"));
   };
 
-  const handleSendEmail = async () => {
-    try {
-      setEmailSending(true);
-      await sendEmailVerification(userEmail || undefined);
-      message.success(t("register.codeSent"));
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.codeSendError"));
-    } finally {
-      setEmailSending(false);
+  const handleFinish = async () => {
+    if (!profileData) {
+      message.warning(t("register.profileError"));
+      setCurrentStep(0);
+      return;
     }
-  };
-
-  const handleVerifyEmail = async () => {
-    try {
-      setEmailVerifying(true);
-      await verifyEmailCode(emailCode);
-      setEmailVerified(true);
-      message.success(t("register.codeVerified"));
-    } catch (error: any) {
-      message.error(error?.response?.data?.detail || t("register.codeVerifyError"));
-    } finally {
-      setEmailVerifying(false);
+    if (!passportFile || !selfieFile) {
+      message.warning(t("register.passportRequired"));
+      return;
     }
-  };
-
-  const handleFinish = () => {
-    stopCamera();
-    message.success(t("register.completed"));
-    navigate("/app");
+    try {
+      setLoading(true);
+      const fullName = `${profileData.first_name} ${profileData.last_name}`.trim();
+      const res = await register({
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        full_name: fullName,
+        email: profileData.email,
+        phone: profileData.phone,
+        patronymic: profileData.patronymic,
+        birth_date: profileData.birth_date,
+        passport_series: profileData.passport_series,
+        passport_front: passportFile,
+        selfie_image: selfieFile,
+      });
+      message.success(res.detail || t("register.completed"));
+      stopCamera();
+      navigate("/login");
+    } catch (error: any) {
+      message.error(error?.response?.data?.detail || t("register.profileError"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -225,7 +177,11 @@ const RegisterPage = () => {
         <Card
           className="wizard-card"
           title={t("register.title")}
-          extra={<Link to="/login" className="body-sm">{t("register.loginLink")}</Link>}
+          extra={
+            <Link to="/login" className="body-sm">
+              {t("register.loginLink")}
+            </Link>
+          }
           hasBeam
         >
           <div className="wizard-steps">
@@ -267,11 +223,7 @@ const RegisterPage = () => {
                     { type: "email", message: t("register.emailInvalid") },
                   ]}
                 >
-                  <Input
-                    icon={<UserOutlined />}
-                    placeholder={t("register.emailPlaceholder")}
-                    type="email"
-                  />
+                  <Input icon={<UserOutlined />} placeholder={t("register.emailPlaceholder")} type="email" />
                 </Form.Item>
                 <Form.Item
                   label={t("register.patronymic")}
@@ -285,11 +237,7 @@ const RegisterPage = () => {
                   name="birth_date"
                   rules={[{ required: true, message: t("register.birthYearRequired") }]}
                 >
-                  <Input
-                    icon={<CalendarOutlined />}
-                    type="date"
-                    max={maxBirthDate}
-                  />
+                  <Input icon={<CalendarOutlined />} type="date" max={maxBirthDate} />
                 </Form.Item>
                 <Form.Item
                   label={t("register.passportSeries")}
@@ -366,41 +314,18 @@ const RegisterPage = () => {
                       {t("register.stopCamera")}
                     </Button>
                   )}
-                  <Button onClick={handleScan} isLoading={scanLoading} disabled={!cameraActive}>
+                  <Button onClick={handleScan} disabled={!cameraActive}>
                     {t("register.scanNow")}
                   </Button>
                 </div>
                 {faceVerified && <div className="status-chip success">{t("register.faceVerified")}</div>}
               </div>
 
-              <div className="email-section">
-                <p className="wizard-text">{t("register.emailSubtitle")}</p>
-                <div className="email-actions">
-                  <Input
-                    placeholder={t("register.emailCodePlaceholder")}
-                    value={emailCode}
-                    onChange={(event) => setEmailCode(event.target.value)}
-                  />
-                  <Button onClick={handleSendEmail} isLoading={emailSending}>
-                    {t("register.sendCode")}
-                  </Button>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={handleVerifyEmail}
-                  isLoading={emailVerifying}
-                  disabled={!emailCode}
-                >
-                  {t("register.verifyCode")}
-                </Button>
-                {emailVerified && <div className="status-chip success">{t("register.emailVerified")}</div>}
-              </div>
-
               <div className="wizard-actions">
                 <Button variant="ghost" onClick={() => setCurrentStep(1)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handleFinish} disabled={!faceVerified || !emailVerified}>
+                <Button onClick={handleFinish} disabled={!faceVerified}>
                   {t("register.finish")}
                 </Button>
               </div>

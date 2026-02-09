@@ -55,7 +55,7 @@ class Applicant(models.Model):
 class ApplicantDocument(models.Model):
     applicant = models.OneToOneField(Applicant, on_delete=models.CASCADE, related_name="documents")
     passport_front = models.ImageField(upload_to="applicants/passport/")
-    passport_back = models.ImageField(upload_to="applicants/passport/")
+    passport_back = models.ImageField(upload_to="applicants/passport/", null=True, blank=True)
     face_image = models.ImageField(upload_to="applicants/face/")
 
     def __str__(self):

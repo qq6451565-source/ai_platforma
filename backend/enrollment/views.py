@@ -105,6 +105,10 @@ class ApplicantRegisterView(APIView):
         phone = (data.get("phone") or "").strip()
         email = (data.get("email") or "").strip()
         direction_id = data.get("direction_choice")
+        birth_date_raw = (data.get("birth_date") or "").strip()
+        birth_date = _parse_date(birth_date_raw) if birth_date_raw else None
+        patronymic = (data.get("patronymic") or "").strip()
+        passport_series = (data.get("passport_series") or data.get("passport_id") or data.get("card_number") or "").strip()
         if direction_id:
             try:
                 Direction.objects.get(id=direction_id)
@@ -117,17 +121,22 @@ class ApplicantRegisterView(APIView):
             email=email,
             direction_choice_id=direction_id or None,
             status="pending",
+            birth_date=birth_date or None,
+            patronymic=patronymic or None,
+            name=first_name or None,
+            surname=last_name or None,
+            passport_id=passport_series or None,
         )
 
         passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
         passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
         selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
 
-        if not passport_front or not passport_back or not selfie:
+        if not passport_front or not selfie:
             applicant.delete()
             raise ValidationError(
                 {
-                    "documents": "Passport oldi, passport orqa va selfie majburiy.",
+                    "documents": "Passport oldi va selfie majburiy.",
                 }
             )
 

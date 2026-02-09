@@ -17,6 +17,9 @@ export type RegisterPayload = {
   full_name?: string;
   email?: string;
   phone?: string;
+  patronymic?: string;
+  birth_date?: string;
+  passport_series?: string;
   passport_front?: File;
   passport_back?: File;
   selfie_image?: File;
