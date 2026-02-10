@@ -96,6 +96,7 @@ class ApplicantRegisterView(APIView):
             raise PermissionDenied("Ro'yxatdan o'tish yopiq.")
 
         data = request.data
+        full_name_input = (data.get("full_name") or "").strip()
         phone = (data.get("phone") or "").strip()
         email = (data.get("email") or "").strip()
         direction_id = data.get("direction_choice")
@@ -140,7 +141,8 @@ class ApplicantRegisterView(APIView):
 
         birth_date = _parse_date(ocr_result.get("birthdate")) if ocr_result.get("birthdate") else None
 
-        username = _build_username(full_name)
+        username_source = full_name_input or full_name
+        username = _build_username(username_source)
         password = passport_series
 
         parts = full_name.split()

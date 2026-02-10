@@ -1,19 +1,27 @@
-import { IdcardOutlined } from "@ant-design/icons";
-import { Upload, message, Modal } from "antd";
+import { IdcardOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
+import { Form, Upload, message, Modal } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { register } from "../api/auth";
-import { Button, Card } from "../components/ui";
+import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
+
+type ProfileFormValues = {
+  full_name: string;
+  email: string;
+  phone: string;
+};
 
 const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [faceVerified, setFaceVerified] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -21,7 +29,7 @@ const RegisterPage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const stepTitles = useMemo(
-    () => [t("register.steps.passport"), t("register.steps.face")],
+    () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
     [t]
   );
 
@@ -46,17 +54,28 @@ const RegisterPage = () => {
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 1 && cameraActive) {
+    if (currentStep !== 2 && cameraActive) {
       stopCamera();
     }
   }, [currentStep, cameraActive]);
+
+  const handleProfileSubmit = (values: ProfileFormValues) => {
+    const payload = {
+      full_name: (values.full_name || "").trim(),
+      email: (values.email || "").trim(),
+      phone: (values.phone || "").trim(),
+    };
+    setProfileData(payload);
+    message.success(t("register.profileSaved"));
+    setCurrentStep(1);
+  };
 
   const handlePassportUpload = () => {
     if (!passportFile) {
       message.warning(t("register.passportRequired"));
       return;
     }
-    setCurrentStep(1);
+    setCurrentStep(2);
   };
 
   const startCamera = async () => {
@@ -118,6 +137,11 @@ const RegisterPage = () => {
   };
 
   const handleFinish = async () => {
+    if (!profileData) {
+      message.warning(t("register.profileError"));
+      setCurrentStep(0);
+      return;
+    }
     if (!passportFile || !selfieFile) {
       message.warning(t("register.passportRequired"));
       return;
@@ -125,6 +149,9 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       const res = await register({
+        full_name: profileData.full_name,
+        email: profileData.email,
+        phone: profileData.phone,
         passport_front: passportFile,
         selfie_image: selfieFile,
       });
@@ -180,6 +207,51 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleProfileSubmit}
+              onFinishFailed={({ errorFields }) => {
+                const firstError = errorFields?.[0]?.errors?.[0];
+                if (firstError) {
+                  message.error(firstError);
+                }
+              }}
+              requiredMark={false}
+            >
+              <div className="wizard-grid">
+                <Form.Item
+                  label={t("register.fullName")}
+                  name="full_name"
+                  rules={[{ required: true, message: t("register.fullNameRequired") }]}
+                >
+                  <Input icon={<UserOutlined />} placeholder={t("register.fullNamePlaceholder")} />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.email")}
+                  name="email"
+                  rules={[
+                    { required: true, message: t("register.emailRequired") },
+                    { type: "email", message: t("register.emailInvalid") },
+                  ]}
+                >
+                  <Input icon={<UserOutlined />} placeholder={t("register.emailPlaceholder")} type="email" />
+                </Form.Item>
+                <Form.Item
+                  label={t("register.phoneNumber")}
+                  name="phone"
+                  rules={[{ required: true, message: t("register.phoneRequired") }]}
+                >
+                  <Input icon={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
+                </Form.Item>
+              </div>
+              <Button type="submit" block isLoading={loading} size="lg" onClick={() => form.submit()}>
+                {t("common.next")}
+              </Button>
+            </Form>
+          )}
+
+          {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
               <Upload
@@ -206,7 +278,7 @@ const RegisterPage = () => {
                 </div>
               )}
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => navigate("/login")}> 
+                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handlePassportUpload} isLoading={loading}>
@@ -216,7 +288,7 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {currentStep === 1 && (
+          {currentStep === 2 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
               <div className="scanner-section">
@@ -241,7 +313,7 @@ const RegisterPage = () => {
               </div>
 
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handleFinish} disabled={!faceVerified}>

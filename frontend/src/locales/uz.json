@@ -214,6 +214,9 @@
     "credentialsNote": "Bu ma'lumotlarni saqlab qo'ying. Admin tasdiqlaguncha faqat profil ko'rinadi.",
     "username": "Username",
     "usernameRequired": "Username kiriting",
-    "usernamePlaceholder": "Ali Valiyev"
+    "usernamePlaceholder": "Ali Valiyev",
+    "fullName": "Ism va familiya",
+    "fullNameRequired": "Ism va familiyani kiriting",
+    "fullNamePlaceholder": "Ali Valiyev"
   }
 }

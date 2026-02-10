@@ -214,6 +214,9 @@
     "credentialsNote": "Please save these credentials. Only profile is available until admin approval.",
     "username": "Username",
     "usernameRequired": "Enter username",
-    "usernamePlaceholder": "Ali Valiyev"
+    "usernamePlaceholder": "Ali Valiyev",
+    "fullName": "Full name",
+    "fullNameRequired": "Enter full name",
+    "fullNamePlaceholder": "Ali Valiyev"
   }
 }
