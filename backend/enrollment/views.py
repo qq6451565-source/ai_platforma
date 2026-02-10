@@ -108,14 +108,36 @@ class ApplicantRegisterView(APIView):
         birth_date_raw = (data.get("birth_date") or "").strip()
         birth_date = _parse_date(birth_date_raw) if birth_date_raw else None
         patronymic = (data.get("patronymic") or "").strip()
-        passport_series = (data.get("passport_series") or data.get("passport_id") or data.get("card_number") or "").strip()
+        passport_series = (
+            data.get("passport_series")
+            or data.get("passport_id")
+            or data.get("card_number")
+            or ""
+        ).strip()
+        if not passport_series:
+            raise ValidationError({"passport_series": "Passport seriyasi majburiy."})
+
         if direction_id:
             try:
                 Direction.objects.get(id=direction_id)
             except Direction.DoesNotExist:
                 raise ValidationError({"direction_choice": "Direction topilmadi."})
 
+        username = _build_username(full_name)
+        password = passport_series
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            role="student",
+            phone=phone,
+        )
+
         applicant = Applicant.objects.create(
+            user=user,
             full_name=full_name,
             phone=phone,
             email=email,
@@ -134,6 +156,7 @@ class ApplicantRegisterView(APIView):
 
         if not passport_front or not selfie:
             applicant.delete()
+            user.delete()
             raise ValidationError(
                 {
                     "documents": "Passport oldi va selfie majburiy.",
@@ -154,6 +177,8 @@ class ApplicantRegisterView(APIView):
                 "detail": "Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.",
                 "applicant_id": applicant.id,
                 "status": applicant.status,
+                "login_username": user.username,
+                "login_password": password,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -609,7 +634,7 @@ class ApproveApplicantView(APIView):
             raise PermissionDenied("Faqat admin tasdiqlay oladi.")
 
         try:
-            applicant = Applicant.objects.select_related("direction_choice").get(id=applicant_id)
+            applicant = Applicant.objects.select_related("direction_choice", "user").get(id=applicant_id)
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
@@ -628,8 +653,9 @@ class ApproveApplicantView(APIView):
         first_name = parts[0] if parts else ""
         last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        username = _build_username(full_name or (applicant.email or "user"))
-        password = "1234"
+        user = applicant.user
+        created_user = False
+        password = None
 
         if role == "student":
             group_id = request.data.get("group_id")
@@ -651,31 +677,59 @@ class ApproveApplicantView(APIView):
             except (TypeError, ValueError):
                 raise ValidationError({"admission_year": "admission_year integer bo'lishi kerak."})
 
-            user = User.objects.create_user(
-                username=username,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                email=applicant.email or "",
-                role="student",
-                phone=applicant.phone or "",
-            )
-            user.group = group
-            user.save(update_fields=["group"])
+            if user is None:
+                username = _build_username(full_name or (applicant.email or "user"))
+                password = applicant.passport_id or "1234"
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=applicant.email or "",
+                    role="student",
+                    phone=applicant.phone or "",
+                )
+                created_user = True
+                applicant.user = user
+            else:
+                if not user.username:
+                    user.username = _build_username(full_name or (applicant.email or "user"))
+                user.first_name = first_name or user.first_name
+                user.last_name = last_name or user.last_name
+                user.email = applicant.email or user.email
+                user.phone = applicant.phone or user.phone
+                user.role = "student"
+                if not user.is_superuser:
+                    user.is_staff = False
+                user.group = group
+                user.save()
+
+            if user.group_id != group.id:
+                user.group = group
+                user.save(update_fields=["group"])
 
             documents = getattr(applicant, "documents", None)
-            if documents and documents.face_image:
+            if documents and documents.face_image and not user.face_image:
                 user.face_image = documents.face_image
                 user.save(update_fields=["face_image"])
 
-            StudentProfile.objects.create(
-                user=user,
-                direction=direction,
-                group=group,
-                admission_year=admission_year,
-                status="active",
-            )
+            try:
+                profile = user.student_profile
+                profile.direction = direction
+                profile.group = group
+                profile.admission_year = admission_year
+                profile.status = "active"
+                profile.save()
+            except StudentProfile.DoesNotExist:
+                StudentProfile.objects.create(
+                    user=user,
+                    direction=direction,
+                    group=group,
+                    admission_year=admission_year,
+                    status="active",
+                )
             _ensure_passport_data(user, applicant, documents)
+
         else:
             subject_id = request.data.get("subject_id")
             if not subject_id:
@@ -686,21 +740,37 @@ class ApproveApplicantView(APIView):
             except Subject.DoesNotExist:
                 raise NotFound("Subject topilmadi.")
 
-            user = User.objects.create_user(
-                username=username,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                email=applicant.email or "",
-                role="teacher",
-                phone=applicant.phone or "",
-            )
-            TeacherProfile.objects.create(
-                user=user,
-            )
+            if user is None:
+                username = _build_username(full_name or (applicant.email or "user"))
+                password = applicant.passport_id or "1234"
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=applicant.email or "",
+                    role="teacher",
+                    phone=applicant.phone or "",
+                )
+                created_user = True
+                applicant.user = user
+            else:
+                if not user.username:
+                    user.username = _build_username(full_name or (applicant.email or "user"))
+                user.first_name = first_name or user.first_name
+                user.last_name = last_name or user.last_name
+                user.email = applicant.email or user.email
+                user.phone = applicant.phone or user.phone
+                user.role = "teacher"
+                user.save()
+
+            try:
+                user.teacher_profile
+            except TeacherProfile.DoesNotExist:
+                TeacherProfile.objects.create(user=user)
 
             documents = getattr(applicant, "documents", None)
-            if documents and documents.face_image:
+            if documents and documents.face_image and not user.face_image:
                 user.face_image = documents.face_image
                 user.save(update_fields=["face_image"])
 
@@ -718,19 +788,25 @@ class ApproveApplicantView(APIView):
         applicant.status = "approved"
         applicant.approved_by = request.user
         applicant.approved_at = timezone.now()
-        applicant.save(update_fields=["status", "approved_by", "approved_at"])
+        applicant.save(update_fields=["status", "approved_by", "approved_at", "user"])
 
         payload = {
             "user_id": user.id,
             "username": user.username,
-            "password": password,
             "role": role,
         }
+        if created_user and password:
+            payload["password"] = password
         if role == "student":
+            direction_id = None
+            try:
+                direction_id = user.student_profile.direction_id
+            except StudentProfile.DoesNotExist:
+                direction_id = None
             payload.update(
                 {
                     "group_id": user.group_id,
-                    "direction_id": user.student_profile.direction_id if hasattr(user, "student_profile") else None,
+                    "direction_id": direction_id,
                 }
             )
         return Response(payload, status=status.HTTP_201_CREATED)
@@ -744,18 +820,16 @@ class RejectApplicantView(APIView):
             raise PermissionDenied("Faqat admin rad eta oladi.")
 
         try:
-            applicant = Applicant.objects.get(id=applicant_id)
+            applicant = Applicant.objects.select_related("user").get(id=applicant_id)
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
         if applicant.status == "rejected":
             return Response({"detail": "Applicant allaqachon rad etilgan."}, status=status.HTTP_200_OK)
 
-        applicant.status = "rejected"
-        applicant.approved_by = request.user
-        applicant.approved_at = timezone.now()
-        applicant.save(update_fields=["status", "approved_by", "approved_at"])
-
+        if applicant.user:
+            applicant.user.delete()
+        applicant.delete()
         return Response({"detail": "Applicant rad etildi."}, status=status.HTTP_200_OK)
 
 

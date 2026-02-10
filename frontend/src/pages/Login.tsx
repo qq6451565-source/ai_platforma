@@ -33,7 +33,7 @@ const LoginPage = () => {
       }
       qc.setQueryData(["me", tokens.access], me);
       message.success("Muvaffaqiyatli kirdingiz");
-      window.location.href = getDefaultRedirect(me.role);
+      window.location.href = getDefaultRedirect(me.role, me.role === "student" && !me.group);
     } catch (err: any) {
       clearTokens();
       message.error(err?.response?.data?.detail || "Login muvaffaqiyatsiz");

@@ -207,6 +207,10 @@
     "lastNamePlaceholder": "Doe",
     "emailPlaceholder": "name@example.com",
     "patronymicPlaceholder": "Middle name",
-    "phonePlaceholder": "+998901234567"
+    "phonePlaceholder": "+998901234567",
+    "credentialsTitle": "Login details",
+    "credentialsUser": "Username: {{username}}",
+    "credentialsPass": "Password: {{password}}",
+    "credentialsNote": "Please save these credentials. Only profile is available until admin approval."
   }
 }

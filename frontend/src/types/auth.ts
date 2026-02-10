@@ -29,6 +29,8 @@ export type RegisterResponse = {
   detail: string;
   applicant_id: number;
   status: "pending" | "verified" | "rejected" | "approved";
+  login_username?: string;
+  login_password?: string;
 };
 
 export type GoogleAuthResponse = AuthTokens & {

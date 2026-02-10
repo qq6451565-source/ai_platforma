@@ -65,6 +65,8 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
+  const isStudent = user?.role === "student";
+  const isPendingStudent = isStudent && !user?.group;
 
   const studentGroup = useMemo(() => [
     {
@@ -77,6 +79,15 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
         { key: "student/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
         { key: "student/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
         { key: "student/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
+        { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
+      ],
+    },
+  ], [t]);
+
+  const pendingStudentGroup = useMemo(() => [
+    {
+      label: t('nav.student'),
+      children: [
         { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
       ],
     },
@@ -122,7 +133,7 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     },
   ], [t]);
 
-  const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : studentGroup;
+  const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : isPendingStudent ? pendingStudentGroup : studentGroup;
 
   useEffect(() => {
     if (!user || isLoading) return;
@@ -164,6 +175,8 @@ const App = () => {
   const { data: user, isLoading, isError } = useMe();
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
+  const isStudent = user?.role === "student";
+  const isPendingStudent = isStudent && !user?.group;
   const isAuthenticated = !!token && !!user && !isError;
 
   useEffect(() => {
@@ -187,7 +200,7 @@ const App = () => {
       <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
         <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
           <Route path="live/:lessonId" element={<LiveRoomPage />} />
-          <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} />}>
+          <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} isPending={isPendingStudent} />}>
             <Route path="dashboard" element={<StudentDashboard />} />
             <Route path="schedule" element={<StudentSchedule />} />
             <Route path="materials" element={<StudentMaterials />} />
@@ -220,7 +233,7 @@ const App = () => {
             <Route path="ai-settings" element={<AdminAISettings />} />
             <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
           </Route>
-          <Route index element={<Navigate to={getDefaultRedirect(user?.role)} replace />} />
+          <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

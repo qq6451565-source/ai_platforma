@@ -1,4 +1,5 @@
 import api from "./client";
+import axios from "axios";
 import type {
   AuthTokens,
   LoginPayload,
@@ -8,6 +9,14 @@ import type {
   RegistrationProfilePayload,
   FaceVerificationResponse,
 } from "../types/auth";
+
+
+const publicApi = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://127.0.0.1:8000",
+});
 
 export async function login(payload: LoginPayload): Promise<AuthTokens> {
   const res = await api.post<AuthTokens>("/api/token/", payload);
@@ -29,7 +38,7 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
   if (payload.passport_back) form.append("passport_back", payload.passport_back);
   if (payload.selfie_image) form.append("selfie_image", payload.selfie_image);
 
-  const res = await api.post<RegisterResponse>("/api/enrollment/register/", form, {
+  const res = await publicApi.post<RegisterResponse>("/api/enrollment/register/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;

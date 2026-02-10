@@ -1,5 +1,5 @@
 import { CalendarOutlined, IdcardOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
-import { Form, Upload, message } from "antd";
+import { Form, Upload, message, Modal } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,7 @@ type ProfileFormValues = {
   last_name: string;
   email: string;
   patronymic: string;
-  birth_date: string;
+  birth_date: string | { format?: (pattern: string) => string };
   passport_series: string;
   phone: string;
 };
@@ -64,8 +64,26 @@ const RegisterPage = () => {
     }
   }, [currentStep, cameraActive]);
 
+  const normalizeBirthDate = (value: ProfileFormValues["birth_date"]) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value.format === "function") return value.format("YYYY-MM-DD");
+    return "";
+  };
+
   const handleProfileSubmit = (values: ProfileFormValues) => {
-    setProfileData(values);
+    const normalizedBirthDate = normalizeBirthDate(values.birth_date);
+    if (!normalizedBirthDate || normalizedBirthDate.length < 10) {
+      message.error(t("register.birthYearRequired"));
+      return;
+    }
+    const normalizedPassport = (values.passport_series || "").replace(/\s+/g, "").toUpperCase();
+    const payload = {
+      ...values,
+      birth_date: normalizedBirthDate,
+      passport_series: normalizedPassport,
+    };
+    setProfileData(payload);
     message.success(t("register.profileSaved"));
     setCurrentStep(1);
   };
@@ -163,7 +181,21 @@ const RegisterPage = () => {
       });
       message.success(res.detail || t("register.completed"));
       stopCamera();
-      navigate("/login");
+      if (res.login_username && res.login_password) {
+        Modal.info({
+          title: t("register.credentialsTitle"),
+          content: (
+            <div>
+              <p>{t("register.credentialsUser", { username: res.login_username })}</p>
+              <p>{t("register.credentialsPass", { password: res.login_password })}</p>
+              <p className="wizard-text">{t("register.credentialsNote")}</p>
+            </div>
+          ),
+          onOk: () => navigate("/login"),
+        });
+      } else {
+        navigate("/login");
+      }
     } catch (error: any) {
       message.error(error?.response?.data?.detail || t("register.profileError"));
     } finally {
@@ -199,7 +231,18 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
-            <Form form={form} layout="vertical" onFinish={handleProfileSubmit} requiredMark={false}>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleProfileSubmit}
+              onFinishFailed={({ errorFields }) => {
+                const firstError = errorFields?.[0]?.errors?.[0];
+                if (firstError) {
+                  message.error(firstError);
+                }
+              }}
+              requiredMark={false}
+            >
               <div className="wizard-grid">
                 <Form.Item
                   label={t("register.firstName")}
@@ -244,7 +287,7 @@ const RegisterPage = () => {
                   name="passport_series"
                   rules={[{ required: true, message: t("register.passportSeriesRequired") }]}
                 >
-                  <Input icon={<IdcardOutlined />} placeholder="AB123456" />
+                  <Input icon={<IdcardOutlined />} placeholder="AB1234567" />
                 </Form.Item>
                 <Form.Item
                   label={t("register.phoneNumber")}
@@ -254,7 +297,7 @@ const RegisterPage = () => {
                   <Input icon={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
                 </Form.Item>
               </div>
-              <Button type="submit" block isLoading={loading} size="lg">
+              <Button type="submit" block isLoading={loading} size="lg" onClick={() => form.submit()}>
                 {t("common.next")}
               </Button>
             </Form>

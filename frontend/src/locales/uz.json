@@ -207,6 +207,10 @@
     "lastNamePlaceholder": "Valiyev",
     "emailPlaceholder": "name@example.com",
     "patronymicPlaceholder": "Otasining ismi",
-    "phonePlaceholder": "+998901234567"
+    "phonePlaceholder": "+998901234567",
+    "credentialsTitle": "Kirish ma'lumotlari",
+    "credentialsUser": "Login: {{username}}",
+    "credentialsPass": "Parol: {{password}}",
+    "credentialsNote": "Bu ma'lumotlarni saqlab qo'ying. Admin tasdiqlaguncha faqat profil ko'rinadi."
   }
 }
