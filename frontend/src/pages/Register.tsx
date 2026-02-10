@@ -7,12 +7,22 @@ import { register } from "../api/auth";
 import { Button, Input, Card } from "../components/ui";
 import "./Register.css";
 
-type ProfileFormValues = {
+type ProfileFormValuesRaw = {
   first_name: string;
   last_name: string;
   email: string;
   patronymic: string;
   birth_date: string | { format?: (pattern: string) => string };
+  passport_series: string;
+  phone: string;
+};
+
+type ProfileFormValues = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  patronymic: string;
+  birth_date: string;
   passport_series: string;
   phone: string;
 };
@@ -64,14 +74,14 @@ const RegisterPage = () => {
     }
   }, [currentStep, cameraActive]);
 
-  const normalizeBirthDate = (value: ProfileFormValues["birth_date"]) => {
+  const normalizeBirthDate = (value: ProfileFormValuesRaw["birth_date"]) => {
     if (!value) return "";
     if (typeof value === "string") return value;
     if (typeof value.format === "function") return value.format("YYYY-MM-DD");
     return "";
   };
 
-  const handleProfileSubmit = (values: ProfileFormValues) => {
+  const handleProfileSubmit = (values: ProfileFormValuesRaw) => {
     const normalizedBirthDate = normalizeBirthDate(values.birth_date);
     if (!normalizedBirthDate || normalizedBirthDate.length < 10) {
       message.error(t("register.birthYearRequired"));
