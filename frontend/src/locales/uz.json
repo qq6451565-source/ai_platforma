@@ -211,6 +211,9 @@
     "credentialsTitle": "Kirish ma'lumotlari",
     "credentialsUser": "Login: {{username}}",
     "credentialsPass": "Parol: {{password}}",
-    "credentialsNote": "Bu ma'lumotlarni saqlab qo'ying. Admin tasdiqlaguncha faqat profil ko'rinadi."
+    "credentialsNote": "Bu ma'lumotlarni saqlab qo'ying. Admin tasdiqlaguncha faqat profil ko'rinadi.",
+    "username": "Username",
+    "usernameRequired": "Username kiriting",
+    "usernamePlaceholder": "Ali Valiyev"
   }
 }

@@ -1,42 +1,19 @@
-import { CalendarOutlined, IdcardOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
-import { Form, Upload, message, Modal } from "antd";
+import { IdcardOutlined } from "@ant-design/icons";
+import { Upload, message, Modal } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { register } from "../api/auth";
-import { Button, Input, Card } from "../components/ui";
+import { Button, Card } from "../components/ui";
 import "./Register.css";
-
-type ProfileFormValuesRaw = {
-  first_name: string;
-  last_name: string;
-  email: string;
-  patronymic: string;
-  birth_date: string | { format?: (pattern: string) => string };
-  passport_series: string;
-  phone: string;
-};
-
-type ProfileFormValues = {
-  first_name: string;
-  last_name: string;
-  email: string;
-  patronymic: string;
-  birth_date: string;
-  passport_series: string;
-  phone: string;
-};
 
 const RegisterPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [form] = Form.useForm();
-  const maxBirthDate = new Date().toISOString().split("T")[0];
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [faceVerified, setFaceVerified] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -44,7 +21,7 @@ const RegisterPage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const stepTitles = useMemo(
-    () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
+    () => [t("register.steps.passport"), t("register.steps.face")],
     [t]
   );
 
@@ -69,41 +46,17 @@ const RegisterPage = () => {
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 2 && cameraActive) {
+    if (currentStep !== 1 && cameraActive) {
       stopCamera();
     }
   }, [currentStep, cameraActive]);
-
-  const normalizeBirthDate = (value: ProfileFormValuesRaw["birth_date"]) => {
-    if (!value) return "";
-    if (typeof value === "string") return value;
-    if (typeof value.format === "function") return value.format("YYYY-MM-DD");
-    return "";
-  };
-
-  const handleProfileSubmit = (values: ProfileFormValuesRaw) => {
-    const normalizedBirthDate = normalizeBirthDate(values.birth_date);
-    if (!normalizedBirthDate || normalizedBirthDate.length < 10) {
-      message.error(t("register.birthYearRequired"));
-      return;
-    }
-    const normalizedPassport = (values.passport_series || "").replace(/\s+/g, "").toUpperCase();
-    const payload = {
-      ...values,
-      birth_date: normalizedBirthDate,
-      passport_series: normalizedPassport,
-    };
-    setProfileData(payload);
-    message.success(t("register.profileSaved"));
-    setCurrentStep(1);
-  };
 
   const handlePassportUpload = () => {
     if (!passportFile) {
       message.warning(t("register.passportRequired"));
       return;
     }
-    setCurrentStep(2);
+    setCurrentStep(1);
   };
 
   const startCamera = async () => {
@@ -165,27 +118,13 @@ const RegisterPage = () => {
   };
 
   const handleFinish = async () => {
-    if (!profileData) {
-      message.warning(t("register.profileError"));
-      setCurrentStep(0);
-      return;
-    }
     if (!passportFile || !selfieFile) {
       message.warning(t("register.passportRequired"));
       return;
     }
     try {
       setLoading(true);
-      const fullName = `${profileData.first_name} ${profileData.last_name}`.trim();
       const res = await register({
-        first_name: profileData.first_name,
-        last_name: profileData.last_name,
-        full_name: fullName,
-        email: profileData.email,
-        phone: profileData.phone,
-        patronymic: profileData.patronymic,
-        birth_date: profileData.birth_date,
-        passport_series: profileData.passport_series,
         passport_front: passportFile,
         selfie_image: selfieFile,
       });
@@ -241,79 +180,6 @@ const RegisterPage = () => {
           </div>
 
           {currentStep === 0 && (
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={handleProfileSubmit}
-              onFinishFailed={({ errorFields }) => {
-                const firstError = errorFields?.[0]?.errors?.[0];
-                if (firstError) {
-                  message.error(firstError);
-                }
-              }}
-              requiredMark={false}
-            >
-              <div className="wizard-grid">
-                <Form.Item
-                  label={t("register.firstName")}
-                  name="first_name"
-                  rules={[{ required: true, message: t("register.firstNameRequired") }]}
-                >
-                  <Input icon={<UserOutlined />} placeholder={t("register.firstNamePlaceholder")} />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.lastName")}
-                  name="last_name"
-                  rules={[{ required: true, message: t("register.lastNameRequired") }]}
-                >
-                  <Input icon={<UserOutlined />} placeholder={t("register.lastNamePlaceholder")} />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.email")}
-                  name="email"
-                  rules={[
-                    { required: true, message: t("register.emailRequired") },
-                    { type: "email", message: t("register.emailInvalid") },
-                  ]}
-                >
-                  <Input icon={<UserOutlined />} placeholder={t("register.emailPlaceholder")} type="email" />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.patronymic")}
-                  name="patronymic"
-                  rules={[{ required: true, message: t("register.patronymicRequired") }]}
-                >
-                  <Input icon={<UserOutlined />} placeholder={t("register.patronymicPlaceholder")} />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.birthYear")}
-                  name="birth_date"
-                  rules={[{ required: true, message: t("register.birthYearRequired") }]}
-                >
-                  <Input icon={<CalendarOutlined />} type="date" max={maxBirthDate} />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.passportSeries")}
-                  name="passport_series"
-                  rules={[{ required: true, message: t("register.passportSeriesRequired") }]}
-                >
-                  <Input icon={<IdcardOutlined />} placeholder="AB1234567" />
-                </Form.Item>
-                <Form.Item
-                  label={t("register.phoneNumber")}
-                  name="phone"
-                  rules={[{ required: true, message: t("register.phoneRequired") }]}
-                >
-                  <Input icon={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
-                </Form.Item>
-              </div>
-              <Button type="submit" block isLoading={loading} size="lg" onClick={() => form.submit()}>
-                {t("common.next")}
-              </Button>
-            </Form>
-          )}
-
-          {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
               <Upload
@@ -340,7 +206,7 @@ const RegisterPage = () => {
                 </div>
               )}
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
+                <Button variant="ghost" onClick={() => navigate("/login")}> 
                   {t("common.back")}
                 </Button>
                 <Button onClick={handlePassportUpload} isLoading={loading}>
@@ -350,7 +216,7 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {currentStep === 2 && (
+          {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
               <div className="scanner-section">
@@ -375,7 +241,7 @@ const RegisterPage = () => {
               </div>
 
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(1)}>
+                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
                 <Button onClick={handleFinish} disabled={!faceVerified}>

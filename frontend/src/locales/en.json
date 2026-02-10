@@ -211,6 +211,9 @@
     "credentialsTitle": "Login details",
     "credentialsUser": "Username: {{username}}",
     "credentialsPass": "Password: {{password}}",
-    "credentialsNote": "Please save these credentials. Only profile is available until admin approval."
+    "credentialsNote": "Please save these credentials. Only profile is available until admin approval.",
+    "username": "Username",
+    "usernameRequired": "Enter username",
+    "usernamePlaceholder": "Ali Valiyev"
   }
 }

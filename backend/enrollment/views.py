@@ -96,26 +96,16 @@ class ApplicantRegisterView(APIView):
             raise PermissionDenied("Ro'yxatdan o'tish yopiq.")
 
         data = request.data
-        first_name = (data.get("first_name") or "").strip()
-        last_name = (data.get("last_name") or "").strip()
-        full_name = (data.get("full_name") or f"{first_name} {last_name}").strip()
-        if not full_name:
-            raise ValidationError({"full_name": "Ism va familiya talab qilinadi."})
-
         phone = (data.get("phone") or "").strip()
         email = (data.get("email") or "").strip()
         direction_id = data.get("direction_choice")
-        birth_date_raw = (data.get("birth_date") or "").strip()
-        birth_date = _parse_date(birth_date_raw) if birth_date_raw else None
-        patronymic = (data.get("patronymic") or "").strip()
-        passport_series = (
-            data.get("passport_series")
-            or data.get("passport_id")
-            or data.get("card_number")
-            or ""
-        ).strip()
-        if not passport_series:
-            raise ValidationError({"passport_series": "Passport seriyasi majburiy."})
+
+        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
+        passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
+        selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
+
+        if not passport_front or not selfie:
+            raise ValidationError({"documents": "Passport oldi va selfie majburiy."})
 
         if direction_id:
             try:
@@ -123,8 +113,39 @@ class ApplicantRegisterView(APIView):
             except Direction.DoesNotExist:
                 raise ValidationError({"direction_choice": "Direction topilmadi."})
 
+        passport_front_bytes = _read_upload_bytes(passport_front)
+        passport_back_bytes = _read_upload_bytes(passport_back)
+        ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
+        ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
+        ocr_result = _merge_ocr_results(ocr_front, ocr_back)
+
+        if not ocr_result:
+            raise ValidationError({"documents": "Passportdan ma'lumot olinmadi."})
+
+        ocr_surname = (ocr_result.get("surname") or "").strip()
+        ocr_name = (ocr_result.get("name") or "").strip()
+        ocr_patronymic = (ocr_result.get("patronymic") or "").strip()
+        fio = (ocr_result.get("fio") or "").strip()
+        if fio:
+            full_name = fio
+        else:
+            full_name = " ".join([p for p in [ocr_surname, ocr_name, ocr_patronymic] if p])
+
+        if not full_name:
+            raise ValidationError({"documents": "Passportdan ism-familiya aniqlanmadi."})
+
+        passport_series = (ocr_result.get("card_number") or ocr_result.get("passport_id") or "").strip()
+        if not passport_series:
+            raise ValidationError({"documents": "Passport seriyasi aniqlanmadi."})
+
+        birth_date = _parse_date(ocr_result.get("birthdate")) if ocr_result.get("birthdate") else None
+
         username = _build_username(full_name)
         password = passport_series
+
+        parts = full_name.split()
+        first_name = ocr_name or (parts[0] if parts else "")
+        last_name = ocr_surname or (" ".join(parts[1:]) if len(parts) > 1 else "")
 
         user = User.objects.create_user(
             username=username,
@@ -144,24 +165,16 @@ class ApplicantRegisterView(APIView):
             direction_choice_id=direction_id or None,
             status="pending",
             birth_date=birth_date or None,
-            patronymic=patronymic or None,
-            name=first_name or None,
-            surname=last_name or None,
+            patronymic=ocr_patronymic or None,
+            name=ocr_name or None,
+            surname=ocr_surname or None,
             passport_id=passport_series or None,
+            card_number=ocr_result.get("card_number") or None,
+            personal_number=ocr_result.get("personal_number") or None,
+            sex=ocr_result.get("sex") or None,
+            citizenship=ocr_result.get("citizenship") or None,
+            birth_place=ocr_result.get("birth_place") or None,
         )
-
-        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
-        passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
-        selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
-
-        if not passport_front or not selfie:
-            applicant.delete()
-            user.delete()
-            raise ValidationError(
-                {
-                    "documents": "Passport oldi va selfie majburiy.",
-                }
-            )
 
         document = ApplicantDocument.objects.create(
             applicant=applicant,
@@ -182,6 +195,24 @@ class ApplicantRegisterView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+def _read_upload_bytes(uploaded_file):
+    if not uploaded_file:
+        return None
+    try:
+        pos = uploaded_file.tell()
+    except Exception:
+        pos = None
+    data = uploaded_file.read()
+    try:
+        if pos is not None:
+            uploaded_file.seek(pos)
+        else:
+            uploaded_file.seek(0)
+    except Exception:
+        pass
+    return data
 
 
 def _read_field_bytes(field_file):
