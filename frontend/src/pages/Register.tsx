@@ -137,7 +137,12 @@ const RegisterPage = () => {
     message.success(t("register.scanSuccess"));
   };
 
-  const autoLoginAndRedirect = async (username: string, password: string) => {
+  const autoLoginAndRedirect = async (username?: string, password?: string) => {
+    if (!username || !password) {
+      message.error(t("register.profileError"));
+      navigate("/login");
+      return;
+    }
     try {
       const tokens = await login({ username, password });
       saveTokens(tokens.access, tokens.refresh);
