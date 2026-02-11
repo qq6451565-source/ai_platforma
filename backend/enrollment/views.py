@@ -133,7 +133,10 @@ class ApplicantRegisterView(APIView):
             full_name = " ".join([p for p in [ocr_surname, ocr_name, ocr_patronymic] if p])
 
         if not full_name:
-            raise ValidationError({"documents": "Passportdan ism-familiya aniqlanmadi."})
+            if full_name_input:
+                full_name = full_name_input
+            else:
+                raise ValidationError({"documents": "Passportdan ism-familiya aniqlanmadi."})
 
         passport_series = (ocr_result.get("card_number") or ocr_result.get("passport_id") or "").strip()
         if not passport_series:

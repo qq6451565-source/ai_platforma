@@ -3,8 +3,9 @@ import { Form, Upload, message, Modal } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { register } from "../api/auth";
+import { login, register } from "../api/auth";
 import { Button, Input, Card } from "../components/ui";
+import { saveTokens, clearTokens } from "../utils/token";
 import "./Register.css";
 
 type ProfileFormValues = {
@@ -136,6 +137,18 @@ const RegisterPage = () => {
     message.success(t("register.scanSuccess"));
   };
 
+  const autoLoginAndRedirect = async (username: string, password: string) => {
+    try {
+      const tokens = await login({ username, password });
+      saveTokens(tokens.access, tokens.refresh);
+      window.location.href = "/app/student/profile";
+    } catch (err: any) {
+      clearTokens();
+      message.error(err?.response?.data?.detail || t("register.profileError"));
+      navigate("/login");
+    }
+  };
+
   const handleFinish = async () => {
     if (!profileData) {
       message.warning(t("register.profileError"));
@@ -167,7 +180,7 @@ const RegisterPage = () => {
               <p className="wizard-text">{t("register.credentialsNote")}</p>
             </div>
           ),
-          onOk: () => navigate("/login"),
+          onOk: () => autoLoginAndRedirect(res.login_username, res.login_password),
         });
       } else {
         navigate("/login");
