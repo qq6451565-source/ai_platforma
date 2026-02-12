@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
 import { Button, Input, Card } from "../../components/ui";
+import {
+  clearPendingCredentials,
+  getPendingCredentials,
+  type PendingCredentials,
+} from "../../utils/pendingCredentials";
 
 const StudentProfile = () => {
   const qc = useQueryClient();
@@ -12,6 +17,7 @@ const StudentProfile = () => {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
   const [file, setFile] = useState<File | undefined>(undefined);
+  const [pendingCredentials, setPendingCredentials] = useState<PendingCredentials | null>(null);
 
   const [profileForm] = Form.useForm();
   const [passForm] = Form.useForm();
@@ -26,6 +32,18 @@ const StudentProfile = () => {
       phone: user?.phone || "",
     });
   }, [user, profileForm]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role === "student" && !user.group) {
+      setPendingCredentials(getPendingCredentials());
+      return;
+    }
+
+    clearPendingCredentials();
+    setPendingCredentials(null);
+  }, [user]);
 
   const profileStatusText = useMemo(() => {
     return isPendingStudent ? "Kutilmoqda" : "Faol";
@@ -149,6 +167,16 @@ const StudentProfile = () => {
           message="Arizangiz qabul qilindi"
           description="Admin tasdiqlaguncha hisob kutish rejimida. Hozircha faqat profil sahifasi faol."
         />
+      )}
+
+      {isPendingStudent && pendingCredentials && (
+        <Card hasBeam style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 8, fontWeight: 600 }}>Kirish ma'lumotlari</div>
+          <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
+            <div><strong>Username:</strong> {pendingCredentials.username}</div>
+            <div><strong>Parol:</strong> {pendingCredentials.password}</div>
+          </div>
+        </Card>
       )}
 
       <Card hasBeam style={{ marginBottom: 16 }}>

@@ -2,7 +2,6 @@ import {
   CameraOutlined,
   IdcardOutlined,
   PhoneOutlined,
-  UploadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Form, Upload, message } from "antd";
@@ -12,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { login, register } from "../api/auth";
 import { Button, Input, Card } from "../components/ui";
 import { clearTokens, saveTokens } from "../utils/token";
+import { clearPendingCredentials, savePendingCredentials } from "../utils/pendingCredentials";
 import "./Register.css";
 
 type ProfileFormValues = {
@@ -52,10 +52,8 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
-
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
-
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
 
@@ -178,7 +176,13 @@ const RegisterPage = () => {
       return;
     }
     setSelfieFile(selfie);
+    stopCamera();
     message.success(t("register.scanSuccess"));
+  };
+
+  const handleRetake = () => {
+    setSelfieFile(null);
+    setSelfiePreview(null);
   };
 
   const autoLoginAndRedirect = async (username?: string, password?: string) => {
@@ -189,10 +193,12 @@ const RegisterPage = () => {
     }
 
     try {
+      savePendingCredentials(username, password);
       const tokens = await login({ username, password });
       saveTokens(tokens.access, tokens.refresh);
       navigate("/app/student/profile", { replace: true });
     } catch (error: any) {
+      clearPendingCredentials();
       clearTokens();
       message.warning(normalizeApiError(error, t("register.profileError")));
       navigate("/login", { replace: true });
@@ -227,7 +233,6 @@ const RegisterPage = () => {
         selfie_image: selfieFile,
       });
 
-      stopCamera();
       message.success(res.detail || t("register.completed"));
       await autoLoginAndRedirect(res.login_username, res.login_password);
     } catch (error: any) {
@@ -349,29 +354,13 @@ const RegisterPage = () => {
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
 
-              <Upload
-                accept="image/*"
-                beforeUpload={() => false}
-                maxCount={1}
-                showUploadList={false}
-                onChange={(info) => {
-                  const file = info.fileList?.[0]?.originFileObj as File | undefined;
-                  if (file) {
-                    setSelfieFile(file);
-                    message.success(t("register.scanSuccess"));
-                  }
-                }}
-              >
-                <Button variant="outline" icon={<UploadOutlined />} block>
-                  Selfie rasm yuklash
-                </Button>
-              </Upload>
-
               <div className="scanner-section">
                 <div className={`scanner-frame ${cameraActive ? "active" : ""}`}>
                   <video ref={videoRef} className="scanner-video" />
                   <canvas ref={canvasRef} className="scanner-canvas" />
-                  {!cameraActive && selfiePreview && <img src={selfiePreview} className="scanner-video" alt="selfie" />}
+                  {!cameraActive && selfiePreview && (
+                    <img src={selfiePreview} className="scanner-video" alt="selfie" />
+                  )}
                   <div className="scanner-overlay" />
                 </div>
 
@@ -387,11 +376,17 @@ const RegisterPage = () => {
                   )}
 
                   <Button onClick={handleCameraCapture} disabled={!cameraActive}>
-                    {t("register.scanNow")}
+                    Rasmga olish
                   </Button>
+
+                  {selfieFile && (
+                    <Button variant="ghost" onClick={handleRetake}>
+                      Qayta olish
+                    </Button>
+                  )}
                 </div>
 
-                {!selfieFile && <div className="wizard-hint">Selfie rasm talab qilinadi.</div>}
+                {!selfieFile && <div className="wizard-hint">Selfie rasm olish majburiy.</div>}
                 {selfieFile && <div className="status-chip success">{t("register.faceVerified")}</div>}
               </div>
 
