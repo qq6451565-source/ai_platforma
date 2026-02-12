@@ -146,7 +146,9 @@ class ApplicantRegisterView(APIView):
 
         username_source = full_name_input or full_name
         username = _build_username(username_source)
-        password = passport_series
+        # Vaqtinchalik kirish paroli sifatida telefon ishlatiladi.
+        # Admin tasdiqlaganida parol passport seriyaga yangilanadi.
+        password = re.sub(r"\s+", "", phone) or passport_series
 
         parts = full_name.split()
         first_name = ocr_name or (parts[0] if parts else "")
@@ -821,6 +823,13 @@ class ApproveApplicantView(APIView):
                 teacher_subject.groups.set(Group.objects.filter(id__in=group_ids))
             _ensure_passport_data(user, applicant, documents)
 
+        approval_password = (applicant.passport_id or applicant.card_number or "").strip()
+        if not approval_password:
+            raise ValidationError({"detail": "Passport seriya/raqami topilmadi. Tasdiqlab bo'lmaydi."})
+
+        user.set_password(approval_password)
+        user.save(update_fields=["password"])
+
         applicant.status = "approved"
         applicant.approved_by = request.user
         applicant.approved_at = timezone.now()
@@ -831,8 +840,8 @@ class ApproveApplicantView(APIView):
             "username": user.username,
             "role": role,
         }
-        if created_user and password:
-            payload["password"] = password
+        if created_user and approval_password:
+            payload["password"] = approval_password
         if role == "student":
             direction_id = None
             try:
