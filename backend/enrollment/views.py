@@ -118,10 +118,7 @@ class ApplicantRegisterView(APIView):
         passport_back_bytes = _read_upload_bytes(passport_back)
         ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
         ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
-        ocr_result = _merge_ocr_results(ocr_front, ocr_back)
-
-        if not ocr_result:
-            raise ValidationError({"documents": "Passportdan ma'lumot olinmadi."})
+        ocr_result = _merge_ocr_results(ocr_front, ocr_back) or {}
 
         ocr_surname = (ocr_result.get("surname") or "").strip()
         ocr_name = (ocr_result.get("name") or "").strip()
@@ -139,8 +136,6 @@ class ApplicantRegisterView(APIView):
                 raise ValidationError({"documents": "Passportdan ism-familiya aniqlanmadi."})
 
         passport_series = (ocr_result.get("card_number") or ocr_result.get("passport_id") or "").strip()
-        if not passport_series:
-            raise ValidationError({"documents": "Passport seriyasi aniqlanmadi."})
 
         birth_date = _parse_date(ocr_result.get("birthdate")) if ocr_result.get("birthdate") else None
 
@@ -148,7 +143,7 @@ class ApplicantRegisterView(APIView):
         username = _build_username(username_source)
         # Vaqtinchalik kirish paroli sifatida telefon ishlatiladi.
         # Admin tasdiqlaganida parol passport seriyaga yangilanadi.
-        password = re.sub(r"\s+", "", phone) or passport_series
+        password = re.sub(r"\s+", "", phone) or passport_series or "123456"
 
         parts = full_name.split()
         first_name = ocr_name or (parts[0] if parts else "")
@@ -679,8 +674,7 @@ class ApproveApplicantView(APIView):
         if applicant.status == "approved":
             return Response({"detail": "Applicant allaqachon tasdiqlangan."}, status=status.HTTP_200_OK)
 
-        if not applicant.verifications.filter(verified=True).exists():
-            raise ValidationError({"detail": "Verification tasdiqlanmagan (verified=True topilmadi)."})
+        # Admin qo'lda tekshirgan holatda AI verified bo'lmasa ham tasdiqlashga ruxsat beriladi.
 
         role = request.data.get("role") or "student"
         if role not in ["student", "teacher"]:
