@@ -248,6 +248,17 @@ const RegisterPage = () => {
       });
 
       message.success(res.detail || t("register.completed"));
+
+      if (res.login_username && res.login_password) {
+        savePendingCredentials(res.login_username, res.login_password);
+      }
+
+      if (res.access) {
+        saveTokens(res.access, res.refresh);
+        navigate("/app/student/profile", { replace: true });
+        return;
+      }
+
       await autoLoginAndRedirect(res.login_username, res.login_password);
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));

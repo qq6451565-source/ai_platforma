@@ -8,6 +8,7 @@ from rest_framework.exceptions import NotFound, ValidationError, PermissionDenie
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from ai.clients import face_match, ocr_passport
 from ai.models import AISettings
@@ -187,6 +188,14 @@ class ApplicantRegisterView(APIView):
         _run_ai_verification(document)
 
         applicant.refresh_from_db()
+
+        refresh = RefreshToken.for_user(user)
+        refresh["role"] = getattr(user, "role", None)
+        refresh["token_version"] = getattr(user, "token_version", 1)
+        refresh["is_staff"] = user.is_staff
+        refresh["is_superuser"] = user.is_superuser
+        access = refresh.access_token
+
         return Response(
             {
                 "detail": "Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.",
@@ -194,6 +203,11 @@ class ApplicantRegisterView(APIView):
                 "status": applicant.status,
                 "login_username": user.username,
                 "login_password": password,
+                "access": str(access),
+                "refresh": str(refresh),
+                "role": getattr(user, "role", None),
+                "user_id": user.id,
+                "token_version": getattr(user, "token_version", 1),
             },
             status=status.HTTP_201_CREATED,
         )

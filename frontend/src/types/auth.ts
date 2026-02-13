@@ -31,6 +31,11 @@ export type RegisterResponse = {
   status: "pending" | "verified" | "rejected" | "approved";
   login_username?: string;
   login_password?: string;
+  access?: string;
+  refresh?: string;
+  role?: "student" | "teacher" | "admin";
+  user_id?: number;
+  token_version?: number;
 };
 
 export type GoogleAuthResponse = AuthTokens & {
