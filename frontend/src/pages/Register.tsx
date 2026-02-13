@@ -4,14 +4,14 @@ import {
   PhoneOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Form, Upload, message } from "antd";
+import { Form, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login, register } from "../api/auth";
 import { Button, Input, Card } from "../components/ui";
 import { clearTokens, saveTokens } from "../utils/token";
-import { clearPendingCredentials, savePendingCredentials } from "../utils/pendingCredentials";
+import { savePendingCredentials } from "../utils/pendingCredentials";
 import "./Register.css";
 
 type ProfileFormValues = {
@@ -54,10 +54,12 @@ const RegisterPage = () => {
   const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
+
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
-
   const [cameraActive, setCameraActive] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -86,12 +88,19 @@ const RegisterPage = () => {
     return () => URL.revokeObjectURL(url);
   }, [selfieFile]);
 
+  const stopCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+    setVideoReady(false);
+  };
+
   useEffect(() => {
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      stopCamera();
     };
   }, []);
 
@@ -102,17 +111,16 @@ const RegisterPage = () => {
   }, [currentStep, cameraActive]);
 
   const handleProfileSubmit = (values: ProfileFormValues) => {
-    const payload = {
+    setProfileData({
       full_name: (values.full_name || "").trim(),
       email: (values.email || "").trim(),
       phone: (values.phone || "").trim(),
-    };
-    setProfileData(payload);
+    });
     message.success(t("register.profileSaved"));
     setCurrentStep(1);
   };
 
-  const handlePassportUpload = () => {
+  const handlePassportNext = () => {
     if (!passportFile) {
       message.warning(t("register.passportRequired"));
       return;
@@ -122,31 +130,32 @@ const RegisterPage = () => {
 
   const startCamera = async () => {
     try {
+      stopCamera();
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: {
+          facingMode: "user",
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          aspectRatio: { ideal: 4 / 3 },
+        },
         audio: false,
       });
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
+
       setCameraActive(true);
+      setVideoReady(false);
     } catch {
       message.error(t("register.cameraError"));
     }
   };
 
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setCameraActive(false);
-  };
-
   const captureSelfie = () => {
-    if (!videoRef.current || !canvasRef.current) return null;
+    if (!videoRef.current || !canvasRef.current || !videoReady) return null;
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
@@ -156,7 +165,7 @@ const RegisterPage = () => {
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     const arr = dataUrl.split(",");
     if (arr.length < 2) return null;
 
@@ -170,11 +179,17 @@ const RegisterPage = () => {
   };
 
   const handleCameraCapture = () => {
+    if (!videoReady) {
+      message.warning(t("register.cameraPreparing"));
+      return;
+    }
+
     const selfie = captureSelfie();
     if (!selfie) {
       message.error(t("register.scanError"));
       return;
     }
+
     setSelfieFile(selfie);
     stopCamera();
     message.success(t("register.scanSuccess"));
@@ -198,7 +213,6 @@ const RegisterPage = () => {
       saveTokens(tokens.access, tokens.refresh);
       navigate("/app/student/profile", { replace: true });
     } catch (error: any) {
-      clearPendingCredentials();
       clearTokens();
       message.warning(normalizeApiError(error, t("register.profileError")));
       navigate("/login", { replace: true });
@@ -219,7 +233,7 @@ const RegisterPage = () => {
     }
 
     if (!selfieFile) {
-      message.warning(t("register.scanError"));
+      message.warning(t("register.selfieRequired"));
       return;
     }
 
@@ -318,20 +332,24 @@ const RegisterPage = () => {
           {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
-              <Upload
+              <input
+                type="file"
                 accept="image/*"
-                beforeUpload={() => false}
-                maxCount={1}
-                showUploadList={false}
-                onChange={(info) => {
-                  const file = info.fileList?.[0]?.originFileObj as File | undefined;
-                  setPassportFile(file || null);
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setPassportFile(file);
                 }}
+                className="hidden-file-input"
+                id="passport-upload-input"
+              />
+              <Button
+                variant="outline"
+                icon={<IdcardOutlined />}
+                block
+                onClick={() => document.getElementById("passport-upload-input")?.click()}
               >
-                <Button variant="outline" icon={<IdcardOutlined />} block>
-                  {t("register.passportUpload")}
-                </Button>
-              </Upload>
+                {t("register.passportUpload")}
+              </Button>
 
               {passportPreview && (
                 <div className="neon-preview-card">
@@ -343,7 +361,7 @@ const RegisterPage = () => {
                 <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handlePassportUpload} isLoading={loading}>
+                <Button onClick={handlePassportNext} isLoading={loading}>
                   {t("common.next")}
                 </Button>
               </div>
@@ -356,10 +374,20 @@ const RegisterPage = () => {
 
               <div className="scanner-section">
                 <div className={`scanner-frame ${cameraActive ? "active" : ""}`}>
-                  <video ref={videoRef} className="scanner-video" />
+                  <video
+                    ref={videoRef}
+                    className="scanner-video"
+                    autoPlay
+                    muted
+                    playsInline
+                    onLoadedMetadata={() => setVideoReady(true)}
+                  />
                   <canvas ref={canvasRef} className="scanner-canvas" />
                   {!cameraActive && selfiePreview && (
-                    <img src={selfiePreview} className="scanner-video" alt="selfie" />
+                    <img src={selfiePreview} className="scanner-video" alt="selfie preview" />
+                  )}
+                  {!cameraActive && !selfiePreview && (
+                    <div className="scanner-placeholder">{t("register.selfieRequired")}</div>
                   )}
                   <div className="scanner-overlay" />
                 </div>
@@ -375,18 +403,19 @@ const RegisterPage = () => {
                     </Button>
                   )}
 
-                  <Button onClick={handleCameraCapture} disabled={!cameraActive}>
-                    Rasmga olish
+                  <Button onClick={handleCameraCapture} disabled={!cameraActive || !videoReady}>
+                    {t("register.capturePhoto")}
                   </Button>
 
                   {selfieFile && (
                     <Button variant="ghost" onClick={handleRetake}>
-                      Qayta olish
+                      {t("register.retakePhoto")}
                     </Button>
                   )}
                 </div>
 
-                {!selfieFile && <div className="wizard-hint">Selfie rasm olish majburiy.</div>}
+                {cameraActive && !videoReady && <div className="wizard-text">{t("register.cameraPreparing")}</div>}
+                {!selfieFile && <div className="wizard-hint">{t("register.selfieRequired")}</div>}
                 {selfieFile && <div className="status-chip success">{t("register.faceVerified")}</div>}
               </div>
 
