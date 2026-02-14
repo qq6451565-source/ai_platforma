@@ -211,7 +211,9 @@ const RegisterPage = () => {
       savePendingCredentials(username, password);
       const tokens = await login({ username, password });
       saveTokens(tokens.access, tokens.refresh);
-      navigate("/app/student/profile", { replace: true });
+      // Use a hard redirect so the app re-initializes with the new token.
+      // (App reads auth token from localStorage and otherwise may not re-render.)
+      window.location.replace("/app/student/profile");
     } catch (error: any) {
       clearTokens();
       message.warning(normalizeApiError(error, t("register.profileError")));
@@ -255,7 +257,8 @@ const RegisterPage = () => {
 
       if (res.access) {
         saveTokens(res.access, res.refresh);
-        navigate("/app/student/profile", { replace: true });
+        // Hard redirect to ensure auth state is picked up immediately.
+        window.location.replace("/app/student/profile");
         return;
       }
 
