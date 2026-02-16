@@ -131,7 +131,7 @@
 .scanner-video {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   background: rgba(0, 0, 0, 0.72);
 }
 
@@ -147,6 +147,16 @@
 .scanner-overlay {
   position: absolute;
   inset: 0;
+}
+
+.scanner-oval {
+  position: absolute;
+  width: min(70%, 340px);
+  aspect-ratio: 3 / 4;
+  border: 2px solid rgba(0, 255, 255, 0.8);
+  border-radius: 999px;
+  box-shadow: 0 0 24px rgba(0, 255, 255, 0.25);
+  pointer-events: none;
 }
 
 .scanner-overlay::before {
@@ -183,6 +193,12 @@
   flex-wrap: wrap;
 }
 
+.scanner-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -194,6 +210,11 @@
   border: 1px solid rgba(0, 255, 255, 0.5);
   color: var(--neon-cyan);
   width: fit-content;
+}
+
+.status-chip.active {
+  border-color: rgba(0, 255, 255, 0.9);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.35);
 }
 
 .status-chip.success {
