@@ -22,6 +22,12 @@ type ProfileFormValues = {
 };
 
 type LivenessStage = "idle" | "align" | "left" | "right" | "blink" | "capturing" | "done";
+const STAGE_DURATION_MS: Record<Exclude<LivenessStage, "idle" | "capturing" | "done">, number> = {
+  align: 1000,
+  left: 800,
+  right: 800,
+  blink: 1000,
+};
 
 const normalizeApiError = (error: any, fallback: string): string => {
   const data = error?.response?.data;
@@ -70,6 +76,7 @@ const RegisterPage = () => {
   const analysisTimerRef = useRef<number | null>(null);
   const analysisBusyRef = useRef(false);
   const stageSinceRef = useRef<number>(0);
+  const stableSinceRef = useRef<number | null>(null);
   const livenessStageRef = useRef<LivenessStage>("idle");
   const cameraActiveRef = useRef(false);
   const videoReadyRef = useRef(false);
@@ -100,6 +107,16 @@ const RegisterPage = () => {
     if (livenessStage === "done") return t("register.submittingHint");
     return t("register.startSelfieHint");
   }, [livenessStage, t]);
+
+  const livenessProgress = useMemo(() => {
+    if (livenessStage === "idle") return 0;
+    if (livenessStage === "align") return 25;
+    if (livenessStage === "left") return 50;
+    if (livenessStage === "right") return 75;
+    if (livenessStage === "blink") return 90;
+    if (livenessStage === "capturing") return 95;
+    return 100;
+  }, [livenessStage]);
 
   useEffect(() => {
     if (!passportFile) {
@@ -153,6 +170,7 @@ const RegisterPage = () => {
 
   const stopCamera = () => {
     stopAnalysis();
+    stableSinceRef.current = null;
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => track.stop());
@@ -286,14 +304,12 @@ const RegisterPage = () => {
       }
 
       if (res.access) {
+        saveTokens(res.access, res.refresh);
         try {
-          saveTokens(res.access, res.refresh);
           await fetchMe();
-          window.location.replace("/app/student/profile");
-          return;
-        } catch {
-          clearTokens();
-        }
+        } catch {}
+        window.location.replace("/app/student/profile");
+        return;
       }
 
       if (res.login_username && res.login_password) {
@@ -342,9 +358,17 @@ const RegisterPage = () => {
       const video = videoRef.current;
       const detector = getFaceDetector();
       const stage = livenessStageRef.current;
+      const now = Date.now();
 
       if (!detector) {
-        if (Date.now() - stageSinceRef.current > 4500) {
+        // Browser FaceDetector qo'llamasa, step flow vaqt bo'yicha barqaror davom etadi.
+        if (stage === "align" && now - stageSinceRef.current >= STAGE_DURATION_MS.align) {
+          setStage("left");
+        } else if (stage === "left" && now - stageSinceRef.current >= STAGE_DURATION_MS.left) {
+          setStage("right");
+        } else if (stage === "right" && now - stageSinceRef.current >= STAGE_DURATION_MS.right) {
+          setStage("blink");
+        } else if (stage === "blink" && now - stageSinceRef.current >= STAGE_DURATION_MS.blink) {
           setStage("capturing");
           stopAnalysis();
           await finishSelfieFlow();
@@ -355,7 +379,7 @@ const RegisterPage = () => {
       const faces = await detector.detect(video);
       if (!faces?.length) {
         setScannerNotice(t("register.faceNotDetected"));
-        stageSinceRef.current = Date.now();
+        stableSinceRef.current = null;
         return;
       }
 
@@ -369,54 +393,47 @@ const RegisterPage = () => {
       const cy = (box.y + box.height / 2) / video.videoHeight;
       const area = (box.width * box.height) / (video.videoWidth * video.videoHeight);
       const centered = Math.abs(cx - 0.5) < 0.18 && Math.abs(cy - 0.5) < 0.2 && area > 0.1;
-      const now = Date.now();
+      const faceOk = area > 0.1 && area < 0.65;
 
-      if (stage === "align") {
-        if (!centered) {
-          stageSinceRef.current = now;
-          return;
-        }
-        if (now - stageSinceRef.current >= 900) {
-          neutralYRef.current = cy;
-          setStage("left");
-        }
-        return;
-      }
-
-      if (stage === "left") {
-        if (cx <= 0.38) {
-          if (now - stageSinceRef.current >= 800) {
-            setStage("right");
-          }
-        } else {
-          stageSinceRef.current = now;
-        }
-        return;
-      }
-
-      if (stage === "right") {
-        if (cx >= 0.62) {
-          if (now - stageSinceRef.current >= 800) {
-            setStage("blink");
-          }
-        } else {
-          stageSinceRef.current = now;
-        }
-        return;
-      }
-
+      let stageMatched = false;
+      if (stage === "align") stageMatched = centered && faceOk;
+      if (stage === "left") stageMatched = faceOk && cx <= 0.4;
+      if (stage === "right") stageMatched = faceOk && cx >= 0.6;
       if (stage === "blink") {
-        // Browser-level blink detection is not available consistently.
-        // We hold the face centered for a short time on the final step.
         const neutralY = neutralYRef.current ?? cy;
         const blinkLikeMove = Math.abs(cy - neutralY) > 0.02;
-        if ((centered && now - stageSinceRef.current >= 1200) || blinkLikeMove) {
-          setStage("capturing");
-          stopAnalysis();
-          await finishSelfieFlow();
-        } else if (!centered) {
-          stageSinceRef.current = now;
-        }
+        stageMatched = centered && (blinkLikeMove || now - stageSinceRef.current > 2200);
+      }
+
+      if (!stageMatched) {
+        stableSinceRef.current = null;
+        return;
+      }
+
+      if (!stableSinceRef.current) stableSinceRef.current = now;
+      const stableElapsed = now - stableSinceRef.current;
+
+      if (stage === "align" && stableElapsed >= STAGE_DURATION_MS.align) {
+        neutralYRef.current = cy;
+        stableSinceRef.current = null;
+        setStage("left");
+        return;
+      }
+      if (stage === "left" && stableElapsed >= STAGE_DURATION_MS.left) {
+        stableSinceRef.current = null;
+        setStage("right");
+        return;
+      }
+      if (stage === "right" && stableElapsed >= STAGE_DURATION_MS.right) {
+        stableSinceRef.current = null;
+        setStage("blink");
+        return;
+      }
+      if (stage === "blink" && stableElapsed >= STAGE_DURATION_MS.blink) {
+        stableSinceRef.current = null;
+        setStage("capturing");
+        stopAnalysis();
+        await finishSelfieFlow();
       }
     } catch {
       setScannerNotice(t("register.scanError"));
@@ -432,6 +449,7 @@ const RegisterPage = () => {
     setScannerNotice(null);
     setSelfieFile(null);
     setSelfiePreview(null);
+    stableSinceRef.current = null;
     neutralYRef.current = null;
 
     const started = await startCamera();
@@ -455,7 +473,9 @@ const RegisterPage = () => {
     savePendingCredentials(username, password);
     const tokens = await login({ username, password });
     saveTokens(tokens.access, tokens.refresh);
-    await fetchMe();
+    try {
+      await fetchMe();
+    } catch {}
     // Use hard redirect to ensure app boots with fresh auth context.
     window.location.replace("/app/student/profile");
   };
@@ -613,6 +633,9 @@ const RegisterPage = () => {
                     );
                   })}
                 </div>
+                <div className="scanner-progress">
+                  <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
+                </div>
 
                 <div className="wizard-text">{livenessInstruction}</div>
                 {scannerNotice && <div className="wizard-hint">{scannerNotice}</div>}
@@ -624,7 +647,7 @@ const RegisterPage = () => {
                     icon={<CameraOutlined />}
                     onClick={startSelfieFlow}
                     disabled={cameraActive || loading}
-                    isLoading={loading || (cameraActive && livenessStage !== "idle")}
+                    isLoading={loading}
                   >
                     {t("register.startSelfieFlow")}
                   </Button>

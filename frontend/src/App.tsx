@@ -172,18 +172,30 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
 const App = () => {
   const token = getAccessToken();
-  const { data: user, isLoading, isError } = useMe();
+  const { data: user, isLoading, isError, error } = useMe();
+  const qc = useQueryClient();
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
   const isPendingStudent = isStudent && !user?.group;
-  const isAuthenticated = !!token && !!user && !isError;
+  const meStatus = (error as any)?.response?.status;
+  const authResolving = !!token && !user && (isLoading || (isError && meStatus !== 401 && meStatus !== 403));
+  const isAuthenticated = !!token && !!user;
 
   useEffect(() => {
-    if (isError) clearTokens();
-  }, [isError]);
+    if (!token || !isError) return;
+    if (meStatus === 401 || meStatus === 403) {
+      clearTokens();
+      window.location.replace("/login");
+      return;
+    }
+    const retryId = window.setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["me", token] });
+    }, 1500);
+    return () => window.clearTimeout(retryId);
+  }, [token, isError, meStatus, qc]);
 
-  if (isLoading && !user) {
+  if (authResolving) {
     return (
       <div className="flex-center h-screen">
         <Spin size="large" />
