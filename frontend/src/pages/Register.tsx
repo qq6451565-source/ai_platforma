@@ -250,19 +250,22 @@ const RegisterPage = () => {
       });
 
       message.success(res.detail || t("register.completed"));
-
+      // Registrationdan keyin avval login endpoint orqali token olamiz:
+      // bu flow oddiy login bilan bir xil va barqarorroq.
       if (res.login_username && res.login_password) {
-        savePendingCredentials(res.login_username, res.login_password);
+        await autoLoginAndRedirect(res.login_username, res.login_password);
+        return;
       }
 
+      // Fallback: agar backend faqat token qaytargan bo'lsa, shu bilan kiramiz.
       if (res.access) {
         saveTokens(res.access, res.refresh);
-        // Hard redirect to ensure auth state is picked up immediately.
         window.location.replace("/app/student/profile");
         return;
       }
 
-      await autoLoginAndRedirect(res.login_username, res.login_password);
+      message.warning(t("register.credentialsNote"));
+      navigate("/login", { replace: true });
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
