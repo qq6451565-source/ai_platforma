@@ -6,9 +6,10 @@ import {
 } from "@ant-design/icons";
 import { Form, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login, register } from "../api/auth";
+import { fetchMe } from "../api/user";
 import { Button, Input, Card } from "../components/ui";
 import { clearTokens, saveTokens } from "../utils/token";
 import { savePendingCredentials } from "../utils/pendingCredentials";
@@ -48,7 +49,6 @@ const normalizeApiError = (error: any, fallback: string): string => {
 
 const RegisterPage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -205,6 +205,7 @@ const RegisterPage = () => {
   const startCamera = async () => {
     try {
       stopCamera();
+      setVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
@@ -218,10 +219,12 @@ const RegisterPage = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+        if (videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+          setVideoReady(true);
+        }
       }
 
       setCameraActive(true);
-      setVideoReady(true);
       return true;
     } catch {
       message.error(t("register.cameraError"));
@@ -278,20 +281,28 @@ const RegisterPage = () => {
       });
 
       message.success(res.detail || t("register.completed"));
+      if (res.login_username && res.login_password) {
+        savePendingCredentials(res.login_username, res.login_password);
+      }
+
+      if (res.access) {
+        try {
+          saveTokens(res.access, res.refresh);
+          await fetchMe();
+          window.location.replace("/app/student/profile");
+          return;
+        } catch {
+          clearTokens();
+        }
+      }
 
       if (res.login_username && res.login_password) {
         await autoLoginAndRedirect(res.login_username, res.login_password);
         return;
       }
 
-      if (res.access) {
-        saveTokens(res.access, res.refresh);
-        window.location.replace("/app/student/profile");
-        return;
-      }
-
       message.warning(t("register.credentialsNote"));
-      navigate("/login", { replace: true });
+      setScannerNotice(t("register.profileError"));
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
@@ -438,23 +449,15 @@ const RegisterPage = () => {
 
   const autoLoginAndRedirect = async (username?: string, password?: string) => {
     if (!username || !password) {
-      message.warning(t("register.credentialsNote"));
-      navigate("/login", { replace: true });
-      return;
+      throw new Error("credentials_missing");
     }
 
-    try {
-      savePendingCredentials(username, password);
-      const tokens = await login({ username, password });
-      saveTokens(tokens.access, tokens.refresh);
-      // Use a hard redirect so the app re-initializes with the new token.
-      // (App reads auth token from localStorage and otherwise may not re-render.)
-      window.location.replace("/app/student/profile");
-    } catch (error: any) {
-      clearTokens();
-      message.warning(normalizeApiError(error, t("register.profileError")));
-      navigate("/login", { replace: true });
-    }
+    savePendingCredentials(username, password);
+    const tokens = await login({ username, password });
+    saveTokens(tokens.access, tokens.refresh);
+    await fetchMe();
+    // Use hard redirect to ensure app boots with fresh auth context.
+    window.location.replace("/app/student/profile");
   };
 
   return (
