@@ -113,7 +113,7 @@
     "saturday": "Shanba"
   },
   "dashboard": {
-    "title": "Talaba paneli",
+    "title": "Talaba",
     "todayLessons": "Bugungi darslar",
     "todayAssignments": "Bugungi topshiriqlar",
     "todayTests": "Bugungi testlar",
@@ -130,10 +130,10 @@
     "admin": "Administrator"
   },
   "landing": {
-    "title": "Tasavvurdan Ziyoda",
+    "title": "Masofaviy ta'lim platformasi",
     "subtitle": "AI bilan boshqariladigan ta'limning kelajagini tajriba qiling",
     "subtitleLine2": "Real-time hamkorlik, ilg'or tahlillar va cheksiz imkoniyatlar",
-    "exploreNow": "Hozir kashf eting",
+    "exploreNow": "Kirish",
     "getStarted": "Boshlash",
     "featureAI": {
       "title": "AI bilan boshqariladigan",

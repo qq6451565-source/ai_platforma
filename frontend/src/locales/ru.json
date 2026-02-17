@@ -113,7 +113,7 @@
     "saturday": "Суббота"
   },
   "dashboard": {
-    "title": "Панель студента",
+    "title": "Студент",
     "todayLessons": "Сегодняшние уроки",
     "todayAssignments": "Сегодняшние задания",
     "todayTests": "Сегодняшние тесты",
@@ -130,10 +130,10 @@
     "admin": "Администратор"
   },
   "landing": {
-    "title": "За пределами воображения",
+    "title": "Платформа дистанционного обучения",
     "subtitle": "Познайте будущее образования на базе ИИ",
     "subtitleLine2": "Сотрудничество в реальном времени, расширенная аналитика и безграничные возможности",
-    "exploreNow": "Исследовать сейчас",
+    "exploreNow": "Войти",
     "getStarted": "Начать",
     "featureAI": {
       "title": "На базе ИИ",
@@ -235,6 +235,7 @@
     "usernamePlaceholder": "Ali Valiyev",
     "fullName": "??? ? ???????",
     "fullNameRequired": "??????? ??? ? ???????",
-    "fullNamePlaceholder": "Ali Valiyev"
+    "fullNamePlaceholder": "Ali Valiyev",
+    "email": "Email"
   }
 }

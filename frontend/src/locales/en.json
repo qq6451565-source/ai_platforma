@@ -113,7 +113,7 @@
     "saturday": "Saturday"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Student",
     "todayLessons": "Today's Lessons",
     "todayAssignments": "Today's Assignments",
     "todayTests": "Today's Tests",
@@ -130,10 +130,10 @@
     "admin": "Administrator"
   },
   "landing": {
-    "title": "Beyond Imagination",
+    "title": "Distance Learning Platform",
     "subtitle": "Experience the future of learning with AI-powered education",
     "subtitleLine2": "Real-time collaboration, advanced analytics, and limitless possibilities",
-    "exploreNow": "Explore Now",
+    "exploreNow": "Login",
     "getStarted": "Get Started",
     "featureAI": {
       "title": "AI-Powered",
