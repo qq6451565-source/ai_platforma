@@ -183,6 +183,8 @@
     "capturingHint": "Selfie olinmoqda...",
     "submittingHint": "Ariza yuborilmoqda...",
     "faceNotDetected": "Yuz aniqlanmadi. Kameraga yaqinroq keling.",
+    "fallbackProgress": "Tekshiruv davom etmoqda, keyingi bosqichga o'tildi.",
+    "fallbackCapture": "Avtomatik selfie olinmoqda...",
     "startCamera": "Kamerani yoqish",
     "stopCamera": "Kamerani o'chirish",
     "scanNow": "Skanerlash",

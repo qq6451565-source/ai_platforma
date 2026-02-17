@@ -183,6 +183,8 @@
     "capturingHint": "Capturing selfie...",
     "submittingHint": "Submitting application...",
     "faceNotDetected": "Face not detected. Move closer to camera.",
+    "fallbackProgress": "Verification continues, moved to next step.",
+    "fallbackCapture": "Capturing selfie automatically...",
     "startCamera": "Start camera",
     "stopCamera": "Stop camera",
     "scanNow": "Scan now",

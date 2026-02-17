@@ -28,6 +28,12 @@ const STAGE_DURATION_MS: Record<Exclude<LivenessStage, "idle" | "capturing" | "d
   right: 800,
   blink: 1000,
 };
+const STAGE_FAILSAFE_MS: Record<Exclude<LivenessStage, "idle" | "capturing" | "done">, number> = {
+  align: 6000,
+  left: 6000,
+  right: 6000,
+  blink: 7000,
+};
 
 const normalizeApiError = (error: any, fallback: string): string => {
   const data = error?.response?.data;
@@ -239,6 +245,17 @@ const RegisterPage = () => {
         await videoRef.current.play();
         if (videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
           setVideoReady(true);
+        } else {
+          await new Promise<void>((resolve) => {
+            const video = videoRef.current!;
+            const onLoaded = () => {
+              video.removeEventListener("loadeddata", onLoaded);
+              resolve();
+            };
+            video.addEventListener("loadeddata", onLoaded, { once: true });
+            window.setTimeout(resolve, 1200);
+          });
+          setVideoReady(videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0);
         }
       }
 
@@ -251,12 +268,18 @@ const RegisterPage = () => {
   };
 
   const captureSelfie = () => {
-    if (!videoRef.current || !canvasRef.current || !videoReady) return null;
+    if (!videoRef.current || !canvasRef.current) return null;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
-    if (!context || !video.videoWidth || !video.videoHeight) return null;
+    if (!context) return null;
+
+    const hasFrame =
+      video.videoWidth > 0 &&
+      video.videoHeight > 0 &&
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+    if (!hasFrame) return null;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -359,6 +382,37 @@ const RegisterPage = () => {
       const detector = getFaceDetector();
       const stage = livenessStageRef.current;
       const now = Date.now();
+
+      if (stage === "align" || stage === "left" || stage === "right" || stage === "blink") {
+        const stuck = now - stageSinceRef.current >= STAGE_FAILSAFE_MS[stage];
+        if (stuck) {
+          if (stage === "align") {
+            stableSinceRef.current = null;
+            setStage("left");
+            setScannerNotice(t("register.fallbackProgress"));
+            return;
+          }
+          if (stage === "left") {
+            stableSinceRef.current = null;
+            setStage("right");
+            setScannerNotice(t("register.fallbackProgress"));
+            return;
+          }
+          if (stage === "right") {
+            stableSinceRef.current = null;
+            setStage("blink");
+            setScannerNotice(t("register.fallbackProgress"));
+            return;
+          }
+          if (stage === "blink") {
+            setStage("capturing");
+            setScannerNotice(t("register.fallbackCapture"));
+            stopAnalysis();
+            await finishSelfieFlow();
+            return;
+          }
+        }
+      }
 
       if (!detector) {
         // Browser FaceDetector qo'llamasa, step flow vaqt bo'yicha barqaror davom etadi.
@@ -646,7 +700,7 @@ const RegisterPage = () => {
                   <Button
                     icon={<CameraOutlined />}
                     onClick={startSelfieFlow}
-                    disabled={cameraActive || loading}
+                    disabled={loading}
                     isLoading={loading}
                   >
                     {t("register.startSelfieFlow")}
