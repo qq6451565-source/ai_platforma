@@ -100,6 +100,9 @@ class PassportOCRView(APIView):
             if not result:
                 return Response({"error": "AI xato qaytardi yoki ma'lumotni o'qiy olmadi"}, status=status.HTTP_400_BAD_REQUEST)
             return Response(result, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Fayl formati yoki hajmi noto'g'ri bo'lsa
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except clients.AIConnectionError:
             return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
@@ -129,6 +132,8 @@ class FaceMatchView(APIView):
             if confidence is not None and confidence < settings.face_match_threshold:
                 result["verified"] = False
             return Response(result, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except clients.AIConnectionError:
             return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
@@ -158,5 +163,7 @@ class PresenceCheckView(APIView):
             if confidence is not None and confidence < settings.presence_threshold:
                 result["present"] = False
             return Response(result, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except clients.AIConnectionError:
             return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
