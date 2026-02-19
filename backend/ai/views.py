@@ -94,10 +94,14 @@ class PassportOCRView(APIView):
         if not passport_file:
             raise ValidationError({"passport_image": "Fayl talab qilinadi"})
 
-        result = clients.ocr_passport(passport_file.read())
-        if not result:
-            return Response({"error": "AI OCR ulanmagan yoki xato yuz berdi"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        return Response(result, status=status.HTTP_200_OK)
+        try:
+            # .read() ishlatmaymiz, fayl obyektini o'zini beramiz (Memory Optimization)
+            result = clients.ocr_passport(passport_file)
+            if not result:
+                return Response({"error": "AI xato qaytardi yoki ma'lumotni o'qiy olmadi"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(result, status=status.HTTP_200_OK)
+        except clients.AIConnectionError:
+            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class FaceMatchView(APIView):
@@ -114,14 +118,19 @@ class FaceMatchView(APIView):
         if not passport_file or not selfie_file:
             raise ValidationError({"detail": "passport_image va selfie_image talab qilinadi"})
 
-        result = clients.face_match(passport_file.read(), selfie_file.read())
-        if not result:
-            return Response({"error": "AI face-match ulanmagan yoki xato"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        # Threshold tekshiruvi
-        confidence = result.get("confidence")
-        if confidence is not None and confidence < settings.face_match_threshold:
-            result["verified"] = False
-        return Response(result, status=status.HTTP_200_OK)
+        try:
+            # .read() ishlatmaymiz
+            result = clients.face_match(passport_file, selfie_file)
+            if not result:
+                return Response({"error": "Yuzni solishtirishda xatolik (yuz topilmadi)"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Threshold tekshiruvi
+            confidence = result.get("confidence")
+            if confidence is not None and confidence < settings.face_match_threshold:
+                result["verified"] = False
+            return Response(result, status=status.HTTP_200_OK)
+        except clients.AIConnectionError:
+            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class PresenceCheckView(APIView):
@@ -138,11 +147,16 @@ class PresenceCheckView(APIView):
         if not session_id or not frame:
             raise ValidationError({"detail": "session_id va frame talab qilinadi"})
 
-        result = clients.presence_check(session_id, frame.read())
-        if not result:
-            return Response({"error": "AI presence ulanmagan yoki xato"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        # Threshold tekshiruvi
-        confidence = result.get("confidence")
-        if confidence is not None and confidence < settings.presence_threshold:
-            result["present"] = False
-        return Response(result, status=status.HTTP_200_OK)
+        try:
+            # .read() ishlatmaymiz
+            result = clients.presence_check(session_id, frame)
+            if not result:
+                return Response({"error": "Yuzni aniqlashda xatolik"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Threshold tekshiruvi (agar backend qaytarsa)
+            confidence = result.get("confidence")
+            if confidence is not None and confidence < settings.presence_threshold:
+                result["present"] = False
+            return Response(result, status=status.HTTP_200_OK)
+        except clients.AIConnectionError:
+            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

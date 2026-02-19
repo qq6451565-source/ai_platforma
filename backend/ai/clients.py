@@ -1,16 +1,20 @@
-import json
 import logging
-import mimetypes
-import socket
 import time
-import uuid
-import urllib.error
-import urllib.request
+import requests
 
 from django.conf import settings
 from django.db import OperationalError, ProgrammingError
 
 logger = logging.getLogger(__name__)
+
+# Maxsus xatoliklar
+class AIError(Exception):
+    """Umumiy AI xatoligi"""
+    pass
+
+class AIConnectionError(AIError):
+    """Ulanish bilan bog'liq xatolar (Timeout, Connection refused)"""
+    pass
 
 
 def _ai_base():
@@ -54,131 +58,114 @@ def _ai_retry():
     return int(getattr(settings, "AI_RETRY", 0))
 
 
-def _get_json(path: str):
+def _request(method: str, path: str, **kwargs):
+    """
+    Requests kutubxonasi orqali so'rov yuborish uchun universal funksiya.
+    Retry va Timeout logikasini o'z ichiga oladi.
+    """
     base_url = _ai_base()
     if not base_url:
+        logger.error("AI Base URL sozlanmagan.")
         return None
 
     url = f"{base_url}/{path.lstrip('/')}"
-    headers = {}
+    headers = kwargs.pop("headers", {})
     api_key = _ai_api_key()
     if api_key:
         headers["X-API-Key"] = api_key
 
-    req = urllib.request.Request(url, headers=headers, method="GET")
     timeout = _ai_timeout()
-    return _read_json(req, timeout)
-
-
-def _post_multipart(path: str, files: dict, data: dict | None = None):
-    base_url = _ai_base()
-    if not base_url:
-        return None
-
-    url = f"{base_url}/{path.lstrip('/')}"
-    boundary = f"----aiBoundary{uuid.uuid4().hex}"
-    body = bytearray()
-
-    if data:
-        for key, value in data.items():
-            body.extend(f"--{boundary}\r\n".encode("utf-8"))
-            body.extend(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode("utf-8"))
-            body.extend(str(value).encode("utf-8"))
-            body.extend(b"\r\n")
-
-    for field_name, file_info in files.items():
-        filename, file_bytes, content_type = file_info
-        if not content_type:
-            content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-        body.extend(f"--{boundary}\r\n".encode("utf-8"))
-        body.extend(
-            f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'.encode("utf-8")
-        )
-        body.extend(f"Content-Type: {content_type}\r\n\r\n".encode("utf-8"))
-        body.extend(file_bytes)
-        body.extend(b"\r\n")
-
-    body.extend(f"--{boundary}--\r\n".encode("utf-8"))
-
-    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
-    api_key = _ai_api_key()
-    if api_key:
-        headers["X-API-Key"] = api_key
-
-    req = urllib.request.Request(url, data=bytes(body), headers=headers, method="POST")
-    timeout = _ai_timeout()
-    return _read_json(req, timeout)
-
-
-def _read_json(req: urllib.request.Request, timeout: int):
     retries = max(0, _ai_retry())
-    last_exc: Exception | None = None
+
     for attempt in range(retries + 1):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                content = resp.read().decode("utf-8")
-                return json.loads(content)
-        except (urllib.error.URLError, ValueError, TimeoutError, socket.timeout) as exc:
-            last_exc = exc
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=headers,
+                timeout=timeout,
+                **kwargs
+            )
+            
+            # Agar 4xx xato bo'lsa (masalan, rasm yomon), darhol xabar beramiz
+            if 400 <= response.status_code < 500:
+                try:
+                    error_detail = response.json()
+                except ValueError:
+                    error_detail = response.text
+                logger.warning(f"AI Client Error ({response.status_code}): {error_detail}")
+                # 4xx xatolar uchun retry qilinmaydi, chunki so'rov noto'g'ri
+                return None
+
+            # Boshqa xatolar (5xx) uchun exception ko'tarib, retry ga o'tamiz
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"AI Request Failed (Attempt {attempt+1}/{retries+1}): {e}")
             if attempt < retries:
                 time.sleep(0.5 * (attempt + 1))
                 continue
-    if last_exc:
-        logger.warning("AI request failed after %s attempt(s): %s", retries + 1, last_exc)
+            else:
+                logger.error(f"AI Service Unreachable after retries: {e}")
+                # View ga 503 qaytarish uchun signal
+                raise AIConnectionError(f"AI Service unavailable: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error in AI client: {e}")
+            return None
+            
     return None
 
 
-def ocr_passport(image_bytes: bytes):
+def _prepare_file(file_obj, filename="image.jpg", content_type="image/jpeg"):
+    """Fayl obyekti yoki baytlarni requests uchun tayyorlaydi."""
+    if hasattr(file_obj, "read"):
+        # Bu Django UploadedFile yoki ochiq fayl
+        return (file_obj.name, file_obj, file_obj.content_type)
+    # Bu shunchaki bytes
+    return (filename, file_obj, content_type)
+
+
+def ocr_passport(image_data):
     """
     Passports OCR: yuborilgan faylni tashqi AI ga multipart orqali jo'natadi.
     """
-    if not image_bytes:
+    if not image_data:
         return None
-    return _post_multipart(
-        "ocr/passport",
-        {"file": ("passport.jpg", image_bytes, "image/jpeg")},
-    )
+    
+    files = {"file": _prepare_file(image_data, "passport.jpg")}
+    return _request("POST", "ocr/passport", files=files)
 
 
-def face_match(passport_image: bytes, selfie_image: bytes):
+def face_match(passport_data, selfie_data):
     """
     Pasportdagi yuz va selfie ni solishtirish.
     """
-    if not (passport_image and selfie_image):
+    if not (passport_data and selfie_data):
         return None
-    return _post_multipart(
-        "face/match",
-        {
-            "passport_image": ("passport.jpg", passport_image, "image/jpeg"),
-            "selfie_image": ("selfie.jpg", selfie_image, "image/jpeg"),
-        },
-    )
+        
+    files = {
+        "passport_image": _prepare_file(passport_data, "passport.jpg"),
+        "selfie_image": _prepare_file(selfie_data, "selfie.jpg"),
+    }
+    return _request("POST", "face/match", files=files)
 
 
-def face_analyze(image_bytes: bytes):
-    """
-    Face analysis and embedding extraction.
-    """
-    if not image_bytes:
-        return None
-    return _post_multipart(
-        "face/analyze",
-        {"file": ("selfie.jpg", image_bytes, "image/jpeg")},
-    )
-
-
-def presence_check(session_id: str, frame_bytes: bytes):
+def presence_check(session_id: str, frame_data):
     """
     Online dars/imtihonda yuz bor-yo'qligini aniqlash.
     """
-    if not frame_bytes:
+    if not frame_data:
         return None
-    return _post_multipart(
-        "face/presence",
-        {"file": ("frame.jpg", frame_bytes, "image/jpeg")},
-        {"session_id": session_id} if session_id else None,
-    )
+        
+    files = {"file": _prepare_file(frame_data, "frame.jpg")}
+    data = {"session_id": session_id} if session_id else None
+    
+    return _request("POST", "face/presence", files=files, data=data)
 
 
 def health_check():
-    return _get_json("/")
+    try:
+        return _request("GET", "/")
+    except AIConnectionError:
+        return None
