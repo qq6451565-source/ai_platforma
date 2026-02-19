@@ -1,8 +1,6 @@
 from django.urls import path
 
 from .views import (
-    StudentAIRecommendationView,
-    MaterialAIAnswerView,
     PassportOCRView,
     FaceMatchView,
     PresenceCheckView,
@@ -12,10 +10,6 @@ from .views import (
 
 
 urlpatterns = [
-    # Student uchun AI tavsiya
-    path("student/<int:student_id>/recommendations/", StudentAIRecommendationView.as_view()),
-    # Material bo'yicha savol-javob (AI stub/real)
-    path("material/ask/", MaterialAIAnswerView.as_view()),
     path("settings/", AISettingsView.as_view()),
     path("settings/rotate-api-key/", AISettingsView.as_view(), {"action": "rotate_api_key"}),
     path("health/", AIHealthView.as_view()),

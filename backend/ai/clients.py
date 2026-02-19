@@ -54,23 +54,6 @@ def _ai_retry():
     return int(getattr(settings, "AI_RETRY", 0))
 
 
-def _post_json(path: str, payload: dict):
-    base_url = _ai_base()
-    if not base_url:
-        return None
-
-    url = f"{base_url}/{path.lstrip('/')}"
-    data = json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-    api_key = _ai_api_key()
-    if api_key:
-        headers["X-API-Key"] = api_key
-
-    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
-    timeout = _ai_timeout()
-    return _read_json(req, timeout)
-
-
 def _get_json(path: str):
     base_url = _ai_base()
     if not base_url:
@@ -195,31 +178,6 @@ def presence_check(session_id: str, frame_bytes: bytes):
         {"file": ("frame.jpg", frame_bytes, "image/jpeg")},
         {"session_id": session_id} if session_id else None,
     )
-
-
-def material_qa(material, question: str):
-    """
-    Material bo'yicha savol-javob. Tashqi AI bo'lmasa None qaytaradi.
-    """
-    payload = {
-        "material_id": material.id,
-        "title": material.title,
-        "question": question,
-    }
-    return _post_json("qa/material", payload)
-
-
-def recommend_student(student, stats: dict):
-    """
-    Student uchun tavsiya. stats tayyorlangan metrikalar.
-    """
-    payload = {
-        "student_id": student.id,
-        "username": student.username,
-        "group": getattr(getattr(student, "group", None), "name", None),
-        "stats": stats,
-    }
-    return _post_json("recommend/student", payload)
 
 
 def health_check():
