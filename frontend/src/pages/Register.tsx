@@ -5,13 +5,14 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { Form, message } from "antd";
+import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login, register } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { Button, Input, Card } from "../components/ui";
-import { clearTokens, saveTokens } from "../utils/token";
+import { saveTokens } from "../utils/token";
 import { savePendingCredentials } from "../utils/pendingCredentials";
 import "./Register.css";
 
@@ -22,17 +23,153 @@ type ProfileFormValues = {
 };
 
 type LivenessStage = "idle" | "align" | "left" | "right" | "blink" | "capturing" | "done";
-const STAGE_DURATION_MS: Record<Exclude<LivenessStage, "idle" | "capturing" | "done">, number> = {
-  align: 1000,
-  left: 800,
-  right: 800,
-  blink: 1000,
+const ANALYZE_INTERVAL_MS = 170;
+const ALIGN_REQUIRED_FRAMES = 8;
+const TURN_REQUIRED_FRAMES = 6;
+const BLINK_CLOSED_REQUIRED_FRAMES = 2;
+
+const LANDMARK_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task";
+const LANDMARK_WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+
+const FACE_AREA_MIN = 0.11;
+const FACE_AREA_MAX = 0.58;
+const ALIGN_CENTER_X_MAX = 0.09;
+const ALIGN_CENTER_Y_MAX = 0.1;
+const ALIGN_YAW_MAX = 0.09;
+const TURN_YAW_MIN = 0.16;
+const ROLL_MAX_RAD = 0.22;
+const BLINK_CLOSED_RATIO = 0.68;
+const BLINK_OPEN_RATIO = 0.9;
+
+const LANDMARK_IDX = {
+  nose: 1,
+  leftEyeOuter: 33,
+  leftEyeInner: 133,
+  rightEyeInner: 362,
+  rightEyeOuter: 263,
+  leftUpper: 159,
+  leftLower: 145,
+  leftUpper2: 158,
+  leftLower2: 153,
+  rightUpper: 386,
+  rightLower: 374,
+  rightUpper2: 385,
+  rightLower2: 380,
+} as const;
+
+type FaceMetrics = {
+  cx: number;
+  cy: number;
+  area: number;
+  yaw: number;
+  roll: number;
+  ear: number;
+  blinkLeft: number | null;
+  blinkRight: number | null;
 };
-const STAGE_FAILSAFE_MS: Record<Exclude<LivenessStage, "idle" | "capturing" | "done">, number> = {
-  align: 6000,
-  left: 6000,
-  right: 6000,
-  blink: 7000,
+
+const pointDistance = (a: NormalizedLandmark, b: NormalizedLandmark) => Math.hypot(a.x - b.x, a.y - b.y);
+
+const eyeAspectRatio = (
+  p1: NormalizedLandmark,
+  p2: NormalizedLandmark,
+  p3: NormalizedLandmark,
+  p4: NormalizedLandmark,
+  p5: NormalizedLandmark,
+  p6: NormalizedLandmark
+) => {
+  const horizontal = Math.max(pointDistance(p1, p4), 1e-6);
+  return (pointDistance(p2, p6) + pointDistance(p3, p5)) / (2 * horizontal);
+};
+
+const blendshapeScore = (result: FaceLandmarkerResult, name: string): number | null => {
+  const categories = result.faceBlendshapes?.[0]?.categories;
+  if (!categories?.length) return null;
+  const found = categories.find((item) => item.categoryName === name);
+  return typeof found?.score === "number" ? found.score : null;
+};
+
+const faceMetricsFromLandmarks = (landmarks: NormalizedLandmark[], result: FaceLandmarkerResult): FaceMetrics | null => {
+  const nose = landmarks[LANDMARK_IDX.nose];
+  const leftOuter = landmarks[LANDMARK_IDX.leftEyeOuter];
+  const leftInner = landmarks[LANDMARK_IDX.leftEyeInner];
+  const rightInner = landmarks[LANDMARK_IDX.rightEyeInner];
+  const rightOuter = landmarks[LANDMARK_IDX.rightEyeOuter];
+  const leftUpper = landmarks[LANDMARK_IDX.leftUpper];
+  const leftUpper2 = landmarks[LANDMARK_IDX.leftUpper2];
+  const leftLower = landmarks[LANDMARK_IDX.leftLower];
+  const leftLower2 = landmarks[LANDMARK_IDX.leftLower2];
+  const rightUpper = landmarks[LANDMARK_IDX.rightUpper];
+  const rightUpper2 = landmarks[LANDMARK_IDX.rightUpper2];
+  const rightLower = landmarks[LANDMARK_IDX.rightLower];
+  const rightLower2 = landmarks[LANDMARK_IDX.rightLower2];
+
+  if (
+    !nose ||
+    !leftOuter ||
+    !leftInner ||
+    !rightInner ||
+    !rightOuter ||
+    !leftUpper ||
+    !leftUpper2 ||
+    !leftLower ||
+    !leftLower2 ||
+    !rightUpper ||
+    !rightUpper2 ||
+    !rightLower ||
+    !rightLower2
+  ) {
+    return null;
+  }
+
+  let minX = 1;
+  let maxX = 0;
+  let minY = 1;
+  let maxY = 0;
+  for (const point of landmarks) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const area = Math.max((maxX - minX) * (maxY - minY), 0);
+
+  const eyeCenterX = (leftOuter.x + rightOuter.x) / 2;
+  const eyeSpan = Math.max(Math.abs(rightOuter.x - leftOuter.x), 1e-6);
+  const yaw = (nose.x - eyeCenterX) / eyeSpan;
+  const roll = Math.atan2(rightOuter.y - leftOuter.y, rightOuter.x - leftOuter.x);
+
+  const leftEAR = eyeAspectRatio(
+    leftOuter,
+    leftUpper,
+    leftUpper2,
+    leftInner,
+    leftLower2,
+    leftLower
+  );
+  const rightEAR = eyeAspectRatio(
+    rightOuter,
+    rightUpper,
+    rightUpper2,
+    rightInner,
+    rightLower2,
+    rightLower
+  );
+
+  return {
+    cx,
+    cy,
+    area,
+    yaw,
+    roll,
+    ear: (leftEAR + rightEAR) / 2,
+    blinkLeft: blendshapeScore(result, "eyeBlinkLeft"),
+    blinkRight: blendshapeScore(result, "eyeBlinkRight"),
+  };
 };
 
 const normalizeApiError = (error: any, fallback: string): string => {
@@ -75,19 +212,24 @@ const RegisterPage = () => {
   const [videoReady, setVideoReady] = useState(false);
   const [livenessStage, setLivenessStage] = useState<LivenessStage>("idle");
   const [scannerNotice, setScannerNotice] = useState<string | null>(null);
+  const [scannerBooting, setScannerBooting] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const detectorRef = useRef<any>(null);
+  const landmarkerRef = useRef<FaceLandmarker | null>(null);
+  const landmarkerLoadingRef = useRef<Promise<FaceLandmarker> | null>(null);
   const analysisTimerRef = useRef<number | null>(null);
   const analysisBusyRef = useRef(false);
-  const stageSinceRef = useRef<number>(0);
-  const stableSinceRef = useRef<number | null>(null);
+  const stableFrameRef = useRef(0);
   const livenessStageRef = useRef<LivenessStage>("idle");
   const cameraActiveRef = useRef(false);
   const videoReadyRef = useRef(false);
   const loadingRef = useRef(false);
-  const neutralYRef = useRef<number | null>(null);
+  const scannerNoticeRef = useRef<string | null>(null);
+  const baselineEarRef = useRef<number | null>(null);
+  const blinkClosedRef = useRef(false);
+  const blinkClosedFramesRef = useRef(0);
+  const yawDirectionRef = useRef<1 | -1>(1);
 
   const stepTitles = useMemo(
     () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
@@ -160,6 +302,52 @@ const RegisterPage = () => {
     loadingRef.current = loading;
   }, [loading]);
 
+  useEffect(() => {
+    scannerNoticeRef.current = scannerNotice;
+  }, [scannerNotice]);
+
+  const setScannerNoticeSafe = (value: string | null) => {
+    if (scannerNoticeRef.current === value) return;
+    scannerNoticeRef.current = value;
+    setScannerNotice(value);
+  };
+
+  const resetLivenessState = () => {
+    stableFrameRef.current = 0;
+    baselineEarRef.current = null;
+    blinkClosedRef.current = false;
+    blinkClosedFramesRef.current = 0;
+    yawDirectionRef.current = 1;
+  };
+
+  const ensureFaceLandmarker = async () => {
+    if (landmarkerRef.current) return landmarkerRef.current;
+    if (!landmarkerLoadingRef.current) {
+      landmarkerLoadingRef.current = (async () => {
+        const vision = await import("@mediapipe/tasks-vision");
+        const fileset = await vision.FilesetResolver.forVisionTasks(LANDMARK_WASM_URL);
+        const detector = await vision.FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: {
+            modelAssetPath: LANDMARK_MODEL_URL,
+            delegate: "CPU",
+          },
+          runningMode: "VIDEO",
+          numFaces: 1,
+          outputFaceBlendshapes: true,
+          outputFacialTransformationMatrixes: false,
+        });
+        landmarkerRef.current = detector;
+        return detector;
+      })();
+    }
+    try {
+      return await landmarkerLoadingRef.current;
+    } catch (error) {
+      landmarkerLoadingRef.current = null;
+      throw error;
+    }
+  };
+
   const stopAnalysis = () => {
     if (analysisTimerRef.current) {
       window.clearInterval(analysisTimerRef.current);
@@ -171,12 +359,17 @@ const RegisterPage = () => {
   const setStage = (stage: LivenessStage) => {
     livenessStageRef.current = stage;
     setLivenessStage(stage);
-    stageSinceRef.current = Date.now();
+    stableFrameRef.current = 0;
+    if (stage !== "blink") {
+      blinkClosedRef.current = false;
+      blinkClosedFramesRef.current = 0;
+    }
   };
 
   const stopCamera = () => {
     stopAnalysis();
-    stableSinceRef.current = null;
+    resetLivenessState();
+    setScannerBooting(false);
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => track.stop());
@@ -191,6 +384,10 @@ const RegisterPage = () => {
   useEffect(() => {
     return () => {
       stopCamera();
+      try {
+        landmarkerRef.current?.close();
+      } catch {}
+      landmarkerRef.current = null;
     };
   }, []);
 
@@ -218,17 +415,15 @@ const RegisterPage = () => {
     setCurrentStep(2);
   };
 
-  const getFaceDetector = () => {
-    if (detectorRef.current) return detectorRef.current;
-    const Detector = (window as any).FaceDetector;
-    if (!Detector) return null;
-    detectorRef.current = new Detector({ fastMode: true, maxDetectedFaces: 1 });
-    return detectorRef.current;
-  };
-
   const startCamera = async () => {
     try {
-      stopCamera();
+      stopAnalysis();
+      if (videoRef.current?.srcObject) {
+        const oldStream = videoRef.current.srcObject as MediaStream;
+        oldStream.getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      setCameraActive(false);
       setVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -341,7 +536,7 @@ const RegisterPage = () => {
       }
 
       message.warning(t("register.credentialsNote"));
-      setScannerNotice(t("register.profileError"));
+      setScannerNoticeSafe(t("register.profileError"));
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
@@ -352,7 +547,7 @@ const RegisterPage = () => {
   const finishSelfieFlow = async () => {
     const selfie = captureSelfie();
     if (!selfie) {
-      setScannerNotice(t("register.scanError"));
+      setScannerNoticeSafe(t("register.scanError"));
       setStage("idle");
       stopCamera();
       return;
@@ -360,7 +555,7 @@ const RegisterPage = () => {
 
     setSelfieFile(selfie);
     setStage("done");
-    setScannerNotice(t("register.submittingHint"));
+    setScannerNoticeSafe(t("register.submittingHint"));
     stopCamera();
     await submitRegistration(selfie);
   };
@@ -379,118 +574,162 @@ const RegisterPage = () => {
 
     try {
       const video = videoRef.current;
-      const detector = getFaceDetector();
       const stage = livenessStageRef.current;
-      const now = Date.now();
-
-      if (stage === "align" || stage === "left" || stage === "right" || stage === "blink") {
-        const stuck = now - stageSinceRef.current >= STAGE_FAILSAFE_MS[stage];
-        if (stuck) {
-          if (stage === "align") {
-            stableSinceRef.current = null;
-            setStage("left");
-            setScannerNotice(t("register.fallbackProgress"));
-            return;
-          }
-          if (stage === "left") {
-            stableSinceRef.current = null;
-            setStage("right");
-            setScannerNotice(t("register.fallbackProgress"));
-            return;
-          }
-          if (stage === "right") {
-            stableSinceRef.current = null;
-            setStage("blink");
-            setScannerNotice(t("register.fallbackProgress"));
-            return;
-          }
-          if (stage === "blink") {
-            setStage("capturing");
-            setScannerNotice(t("register.fallbackCapture"));
-            stopAnalysis();
-            await finishSelfieFlow();
-            return;
-          }
-        }
+      if (stage === "idle" || stage === "done" || stage === "capturing") {
+        return;
       }
 
-      if (!detector) {
-        // Browser FaceDetector qo'llamasa, step flow vaqt bo'yicha barqaror davom etadi.
-        if (stage === "align" && now - stageSinceRef.current >= STAGE_DURATION_MS.align) {
+      const detector = landmarkerRef.current ?? (await ensureFaceLandmarker());
+      const result = detector.detectForVideo(video, performance.now());
+      const landmarks = result.faceLandmarks?.[0];
+
+      if (!landmarks?.length) {
+        stableFrameRef.current = 0;
+        blinkClosedFramesRef.current = 0;
+        setScannerNoticeSafe(t("register.faceNotDetected"));
+        return;
+      }
+
+      const metrics = faceMetricsFromLandmarks(landmarks, result);
+      if (!metrics) {
+        stableFrameRef.current = 0;
+        setScannerNoticeSafe(t("register.scanError"));
+        return;
+      }
+
+      if (metrics.area < FACE_AREA_MIN) {
+        stableFrameRef.current = 0;
+        setScannerNoticeSafe(t("register.faceMoveCloser"));
+        return;
+      }
+      if (metrics.area > FACE_AREA_MAX) {
+        stableFrameRef.current = 0;
+        setScannerNoticeSafe(t("register.faceMoveAway"));
+        return;
+      }
+      if (Math.abs(metrics.roll) > ROLL_MAX_RAD) {
+        stableFrameRef.current = 0;
+        setScannerNoticeSafe(t("register.straightHead"));
+        return;
+      }
+
+      const centeredStrict =
+        Math.abs(metrics.cx - 0.5) <= ALIGN_CENTER_X_MAX && Math.abs(metrics.cy - 0.5) <= ALIGN_CENTER_Y_MAX;
+      const centeredLoose = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
+      const yaw = metrics.yaw * yawDirectionRef.current;
+
+      if (stage === "align") {
+        const aligned = centeredStrict && Math.abs(yaw) <= ALIGN_YAW_MAX;
+        if (!aligned) {
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.holdStill"));
+          return;
+        }
+
+        baselineEarRef.current =
+          baselineEarRef.current === null ? metrics.ear : baselineEarRef.current * 0.88 + metrics.ear * 0.12;
+        stableFrameRef.current += 1;
+        setScannerNoticeSafe(t("register.holdStill"));
+
+        if (stableFrameRef.current >= ALIGN_REQUIRED_FRAMES) {
           setStage("left");
-        } else if (stage === "left" && now - stageSinceRef.current >= STAGE_DURATION_MS.left) {
-          setStage("right");
-        } else if (stage === "right" && now - stageSinceRef.current >= STAGE_DURATION_MS.right) {
-          setStage("blink");
-        } else if (stage === "blink" && now - stageSinceRef.current >= STAGE_DURATION_MS.blink) {
-          setStage("capturing");
-          stopAnalysis();
-          await finishSelfieFlow();
+          setScannerNoticeSafe(t("register.lookLeftHint"));
         }
         return;
       }
 
-      const faces = await detector.detect(video);
-      if (!faces?.length) {
-        setScannerNotice(t("register.faceNotDetected"));
-        stableSinceRef.current = null;
+      if (!centeredLoose) {
+        stableFrameRef.current = 0;
+        setScannerNoticeSafe(t("register.alignFaceHint"));
         return;
       }
 
-      setScannerNotice(null);
-      const face = faces[0];
-      const box = face.boundingBox;
+      if (stage === "left") {
+        if (yaw >= TURN_YAW_MIN) {
+          yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1;
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.turnLeftMore"));
+          return;
+        }
 
-      if (!box || !video.videoWidth || !video.videoHeight) return;
+        if (yaw <= -TURN_YAW_MIN) {
+          stableFrameRef.current += 1;
+          setScannerNoticeSafe(t("register.holdStill"));
+          if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) {
+            setStage("right");
+            setScannerNoticeSafe(t("register.lookRightHint"));
+          }
+        } else {
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.turnLeftMore"));
+        }
+        return;
+      }
 
-      const cx = (box.x + box.width / 2) / video.videoWidth;
-      const cy = (box.y + box.height / 2) / video.videoHeight;
-      const area = (box.width * box.height) / (video.videoWidth * video.videoHeight);
-      const centered = Math.abs(cx - 0.5) < 0.18 && Math.abs(cy - 0.5) < 0.2 && area > 0.1;
-      const faceOk = area > 0.1 && area < 0.65;
+      if (stage === "right") {
+        if (yaw <= -TURN_YAW_MIN) {
+          yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1;
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.turnRightMore"));
+          return;
+        }
 
-      let stageMatched = false;
-      if (stage === "align") stageMatched = centered && faceOk;
-      if (stage === "left") stageMatched = faceOk && cx <= 0.4;
-      if (stage === "right") stageMatched = faceOk && cx >= 0.6;
+        if (yaw >= TURN_YAW_MIN) {
+          stableFrameRef.current += 1;
+          setScannerNoticeSafe(t("register.holdStill"));
+          if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) {
+            setStage("blink");
+            setScannerNoticeSafe(t("register.blinkPrompt"));
+          }
+        } else {
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.turnRightMore"));
+        }
+        return;
+      }
+
       if (stage === "blink") {
-        const neutralY = neutralYRef.current ?? cy;
-        const blinkLikeMove = Math.abs(cy - neutralY) > 0.02;
-        stageMatched = centered && (blinkLikeMove || now - stageSinceRef.current > 2200);
-      }
+        const baselineEar = baselineEarRef.current ?? metrics.ear;
+        const closedByEar = metrics.ear <= baselineEar * BLINK_CLOSED_RATIO;
+        const openedByEar = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
 
-      if (!stageMatched) {
-        stableSinceRef.current = null;
-        return;
-      }
+        const leftBlink = metrics.blinkLeft;
+        const rightBlink = metrics.blinkRight;
+        const closedByBlend =
+          leftBlink !== null && rightBlink !== null && leftBlink > 0.45 && rightBlink > 0.45;
+        const openedByBlend =
+          leftBlink !== null && rightBlink !== null && leftBlink < 0.2 && rightBlink < 0.2;
 
-      if (!stableSinceRef.current) stableSinceRef.current = now;
-      const stableElapsed = now - stableSinceRef.current;
+        const eyesClosed = closedByBlend || closedByEar;
+        const eyesOpened = openedByBlend || openedByEar;
 
-      if (stage === "align" && stableElapsed >= STAGE_DURATION_MS.align) {
-        neutralYRef.current = cy;
-        stableSinceRef.current = null;
-        setStage("left");
-        return;
-      }
-      if (stage === "left" && stableElapsed >= STAGE_DURATION_MS.left) {
-        stableSinceRef.current = null;
-        setStage("right");
-        return;
-      }
-      if (stage === "right" && stableElapsed >= STAGE_DURATION_MS.right) {
-        stableSinceRef.current = null;
-        setStage("blink");
-        return;
-      }
-      if (stage === "blink" && stableElapsed >= STAGE_DURATION_MS.blink) {
-        stableSinceRef.current = null;
+        if (!blinkClosedRef.current) {
+          if (eyesClosed) {
+            blinkClosedFramesRef.current += 1;
+            if (blinkClosedFramesRef.current >= BLINK_CLOSED_REQUIRED_FRAMES) {
+              blinkClosedRef.current = true;
+              setScannerNoticeSafe(t("register.blinkDetected"));
+            }
+          } else {
+            blinkClosedFramesRef.current = 0;
+            setScannerNoticeSafe(t("register.blinkPrompt"));
+          }
+          return;
+        }
+
+        if (!eyesOpened) {
+          setScannerNoticeSafe(t("register.blinkPrompt"));
+          return;
+        }
+
         setStage("capturing");
+        setScannerNoticeSafe(t("register.capturingHint"));
         stopAnalysis();
         await finishSelfieFlow();
+        return;
       }
     } catch {
-      setScannerNotice(t("register.scanError"));
+      setScannerNoticeSafe(t("register.scanError"));
       stopAnalysis();
       stopCamera();
       setStage("idle");
@@ -500,23 +739,38 @@ const RegisterPage = () => {
   };
 
   const startSelfieFlow = async () => {
-    setScannerNotice(null);
+    setScannerNoticeSafe(t("register.initializingScanner"));
+    setScannerBooting(true);
     setSelfieFile(null);
     setSelfiePreview(null);
-    stableSinceRef.current = null;
-    neutralYRef.current = null;
+    resetLivenessState();
+    setStage("idle");
+
+    try {
+      await ensureFaceLandmarker();
+    } catch {
+      setScannerBooting(false);
+      setScannerNoticeSafe(t("register.scanError"));
+      return;
+    }
 
     const started = await startCamera();
-    if (!started) return;
+    if (!started) {
+      setScannerBooting(false);
+      return;
+    }
+
+    setScannerBooting(false);
 
     setStage("align");
+    setScannerNoticeSafe(t("register.alignFaceHint"));
 
     if (analysisTimerRef.current) {
       window.clearInterval(analysisTimerRef.current);
     }
     analysisTimerRef.current = window.setInterval(() => {
       void analyzeLiveness();
-    }, 350);
+    }, ANALYZE_INTERVAL_MS);
   };
 
   const autoLoginAndRedirect = async (username?: string, password?: string) => {
@@ -658,6 +912,7 @@ const RegisterPage = () => {
                     autoPlay
                     muted
                     playsInline
+                    style={{ transform: "scaleX(-1)" }}
                     onLoadedMetadata={() => setVideoReady(true)}
                   />
                   <canvas ref={canvasRef} className="scanner-canvas" />
@@ -700,8 +955,8 @@ const RegisterPage = () => {
                   <Button
                     icon={<CameraOutlined />}
                     onClick={startSelfieFlow}
-                    disabled={loading}
-                    isLoading={loading}
+                    disabled={loading || scannerBooting}
+                    isLoading={loading || scannerBooting}
                   >
                     {t("register.startSelfieFlow")}
                   </Button>
