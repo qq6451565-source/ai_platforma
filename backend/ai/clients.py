@@ -48,7 +48,7 @@ def _ai_timeout():
     ai_settings = _get_ai_settings()
     if ai_settings and ai_settings.timeout_seconds:
         return int(ai_settings.timeout_seconds)
-    return int(getattr(settings, "AI_TIMEOUT", 5))
+    return int(getattr(settings, "AI_TIMEOUT", 60))
 
 
 def _ai_retry():
@@ -162,6 +162,50 @@ def presence_check(session_id: str, frame_data):
     data = {"session_id": session_id} if session_id else None
     
     return _request("POST", "face/presence", files=files, data=data)
+
+
+def face_analyze(image_data):
+    """
+    Yuzlarni aniqlash va embedding olish.
+    """
+    if not image_data:
+        return None
+
+    files = {"file": _prepare_file(image_data, "face.jpg")}
+    return _request("POST", "face/analyze", files=files)
+
+
+def face_quality(image_data):
+    """
+    Yuz sifati tekshiruvi (yorug'lik, tiniqlik, masofa).
+    """
+    if not image_data:
+        return None
+
+    files = {"file": _prepare_file(image_data, "face.jpg")}
+    return _request("POST", "face/quality", files=files)
+
+
+def face_liveness(image_data):
+    """
+    Single-frame liveness tekshiruvi.
+    """
+    if not image_data:
+        return None
+
+    files = {"file": _prepare_file(image_data, "face.jpg")}
+    return _request("POST", "face/liveness", files=files)
+
+
+def face_blink(image_data):
+    """
+    Blink aniqlash endpointi.
+    """
+    if not image_data:
+        return None
+
+    files = {"file": _prepare_file(image_data, "face.jpg")}
+    return _request("POST", "face/blink", files=files)
 
 
 def health_check():
