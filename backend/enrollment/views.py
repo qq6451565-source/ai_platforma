@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from difflib import SequenceMatcher
 import re
@@ -10,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from ai.clients import face_match, ocr_passport
+from ai.clients import AIConnectionError, face_match, ocr_passport
 from ai.models import AISettings
 from accounts.models import User, PassportData
 from groups.models import Group
@@ -27,6 +28,8 @@ from .serializers import (
     ApplicantDocumentSerializer,
     VerificationResultSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RegistrationWindowViewSet(viewsets.ModelViewSet):
@@ -117,9 +120,15 @@ class ApplicantRegisterView(APIView):
 
         passport_front_bytes = _read_upload_bytes(passport_front)
         passport_back_bytes = _read_upload_bytes(passport_back)
-        ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
-        ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
-        ocr_result = _merge_ocr_results(ocr_front, ocr_back) or {}
+        ocr_result = {}
+        ai_warning = None
+        try:
+            ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
+            ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
+            ocr_result = _merge_ocr_results(ocr_front, ocr_back) or {}
+        except AIConnectionError as exc:
+            logger.warning("AI OCR unavailable during registration: %s", exc)
+            ai_warning = "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
 
         ocr_surname = (ocr_result.get("surname") or "").strip()
         ocr_name = (ocr_result.get("name") or "").strip()
@@ -185,7 +194,9 @@ class ApplicantRegisterView(APIView):
             passport_back=passport_back,
             face_image=selfie,
         )
-        _run_ai_verification(document)
+        verification_warning = _run_ai_verification(document)
+        if verification_warning and not ai_warning:
+            ai_warning = verification_warning
 
         applicant.refresh_from_db()
 
@@ -196,21 +207,21 @@ class ApplicantRegisterView(APIView):
         refresh["is_superuser"] = user.is_superuser
         access = refresh.access_token
 
-        return Response(
-            {
-                "detail": "Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.",
-                "applicant_id": applicant.id,
-                "status": applicant.status,
-                "login_username": user.username,
-                "login_password": password,
-                "access": str(access),
-                "refresh": str(refresh),
-                "role": getattr(user, "role", None),
-                "user_id": user.id,
-                "token_version": getattr(user, "token_version", 1),
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        payload = {
+            "detail": "Ariza qabul qilindi. Admin tasdiqlashi kutilmoqda.",
+            "applicant_id": applicant.id,
+            "status": applicant.status,
+            "login_username": user.username,
+            "login_password": password,
+            "access": str(access),
+            "refresh": str(refresh),
+            "role": getattr(user, "role", None),
+            "user_id": user.id,
+            "token_version": getattr(user, "token_version", 1),
+        }
+        if ai_warning:
+            payload["warning"] = ai_warning
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 def _read_upload_bytes(uploaded_file):
@@ -476,9 +487,23 @@ def _run_ai_verification(document):
     passport_front_bytes = _read_field_bytes(document.passport_front)
     passport_back_bytes = _read_field_bytes(document.passport_back)
     selfie_bytes = _read_field_bytes(document.face_image)
-    ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
-    ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
-    ocr_result = _merge_ocr_results(ocr_front, ocr_back)
+    try:
+        ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
+        ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
+        ocr_result = _merge_ocr_results(ocr_front, ocr_back)
+    except AIConnectionError as exc:
+        logger.warning("AI OCR unavailable for applicant %s: %s", applicant.id, exc)
+        events.append({"type": "ai", "status": "unavailable", "detail": str(exc)})
+        VerificationResult.objects.create(
+            applicant=applicant,
+            verified=False,
+            confidence=0.0,
+            events_json=events,
+        )
+        if applicant.status not in ["approved", "rejected"]:
+            applicant.status = "pending"
+            applicant.save(update_fields=["status"])
+        return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
     if not ocr_result:
         events.append({"type": "ocr", "status": "failed"})
     else:
@@ -579,7 +604,21 @@ def _run_ai_verification(document):
     face_result = None
     face_passed = True
     if settings_ai.enable_face_match:
-        face_result = face_match(passport_front_bytes or passport_back_bytes, selfie_bytes)
+        try:
+            face_result = face_match(passport_front_bytes or passport_back_bytes, selfie_bytes)
+        except AIConnectionError as exc:
+            logger.warning("AI face match unavailable for applicant %s: %s", applicant.id, exc)
+            events.append({"type": "ai", "status": "unavailable", "detail": str(exc)})
+            VerificationResult.objects.create(
+                applicant=applicant,
+                verified=False,
+                confidence=0.0,
+                events_json=events,
+            )
+            if applicant.status not in ["approved", "rejected"]:
+                applicant.status = "pending"
+                applicant.save(update_fields=["status"])
+            return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
         if not face_result:
             face_passed = False
             events.append({"type": "face_match", "status": "failed"})
@@ -616,6 +655,7 @@ def _run_ai_verification(document):
     if applicant.status not in ["approved", "rejected"]:
         applicant.status = "verified" if verified else "pending"
         applicant.save(update_fields=["status"])
+    return None
 
 
 def _merge_ocr_results(front, back):
