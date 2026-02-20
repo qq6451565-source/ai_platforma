@@ -195,6 +195,8 @@ const normalizeApiError = (error: any, fallback: string): string => {
   return fallback;
 };
 
+const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
 const RegisterPage = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -546,23 +548,43 @@ const RegisterPage = () => {
       return;
     }
 
-    try {
-      setLoading(true);
-      const res = await registerFinalize({
-        passport_front: passportFile,
-        selfie_image: capturedSelfie,
-      });
+    setLoading(true);
+    const retryDelays = [0, 800, 1600];
+    let lastError: any = null;
 
-      message.success(res.detail || t("register.completed"));
-      if (res.warning) {
-        message.warning(res.warning);
+    try {
+      for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+        if (attempt > 0) {
+          setScannerNoticeSafe(t("register.retryingSubmit", { attempt: attempt + 1 }));
+          await delay(retryDelays[attempt]);
+        }
+
+        try {
+          const res = await registerFinalize({
+            passport_front: passportFile,
+            selfie_image: capturedSelfie,
+          });
+
+          message.success(res.detail || t("register.completed"));
+          if (res.warning) {
+            message.warning(res.warning);
+          }
+          if (res.login_username && res.login_password) {
+            savePendingCredentials(res.login_username, res.login_password);
+          }
+          window.location.replace("/app/student/profile");
+          return;
+        } catch (error: any) {
+          lastError = error;
+        }
       }
-      if (res.login_username && res.login_password) {
-        savePendingCredentials(res.login_username, res.login_password);
-      }
-      window.location.replace("/app/student/profile");
-    } catch (error: any) {
-      message.error(normalizeApiError(error, t("register.profileError")));
+
+      const errorText = t("register.submitFailedRetry");
+      setScannerNoticeSafe(errorText);
+      message.error(normalizeApiError(lastError, errorText));
+      setStage("idle");
+      setSelfieFile(null);
+      setSelfiePreview(null);
     } finally {
       setLoading(false);
     }

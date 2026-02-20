@@ -203,6 +203,8 @@
     "cameraPreparing": "Preparing camera...",
     "scanSuccess": "Face scan completed.",
     "scanError": "Face scan failed.",
+    "retryingSubmit": "Retrying registration submission (attempt {{attempt}})...",
+    "submitFailedRetry": "Registration was not submitted. Check your internet and try again.",
     "faceVerified": "Face verified",
     "cameraError": "Unable to access camera.",
     "emailSubtitle": "Verify your email with the 6-digit code.",

@@ -203,6 +203,8 @@
     "cameraPreparing": "Kamera tayyorlanmoqda...",
     "scanSuccess": "Yuz skaneri yakunlandi.",
     "scanError": "Yuz skaneri bajarilmadi.",
+    "retryingSubmit": "Ariza qayta yuborilmoqda ({{attempt}}-urinish)...",
+    "submitFailedRetry": "Ariza yuborilmadi, internetni tekshirib qayta urinib ko'ring.",
     "faceVerified": "Yuz tasdiqlandi",
     "cameraError": "Kameraga ulanish imkoni yo'q.",
     "emailSubtitle": "Emailni 6 xonali kod bilan tasdiqlang.",
