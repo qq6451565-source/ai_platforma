@@ -15,7 +15,7 @@ class AISettings(models.Model):
     ai_enabled = models.BooleanField(default=True)
     api_base_url = models.CharField(max_length=255, blank=True, null=True)
     api_key = models.CharField(max_length=255, blank=True, null=True)
-    timeout_seconds = models.PositiveIntegerField(default=10)
+    timeout_seconds = models.PositiveIntegerField(default=60)
     retry_count = models.PositiveIntegerField(default=1)
     ocr_confidence_threshold = models.FloatField(default=0.0)
     max_image_size_mb = models.FloatField(default=8.0)
@@ -48,7 +48,7 @@ class AISettings(models.Model):
                 "ai_enabled": getattr(settings, "AI_ENABLED", True),
                 "api_base_url": getattr(settings, "AI_BASE_URL", None),
                 "api_key": getattr(settings, "AI_API_KEY", None),
-                "timeout_seconds": int(getattr(settings, "AI_TIMEOUT", 10)),
+                "timeout_seconds": int(getattr(settings, "AI_TIMEOUT", 60)),
                 "retry_count": int(getattr(settings, "AI_RETRY", 1)),
                 "ocr_confidence_threshold": 0.0,
                 "max_image_size_mb": 8.0,
