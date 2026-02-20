@@ -171,7 +171,7 @@
     "passportError": "Passport yuklashda xatolik.",
     "faceSubtitle": "Yuzingizni skanerdan o'tkazing va AI tekshiruvini boshlang.",
     "startSelfieFlow": "Boshlash",
-    "startSelfieHint": "Boshlashni bosing va ko'rsatmalar bo'yicha harakat qiling.",
+    "startSelfieHint": "Skaner avtomatik ishga tushadi, ko'rsatmalar bo'yicha harakat qiling.",
     "alignFace": "Yuzni ramkaga joylash",
     "lookLeft": "Chapga qarash",
     "lookRight": "O'ngga qarash",

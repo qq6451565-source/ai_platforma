@@ -224,6 +224,147 @@ class ApplicantRegisterView(APIView):
         return Response(payload, status=status.HTTP_201_CREATED)
 
 
+class ApplicantRegisterStartView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        if not _is_registration_open():
+            raise PermissionDenied("Ro'yxatdan o'tish yopiq.")
+
+        full_name = (request.data.get("full_name") or "").strip()
+        email = (request.data.get("email") or "").strip()
+        phone = (request.data.get("phone") or "").strip()
+        direction_id = request.data.get("direction_choice")
+
+        if not full_name:
+            raise ValidationError({"full_name": "Ism va familiya majburiy."})
+        if not email:
+            raise ValidationError({"email": "Email majburiy."})
+        if not phone:
+            raise ValidationError({"phone": "Telefon raqami majburiy."})
+
+        if direction_id:
+            try:
+                Direction.objects.get(id=direction_id)
+            except Direction.DoesNotExist:
+                raise ValidationError({"direction_choice": "Direction topilmadi."})
+
+        username = _build_username(full_name)
+        password = re.sub(r"\s+", "", phone) or "123456"
+        name_parts = full_name.split()
+        first_name = name_parts[0] if name_parts else ""
+        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            role="student",
+            phone=phone,
+        )
+
+        applicant = Applicant.objects.create(
+            user=user,
+            full_name=full_name,
+            phone=phone,
+            email=email,
+            direction_choice_id=direction_id or None,
+            status="pending",
+        )
+
+        refresh = RefreshToken.for_user(user)
+        refresh["role"] = getattr(user, "role", None)
+        refresh["token_version"] = getattr(user, "token_version", 1)
+        refresh["is_staff"] = user.is_staff
+        refresh["is_superuser"] = user.is_superuser
+        access = refresh.access_token
+
+        return Response(
+            {
+                "detail": "Boshlang'ich ma'lumotlar saqlandi.",
+                "applicant_id": applicant.id,
+                "status": applicant.status,
+                "login_username": user.username,
+                "login_password": password,
+                "access": str(access),
+                "refresh": str(refresh),
+                "role": getattr(user, "role", None),
+                "user_id": user.id,
+                "token_version": getattr(user, "token_version", 1),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ApplicantRegisterFinalizeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not _is_registration_open():
+            raise PermissionDenied("Ro'yxatdan o'tish yopiq.")
+
+        if getattr(request.user, "role", None) != "student":
+            raise PermissionDenied("Faqat student finalizatsiya qila oladi.")
+
+        applicant = (
+            Applicant.objects.filter(user=request.user)
+            .exclude(status__in=["approved", "rejected"])
+            .order_by("-created_at")
+            .first()
+        )
+        if not applicant:
+            raise NotFound("Aktiv ariza topilmadi.")
+
+        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
+        passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
+        selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
+        direction_id = request.data.get("direction_choice")
+
+        if not passport_front:
+            raise ValidationError({"passport_front": "Passport old tomoni majburiy."})
+        if not selfie:
+            raise ValidationError({"selfie": "Selfie rasmi majburiy."})
+
+        if direction_id:
+            try:
+                Direction.objects.get(id=direction_id)
+            except Direction.DoesNotExist:
+                raise ValidationError({"direction_choice": "Direction topilmadi."})
+            applicant.direction_choice_id = direction_id
+            applicant.save(update_fields=["direction_choice"])
+
+        document, created = ApplicantDocument.objects.get_or_create(
+            applicant=applicant,
+            defaults={
+                "passport_front": passport_front,
+                "passport_back": passport_back,
+                "face_image": selfie,
+            },
+        )
+        if not created:
+            document.passport_front = passport_front
+            if passport_back:
+                document.passport_back = passport_back
+            document.face_image = selfie
+            document.save()
+
+        verification_warning = _run_ai_verification(document)
+        applicant.refresh_from_db()
+
+        payload = {
+            "detail": "Ariza yakunlandi. Admin tasdiqlashi kutilmoqda.",
+            "applicant_id": applicant.id,
+            "status": applicant.status,
+            "login_username": request.user.username,
+        }
+        if verification_warning:
+            payload["warning"] = verification_warning
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+
 def _read_upload_bytes(uploaded_file):
     if not uploaded_file:
         return None

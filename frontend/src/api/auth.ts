@@ -5,6 +5,8 @@ import type {
   LoginPayload,
   RegisterPayload,
   RegisterResponse,
+  RegisterStartPayload,
+  RegisterFinalizePayload,
   GoogleAuthResponse,
   RegistrationProfilePayload,
   FaceVerificationResponse,
@@ -39,6 +41,24 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
   if (payload.selfie_image) form.append("selfie_image", payload.selfie_image);
 
   const res = await publicApi.post<RegisterResponse>("/api/enrollment/register/", form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+export async function registerStart(payload: RegisterStartPayload): Promise<RegisterResponse> {
+  const res = await publicApi.post<RegisterResponse>("/api/enrollment/register/start/", payload);
+  return res.data;
+}
+
+export async function registerFinalize(payload: RegisterFinalizePayload): Promise<RegisterResponse> {
+  const form = new FormData();
+  form.append("passport_front", payload.passport_front);
+  if (payload.passport_back) form.append("passport_back", payload.passport_back);
+  form.append("selfie_image", payload.selfie_image);
+  if (payload.direction_choice) form.append("direction_choice", String(payload.direction_choice));
+
+  const res = await api.post<RegisterResponse>("/api/enrollment/register/finalize/", form, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;

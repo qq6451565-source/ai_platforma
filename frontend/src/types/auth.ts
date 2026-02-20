@@ -36,6 +36,21 @@ export type RegisterResponse = {
   role?: "student" | "teacher" | "admin";
   user_id?: number;
   token_version?: number;
+  warning?: string;
+};
+
+export type RegisterStartPayload = {
+  full_name: string;
+  email: string;
+  phone: string;
+  direction_choice?: number;
+};
+
+export type RegisterFinalizePayload = {
+  passport_front: File;
+  passport_back?: File;
+  selfie_image: File;
+  direction_choice?: number;
 };
 
 export type GoogleAuthResponse = AuthTokens & {

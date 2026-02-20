@@ -1,5 +1,4 @@
 import {
-  CameraOutlined,
   IdcardOutlined,
   PhoneOutlined,
   UserOutlined,
@@ -9,7 +8,7 @@ import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { login, register } from "../api/auth";
+import { login, registerFinalize, registerStart } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { Button, Input, Card } from "../components/ui";
 import { saveTokens } from "../utils/token";
@@ -202,7 +201,6 @@ const RegisterPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const [profileData, setProfileData] = useState<ProfileFormValues | null>(null);
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
 
@@ -230,6 +228,7 @@ const RegisterPage = () => {
   const blinkClosedRef = useRef(false);
   const blinkClosedFramesRef = useRef(0);
   const yawDirectionRef = useRef<1 | -1>(1);
+  const autoScanStartedRef = useRef(false);
 
   const stepTitles = useMemo(
     () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
@@ -397,14 +396,61 @@ const RegisterPage = () => {
     }
   }, [currentStep, cameraActive]);
 
-  const handleProfileSubmit = (values: ProfileFormValues) => {
-    setProfileData({
+  useEffect(() => {
+    if (currentStep !== 2) {
+      autoScanStartedRef.current = false;
+      return;
+    }
+    if (autoScanStartedRef.current || loadingRef.current) return;
+    autoScanStartedRef.current = true;
+    void startSelfieFlow();
+  }, [currentStep]);
+
+  const ensureSessionTokens = async (username?: string, password?: string) => {
+    if (!username || !password) return false;
+    savePendingCredentials(username, password);
+    const tokens = await login({ username, password });
+    saveTokens(tokens.access, tokens.refresh);
+    try {
+      await fetchMe();
+    } catch {}
+    return true;
+  };
+
+  const handleProfileSubmit = async (values: ProfileFormValues) => {
+    const preparedProfile = {
       full_name: (values.full_name || "").trim(),
       email: (values.email || "").trim(),
       phone: (values.phone || "").trim(),
-    });
-    message.success(t("register.profileSaved"));
-    setCurrentStep(1);
+    };
+
+    try {
+      setLoading(true);
+      const res = await registerStart(preparedProfile);
+
+      if (res.login_username && res.login_password) {
+        savePendingCredentials(res.login_username, res.login_password);
+      }
+
+      if (res.access) {
+        saveTokens(res.access, res.refresh);
+        try {
+          await fetchMe();
+        } catch {}
+      } else if (res.login_username && res.login_password) {
+        await ensureSessionTokens(res.login_username, res.login_password);
+      }
+
+      message.success(res.detail || t("register.profileSaved"));
+      if (res.warning) {
+        message.warning(res.warning);
+      }
+      setCurrentStep(1);
+    } catch (error: any) {
+      message.error(normalizeApiError(error, t("register.profileError")));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePassportNext = () => {
@@ -494,12 +540,6 @@ const RegisterPage = () => {
   };
 
   const submitRegistration = async (capturedSelfie: File) => {
-    if (!profileData) {
-      message.warning(t("register.profileError"));
-      setCurrentStep(0);
-      return;
-    }
-
     if (!passportFile) {
       message.warning(t("register.passportRequired"));
       setCurrentStep(1);
@@ -508,35 +548,19 @@ const RegisterPage = () => {
 
     try {
       setLoading(true);
-      const res = await register({
-        full_name: profileData.full_name,
-        email: profileData.email,
-        phone: profileData.phone,
+      const res = await registerFinalize({
         passport_front: passportFile,
         selfie_image: capturedSelfie,
       });
 
       message.success(res.detail || t("register.completed"));
+      if (res.warning) {
+        message.warning(res.warning);
+      }
       if (res.login_username && res.login_password) {
         savePendingCredentials(res.login_username, res.login_password);
       }
-
-      if (res.access) {
-        saveTokens(res.access, res.refresh);
-        try {
-          await fetchMe();
-        } catch {}
-        window.location.replace("/app/student/profile");
-        return;
-      }
-
-      if (res.login_username && res.login_password) {
-        await autoLoginAndRedirect(res.login_username, res.login_password);
-        return;
-      }
-
-      message.warning(t("register.credentialsNote"));
-      setScannerNoticeSafe(t("register.profileError"));
+      window.location.replace("/app/student/profile");
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
@@ -750,6 +774,7 @@ const RegisterPage = () => {
       await ensureFaceLandmarker();
     } catch {
       setScannerBooting(false);
+      autoScanStartedRef.current = false;
       setScannerNoticeSafe(t("register.scanError"));
       return;
     }
@@ -757,6 +782,7 @@ const RegisterPage = () => {
     const started = await startCamera();
     if (!started) {
       setScannerBooting(false);
+      autoScanStartedRef.current = false;
       return;
     }
 
@@ -771,21 +797,6 @@ const RegisterPage = () => {
     analysisTimerRef.current = window.setInterval(() => {
       void analyzeLiveness();
     }, ANALYZE_INTERVAL_MS);
-  };
-
-  const autoLoginAndRedirect = async (username?: string, password?: string) => {
-    if (!username || !password) {
-      throw new Error("credentials_missing");
-    }
-
-    savePendingCredentials(username, password);
-    const tokens = await login({ username, password });
-    saveTokens(tokens.access, tokens.refresh);
-    try {
-      await fetchMe();
-    } catch {}
-    // Use hard redirect to ensure app boots with fresh auth context.
-    window.location.replace("/app/student/profile");
   };
 
   return (
@@ -950,17 +961,6 @@ const RegisterPage = () => {
                 {scannerNotice && <div className="wizard-hint">{scannerNotice}</div>}
                 {!cameraActive && !selfieFile && <div className="wizard-hint">{t("register.selfieRequired")}</div>}
                 {selfieFile && <div className="status-chip success">{t("register.faceVerified")}</div>}
-
-                <div className="scanner-actions">
-                  <Button
-                    icon={<CameraOutlined />}
-                    onClick={startSelfieFlow}
-                    disabled={loading || scannerBooting}
-                    isLoading={loading || scannerBooting}
-                  >
-                    {t("register.startSelfieFlow")}
-                  </Button>
-                </div>
               </div>
 
               <div className="wizard-actions">

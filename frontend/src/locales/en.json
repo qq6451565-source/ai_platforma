@@ -171,7 +171,7 @@
     "passportError": "Failed to upload passport.",
     "faceSubtitle": "Align your face within the scanner and run the AI check.",
     "startSelfieFlow": "Start",
-    "startSelfieHint": "Press Start and follow the liveness instructions.",
+    "startSelfieHint": "Scanner starts automatically, follow the liveness instructions.",
     "alignFace": "Align face",
     "lookLeft": "Look left",
     "lookRight": "Look right",
