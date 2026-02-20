@@ -23,6 +23,10 @@ services:
         sync: false
       - key: AI_BASE_URL
         sync: false
+      - key: AI_TIMEOUT
+        value: "120"
+      - key: AI_RETRY
+        value: "1"
       - key: AGORA_APP_ID
         sync: false
       - key: AGORA_APP_CERTIFICATE
