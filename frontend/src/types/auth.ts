@@ -83,3 +83,15 @@ export type FaceVerificationResponse = {
   has_embedding: boolean;
   match_result?: unknown;
 };
+
+export type ProfileAiVerificationResponse = {
+  id?: number;
+  applicant?: number;
+  verified: boolean;
+  confidence: number;
+  created_at?: string;
+  events_json?: Array<Record<string, unknown>>;
+  detail?: string;
+  action?: "verified" | "skipped" | "cooldown";
+  applicant_status?: string;
+};

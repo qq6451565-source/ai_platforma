@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
-from enrollment.models import Applicant, ApplicantDocument, RegistrationWindow
+from enrollment.models import Applicant, ApplicantDocument, RegistrationWindow, VerificationResult
 
 
 def _image_file(name: str) -> SimpleUploadedFile:
@@ -85,3 +86,70 @@ class EnrollmentRegistrationFlowTests(APITestCase):
         }
         response = self.client.post("/api/enrollment/register/finalize/", payload, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch("enrollment.views._run_ai_verification")
+    def test_self_reverify_runs_for_pending_student(self, mocked_run_ai):
+        start_response = self._start_registration()
+        access = start_response.data["access"]
+        applicant_id = start_response.data["applicant_id"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+        finalize_payload = {
+            "passport_front": _image_file("passport_front.jpg"),
+            "selfie_image": _image_file("selfie.jpg"),
+        }
+        finalize_response = self.client.post("/api/enrollment/register/finalize/", finalize_payload, format="multipart")
+        self.assertEqual(finalize_response.status_code, status.HTTP_200_OK)
+
+        applicant = Applicant.objects.get(id=applicant_id)
+        mocked_run_ai.return_value = None
+        VerificationResult.objects.create(
+            applicant=applicant,
+            verified=True,
+            confidence=0.92,
+            events_json=[{"type": "face_match", "status": "ok"}],
+        )
+
+        response = self.client.post("/api/enrollment/reverify/self/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get("action"), "skipped")
+        mocked_run_ai.assert_not_called()
+
+    def test_self_reverify_requires_student_role(self):
+        teacher = User.objects.create_user(
+            username="teacher_reverify",
+            password="secret123",
+            role="teacher",
+            email="teacher2@example.com",
+        )
+        self.client.force_authenticate(user=teacher)
+        response = self.client.post("/api/enrollment/reverify/self/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_self_reverify_returns_cooldown_for_recent_unavailable(self):
+        start_response = self._start_registration()
+        access = start_response.data["access"]
+        applicant_id = start_response.data["applicant_id"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+        finalize_payload = {
+            "passport_front": _image_file("passport_front.jpg"),
+            "selfie_image": _image_file("selfie.jpg"),
+        }
+        finalize_response = self.client.post("/api/enrollment/register/finalize/", finalize_payload, format="multipart")
+        self.assertEqual(finalize_response.status_code, status.HTTP_200_OK)
+
+        applicant = Applicant.objects.get(id=applicant_id)
+        VerificationResult.objects.create(
+            applicant=applicant,
+            verified=False,
+            confidence=0.0,
+            events_json=[{"type": "ai", "status": "unavailable"}],
+            created_at=timezone.now(),
+        )
+
+        with patch("enrollment.views._run_ai_verification") as mocked_run_ai:
+            response = self.client.post("/api/enrollment/reverify/self/")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data.get("action"), "cooldown")
+            mocked_run_ai.assert_not_called()

@@ -37,6 +37,23 @@ import {
 } from "../../api/admin";
 
 const { Text } = Typography;
+const AI_REASON_LABELS: Record<string, string> = {
+  timeout: "Timeout",
+  gateway_unreachable: "Gateway ulanmayapti",
+  connection_error: "Ulanish xatosi",
+  dns_error: "DNS xatosi",
+  ssl_error: "SSL xatosi",
+  auth_error: "API kalit/ruxsat xatosi",
+  rate_limited: "Rate limit",
+  gateway_error: "Gateway ichki xatosi",
+};
+
+type AiStatusMeta = {
+  color: string;
+  label: string;
+  message: string;
+  reason?: string;
+};
 
 const EnrollmentPage = () => {
   const qc = useQueryClient();
@@ -143,10 +160,78 @@ const EnrollmentPage = () => {
       message.success("AI qayta tekshirildi");
       await refreshEnrollment(id);
     },
-    onError: () => message.error("AI tekshiruvda xato"),
+    onError: (error: any) => {
+      const detail =
+        error?.response?.data?.detail ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "AI tekshiruvda xato";
+      message.error(detail);
+    },
   });
 
   const isVerified = (item: EnrollmentItem) => (item.verifications || []).some((v) => v.verified);
+  const getLatestVerification = (item: EnrollmentItem) =>
+    [...(item.verifications || [])].sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    })[0];
+
+  const getUnavailableEvent = (events: unknown) => {
+    if (!Array.isArray(events)) return undefined;
+    return events.find(
+      (event: any) => event?.type === "ai" && event?.status === "unavailable",
+    ) as { detail?: string; reason?: string } | undefined;
+  };
+
+  const summarizeEvents = (events: unknown) => {
+    if (!Array.isArray(events) || !events.length) return "Hodisalar yo'q";
+    return events
+      .map((event: any) => {
+        const type = event?.type || "unknown";
+        const status = event?.status || "n/a";
+        return `${type}:${status}`;
+      })
+      .join(", ");
+  };
+
+  const getAiStatus = (item: EnrollmentItem): AiStatusMeta => {
+    const latest = getLatestVerification(item);
+    if (!latest) {
+      return {
+        color: "default",
+        label: "Tekshirilmagan",
+        message: "AI tekshiruv hali ishlatilmagan.",
+      };
+    }
+    if (latest.verified) {
+      return {
+        color: "green",
+        label: "Tasdiqlandi",
+        message: "AI tekshiruv muvaffaqiyatli yakunlandi.",
+      };
+    }
+
+    const unavailable = getUnavailableEvent(latest.events_json);
+    if (unavailable) {
+      const reason = unavailable.reason || "connection_error";
+      return {
+        color: "orange",
+        label: "AI mavjud emas",
+        reason,
+        message:
+          unavailable.detail ||
+          `AI xizmati vaqtincha mavjud emas (${AI_REASON_LABELS[reason] || reason}).`,
+      };
+    }
+
+    return {
+      color: "red",
+      label: "Tasdiqlanmadi",
+      message: "AI tekshiruv ma'lumotlarni tasdiqlamadi.",
+    };
+  };
 
   const statusTag = (status?: string) => {
     if (status === "approved") return <Tag color="green">Tasdiqlangan</Tag>;
@@ -266,8 +351,10 @@ const EnrollmentPage = () => {
           },
           {
             title: "AI",
-            render: (_: unknown, row: EnrollmentItem) =>
-              isVerified(row) ? <Tag color="green">Tasdiqlandi</Tag> : <Tag color="red">Tasdiqlanmadi</Tag>,
+            render: (_: unknown, row: EnrollmentItem) => {
+              const aiStatus = getAiStatus(row);
+              return <Tag color={aiStatus.color}>{aiStatus.label}</Tag>;
+            },
           },
           {
             title: "Telefon",
@@ -363,7 +450,10 @@ const EnrollmentPage = () => {
                   : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="AI holati">
-                {isVerified(activeApplicant) ? <Tag color="green">Tasdiqlandi</Tag> : <Tag color="red">Yo'q</Tag>}
+                {(() => {
+                  const aiStatus = getAiStatus(activeApplicant);
+                  return <Tag color={aiStatus.color}>{aiStatus.label}</Tag>;
+                })()}
               </Descriptions.Item>
             </Descriptions>
 
@@ -409,17 +499,38 @@ const EnrollmentPage = () => {
                   .map((v, idx) => (
                     <Card key={idx} size="small">
                       <Space wrap>
-                        <Tag color={v.verified ? "green" : "red"}>{v.verified ? "Verified" : "Not verified"}</Tag>
+                        {(() => {
+                          const unavailable = getUnavailableEvent(v.events_json);
+                          if (v.verified) return <Tag color="green">Verified</Tag>;
+                          if (unavailable) return <Tag color="orange">AI unavailable</Tag>;
+                          return <Tag color="red">Not verified</Tag>;
+                        })()}
                         <Text>Ishonch: {v.confidence ?? 0}</Text>
                         <Text type="secondary">
                           {v.created_at ? dayjs(v.created_at).format("YYYY-MM-DD HH:mm") : "-"}
                         </Text>
                       </Space>
-                      {v.events_json ? (
-                        <pre style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-                          {JSON.stringify(v.events_json, null, 2)}
-                        </pre>
-                      ) : null}
+                      {(() => {
+                        const unavailable = getUnavailableEvent(v.events_json);
+                        if (unavailable) {
+                          const reason = unavailable.reason || "connection_error";
+                          const reasonLabel = AI_REASON_LABELS[reason] || reason;
+                          return (
+                            <Alert
+                              style={{ marginTop: 8 }}
+                              type="warning"
+                              showIcon
+                              message={unavailable.detail || "AI xizmati vaqtincha mavjud emas."}
+                              description={`Sabab: ${reasonLabel}`}
+                            />
+                          );
+                        }
+                        return (
+                          <Text type="secondary" style={{ display: "block", marginTop: 8 }}>
+                            Hodisalar: {summarizeEvents(v.events_json)}
+                          </Text>
+                        );
+                      })()}
                     </Card>
                   ))}
               </Space>

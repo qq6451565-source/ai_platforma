@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from ai.clients import AIConnectionError, face_match, ocr_passport
+from ai.clients import AIConnectionError, face_match, health_check, ocr_passport
 from ai.models import AISettings
 from accounts.models import User, PassportData
 from groups.models import Group
@@ -31,6 +31,7 @@ from .serializers import (
 )
 
 logger = logging.getLogger(__name__)
+AI_REVERIFY_COOLDOWN_SECONDS = 90
 
 
 class RegistrationWindowViewSet(viewsets.ModelViewSet):
@@ -634,7 +635,7 @@ def _ensure_passport_data(user, applicant, documents):
         passport.save(update_fields=list(updates.keys()))
 
 
-def _run_ai_verification(document):
+def _run_ai_verification(document, *, fast_mode: bool = False):
     applicant = document.applicant
     settings_ai = AISettings.get_active()
 
@@ -654,26 +655,46 @@ def _run_ai_verification(document):
         )
         return
 
+    gateway_health = health_check() or {}
+    if not gateway_health.get("ok"):
+        return _mark_ai_unavailable(
+            applicant,
+            events,
+            reason=gateway_health.get("reason", "gateway_unreachable"),
+        )
+
     passport_front_bytes = _read_field_bytes(document.passport_front)
     passport_back_bytes = _read_field_bytes(document.passport_back)
     selfie_bytes = _read_field_bytes(document.face_image)
+    timeout_override = None
+    retries_override = None
+    if fast_mode:
+        configured_timeout = int(settings_ai.timeout_seconds or 60)
+        timeout_override = max(8, min(20, configured_timeout))
+        retries_override = 0
     try:
-        ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
-        ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
+        ocr_front = (
+            ocr_passport(
+                passport_front_bytes,
+                timeout_override=timeout_override,
+                retries_override=retries_override,
+            )
+            if passport_front_bytes
+            else None
+        )
+        ocr_back = (
+            ocr_passport(
+                passport_back_bytes,
+                timeout_override=timeout_override,
+                retries_override=retries_override,
+            )
+            if passport_back_bytes
+            else None
+        )
         ocr_result = _merge_ocr_results(ocr_front, ocr_back)
     except AIConnectionError as exc:
         logger.warning("AI OCR unavailable for applicant %s: %s", applicant.id, exc)
-        events.append({"type": "ai", "status": "unavailable", "detail": str(exc)})
-        VerificationResult.objects.create(
-            applicant=applicant,
-            verified=False,
-            confidence=0.0,
-            events_json=events,
-        )
-        if applicant.status not in ["approved", "rejected"]:
-            applicant.status = "pending"
-            applicant.save(update_fields=["status"])
-        return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
+        return _mark_ai_unavailable(applicant, events, reason=_infer_ai_error_reason(exc))
     if not ocr_result:
         events.append({"type": "ocr", "status": "failed"})
     else:
@@ -775,20 +796,15 @@ def _run_ai_verification(document):
     face_passed = True
     if settings_ai.enable_face_match:
         try:
-            face_result = face_match(passport_front_bytes or passport_back_bytes, selfie_bytes)
+            face_result = face_match(
+                passport_front_bytes or passport_back_bytes,
+                selfie_bytes,
+                timeout_override=timeout_override,
+                retries_override=retries_override,
+            )
         except AIConnectionError as exc:
             logger.warning("AI face match unavailable for applicant %s: %s", applicant.id, exc)
-            events.append({"type": "ai", "status": "unavailable", "detail": str(exc)})
-            VerificationResult.objects.create(
-                applicant=applicant,
-                verified=False,
-                confidence=0.0,
-                events_json=events,
-            )
-            if applicant.status not in ["approved", "rejected"]:
-                applicant.status = "pending"
-                applicant.save(update_fields=["status"])
-            return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
+            return _mark_ai_unavailable(applicant, events, reason=_infer_ai_error_reason(exc))
         if not face_result:
             face_passed = False
             events.append({"type": "face_match", "status": "failed"})
@@ -826,6 +842,57 @@ def _run_ai_verification(document):
         applicant.status = "verified" if verified else "pending"
         applicant.save(update_fields=["status"])
     return None
+
+
+def _mark_ai_unavailable(applicant, events, reason: str | None = None):
+    resolved_reason = reason or "connection_error"
+    event = {
+        "type": "ai",
+        "status": "unavailable",
+        "reason": resolved_reason,
+        "detail": _ai_unavailable_message(resolved_reason),
+    }
+    events.append(event)
+    VerificationResult.objects.create(
+        applicant=applicant,
+        verified=False,
+        confidence=0.0,
+        events_json=events,
+    )
+    if applicant.status not in ["approved", "rejected"]:
+        applicant.status = "pending"
+        applicant.save(update_fields=["status"])
+    return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
+
+
+def _infer_ai_error_reason(exc: Exception) -> str:
+    explicit_reason = getattr(exc, "reason", None)
+    if explicit_reason:
+        return explicit_reason
+    text = str(exc).lower()
+    if "timed out" in text or "timeout" in text:
+        return "timeout"
+    if "401" in text or "403" in text or "unauthorized" in text or "forbidden" in text:
+        return "auth_error"
+    if "name or service not known" in text or "nodename nor servname" in text:
+        return "dns_error"
+    if "ssl" in text or "certificate" in text:
+        return "ssl_error"
+    return "connection_error"
+
+
+def _ai_unavailable_message(reason: str) -> str:
+    messages = {
+        "timeout": "AI xizmatidan javob kelmadi (timeout).",
+        "gateway_unreachable": "AI gateway hozircha ulanmayapti.",
+        "connection_error": "AI gateway bilan aloqa o'rnatilmadi.",
+        "dns_error": "AI gateway manzili topilmadi (DNS xato).",
+        "ssl_error": "AI gateway SSL sertifikatida muammo bor.",
+        "auth_error": "AI gateway API kaliti noto'g'ri yoki ruxsat yo'q.",
+        "rate_limited": "AI gateway vaqtincha band (rate limit).",
+        "gateway_error": "AI gateway ichki xatolik qaytardi.",
+    }
+    return messages.get(reason, "AI gateway bilan aloqa o'rnatilmadi.")
 
 
 def _merge_ocr_results(front, back):
@@ -1117,3 +1184,71 @@ class ReverifyApplicantView(APIView):
         if not latest:
             return Response({"detail": "Tekshiruv natijasi topilmadi."}, status=status.HTTP_200_OK)
         return Response(VerificationResultSerializer(latest).data, status=status.HTTP_200_OK)
+
+
+class SelfReverifyApplicantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request.user, "role", None) != "student":
+            raise PermissionDenied("Faqat student AI tekshiruvni ishga tushira oladi.")
+
+        applicant = (
+            Applicant.objects.filter(user=request.user)
+            .exclude(status__in=["approved", "rejected"])
+            .order_by("-created_at")
+            .first()
+        )
+        if not applicant:
+            raise NotFound("Aktiv ariza topilmadi.")
+
+        documents = getattr(applicant, "documents", None)
+        if not documents:
+            raise ValidationError({"detail": "Hujjatlar topilmadi. Avval ro'yxatdan o'tishni yakunlang."})
+
+        latest = applicant.verifications.order_by("-created_at").first()
+        if latest and latest.verified:
+            payload = VerificationResultSerializer(latest).data
+            payload["detail"] = "AI tekshiruv allaqachon tasdiqlangan."
+            payload["action"] = "skipped"
+            return Response(payload, status=status.HTTP_200_OK)
+
+        if latest and _is_reverify_on_cooldown(latest):
+            payload = VerificationResultSerializer(latest).data
+            payload["detail"] = "AI tekshiruv yaqinda bajarilgan. Bir ozdan keyin qayta urinib ko'ring."
+            payload["action"] = "cooldown"
+            return Response(payload, status=status.HTTP_200_OK)
+
+        warning = _run_ai_verification(documents, fast_mode=True)
+        latest = applicant.verifications.order_by("-created_at").first()
+        if not latest:
+            return Response({"detail": "AI tekshiruv natijasi topilmadi."}, status=status.HTTP_200_OK)
+
+        payload = VerificationResultSerializer(latest).data
+        payload["detail"] = warning or "AI tekshiruv bajarildi."
+        payload["action"] = "verified"
+        payload["applicant_status"] = applicant.status
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+def _is_reverify_on_cooldown(verification: VerificationResult) -> bool:
+    if verification.verified:
+        return False
+    if not verification.created_at:
+        return False
+    if not _verification_has_ai_unavailable(verification):
+        return False
+    elapsed = (timezone.now() - verification.created_at).total_seconds()
+    return elapsed < AI_REVERIFY_COOLDOWN_SECONDS
+
+
+def _verification_has_ai_unavailable(verification: VerificationResult) -> bool:
+    events = verification.events_json
+    if not isinstance(events, list):
+        return False
+    return any(
+        isinstance(event, dict)
+        and event.get("type") == "ai"
+        and event.get("status") == "unavailable"
+        for event in events
+    )

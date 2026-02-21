@@ -12,6 +12,7 @@ from .views import (
     ApplicantRegisterStartView,
     ApplicantRegisterFinalizeView,
     ReverifyApplicantView,
+    SelfReverifyApplicantView,
 )
 
 
@@ -28,4 +29,5 @@ urlpatterns = router.urls + [
     path("approve/<int:applicant_id>/", ApproveApplicantView.as_view()),
     path("reject/<int:applicant_id>/", RejectApplicantView.as_view()),
     path("reverify/<int:applicant_id>/", ReverifyApplicantView.as_view()),
+    path("reverify/self/", SelfReverifyApplicantView.as_view()),
 ]

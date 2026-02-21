@@ -76,13 +76,17 @@ class AIHealthView(APIView):
             payload["status"] = "unconfigured"
             return Response(payload, status=status.HTTP_200_OK)
 
-        health = clients.health_check()
-        if not health:
+        health = clients.health_check() or {}
+        if not health.get("ok"):
             payload["status"] = "unreachable"
+            payload["reason"] = health.get("reason", "connection_error")
             return Response(payload, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         payload["status"] = "ok"
-        payload["gateway"] = health
+        payload["gateway"] = {
+            "endpoint": health.get("endpoint"),
+            "data": health.get("data"),
+        }
         return Response(payload, status=status.HTTP_200_OK)
 
 

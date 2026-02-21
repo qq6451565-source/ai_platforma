@@ -14,7 +14,10 @@ class AIError(Exception):
 
 class AIConnectionError(AIError):
     """Ulanish bilan bog'liq xatolar (Timeout, Connection refused)"""
-    pass
+    def __init__(self, message: str, *, reason: str = "connection_error", status_code: int | None = None):
+        super().__init__(message)
+        self.reason = reason
+        self.status_code = status_code
 
 
 def _ai_base():
@@ -58,7 +61,7 @@ def _ai_retry():
     return int(getattr(settings, "AI_RETRY", 0))
 
 
-def _request(method: str, path: str, **kwargs):
+def _request(method: str, path: str, *, timeout_override: int | None = None, retries_override: int | None = None, **kwargs):
     """
     Requests kutubxonasi orqali so'rov yuborish uchun universal funksiya.
     Retry va Timeout logikasini o'z ichiga oladi.
@@ -74,8 +77,8 @@ def _request(method: str, path: str, **kwargs):
     if api_key:
         headers["X-API-Key"] = api_key
 
-    timeout = _ai_timeout()
-    retries = max(0, _ai_retry())
+    timeout = int(timeout_override if timeout_override is not None else _ai_timeout())
+    retries = max(0, int(retries_override if retries_override is not None else _ai_retry()))
 
     for attempt in range(retries + 1):
         try:
@@ -89,12 +92,19 @@ def _request(method: str, path: str, **kwargs):
             
             # Agar 4xx xato bo'lsa (masalan, rasm yomon), darhol xabar beramiz
             if 400 <= response.status_code < 500:
+                reason = _status_reason(response.status_code)
                 try:
                     error_detail = response.json()
                 except ValueError:
                     error_detail = response.text
                 logger.warning(f"AI Client Error ({response.status_code}): {error_detail}")
-                # 4xx xatolar uchun retry qilinmaydi, chunki so'rov noto'g'ri
+                if response.status_code in (401, 403, 408, 429):
+                    raise AIConnectionError(
+                        f"AI service returned {response.status_code}",
+                        reason=reason,
+                        status_code=response.status_code,
+                    )
+                # 4xx validation xatolar uchun retry qilinmaydi, chunki so'rov noto'g'ri
                 return None
 
             # Boshqa xatolar (5xx) uchun exception ko'tarib, retry ga o'tamiz
@@ -109,12 +119,50 @@ def _request(method: str, path: str, **kwargs):
             else:
                 logger.error(f"AI Service Unreachable after retries: {e}")
                 # View ga 503 qaytarish uchun signal
-                raise AIConnectionError(f"AI Service unavailable: {e}")
+                raise AIConnectionError(
+                    f"AI Service unavailable: {e}",
+                    reason=_request_exception_reason(e),
+                )
         except Exception as e:
             logger.exception(f"Unexpected error in AI client: {e}")
             return None
             
     return None
+
+
+def _status_reason(status_code: int) -> str:
+    if status_code in (401, 403):
+        return "auth_error"
+    if status_code in (408,):
+        return "timeout"
+    if status_code in (429,):
+        return "rate_limited"
+    if status_code >= 500:
+        return "gateway_error"
+    return "validation_error"
+
+
+def _request_exception_reason(exc: Exception) -> str:
+    if isinstance(exc, requests.exceptions.HTTPError):
+        status_code = getattr(getattr(exc, "response", None), "status_code", None)
+        if status_code in (401, 403):
+            return "auth_error"
+        if status_code == 429:
+            return "rate_limited"
+        if status_code == 408:
+            return "timeout"
+        if status_code and status_code >= 500:
+            return "gateway_error"
+    if isinstance(exc, (requests.exceptions.Timeout, requests.exceptions.ReadTimeout)):
+        return "timeout"
+    if isinstance(exc, requests.exceptions.SSLError):
+        return "ssl_error"
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        text = str(exc).lower()
+        if "name or service not known" in text or "nodename nor servname" in text:
+            return "dns_error"
+        return "connection_error"
+    return "connection_error"
 
 
 def _prepare_file(file_obj, filename="image.jpg", content_type="image/jpeg"):
@@ -126,7 +174,7 @@ def _prepare_file(file_obj, filename="image.jpg", content_type="image/jpeg"):
     return (filename, file_obj, content_type)
 
 
-def ocr_passport(image_data):
+def ocr_passport(image_data, *, timeout_override: int | None = None, retries_override: int | None = None):
     """
     Passports OCR: yuborilgan faylni tashqi AI ga multipart orqali jo'natadi.
     """
@@ -134,10 +182,22 @@ def ocr_passport(image_data):
         return None
     
     files = {"file": _prepare_file(image_data, "passport.jpg")}
-    return _request("POST", "ocr/passport", files=files)
+    return _request(
+        "POST",
+        "ocr/passport",
+        files=files,
+        timeout_override=timeout_override,
+        retries_override=retries_override,
+    )
 
 
-def face_match(passport_data, selfie_data):
+def face_match(
+    passport_data,
+    selfie_data,
+    *,
+    timeout_override: int | None = None,
+    retries_override: int | None = None,
+):
     """
     Pasportdagi yuz va selfie ni solishtirish.
     """
@@ -148,7 +208,13 @@ def face_match(passport_data, selfie_data):
         "passport_image": _prepare_file(passport_data, "passport.jpg"),
         "selfie_image": _prepare_file(selfie_data, "selfie.jpg"),
     }
-    return _request("POST", "face/match", files=files)
+    return _request(
+        "POST",
+        "face/match",
+        files=files,
+        timeout_override=timeout_override,
+        retries_override=retries_override,
+    )
 
 
 def presence_check(session_id: str, frame_data):
@@ -209,7 +275,16 @@ def face_blink(image_data):
 
 
 def health_check():
-    try:
-        return _request("GET", "/")
-    except AIConnectionError:
-        return None
+    timeout = max(3, min(10, _ai_timeout()))
+    last_error = None
+    for endpoint in ("/health", "/ready", "/"):
+        try:
+            data = _request("GET", endpoint, timeout_override=timeout, retries_override=0)
+            if data is not None:
+                return {"ok": True, "endpoint": endpoint, "data": data}
+        except AIConnectionError as exc:
+            last_error = exc
+            continue
+    if last_error is not None:
+        return {"ok": False, "reason": getattr(last_error, "reason", "connection_error")}
+    return {"ok": False, "reason": "gateway_unreachable"}

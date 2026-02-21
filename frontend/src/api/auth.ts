@@ -10,6 +10,7 @@ import type {
   GoogleAuthResponse,
   RegistrationProfilePayload,
   FaceVerificationResponse,
+  ProfileAiVerificationResponse,
 } from "../types/auth";
 
 
@@ -104,4 +105,9 @@ export async function verifyEmailCode(code: string) {
 
 export async function logout(): Promise<void> {
   await api.post("/api/accounts/logout/");
+}
+
+export async function runProfileAiVerification(): Promise<ProfileAiVerificationResponse> {
+  const res = await api.post<ProfileAiVerificationResponse>("/api/enrollment/reverify/self/");
+  return res.data;
 }
