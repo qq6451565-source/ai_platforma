@@ -20,7 +20,9 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(59, 130, 246, 0.15),
+    rgba(168, 85, 247, 0.25),
+    rgba(236, 72, 153, 0.20),
+    rgba(245, 158, 11, 0.15),
     transparent
   );
   transition: left 0.6s;

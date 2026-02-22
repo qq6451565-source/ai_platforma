@@ -8,6 +8,7 @@
 @import './animations.css';
 @import './micro-interactions.css';
 @import './accessibility.css';
+@import './vibrant-effects.css';
 
 /* ── Reset ───────────────────────────────────────────────────── */
 *, *::before, *::after {
@@ -106,10 +107,14 @@ button, input, select, textarea {
 ::-webkit-scrollbar        { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  {
-  background: rgba(59, 130, 246, 0.26);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.30));
   border-radius: var(--radius-full);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.30);
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.48); }
+::-webkit-scrollbar-thumb:hover { 
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.50), rgba(236, 72, 153, 0.45));
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.50);
+}
 ::-webkit-scrollbar-corner      { background: transparent; }
 
 @media (max-width: 768px) {
@@ -119,7 +124,10 @@ button, input, select, textarea {
 /* ── Focus & Selection ───────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 :focus:not(:focus-visible) { outline: none; }
-::selection { background: rgba(59, 130, 246, 0.28); color: var(--color-text-primary); }
+::selection { 
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(236, 72, 153, 0.30)); 
+  color: white;
+}
 
 /* ── Utility classes ─────────────────────────────────────────── */
 .gradient-text,
@@ -151,9 +159,10 @@ button, input, select, textarea {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(59, 130, 246, 0.10) 25%,
-    rgba(20, 184, 166, 0.16) 50%,
-    rgba(59, 130, 246, 0.10) 75%,
+    rgba(168, 85, 247, 0.20) 20%,
+    rgba(236, 72, 153, 0.25) 40%,
+    rgba(245, 158, 11, 0.20) 60%,
+    rgba(236, 72, 153, 0.25) 80%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -174,9 +183,10 @@ button, input, select, textarea {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(59, 130, 246, 0.10) 25%,
-    rgba(20, 184, 166, 0.18) 50%,
-    rgba(59, 130, 246, 0.10) 75%,
+    rgba(168, 85, 247, 0.20) 20%,
+    rgba(236, 72, 153, 0.25) 40%,
+    rgba(245, 158, 11, 0.20) 60%,
+    rgba(236, 72, 153, 0.25) 80%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -186,4 +196,6 @@ button, input, select, textarea {
 
 /* ── Table clickable row ─────────────────────────────────────── */
 .clickable-row { cursor: pointer; }
-.clickable-row:hover td { background: rgba(59, 130, 246, 0.05) !important; }
+.clickable-row:hover td { 
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(236, 72, 153, 0.06)) !important;
+}
