@@ -11,12 +11,6 @@ const Landing: React.FC = () => {
 
   return (
     <div className="landing-page">
-      <div className="aurora-bg">
-        <div className="aurora-line aurora-line-1"></div>
-        <div className="aurora-line aurora-line-2"></div>
-        <div className="aurora-line aurora-line-3"></div>
-      </div>
-
       <div className="landing-header">
         <div className="landing-logo">LMS</div>
         <LanguageSwitcher />
@@ -24,7 +18,7 @@ const Landing: React.FC = () => {
 
       <div className="landing-content">
         <div className="hero-section">
-          <div className="holographic-illustration">
+          <div className="hero-illustration">
             <svg viewBox="0 0 200 200" className="holographic-svg">
               <defs>
                 <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,7 +60,7 @@ const Landing: React.FC = () => {
           </div>
 
           <h1 className="hero-title">
-            <span className="neon-text-gradient">{t('landing.title')}</span>
+            {t('landing.title')}
           </h1>
 
           <p className="hero-subtitle">
@@ -77,14 +71,14 @@ const Landing: React.FC = () => {
 
           <div className="cta-buttons">
             <Button
-              variant="neon"
+              variant="primary"
               size="lg"
               onClick={() => navigate('/login')}
             >
               {t('landing.exploreNow')}
             </Button>
             <Button
-              variant="glow"
+              variant="outline"
               size="lg"
               onClick={() => navigate('/register')}
             >
@@ -94,17 +88,17 @@ const Landing: React.FC = () => {
         </div>
 
         <div className="features-grid">
-          <Card className="feature-card" hasBeam>
+          <Card className="feature-card" hoverable>
             <div className="feature-icon">🚀</div>
             <h3>{t('landing.featureAI.title')}</h3>
             <p>{t('landing.featureAI.description')}</p>
           </Card>
-          <Card className="feature-card" hasBeam>
+          <Card className="feature-card" hoverable>
             <div className="feature-icon">⚡</div>
             <h3>{t('landing.featureLightning.title')}</h3>
             <p>{t('landing.featureLightning.description')}</p>
           </Card>
-          <Card className="feature-card" hasBeam>
+          <Card className="feature-card" hoverable>
             <div className="feature-icon">🎯</div>
             <h3>{t('landing.featureAnalytics.title')}</h3>
             <p>{t('landing.featureAnalytics.description')}</p>

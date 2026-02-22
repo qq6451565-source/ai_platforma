@@ -40,7 +40,7 @@ const TeacherDashboard = () => {
   return (
     <div className="page-container animate-fade-in">
       <div className="d-flex justify-between items-center mb-6">
-        <h1 className="m-0 neon-text-gradient">{t('dashboard.title')}</h1>
+        <h1 className="m-0">{t('dashboard.title')}</h1>
         <div className="body-sm text-secondary">{dayjs().format('DD.MM.YYYY')}</div>
       </div>
 

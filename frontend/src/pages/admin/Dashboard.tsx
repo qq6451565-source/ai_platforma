@@ -105,7 +105,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      <h1 className="mb-6 neon-text-gradient">{t('nav.dashboard')}</h1>
+      <h1 className="mb-6">{t('nav.dashboard')}</h1>
       
       {loading ? (
         <Skeleton active />

@@ -80,7 +80,7 @@ const TeacherLessons = () => {
 
   return (
     <div className="page-shell page-container animate-fade-in">
-      <h1 className="page-title neon-text-gradient mb-6">{t('schedule.title')}</h1>
+      <h1 className="page-title mb-6">{t('schedule.title')}</h1>
       <Card className="mb-6">
         <div className="d-flex justify-between items-center flex-wrap gap-4">
           <div>
@@ -169,7 +169,7 @@ const TeacherLessons = () => {
                 <div className="d-flex justify-between items-center mb-4">
                   <span className="font-bold">{weekdayIndex !== null ? weekdayNames[weekdayIndex] : ''}</span>
                   {isToday && (
-                    <span className="badge-neon">{t('common.today')}</span>
+                    <span className="badge badge-primary">{t('common.today')}</span>
                   )}
                 </div>
                 <div className="text-2xl font-bold mb-4">

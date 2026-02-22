@@ -696,7 +696,6 @@ const RegisterPage = () => {
               {t("register.loginLink")}
             </Link>
           }
-          hasBeam
         >
           {/* ── Horizontal stepper ─────────────────────────────── */}
           <div className="wizard-steps">
@@ -793,7 +792,7 @@ const RegisterPage = () => {
               </label>
 
               {passportPreview && (
-                <div className="neon-preview-card">
+                <div className="preview-card">
                   <img src={passportPreview} alt="passport preview" />
                 </div>
               )}

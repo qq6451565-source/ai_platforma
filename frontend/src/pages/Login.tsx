@@ -52,8 +52,7 @@ const LoginPage = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.5rem",
-        background:
-          "radial-gradient(ellipse at 30% 10%, rgba(0,255,255,0.07) 0%, transparent 55%), radial-gradient(ellipse at 70% 90%, rgba(255,0,255,0.07) 0%, transparent 50%), var(--color-background)",
+        background: "var(--color-background)",
       }}
     >
       <div style={{ maxWidth: 420, width: "100%" }}>
@@ -64,7 +63,6 @@ const LoginPage = () => {
               {t("register.title")}
             </Link>
           }
-          hasBeam
         >
           <form
             onSubmit={handleSubmit}
