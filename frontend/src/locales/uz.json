@@ -90,7 +90,9 @@
     "forgotPassword": "Parolni unutdingizmi?",
     "loginSuccess": "Muvaffaqiyatli kirildi",
     "loginError": "Login yoki parol noto'g'ri",
-    "logoutConfirm": "Chiqishni tasdiqlaysizmi?"
+    "logoutConfirm": "Chiqishni tasdiqlaysizmi?",
+    "adminLogin": "Admin sifatida kirish",
+    "adminSeparateLogin": "Admin uchun alohida kirish sahifasidan foydalaning"
   },
   "layout": {
     "welcome": "Xush kelibsiz",
@@ -166,6 +168,7 @@
     "profileError": "Ma'lumotlarni saqlashda xatolik.",
     "passportSubtitle": "AI tekshiruvi uchun passportning old tomonini yuklang.",
     "passportUpload": "Passportni yuklash",
+    "passportUploadHint": "JPG yoki PNG formatdagi rasm, aniq va ravshan bo'lsin",
     "passportRequired": "Passport rasmi talab qilinadi.",
     "passportUploaded": "Passport muvaffaqiyatli yuklandi.",
     "passportError": "Passport yuklashda xatolik.",

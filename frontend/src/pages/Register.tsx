@@ -1,11 +1,12 @@
 import {
+  CheckOutlined,
   IdcardOutlined,
   PhoneOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Form, message } from "antd";
 import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login, registerFinalize, registerStart } from "../api/auth";
@@ -105,27 +106,14 @@ const faceMetricsFromLandmarks = (landmarks: NormalizedLandmark[], result: FaceL
   const rightLower2 = landmarks[LANDMARK_IDX.rightLower2];
 
   if (
-    !nose ||
-    !leftOuter ||
-    !leftInner ||
-    !rightInner ||
-    !rightOuter ||
-    !leftUpper ||
-    !leftUpper2 ||
-    !leftLower ||
-    !leftLower2 ||
-    !rightUpper ||
-    !rightUpper2 ||
-    !rightLower ||
-    !rightLower2
+    !nose || !leftOuter || !leftInner || !rightInner || !rightOuter ||
+    !leftUpper || !leftUpper2 || !leftLower || !leftLower2 ||
+    !rightUpper || !rightUpper2 || !rightLower || !rightLower2
   ) {
     return null;
   }
 
-  let minX = 1;
-  let maxX = 0;
-  let minY = 1;
-  let maxY = 0;
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
   for (const point of landmarks) {
     minX = Math.min(minX, point.x);
     maxX = Math.max(maxX, point.x);
@@ -142,29 +130,11 @@ const faceMetricsFromLandmarks = (landmarks: NormalizedLandmark[], result: FaceL
   const yaw = (nose.x - eyeCenterX) / eyeSpan;
   const roll = Math.atan2(rightOuter.y - leftOuter.y, rightOuter.x - leftOuter.x);
 
-  const leftEAR = eyeAspectRatio(
-    leftOuter,
-    leftUpper,
-    leftUpper2,
-    leftInner,
-    leftLower2,
-    leftLower
-  );
-  const rightEAR = eyeAspectRatio(
-    rightOuter,
-    rightUpper,
-    rightUpper2,
-    rightInner,
-    rightLower2,
-    rightLower
-  );
+  const leftEAR = eyeAspectRatio(leftOuter, leftUpper, leftUpper2, leftInner, leftLower2, leftLower);
+  const rightEAR = eyeAspectRatio(rightOuter, rightUpper, rightUpper2, rightInner, rightLower2, rightLower);
 
   return {
-    cx,
-    cy,
-    area,
-    yaw,
-    roll,
+    cx, cy, area, yaw, roll,
     ear: (leftEAR + rightEAR) / 2,
     blinkLeft: blendshapeScore(result, "eyeBlinkLeft"),
     blinkRight: blendshapeScore(result, "eyeBlinkRight"),
@@ -213,6 +183,7 @@ const RegisterPage = () => {
   const [livenessStage, setLivenessStage] = useState<LivenessStage>("idle");
   const [scannerNotice, setScannerNotice] = useState<string | null>(null);
   const [scannerBooting, setScannerBooting] = useState(false);
+  const [scanFailed, setScanFailed] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -240,7 +211,7 @@ const RegisterPage = () => {
   const livenessTasks = useMemo(
     () => [
       { key: "align", label: t("register.alignFace") },
-      { key: "left", label: t("register.lookLeft") },
+      { key: "left",  label: t("register.lookLeft") },
       { key: "right", label: t("register.lookRight") },
       { key: "blink", label: t("register.blinkEyes") },
     ],
@@ -248,64 +219,44 @@ const RegisterPage = () => {
   );
 
   const livenessInstruction = useMemo(() => {
-    if (livenessStage === "align") return t("register.alignFaceHint");
-    if (livenessStage === "left") return t("register.lookLeftHint");
-    if (livenessStage === "right") return t("register.lookRightHint");
-    if (livenessStage === "blink") return t("register.blinkEyesHint");
+    if (livenessStage === "align")     return t("register.alignFaceHint");
+    if (livenessStage === "left")      return t("register.lookLeftHint");
+    if (livenessStage === "right")     return t("register.lookRightHint");
+    if (livenessStage === "blink")     return t("register.blinkEyesHint");
     if (livenessStage === "capturing") return t("register.capturingHint");
-    if (livenessStage === "done") return t("register.submittingHint");
-    return t("register.startSelfieHint");
+    if (livenessStage === "done")      return t("register.submittingHint");
+    return null;
   }, [livenessStage, t]);
 
   const livenessProgress = useMemo(() => {
-    if (livenessStage === "idle") return 0;
-    if (livenessStage === "align") return 25;
-    if (livenessStage === "left") return 50;
-    if (livenessStage === "right") return 75;
-    if (livenessStage === "blink") return 90;
+    if (livenessStage === "idle")      return 0;
+    if (livenessStage === "align")     return 25;
+    if (livenessStage === "left")      return 50;
+    if (livenessStage === "right")     return 75;
+    if (livenessStage === "blink")     return 90;
     if (livenessStage === "capturing") return 95;
     return 100;
   }, [livenessStage]);
 
   useEffect(() => {
-    if (!passportFile) {
-      setPassportPreview(null);
-      return;
-    }
+    if (!passportFile) { setPassportPreview(null); return; }
     const url = URL.createObjectURL(passportFile);
     setPassportPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [passportFile]);
 
   useEffect(() => {
-    if (!selfieFile) {
-      setSelfiePreview(null);
-      return;
-    }
+    if (!selfieFile) { setSelfiePreview(null); return; }
     const url = URL.createObjectURL(selfieFile);
     setSelfiePreview(url);
     return () => URL.revokeObjectURL(url);
   }, [selfieFile]);
 
-  useEffect(() => {
-    livenessStageRef.current = livenessStage;
-  }, [livenessStage]);
-
-  useEffect(() => {
-    cameraActiveRef.current = cameraActive;
-  }, [cameraActive]);
-
-  useEffect(() => {
-    videoReadyRef.current = videoReady;
-  }, [videoReady]);
-
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
-
-  useEffect(() => {
-    scannerNoticeRef.current = scannerNotice;
-  }, [scannerNotice]);
+  useEffect(() => { livenessStageRef.current = livenessStage; }, [livenessStage]);
+  useEffect(() => { cameraActiveRef.current = cameraActive; }, [cameraActive]);
+  useEffect(() => { videoReadyRef.current = videoReady; }, [videoReady]);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+  useEffect(() => { scannerNoticeRef.current = scannerNotice; }, [scannerNotice]);
 
   const setScannerNoticeSafe = (value: string | null) => {
     if (scannerNoticeRef.current === value) return;
@@ -328,10 +279,7 @@ const RegisterPage = () => {
         const vision = await import("@mediapipe/tasks-vision");
         const fileset = await vision.FilesetResolver.forVisionTasks(LANDMARK_WASM_URL);
         const detector = await vision.FaceLandmarker.createFromOptions(fileset, {
-          baseOptions: {
-            modelAssetPath: LANDMARK_MODEL_URL,
-            delegate: "CPU",
-          },
+          baseOptions: { modelAssetPath: LANDMARK_MODEL_URL, delegate: "CPU" },
           runningMode: "VIDEO",
           numFaces: 1,
           outputFaceBlendshapes: true,
@@ -385,17 +333,13 @@ const RegisterPage = () => {
   useEffect(() => {
     return () => {
       stopCamera();
-      try {
-        landmarkerRef.current?.close();
-      } catch {}
+      try { landmarkerRef.current?.close(); } catch {}
       landmarkerRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (currentStep !== 2 && cameraActive) {
-      stopCamera();
-    }
+    if (currentStep !== 2 && cameraActive) stopCamera();
   }, [currentStep, cameraActive]);
 
   useEffect(() => {
@@ -413,9 +357,7 @@ const RegisterPage = () => {
     savePendingCredentials(username, password);
     const tokens = await login({ username, password });
     saveTokens(tokens.access, tokens.refresh);
-    try {
-      await fetchMe();
-    } catch {}
+    try { await fetchMe(); } catch {}
     return true;
   };
 
@@ -433,20 +375,15 @@ const RegisterPage = () => {
       if (res.login_username && res.login_password) {
         savePendingCredentials(res.login_username, res.login_password);
       }
-
       if (res.access) {
         saveTokens(res.access, res.refresh);
-        try {
-          await fetchMe();
-        } catch {}
+        try { await fetchMe(); } catch {}
       } else if (res.login_username && res.login_password) {
         await ensureSessionTokens(res.login_username, res.login_password);
       }
 
       message.success(res.detail || t("register.profileSaved"));
-      if (res.warning) {
-        message.warning(res.warning);
-      }
+      if (res.warning) message.warning(res.warning);
       setCurrentStep(1);
     } catch (error: any) {
       message.error(normalizeApiError(error, t("register.profileError")));
@@ -474,12 +411,7 @@ const RegisterPage = () => {
       setCameraActive(false);
       setVideoReady(false);
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          aspectRatio: { ideal: 4 / 3 },
-        },
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, aspectRatio: { ideal: 4 / 3 } },
         audio: false,
       });
 
@@ -491,10 +423,7 @@ const RegisterPage = () => {
         } else {
           await new Promise<void>((resolve) => {
             const video = videoRef.current!;
-            const onLoaded = () => {
-              video.removeEventListener("loadeddata", onLoaded);
-              resolve();
-            };
+            const onLoaded = () => { video.removeEventListener("loadeddata", onLoaded); resolve(); };
             video.addEventListener("loadeddata", onLoaded, { once: true });
             window.setTimeout(resolve, 1200);
           });
@@ -512,16 +441,12 @@ const RegisterPage = () => {
 
   const captureSelfie = () => {
     if (!videoRef.current || !canvasRef.current) return null;
-
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
     if (!context) return null;
 
-    const hasFrame =
-      video.videoWidth > 0 &&
-      video.videoHeight > 0 &&
-      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+    const hasFrame = video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
     if (!hasFrame) return null;
 
     canvas.width = video.videoWidth;
@@ -558,17 +483,10 @@ const RegisterPage = () => {
           setScannerNoticeSafe(t("register.retryingSubmit", { attempt: attempt + 1 }));
           await delay(retryDelays[attempt]);
         }
-
         try {
-          const res = await registerFinalize({
-            passport_front: passportFile,
-            selfie_image: capturedSelfie,
-          });
-
+          const res = await registerFinalize({ passport_front: passportFile, selfie_image: capturedSelfie });
           message.success(res.detail || t("register.completed"));
-          if (res.warning) {
-            message.warning(res.warning);
-          }
+          if (res.warning) message.warning(res.warning);
           if (res.login_username && res.login_password) {
             savePendingCredentials(res.login_username, res.login_password);
           }
@@ -585,6 +503,7 @@ const RegisterPage = () => {
       setStage("idle");
       setSelfieFile(null);
       setSelfiePreview(null);
+      setScanFailed(true);
     } finally {
       setLoading(false);
     }
@@ -596,9 +515,9 @@ const RegisterPage = () => {
       setScannerNoticeSafe(t("register.scanError"));
       setStage("idle");
       stopCamera();
+      setScanFailed(true);
       return;
     }
-
     setSelfieFile(selfie);
     setStage("done");
     setScannerNoticeSafe(t("register.submittingHint"));
@@ -613,17 +532,13 @@ const RegisterPage = () => {
       !cameraActiveRef.current ||
       !videoReadyRef.current ||
       loadingRef.current
-    ) {
-      return;
-    }
-    analysisBusyRef.current = true;
+    ) return;
 
+    analysisBusyRef.current = true;
     try {
       const video = videoRef.current;
       const stage = livenessStageRef.current;
-      if (stage === "idle" || stage === "done" || stage === "capturing") {
-        return;
-      }
+      if (stage === "idle" || stage === "done" || stage === "capturing") return;
 
       const detector = landmarkerRef.current ?? (await ensureFaceLandmarker());
       const result = detector.detectForVideo(video, performance.now());
@@ -643,111 +558,51 @@ const RegisterPage = () => {
         return;
       }
 
-      if (metrics.area < FACE_AREA_MIN) {
-        stableFrameRef.current = 0;
-        setScannerNoticeSafe(t("register.faceMoveCloser"));
-        return;
-      }
-      if (metrics.area > FACE_AREA_MAX) {
-        stableFrameRef.current = 0;
-        setScannerNoticeSafe(t("register.faceMoveAway"));
-        return;
-      }
-      if (Math.abs(metrics.roll) > ROLL_MAX_RAD) {
-        stableFrameRef.current = 0;
-        setScannerNoticeSafe(t("register.straightHead"));
-        return;
-      }
+      if (metrics.area < FACE_AREA_MIN) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.faceMoveCloser")); return; }
+      if (metrics.area > FACE_AREA_MAX) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.faceMoveAway")); return; }
+      if (Math.abs(metrics.roll) > ROLL_MAX_RAD) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.straightHead")); return; }
 
-      const centeredStrict =
-        Math.abs(metrics.cx - 0.5) <= ALIGN_CENTER_X_MAX && Math.abs(metrics.cy - 0.5) <= ALIGN_CENTER_Y_MAX;
-      const centeredLoose = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
+      const centeredStrict = Math.abs(metrics.cx - 0.5) <= ALIGN_CENTER_X_MAX && Math.abs(metrics.cy - 0.5) <= ALIGN_CENTER_Y_MAX;
+      const centeredLoose  = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
       const yaw = metrics.yaw * yawDirectionRef.current;
 
       if (stage === "align") {
         const aligned = centeredStrict && Math.abs(yaw) <= ALIGN_YAW_MAX;
-        if (!aligned) {
-          stableFrameRef.current = 0;
-          setScannerNoticeSafe(t("register.holdStill"));
-          return;
-        }
-
+        if (!aligned) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.holdStill")); return; }
         baselineEarRef.current =
           baselineEarRef.current === null ? metrics.ear : baselineEarRef.current * 0.88 + metrics.ear * 0.12;
         stableFrameRef.current += 1;
         setScannerNoticeSafe(t("register.holdStill"));
-
-        if (stableFrameRef.current >= ALIGN_REQUIRED_FRAMES) {
-          setStage("left");
-          setScannerNoticeSafe(t("register.lookLeftHint"));
-        }
+        if (stableFrameRef.current >= ALIGN_REQUIRED_FRAMES) { setStage("left"); setScannerNoticeSafe(t("register.lookLeftHint")); }
         return;
       }
 
-      if (!centeredLoose) {
-        stableFrameRef.current = 0;
-        setScannerNoticeSafe(t("register.alignFaceHint"));
-        return;
-      }
+      if (!centeredLoose) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.alignFaceHint")); return; }
 
       if (stage === "left") {
-        if (yaw >= TURN_YAW_MIN) {
-          yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1;
-          stableFrameRef.current = 0;
-          setScannerNoticeSafe(t("register.turnLeftMore"));
-          return;
-        }
-
-        if (yaw <= -TURN_YAW_MIN) {
-          stableFrameRef.current += 1;
-          setScannerNoticeSafe(t("register.holdStill"));
-          if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) {
-            setStage("right");
-            setScannerNoticeSafe(t("register.lookRightHint"));
-          }
-        } else {
-          stableFrameRef.current = 0;
-          setScannerNoticeSafe(t("register.turnLeftMore"));
-        }
+        if (yaw >= TURN_YAW_MIN) { yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1; stableFrameRef.current = 0; setScannerNoticeSafe(t("register.turnLeftMore")); return; }
+        if (yaw <= -TURN_YAW_MIN) { stableFrameRef.current += 1; setScannerNoticeSafe(t("register.holdStill")); if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) { setStage("right"); setScannerNoticeSafe(t("register.lookRightHint")); } }
+        else { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.turnLeftMore")); }
         return;
       }
 
       if (stage === "right") {
-        if (yaw <= -TURN_YAW_MIN) {
-          yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1;
-          stableFrameRef.current = 0;
-          setScannerNoticeSafe(t("register.turnRightMore"));
-          return;
-        }
-
-        if (yaw >= TURN_YAW_MIN) {
-          stableFrameRef.current += 1;
-          setScannerNoticeSafe(t("register.holdStill"));
-          if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) {
-            setStage("blink");
-            setScannerNoticeSafe(t("register.blinkPrompt"));
-          }
-        } else {
-          stableFrameRef.current = 0;
-          setScannerNoticeSafe(t("register.turnRightMore"));
-        }
+        if (yaw <= -TURN_YAW_MIN) { yawDirectionRef.current = (yawDirectionRef.current * -1) as 1 | -1; stableFrameRef.current = 0; setScannerNoticeSafe(t("register.turnRightMore")); return; }
+        if (yaw >= TURN_YAW_MIN) { stableFrameRef.current += 1; setScannerNoticeSafe(t("register.holdStill")); if (stableFrameRef.current >= TURN_REQUIRED_FRAMES) { setStage("blink"); setScannerNoticeSafe(t("register.blinkPrompt")); } }
+        else { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.turnRightMore")); }
         return;
       }
 
       if (stage === "blink") {
         const baselineEar = baselineEarRef.current ?? metrics.ear;
-        const closedByEar = metrics.ear <= baselineEar * BLINK_CLOSED_RATIO;
-        const openedByEar = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
-
-        const leftBlink = metrics.blinkLeft;
-        const rightBlink = metrics.blinkRight;
-        const closedByBlend =
-          leftBlink !== null && rightBlink !== null && leftBlink > 0.45 && rightBlink > 0.45;
-        const openedByBlend =
-          leftBlink !== null && rightBlink !== null && leftBlink < 0.2 && rightBlink < 0.2;
-
-        const eyesClosed = closedByBlend || closedByEar;
-        const eyesOpened = openedByBlend || openedByEar;
+        const closedByEar   = metrics.ear <= baselineEar * BLINK_CLOSED_RATIO;
+        const openedByEar   = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
+        const leftBlink     = metrics.blinkLeft;
+        const rightBlink    = metrics.blinkRight;
+        const closedByBlend = leftBlink !== null && rightBlink !== null && leftBlink > 0.45 && rightBlink > 0.45;
+        const openedByBlend = leftBlink !== null && rightBlink !== null && leftBlink < 0.2 && rightBlink < 0.2;
+        const eyesClosed    = closedByBlend || closedByEar;
+        const eyesOpened    = openedByBlend || openedByEar;
 
         if (!blinkClosedRef.current) {
           if (eyesClosed) {
@@ -763,10 +618,7 @@ const RegisterPage = () => {
           return;
         }
 
-        if (!eyesOpened) {
-          setScannerNoticeSafe(t("register.blinkPrompt"));
-          return;
-        }
+        if (!eyesOpened) { setScannerNoticeSafe(t("register.blinkPrompt")); return; }
 
         setStage("capturing");
         setScannerNoticeSafe(t("register.capturingHint"));
@@ -779,12 +631,14 @@ const RegisterPage = () => {
       stopAnalysis();
       stopCamera();
       setStage("idle");
+      setScanFailed(true);
     } finally {
       analysisBusyRef.current = false;
     }
   };
 
   const startSelfieFlow = async () => {
+    setScanFailed(false);
     setScannerNoticeSafe(t("register.initializingScanner"));
     setScannerBooting(true);
     setSelfieFile(null);
@@ -798,6 +652,7 @@ const RegisterPage = () => {
       setScannerBooting(false);
       autoScanStartedRef.current = false;
       setScannerNoticeSafe(t("register.scanError"));
+      setScanFailed(true);
       return;
     }
 
@@ -805,21 +660,30 @@ const RegisterPage = () => {
     if (!started) {
       setScannerBooting(false);
       autoScanStartedRef.current = false;
+      setScanFailed(true);
       return;
     }
 
     setScannerBooting(false);
-
     setStage("align");
-    setScannerNoticeSafe(t("register.alignFaceHint"));
+    setScannerNoticeSafe(null);
 
-    if (analysisTimerRef.current) {
-      window.clearInterval(analysisTimerRef.current);
-    }
-    analysisTimerRef.current = window.setInterval(() => {
-      void analyzeLiveness();
-    }, ANALYZE_INTERVAL_MS);
+    if (analysisTimerRef.current) window.clearInterval(analysisTimerRef.current);
+    analysisTimerRef.current = window.setInterval(() => { void analyzeLiveness(); }, ANALYZE_INTERVAL_MS);
   };
+
+  const handleRetryScan = () => {
+    autoScanStartedRef.current = false;
+    setScanFailed(false);
+    void startSelfieFlow();
+  };
+
+  /* ── Determine oval CSS state ──────────────────────────────── */
+  const scannerFrameClass = [
+    "scanner-frame",
+    cameraActive ? "active" : "",
+    livenessStage === "done" ? "done-state" : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <div className="registration-page">
@@ -834,20 +698,30 @@ const RegisterPage = () => {
           }
           hasBeam
         >
+          {/* ── Horizontal stepper ─────────────────────────────── */}
           <div className="wizard-steps">
             {stepTitles.map((title, index) => (
-              <div
-                key={title}
-                className={`wizard-step ${index === currentStep ? "active" : ""} ${
-                  index < currentStep ? "done" : ""
-                }`}
-              >
-                <div className="step-index">{index + 1}</div>
-                <span>{title}</span>
-              </div>
+              <Fragment key={title}>
+                <div
+                  className={[
+                    "wizard-step",
+                    index === currentStep ? "active" : "",
+                    index < currentStep ? "done" : "",
+                  ].filter(Boolean).join(" ")}
+                >
+                  <div className="step-circle">
+                    {index < currentStep ? <CheckOutlined /> : index + 1}
+                  </div>
+                  <span className="step-label">{title}</span>
+                </div>
+                {index < stepTitles.length - 1 && (
+                  <div className={`step-connector ${index < currentStep ? "done" : ""}`} />
+                )}
+              </Fragment>
             ))}
           </div>
 
+          {/* ── Step 0: Personal details ─────────────────────── */}
           {currentStep === 0 && (
             <Form
               form={form}
@@ -894,27 +768,29 @@ const RegisterPage = () => {
             </Form>
           )}
 
+          {/* ── Step 1: Passport upload ──────────────────────── */}
           {currentStep === 1 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.passportSubtitle")}</p>
+
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setPassportFile(file);
-                }}
+                onChange={(e) => setPassportFile(e.target.files?.[0] || null)}
                 className="hidden-file-input"
                 id="passport-upload-input"
               />
-              <Button
-                variant="outline"
-                icon={<IdcardOutlined />}
-                block
-                onClick={() => document.getElementById("passport-upload-input")?.click()}
+
+              <label
+                htmlFor="passport-upload-input"
+                className={`passport-upload-zone ${passportFile ? "has-file" : ""}`}
               >
-                {t("register.passportUpload")}
-              </Button>
+                <IdcardOutlined className="upload-zone-icon" />
+                <span className="upload-zone-title">
+                  {passportFile ? passportFile.name : t("register.passportUpload")}
+                </span>
+                <span className="upload-zone-hint">{t("register.passportUploadHint")}</span>
+              </label>
 
               {passportPreview && (
                 <div className="neon-preview-card">
@@ -933,12 +809,14 @@ const RegisterPage = () => {
             </div>
           )}
 
+          {/* ── Step 2: Face scan ───────────────────────────── */}
           {currentStep === 2 && (
             <div className="wizard-step-body">
               <p className="wizard-text">{t("register.faceSubtitle")}</p>
 
               <div className="scanner-section">
-                <div className={`scanner-frame ${cameraActive ? "active" : ""}`}>
+                {/* Video frame */}
+                <div className={scannerFrameClass}>
                   <video
                     ref={videoRef}
                     className="scanner-video"
@@ -949,40 +827,91 @@ const RegisterPage = () => {
                     onLoadedMetadata={() => setVideoReady(true)}
                   />
                   <canvas ref={canvasRef} className="scanner-canvas" />
+
+                  {/* Placeholder when camera off */}
+                  {!cameraActive && !selfiePreview && !scannerBooting && (
+                    <div className="scanner-placeholder">
+                      {t("register.startSelfieHint")}
+                    </div>
+                  )}
+
+                  {/* Selfie preview after capture (before submit finishes) */}
                   {!cameraActive && selfiePreview && (
-                    <img src={selfiePreview} className="scanner-video" alt="selfie preview" />
+                    <img src={selfiePreview} className="scanner-video" alt="selfie preview" style={{ transform: "none" }} />
                   )}
-                  {!cameraActive && !selfiePreview && (
-                    <div className="scanner-placeholder">{t("register.startSelfieHint")}</div>
-                  )}
+
+                  {/* Scan-line overlay + oval guide */}
                   <div className="scanner-overlay" />
-                  <div className="scanner-oval" />
+                  {(cameraActive || scannerBooting) && <div className="scanner-oval" />}
+
+                  {/* Booting spinner */}
+                  {scannerBooting && (
+                    <div className="scanner-booting-overlay">
+                      <div className="scanner-spinner" />
+                      <span>{t("register.initializingScanner")}</span>
+                    </div>
+                  )}
+
+                  {/* Done overlay */}
+                  {livenessStage === "done" && selfieFile && !loading && (
+                    <div className="scanner-done-overlay">
+                      <CheckOutlined className="scanner-done-icon" />
+                      <span>{t("register.faceVerified")}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="scanner-status-list">
-                  {livenessTasks.map((task) => {
-                    const currentIndex = livenessTasks.findIndex((item) => item.key === livenessStage);
-                    const itemIndex = livenessTasks.findIndex((item) => item.key === task.key);
-                    const done = currentIndex > itemIndex || livenessStage === "done";
-                    const active = livenessStage === task.key;
-                    return (
-                      <div
-                        key={task.key}
-                        className={`status-chip ${done ? "success" : ""} ${active ? "active" : ""}`}
-                      >
-                        {task.label}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="scanner-progress">
-                  <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
+                {/* Task chips */}
+                {livenessStage !== "idle" && (
+                  <div className="scanner-tasks">
+                    {livenessTasks.map((task) => {
+                      const currentIndex = livenessTasks.findIndex((item) => item.key === livenessStage);
+                      const itemIndex    = livenessTasks.findIndex((item) => item.key === task.key);
+                      const done   = currentIndex > itemIndex || livenessStage === "done";
+                      const active = livenessStage === task.key;
+                      return (
+                        <div
+                          key={task.key}
+                          className={["status-chip", done ? "success" : "", active ? "active" : ""].filter(Boolean).join(" ")}
+                        >
+                          {done && <CheckOutlined style={{ fontSize: "0.7rem" }} />}
+                          {task.label}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Progress bar */}
+                {livenessStage !== "idle" && (
+                  <div className="scanner-progress">
+                    <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
+                  </div>
+                )}
+
+                {/* Instruction + notice */}
+                <div className="scanner-instruction">
+                  {livenessInstruction && (
+                    <div className="scanner-instruction-main">{livenessInstruction}</div>
+                  )}
+                  {scannerNotice && scannerNotice !== livenessInstruction && (
+                    <div className="scanner-instruction-sub">{scannerNotice}</div>
+                  )}
                 </div>
 
-                <div className="wizard-text">{livenessInstruction}</div>
-                {scannerNotice && <div className="wizard-hint">{scannerNotice}</div>}
-                {!cameraActive && !selfieFile && <div className="wizard-hint">{t("register.selfieRequired")}</div>}
-                {selfieFile && <div className="status-chip success">{t("register.faceVerified")}</div>}
+                {/* Retry button */}
+                {scanFailed && !loading && livenessStage === "idle" && !cameraActive && (
+                  <div className="scanner-retry">
+                    <Button variant="outline" onClick={handleRetryScan} size="sm">
+                      {t("register.scanNow")}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Submitting loading notice */}
+                {loading && livenessStage === "done" && (
+                  <div className="wizard-info">{t("register.submittingHint")}</div>
+                )}
               </div>
 
               <div className="wizard-actions">

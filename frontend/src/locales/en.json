@@ -90,7 +90,9 @@
     "forgotPassword": "Forgot password?",
     "loginSuccess": "Login successful",
     "loginError": "Invalid email or password",
-    "logoutConfirm": "Are you sure you want to logout?"
+    "logoutConfirm": "Are you sure you want to logout?",
+    "adminLogin": "Sign in as admin",
+    "adminSeparateLogin": "Please use the dedicated admin login page"
   },
   "layout": {
     "welcome": "Welcome",
@@ -166,6 +168,7 @@
     "profileError": "Unable to save personal details.",
     "passportSubtitle": "Upload the front side of your passport for AI verification.",
     "passportUpload": "Upload passport front",
+    "passportUploadHint": "JPG or PNG image, make sure it is clear and readable",
     "passportRequired": "Passport image is required.",
     "passportUploaded": "Passport uploaded successfully.",
     "passportError": "Failed to upload passport.",

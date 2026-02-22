@@ -1,8 +1,9 @@
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Typography, message } from "antd";
+import { message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { login } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { clearTokens, saveTokens } from "../utils/token";
@@ -10,14 +11,15 @@ import { getDefaultRedirect } from "../utils/roleRedirect";
 import { Button, Input, Card } from "../components/ui";
 
 const LoginPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ username: "", password: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.password) {
-      message.error("Iltimos barcha maydonlarni to'ldiring");
+      message.error(t("auth.loginError"));
       return;
     }
 
@@ -28,44 +30,61 @@ const LoginPage = () => {
       const me = await fetchMe();
       if (me.role === "admin") {
         clearTokens();
-        message.error("Admin uchun alohida kirish sahifasidan foydalaning");
+        message.error(t("auth.adminSeparateLogin"));
         return;
       }
       qc.setQueryData(["me", tokens.access], me);
-      message.success("Muvaffaqiyatli kirdingiz");
+      message.success(t("auth.loginSuccess"));
       window.location.href = getDefaultRedirect(me.role, me.role === "student" && !me.group);
     } catch (err: any) {
       clearTokens();
-      message.error(err?.response?.data?.detail || "Login muvaffaqiyatsiz");
+      message.error(err?.response?.data?.detail || t("auth.loginError"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex-center h-screen bg-background p-4 animate-fade-in">
-      <div style={{ maxWidth: '420px', width: '100%' }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1.5rem",
+        background:
+          "radial-gradient(ellipse at 30% 10%, rgba(0,255,255,0.07) 0%, transparent 55%), radial-gradient(ellipse at 70% 90%, rgba(255,0,255,0.07) 0%, transparent 50%), var(--color-background)",
+      }}
+    >
+      <div style={{ maxWidth: 420, width: "100%" }}>
         <Card
-          className="w-full"
-          title="Kirish"
-          extra={<Link to="/register" className="body-sm">Ro'yxatdan o'tish</Link>}
+          title={t("common.login")}
+          extra={
+            <Link to="/register" className="body-sm">
+              {t("register.title")}
+            </Link>
+          }
+          hasBeam
         >
-          <form onSubmit={handleSubmit} className="d-flex flex-direction-column gap-4" style={{ gap: '1rem', display: 'flex', flexDirection: 'column' }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
             <Input
               label="Username"
               icon={<UserOutlined />}
               placeholder="username"
               value={formData.username}
-              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               required
             />
             <Input
-              label="Parol"
+              label={t("auth.password")}
               type="password"
               icon={<LockOutlined />}
-              placeholder="••••••"
+              placeholder="••••••••"
               value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
             />
             <Button
@@ -73,12 +92,14 @@ const LoginPage = () => {
               block
               isLoading={loading}
               size="lg"
-              className="mt-2"
+              style={{ marginTop: "0.25rem" }}
             >
-              Kirish
+              {t("common.login")}
             </Button>
-            <div className="text-center mt-2">
-              <Link to="/admin-login" className="caption">Admin sifatida kirish</Link>
+            <div style={{ textAlign: "center", marginTop: "0.25rem" }}>
+              <Link to="/admin-login" className="caption" style={{ opacity: 0.6 }}>
+                {t("auth.adminLogin")}
+              </Link>
             </div>
           </form>
         </Card>
