@@ -143,7 +143,7 @@ const CleanDemo: React.FC = () => {
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
         gap: '1.5rem'
       }}>
-        <Card hover style={{ padding: '2rem' }}>
+        <Card hoverable style={{ padding: '2rem' }}>
           <div style={{ 
             width: '48px',
             height: '48px',
@@ -165,7 +165,7 @@ const CleanDemo: React.FC = () => {
           </p>
         </Card>
 
-        <Card hover style={{ padding: '2rem' }}>
+        <Card hoverable style={{ padding: '2rem' }}>
           <div style={{ 
             width: '48px',
             height: '48px',
@@ -187,7 +187,7 @@ const CleanDemo: React.FC = () => {
           </p>
         </Card>
 
-        <Card hover style={{ padding: '2rem' }}>
+        <Card hoverable style={{ padding: '2rem' }}>
           <div style={{ 
             width: '48px',
             height: '48px',
