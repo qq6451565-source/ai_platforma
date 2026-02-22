@@ -59,16 +59,16 @@
 }
 
 .btn-secondary {
-  background: rgba(236, 72, 153, 0.10);
-  border: 1px solid rgba(236, 72, 153, 0.25);
-  color: var(--accent-2);
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(236, 72, 153, 0.18);
-  border-color: var(--accent-2);
-  box-shadow: 0 0 20px rgba(236, 72, 153, 0.30);
-  transform: translateY(-2px);
+  background: var(--bg-elevated-2);
+  border-color: var(--color-text-muted);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
@@ -94,9 +94,8 @@
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--accent-10);
+  background: var(--bg-elevated-2);
   color: var(--accent);
-  box-shadow: 0 0 15px var(--accent-glow);
 }
 
 .btn-error {

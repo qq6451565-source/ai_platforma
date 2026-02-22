@@ -35,11 +35,11 @@
   --neon-text:          #111827;
   --neon-text-dim:      #4B5563;
 
-  /* ── BACKGROUNDS (Pure White) ────────────────────────────── */
+  /* ── BACKGROUNDS (All White) ─────────────────────────────── */
   --color-background:   #FFFFFF;
   --bg-elevated-1:      #FFFFFF;
-  --bg-elevated-2:      #FAFAFA;
-  --bg-elevated-3:      #F5F5F5;
+  --bg-elevated-2:      #FFFFFF;
+  --bg-elevated-3:      #FFFFFF;
   --color-surface:      #FFFFFF;
 
   /* ── BORDERS ─────────────────────────────────────────────── */
