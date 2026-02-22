@@ -68,7 +68,7 @@
 /* ── Premium glow pulse ──────────────────────────────────────── */
 @keyframes neonPulse {
   0%, 100% { box-shadow: var(--shadow-glow-primary); }
-  50%       { box-shadow: 0 0 30px rgba(139,92,246,0.30), 0 0 60px rgba(139,92,246,0.18); }
+  50%       { box-shadow: 0 0 30px rgba(20,184,166,0.30), 0 0 60px rgba(20,184,166,0.18); }
 }
 
 @keyframes borderGlow {

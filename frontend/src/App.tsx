@@ -1,4 +1,5 @@
 import { Spin } from "antd";
+import { ToastProvider } from "./components/ui";
 import {
   CalendarOutlined,
   FileDoneOutlined,
@@ -204,52 +205,54 @@ const App = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin-login" element={<AdminLoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
-        <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
-          <Route path="live/:lessonId" element={<LiveRoomPage />} />
-          <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} isPending={isPendingStudent} />}>
-            <Route path="dashboard" element={<StudentDashboard />} />
-            <Route path="schedule" element={<StudentSchedule />} />
-            <Route path="materials" element={<StudentMaterials />} />
-            <Route path="assignments" element={<StudentAssignments />} />
-            <Route path="tests" element={<StudentTests />} />
-            <Route path="grades" element={<StudentGrades />} />
-            <Route path="attendance" element={<StudentAttendance />} />
-            <Route path="profile" element={<StudentProfile />} />
-            <Route path="*" element={<Navigate to="/app/student/dashboard" replace />} />
+    <ToastProvider>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
+          <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
+            <Route path="live/:lessonId" element={<LiveRoomPage />} />
+            <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} isPending={isPendingStudent} />}>
+              <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="schedule" element={<StudentSchedule />} />
+              <Route path="materials" element={<StudentMaterials />} />
+              <Route path="assignments" element={<StudentAssignments />} />
+              <Route path="tests" element={<StudentTests />} />
+              <Route path="grades" element={<StudentGrades />} />
+              <Route path="attendance" element={<StudentAttendance />} />
+              <Route path="profile" element={<StudentProfile />} />
+              <Route path="*" element={<Navigate to="/app/student/dashboard" replace />} />
+            </Route>
+            <Route path="teacher" element={<TeacherRoute isTeacher={isTeacher} role={user?.role} loading={isLoading} />}>
+              <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="lessons" element={<TeacherLessons />} />
+              <Route path="assignments" element={<TeacherAssignments />} />
+              <Route path="tests" element={<TeacherTests />} />
+              <Route path="grades" element={<TeacherGrades />} />
+              <Route path="attendance" element={<TeacherAttendance />} />
+              <Route path="materials" element={<TeacherMaterials />} />
+              <Route path="submissions" element={<TeacherSubmissions />} />
+              <Route path="profile" element={<TeacherProfile />} />
+              <Route path="*" element={<Navigate to="/app/teacher/dashboard" replace />} />
+            </Route>
+            <Route path="admin" element={<AdminRoute isAdmin={isAdmin} role={user?.role} loading={isLoading} />}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="profile" element={<AdminProfile />} />
+              <Route path="users" element={<AdminUsersHub />} />
+              <Route path="enrollment" element={<AdminEnrollmentHub />} />
+              <Route path="university" element={<AdminUniversityHub />} />
+              <Route path="learning" element={<AdminLearningHub />} />
+              <Route path="ai-settings" element={<AdminAISettings />} />
+              <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
+            </Route>
+            <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
           </Route>
-          <Route path="teacher" element={<TeacherRoute isTeacher={isTeacher} role={user?.role} loading={isLoading} />}>
-            <Route path="dashboard" element={<TeacherDashboard />} />
-            <Route path="lessons" element={<TeacherLessons />} />
-            <Route path="assignments" element={<TeacherAssignments />} />
-            <Route path="tests" element={<TeacherTests />} />
-            <Route path="grades" element={<TeacherGrades />} />
-            <Route path="attendance" element={<TeacherAttendance />} />
-            <Route path="materials" element={<TeacherMaterials />} />
-            <Route path="submissions" element={<TeacherSubmissions />} />
-            <Route path="profile" element={<TeacherProfile />} />
-            <Route path="*" element={<Navigate to="/app/teacher/dashboard" replace />} />
-          </Route>
-          <Route path="admin" element={<AdminRoute isAdmin={isAdmin} role={user?.role} loading={isLoading} />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="profile" element={<AdminProfile />} />
-            <Route path="users" element={<AdminUsersHub />} />
-            <Route path="enrollment" element={<AdminEnrollmentHub />} />
-            <Route path="university" element={<AdminUniversityHub />} />
-            <Route path="learning" element={<AdminLearningHub />} />
-            <Route path="ai-settings" element={<AdminAISettings />} />
-            <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
-          </Route>
-          <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ToastProvider>
   );
 };
 

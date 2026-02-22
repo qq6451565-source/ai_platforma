@@ -1,0 +1,48 @@
+.pull-to-refresh {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pull-to-refresh-indicator {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  transition: opacity var(--transition-fast);
+  z-index: 10;
+}
+
+.pull-to-refresh-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: var(--shadow-glow-primary);
+  transition: transform var(--transition-fast);
+}
+
+.pull-to-refresh-spinner.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.pull-to-refresh-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.pull-to-refresh-content {
+  transition: transform var(--transition-base);
+  will-change: transform;
+}

@@ -1,0 +1,126 @@
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--transition-base);
+}
+
+.stat-card:hover::before {
+  width: 6px;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-20);
+}
+
+.stat-card-primary::before {
+  background: var(--accent);
+}
+
+.stat-card-success::before {
+  background: var(--color-success);
+}
+
+.stat-card-warning::before {
+  background: var(--color-warning);
+}
+
+.stat-card-error::before {
+  background: var(--color-error);
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.stat-card-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--accent-10);
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.stat-card-success .stat-card-icon {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.stat-card-warning .stat-card-icon {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.stat-card-error .stat-card-icon {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.stat-card-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  line-height: 1;
+}
+
+.stat-card-trend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.stat-card-trend.positive {
+  color: var(--color-success);
+}
+
+.stat-card-trend.negative {
+  color: var(--color-error);
+}
+
+.stat-card-trend-icon {
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  .stat-card {
+    padding: var(--space-4);
+  }
+
+  .stat-card-value {
+    font-size: var(--font-size-2xl);
+  }
+}
