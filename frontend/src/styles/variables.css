@@ -35,11 +35,11 @@
   --neon-text:          #111827;
   --neon-text-dim:      #4B5563;
 
-  /* ── BACKGROUNDS (Light Mode Only) ──────────────────────── */
-  --color-background:   #F9FAFB;
+  /* ── BACKGROUNDS (Pure White) ────────────────────────────── */
+  --color-background:   #FFFFFF;
   --bg-elevated-1:      #FFFFFF;
-  --bg-elevated-2:      #F3F4F6;
-  --bg-elevated-3:      #E5E7EB;
+  --bg-elevated-2:      #FAFAFA;
+  --bg-elevated-3:      #F5F5F5;
   --color-surface:      #FFFFFF;
 
   /* ── BORDERS ─────────────────────────────────────────────── */
@@ -155,9 +155,7 @@
   --gradient-rainbow: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
   --gradient-vivid: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
   --gradient-success: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
-  --gradient-ambient:
-    radial-gradient(ellipse at 20% 10%,  rgba(37, 99, 235, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 90%,  rgba(59, 130, 246, 0.04) 0%, transparent 50%);
+  --gradient-ambient: none;
 
   /* ── Z-INDEX ─────────────────────────────────────────────── */
   --z-dropdown: 1000;
