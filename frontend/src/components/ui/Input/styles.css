@@ -23,8 +23,7 @@
   padding: 0 var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(22, 27, 51, 0.5);
-  backdrop-filter: blur(5px);
+  background: #FFFFFF;
   transition: all var(--transition-base);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
@@ -37,8 +36,8 @@
 .input-field:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-15);
-  background: white;
+  box-shadow: var(--shadow-focus);
+  background: #FFFFFF;
 }
 
 .input-field.error {
@@ -46,7 +45,7 @@
 }
 
 .input-field.error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1), 0 0 20px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px rgba(239, 68, 68, 0.20);
 }
 
 .input-error-message {

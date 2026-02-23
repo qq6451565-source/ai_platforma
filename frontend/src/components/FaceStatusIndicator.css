@@ -4,23 +4,22 @@
   display: inline-flex;
   align-items: center;
   padding: var(--space-2) var(--space-3);
-  background: rgba(22, 27, 51, 0.6);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  backdrop-filter: blur(8px);
   transition: all var(--transition-base);
   will-change: transform, opacity;
   overflow: hidden;
 }
 
 .face-status-indicator:hover {
-  border-color: rgba(0, 255, 255, 0.4);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
 }
 
 .face-status-scanning {
-  border-color: rgba(0, 255, 255, 0.5);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 10px rgba(0, 255, 255, 0.1);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-glow-primary);
 }
 
 /* Laser Scanner Line */
@@ -32,10 +31,10 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(0, 255, 255, 0.5) 50%,
+    var(--accent-50) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 10px var(--accent-glow);
   pointer-events: none;
   will-change: transform, opacity;
 }
@@ -52,8 +51,8 @@
 }
 
 .face-scanner-line::before {
-  background: #00ffff;
-  box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+  background: var(--accent);
+  box-shadow: 0 0 5px var(--accent-glow);
 }
 
 /* Face Status Content */
@@ -76,7 +75,7 @@
 
 .face-status-icon-loading {
   animation: spin 1s linear infinite;
-  color: #00ffff !important;
+  color: var(--accent) !important;
 }
 
 .face-status-text {

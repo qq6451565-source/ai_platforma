@@ -14,13 +14,13 @@
 }
 
 .card:hover {
-  border-color: rgba(0, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 255, 0.1);
+  border-color: var(--accent-20);
+  box-shadow: var(--shadow-md);
 }
 
 .card-hover:hover {
   transform: translateY(-2px);
-  border-color: var(--accent-20);
+  border-color: var(--accent);
   box-shadow: var(--shadow-lg);
 }
 
@@ -53,10 +53,10 @@
   background: conic-gradient(
     from var(--beam-angle),
     transparent 0deg,
-    var(--neon-cyan) 90deg,
-    var(--neon-magenta) 180deg,
+    var(--accent) 90deg,
+    var(--accent-2) 180deg,
     transparent 270deg,
-    var(--neon-cyan) 360deg
+    var(--accent) 360deg
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -92,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 255, 255, 0.03);
+  background: var(--bg-elevated-2);
 }
 
 .card-body {
@@ -102,7 +102,7 @@
 .card-footer {
   padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--color-border);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--bg-elevated-2);
 }
 
 @media (max-width: 768px) {

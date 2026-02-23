@@ -7,8 +7,7 @@
 
 .desktop-header {
   height: 64px;
-  background: rgba(10, 11, 30, 0.9);
-  backdrop-filter: blur(20px);
+  background: #FFFFFF;
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -17,7 +16,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-sm);
 }
 
 .desktop-header-left {
@@ -29,12 +28,11 @@
 .logo {
   font-size: 1.8rem;
   font-weight: 900;
-  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.04em;
-  filter: drop-shadow(0 0 10px var(--neon-glow-cyan));
 }
 
 .page-title-header {
@@ -62,7 +60,7 @@
 }
 
 .user-profile-trigger:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-elevated-2);
   border-color: var(--color-border);
 }
 
@@ -77,7 +75,7 @@
 .user-name {
   font-weight: 700;
   font-size: var(--font-size-sm);
-  color: var(--neon-cyan);
+  color: var(--color-text-primary);
 }
 
 .user-role {
@@ -96,7 +94,7 @@
   flex: 1;
   padding: var(--space-8);
   min-width: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(46, 26, 71, 0.1) 0%, transparent 100%);
+  background: var(--bg-elevated-2);
 }
 
 @media (max-width: 768px) {
