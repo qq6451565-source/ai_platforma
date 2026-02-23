@@ -1,0 +1,288 @@
+/* ═══════════════════════════════════════════════════════════════
+   TAYYOR MAVZULAR / THEME PRESETS
+   Tayyor dizayn mavzulari - faqat birini tanlang
+   Ready-made design themes - just choose one
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 1: PROFESSIONAL WHITE (Hozirgi)
+   Toza, professional oq dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-professional-white {
+  --theme-primary:           #3B82F6;
+  --theme-primary-hover:     #2563EB;
+  --theme-primary-active:    #1D4ED8;
+  --theme-secondary:         #6366F1;
+  --theme-tertiary:          #8B5CF6;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #F8FAFC;
+  --theme-bg-tertiary:       #F1F5F9;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #F1F5F9;
+  --theme-border-default:    #E2E8F0;
+  --theme-border-strong:     #CBD5E1;
+  
+  --theme-text-primary:      #0F172A;
+  --theme-text-secondary:    #475569;
+  --theme-text-muted:        #94A3B8;
+  --theme-text-disabled:     #CBD5E1;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 2: MODERN DARK
+   Zamonaviy qora dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-modern-dark {
+  --theme-primary:           #60A5FA;
+  --theme-primary-hover:     #93C5FD;
+  --theme-primary-active:    #3B82F6;
+  --theme-secondary:         #818CF8;
+  --theme-tertiary:          #A78BFA;
+  
+  --theme-bg-primary:        #0F172A;
+  --theme-bg-secondary:      #1E293B;
+  --theme-bg-tertiary:       #334155;
+  --theme-bg-elevated:       #1E293B;
+  
+  --theme-border-light:      rgba(255, 255, 255, 0.05);
+  --theme-border-default:    rgba(255, 255, 255, 0.10);
+  --theme-border-strong:     rgba(255, 255, 255, 0.20);
+  
+  --theme-text-primary:      #F1F5F9;
+  --theme-text-secondary:    #CBD5E1;
+  --theme-text-muted:        #94A3B8;
+  --theme-text-disabled:     #64748B;
+  
+  --theme-success:           #34D399;
+  --theme-warning:           #FBBF24;
+  --theme-error:             #F87171;
+  --theme-info:              #22D3EE;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 3: OCEAN BLUE
+   Okean ko'k dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-ocean-blue {
+  --theme-primary:           #0EA5E9;
+  --theme-primary-hover:     #0284C7;
+  --theme-primary-active:    #0369A1;
+  --theme-secondary:         #06B6D4;
+  --theme-tertiary:          #3B82F6;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #F0F9FF;
+  --theme-bg-tertiary:       #E0F2FE;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #E0F2FE;
+  --theme-border-default:    #BAE6FD;
+  --theme-border-strong:     #7DD3FC;
+  
+  --theme-text-primary:      #0C4A6E;
+  --theme-text-secondary:    #075985;
+  --theme-text-muted:        #0369A1;
+  --theme-text-disabled:     #BAE6FD;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 4: SUNSET ORANGE
+   Quyosh botishi to'q sariq dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-sunset-orange {
+  --theme-primary:           #F97316;
+  --theme-primary-hover:     #EA580C;
+  --theme-primary-active:    #C2410C;
+  --theme-secondary:         #FB923C;
+  --theme-tertiary:          #FDBA74;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #FFF7ED;
+  --theme-bg-tertiary:       #FFEDD5;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #FFEDD5;
+  --theme-border-default:    #FED7AA;
+  --theme-border-strong:     #FDBA74;
+  
+  --theme-text-primary:      #431407;
+  --theme-text-secondary:    #7C2D12;
+  --theme-text-muted:        #C2410C;
+  --theme-text-disabled:     #FED7AA;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 5: FOREST GREEN
+   O'rmon yashil dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-forest-green {
+  --theme-primary:           #059669;
+  --theme-primary-hover:     #047857;
+  --theme-primary-active:    #065F46;
+  --theme-secondary:         #10B981;
+  --theme-tertiary:          #34D399;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #F0FDF4;
+  --theme-bg-tertiary:       #DCFCE7;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #DCFCE7;
+  --theme-border-default:    #BBF7D0;
+  --theme-border-strong:     #86EFAC;
+  
+  --theme-text-primary:      #052E16;
+  --theme-text-secondary:    #14532D;
+  --theme-text-muted:        #166534;
+  --theme-text-disabled:     #BBF7D0;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 6: ROYAL PURPLE
+   Qirollik binafsha dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-royal-purple {
+  --theme-primary:           #7C3AED;
+  --theme-primary-hover:     #6D28D9;
+  --theme-primary-active:    #5B21B6;
+  --theme-secondary:         #8B5CF6;
+  --theme-tertiary:          #A78BFA;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #FAF5FF;
+  --theme-bg-tertiary:       #F3E8FF;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #F3E8FF;
+  --theme-border-default:    #E9D5FF;
+  --theme-border-strong:     #D8B4FE;
+  
+  --theme-text-primary:      #2E1065;
+  --theme-text-secondary:    #4C1D95;
+  --theme-text-muted:        #6D28D9;
+  --theme-text-disabled:     #E9D5FF;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 7: ROSE PINK
+   Atirgul pushti dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-rose-pink {
+  --theme-primary:           #E11D48;
+  --theme-primary-hover:     #BE123C;
+  --theme-primary-active:    #9F1239;
+  --theme-secondary:         #F43F5E;
+  --theme-tertiary:          #FB7185;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #FFF1F2;
+  --theme-bg-tertiary:       #FFE4E6;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #FFE4E6;
+  --theme-border-default:    #FECDD3;
+  --theme-border-strong:     #FDA4AF;
+  
+  --theme-text-primary:      #4C0519;
+  --theme-text-secondary:    #881337;
+  --theme-text-muted:        #BE123C;
+  --theme-text-disabled:     #FECDD3;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MAVZU 8: MINIMAL GRAY
+   Minimal kulrang dizayn
+   ═══════════════════════════════════════════════════════════════ */
+
+.theme-minimal-gray {
+  --theme-primary:           #475569;
+  --theme-primary-hover:     #334155;
+  --theme-primary-active:    #1E293B;
+  --theme-secondary:         #64748B;
+  --theme-tertiary:          #94A3B8;
+  
+  --theme-bg-primary:        #FFFFFF;
+  --theme-bg-secondary:      #F8FAFC;
+  --theme-bg-tertiary:       #F1F5F9;
+  --theme-bg-elevated:       #FFFFFF;
+  
+  --theme-border-light:      #F1F5F9;
+  --theme-border-default:    #E2E8F0;
+  --theme-border-strong:     #CBD5E1;
+  
+  --theme-text-primary:      #0F172A;
+  --theme-text-secondary:    #334155;
+  --theme-text-muted:        #64748B;
+  --theme-text-disabled:     #CBD5E1;
+  
+  --theme-success:           #10B981;
+  --theme-warning:           #F59E0B;
+  --theme-error:             #EF4444;
+  --theme-info:              #06B6D4;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   QANDAY ISHLATISH / HOW TO USE
+   ═══════════════════════════════════════════════════════════════
+   
+   1. global.css fayliga qo'shing:
+      @import './theme-presets.css';
+   
+   2. HTML ga class qo'shing:
+      <html class="theme-ocean-blue">
+      
+   3. Yoki JavaScript bilan o'zgartiring:
+      document.documentElement.className = 'theme-forest-green';
+   
+   4. Yoki React da:
+      <html className="theme-royal-purple">
+      
+   ═══════════════════════════════════════════════════════════════ */

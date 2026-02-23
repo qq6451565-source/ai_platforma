@@ -1,0 +1,39 @@
+/* ═══════════════════════════════════════════════════════════════
+   GRID LAYOUT STILLARI / GRID LAYOUT STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+.grid-layout {
+  display: grid;
+  width: 100%;
+}
+
+/* Oraliqlar / Gaps */
+.grid-gap-sm {
+  gap: var(--space-3);
+}
+
+.grid-gap-md {
+  gap: var(--space-4);
+}
+
+.grid-gap-lg {
+  gap: var(--space-6);
+}
+
+.grid-gap-xl {
+  gap: var(--space-8);
+}
+
+/* Mobil / Mobile */
+@media (max-width: 768px) {
+  .grid-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Planshet / Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-layout {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  }
+}

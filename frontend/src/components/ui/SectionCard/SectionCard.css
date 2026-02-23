@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════════════════════════════
+   SEKTSIYA KARTASI STILLARI / SECTION CARD STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+.section-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Karta sarlavhasi / Card header */
+.section-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--bg-elevated-2);
+}
+
+.section-card-header-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+
+.section-card-icon {
+  font-size: var(--font-size-xl);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-card-title-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-card-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.section-card-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: var(--space-1) 0 0 0;
+  line-height: 1.5;
+}
+
+.section-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Karta tanasi / Card body */
+.section-card-body {
+  flex: 1;
+  padding: var(--space-5);
+  overflow: auto;
+}
+
+.section-card-body.no-padding {
+  padding: 0;
+}
+
+.section-card-body.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Mobil / Mobile */
+@media (max-width: 768px) {
+  .section-card-header {
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .section-card-header-content {
+    width: 100%;
+  }
+
+  .section-card-title {
+    font-size: var(--font-size-md);
+  }
+
+  .section-card-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .section-card-body {
+    padding: var(--space-4);
+  }
+}

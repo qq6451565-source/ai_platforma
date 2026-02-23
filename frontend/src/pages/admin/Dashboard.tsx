@@ -13,7 +13,7 @@ import {
 import { fetchMaterials } from "../../api/materials";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
-import { Card } from "../../components/ui";
+import { PageContainer, SectionCard, GridLayout } from "../../components/ui";
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -104,56 +104,74 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="page-container animate-fade-in">
-      <h1 className="mb-6">{t('nav.dashboard')}</h1>
-      
+    <PageContainer title={t('nav.dashboard')}>
       {loading ? (
         <Skeleton active />
       ) : (
-        <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+        <GridLayout columns="auto" minColumnWidth="240px" gap="md">
           {stats.map((stat) => (
-            <div
+            <SectionCard
               key={stat.key}
-              className="clickable-row"
+              hoverable
               onClick={() => navigate(stat.to)}
-              style={{ cursor: 'pointer' }}
+              noPadding
             >
-              <Card hoverable hasBeam>
+              <div style={{ padding: 'var(--space-5)' }}>
                 <Statistic title={stat.title} value={stat.value} />
-              </Card>
-            </div>
+              </div>
+            </SectionCard>
           ))}
-        </div>
+        </GridLayout>
       )}
 
       {!loading && (
-        <div className="mt-8">
-          <h2 className="mb-4 h4 text-secondary">{t('nav.main')}</h2>
-          <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            <Card title={t('nav.enrollment')} hasBeam>
-               <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=windows")}>{t('nav.enrollment')}</div>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=applicants")}>{t('nav.students')}</div>
-               </div>
-            </Card>
-            <Card title={t('nav.academic')} hasBeam>
-              <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=directions")}>{t('nav.curriculum')}</div>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=subjects")}>{t('nav.subjects')}</div>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=groups")}>{t('nav.groups')}</div>
-               </div>
-            </Card>
-            <Card title={t('nav.learning')} hasBeam>
-              <div className="d-flex flex-direction-column gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=lessons")}>{t('nav.schedule')}</div>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=materials")}>{t('nav.materials')}</div>
-                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=tests")}>{t('nav.tests')}</div>
-               </div>
-            </Card>
-          </div>
+        <div style={{ marginTop: 'var(--space-8)' }}>
+          <h2 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>
+            {t('nav.main')}
+          </h2>
+          <GridLayout columns="auto" minColumnWidth="300px" gap="lg">
+            <SectionCard title={t('nav.enrollment')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=windows")}>
+                  {t('nav.enrollment')}
+                </div>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=applicants")}>
+                  {t('nav.students')}
+                </div>
+              </div>
+            </SectionCard>
+            
+            <SectionCard title={t('nav.academic')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=directions")}>
+                  {t('nav.curriculum')}
+                </div>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=subjects")}>
+                  {t('nav.subjects')}
+                </div>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=groups")}>
+                  {t('nav.groups')}
+                </div>
+              </div>
+            </SectionCard>
+            
+            <SectionCard title={t('nav.learning')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=lessons")}>
+                  {t('nav.schedule')}
+                </div>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=materials")}>
+                  {t('nav.materials')}
+                </div>
+                <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=tests")}>
+                  {t('nav.tests')}
+                </div>
+              </div>
+            </SectionCard>
+          </GridLayout>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

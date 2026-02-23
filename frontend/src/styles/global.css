@@ -1,7 +1,14 @@
 /* Google Fonts — Plus Jakarta Sans + Inter + JetBrains Mono */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-@import './variables.css';
+/* ═══════════════════════════════════════════════════════════════
+   TEMA TIZIMI / THEME SYSTEM
+   Barcha dizayn sozlamalari shu fayllardan boshqariladi
+   All design settings are controlled from these files
+   ═══════════════════════════════════════════════════════════════ */
+@import './theme-config.css';      /* Asosiy tema sozlamalari / Main theme configuration */
+@import './theme-presets.css';     /* Tayyor mavzular / Ready-made themes */
+@import './variables.css';         /* Eski o'zgaruvchilar / Legacy variables */
 @import './mixins.css';
 @import './utilities.css';
 @import './animations.css';

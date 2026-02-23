@@ -9,6 +9,10 @@ import App from "./App";
 import "@livekit/components-styles";
 import "./index.css";
 import "./i18n";
+import { loadSavedTheme } from "./utils/themeManager";
+
+// Saqlangan temani yuklash / Load saved theme
+loadSavedTheme();
 
 const queryClient = new QueryClient();
 

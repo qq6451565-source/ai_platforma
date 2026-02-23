@@ -5,7 +5,7 @@ import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Card, Button } from "../../components/ui";
+import { PageContainer, SectionCard, GridLayout, Button } from "../../components/ui";
 import { useTranslation } from "react-i18next";
 
 const StudentDashboard = () => {
@@ -47,14 +47,12 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="page-container animate-fade-in">
-      <div className="d-flex justify-between items-center mb-6">
-        <h1 className="m-0">{t('dashboard.title')}</h1>
-        <div className="body-sm text-secondary">{dayjs().format('DD.MM.YYYY')}</div>
-      </div>
-
-      <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <Card title={t('dashboard.todayLessons')} className="h-full" hasBeam>
+    <PageContainer 
+      title={t('dashboard.title')}
+      subtitle={dayjs().format('DD.MM.YYYY')}
+    >
+      <GridLayout columns="auto" minColumnWidth="320px" gap="lg">
+        <SectionCard title={t('dashboard.todayLessons')} loading={loadingLessons}>
           {loadingLessons ? (
             <Skeleton active />
           ) : (
@@ -71,7 +69,7 @@ const StudentDashboard = () => {
                     extra={
                       <Button
                         size="sm"
-                        variant={liveStatus.canJoin ? "neon" : "outline"}
+                        variant={liveStatus.canJoin ? "primary" : "outline"}
                         disabled={!liveStatus.canJoin}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -98,9 +96,9 @@ const StudentDashboard = () => {
               }}
             />
           )}
-        </Card>
+        </SectionCard>
 
-        <Card title={t('dashboard.todayAssignments')} className="h-full" hasBeam>
+        <SectionCard title={t('dashboard.todayAssignments')} loading={loadingAssignments}>
           {loadingAssignments ? (
             <Skeleton active />
           ) : (
@@ -121,9 +119,9 @@ const StudentDashboard = () => {
               )}
             />
           )}
-        </Card>
+        </SectionCard>
 
-        <Card title={t('dashboard.todayTests')} className="h-full" hasBeam>
+        <SectionCard title={t('dashboard.todayTests')} loading={loadingTests}>
           {loadingTests ? (
             <Skeleton active />
           ) : (
@@ -144,9 +142,9 @@ const StudentDashboard = () => {
               )}
             />
           )}
-        </Card>
-      </div>
-    </div>
+        </SectionCard>
+      </GridLayout>
+    </PageContainer>
   );
 };
 
