@@ -22,7 +22,7 @@ import './ThemeSwitcher.css';
 const { Title, Text } = Typography;
 
 export const ThemeSwitcher: React.FC = () => {
-  const [currentTheme, setCurrentTheme] = useState<string>(getCurrentTheme());
+  const [currentTheme, setCurrentTheme] = useState<ThemePreset | 'default' | 'custom'>(getCurrentTheme());
   const [primaryColor, setPrimaryColor] = useState('#3B82F6');
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export const ThemeSwitcher: React.FC = () => {
         <div>
           <Text strong>Tayyor Mavzular:</Text>
           <Select
-            value={currentTheme}
+            value={currentTheme === 'default' || currentTheme === 'custom' ? undefined : currentTheme}
             onChange={handleThemeChange}
             style={{ width: '100%', marginTop: 8 }}
             placeholder="Tema tanlang"
