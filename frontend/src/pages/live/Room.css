@@ -228,6 +228,446 @@
   font-weight: 500;
 }
 
+/* Students Strip - Horizontal thumbnails at bottom */
+.students-strip {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  height: 140px;
+  z-index: 5;
+  padding: 0 var(--space-4);
+  pointer-events: none;
+}
+
+.students-strip-container {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
+  padding: var(--space-2) 0;
+  pointer-events: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.students-strip-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.students-strip-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.students-strip-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.student-thumbnail {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  transition: all var(--transition-base);
+  will-change: transform;
+}
+
+.student-thumbnail .participant-tile {
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-base);
+}
+
+.student-thumbnail.is-hand-raised .participant-tile {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px var(--neon-glow-cyan);
+  animation: pulse-hand-raised 2s ease-in-out infinite;
+}
+
+.student-thumbnail:hover .participant-tile {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: bold;
+  transition: all var(--transition-base);
+  will-change: transform, opacity;
+}
+
+.badge-verified {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+}
+
+.badge-not-verified {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  animation: shake 0.5s ease-in-out;
+}
+
+.badge-hand-raised {
+  background: var(--neon-cyan);
+  color: #000;
+  box-shadow: 0 0 16px var(--neon-glow-cyan);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.badge-pending {
+  background: rgba(250, 173, 20, 0.9);
+  color: white;
+  box-shadow: 0 0 12px rgba(250, 173, 20, 0.6);
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes pulse-hand-raised {
+  0%, 100% {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 20px var(--neon-glow-cyan);
+  }
+  50% {
+    border-color: rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 30px var(--neon-glow-cyan), 0 0 40px var(--neon-glow-cyan);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 16px var(--neon-glow-cyan);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 24px var(--neon-glow-cyan);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* Participant tile adjustments for thumbnails */
+.student-thumbnail .participant-tile .participant-video {
+  height: 80%;
+}
+
+.student-thumbnail .participant-tile .participant-info {
+  height: 20%;
+  padding: var(--space-1);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.student-thumbnail .participant-tile .participant-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.student-thumbnail .participant-tile .participant-badge {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   PARTICIPANTS SIDEBAR (Desktop)
+   ============================================ */
+
+.participants-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.participants-sidebar.is-open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.sidebar-close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+}
+
+.sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+/* Sidebar Section */
+.sidebar-section {
+  margin-bottom: var(--space-2);
+}
+
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-section-icon {
+  font-size: 16px;
+}
+
+.sidebar-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-section-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar Participant Item */
+.sidebar-participant-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  transition: all var(--transition-base);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-participant-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-participant-item.is-hand-raised {
+  background: rgba(0, 255, 255, 0.1);
+  border-left: 3px solid var(--neon-cyan);
+  cursor: pointer;
+}
+
+.sidebar-participant-item.is-hand-raised:hover {
+  background: rgba(0, 255, 255, 0.15);
+  transform: translateX(-2px);
+}
+
+.sidebar-participant-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--accent), var(--accent-vibrant));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.sidebar-participant-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-participant-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-participant-role {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-participant-badge {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Hide sidebar on mobile/tablet, show bottom strip */
+@media (max-width: 1023px) {
+  .participants-sidebar {
+    display: none;
+  }
+  
+  .students-strip {
+    display: block;
+  }
+}
+
+/* Show sidebar on desktop, hide bottom strip */
+@media (min-width: 1024px) {
+  .participants-sidebar {
+    display: flex;
+  }
+  
+  .students-strip {
+    display: none;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 768px) {
+  .student-thumbnail {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .students-strip {
+    bottom: 80px;
+    height: 120px;
+  }
+  
+  .students-strip-container {
+    gap: var(--space-2);
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 480px) {
+  .student-thumbnail {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .students-strip {
+    bottom: 70px;
+    height: 100px;
+    padding: 0 var(--space-2);
+  }
+  
+  .verification-badge {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+}
+
+/* GPU Acceleration for all animated elements */
+.students-strip,
+.students-strip-container,
+.student-thumbnail,
+.verification-badge,
+.participant-tile {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+  will-change: transform, opacity;
+}
+
+/* Smooth transitions */
+.student-thumbnail,
+.verification-badge,
+.participant-tile {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects for teacher */
+.student-thumbnail.is-hand-raised:hover {
+  transform: translateY(-8px);
+  cursor: pointer;
+}
+
+.student-thumbnail.is-hand-raised:hover .participant-tile {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 30px var(--neon-glow-cyan), 0 0 50px var(--neon-glow-cyan);
+}
+
 @media (min-width: 1024px) {
   .live-controls {
     bottom: var(--space-8);

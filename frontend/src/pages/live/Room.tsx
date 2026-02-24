@@ -18,8 +18,9 @@ import {
   raiseHand,
   setStageUser,
   togglePushToTalk,
+  fetchLiveMonitoring,
 } from "../../api/live";
-import type { LiveParticipantState } from "../../api/live";
+import type { LiveParticipantState, LiveMonitoringData, LiveFaceSession } from "../../api/live";
 import { sendPresence } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
@@ -58,6 +59,29 @@ const ParticipantTile = ({ label, videoTrack, isRaised, isClickable, onClick, ba
   );
 };
 
+const ParticipantSidebarItem = ({ participant, badge, onClick, isTeacher }: any) => {
+  const initials = getInitials(participant.user_name);
+  
+  return (
+    <div 
+      className={`sidebar-participant-item ${participant.hand_raised ? 'is-hand-raised' : ''}`}
+      onClick={onClick}
+      style={{ cursor: isTeacher && participant.hand_raised ? 'pointer' : 'default' }}
+    >
+      <div className="sidebar-participant-avatar">
+        {initials}
+      </div>
+      <div className="sidebar-participant-info">
+        <div className="sidebar-participant-name">{participant.user_name}</div>
+        <div className="sidebar-participant-role">{participant.role || 'Student'}</div>
+      </div>
+      <div className="sidebar-participant-badge">
+        {badge}
+      </div>
+    </div>
+  );
+};
+
 const LiveRoomPage = () => {
   const { lessonId } = useParams();
   const navigate = useNavigate();
@@ -82,6 +106,15 @@ const LiveRoomPage = () => {
   const [screenTrack, setScreenTrack] = useState<ILocalVideoTrack | null>(null);
   const [showParticipants, setShowParticipants] = useState(false);
   const [cinemaMode, setCinemaMode] = useState(false);
+  const [faceMonitoring, setFaceMonitoring] = useState<LiveMonitoringData | null>(null);
+  const facePollingRef = useRef<NodeJS.Timeout | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    // Load from localStorage (desktop only)
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      return localStorage.getItem('live-sidebar-open') === 'true';
+    }
+    return false;
+  });
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
@@ -189,6 +222,100 @@ const LiveRoomPage = () => {
     return () => clearInterval(timer);
   }, [roomInfo?.room_id, refreshState]);
 
+  // Polling for face verification monitoring
+  const fetchFaceMonitoringData = useCallback(async () => {
+    if (!roomInfo?.room?.room_name) return;
+    try {
+      const data = await fetchLiveMonitoring(roomInfo.room.room_name);
+      setFaceMonitoring(data);
+    } catch (error) {
+      console.error('Face monitoring fetch error:', error);
+    }
+  }, [roomInfo?.room?.room_name]);
+
+  useEffect(() => {
+    if (!roomInfo?.room?.room_name) return;
+    
+    // Initial fetch
+    fetchFaceMonitoringData();
+    
+    // Poll every 3 seconds
+    facePollingRef.current = setInterval(() => {
+      fetchFaceMonitoringData();
+    }, 3000);
+    
+    return () => {
+      if (facePollingRef.current) {
+        clearInterval(facePollingRef.current);
+      }
+    };
+  }, [roomInfo?.room?.room_name, fetchFaceMonitoringData]);
+
+  // Get face session for a user
+  const getFaceSession = useCallback((userId: number): LiveFaceSession | undefined => {
+    return faceMonitoring?.sessions?.find(s => s.user === userId);
+  }, [faceMonitoring]);
+
+  // Toggle sidebar
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => {
+      const next = !prev;
+      localStorage.setItem('live-sidebar-open', String(next));
+      return next;
+    });
+  }, []);
+
+  // Get verification status for sorting
+  const getVerificationStatus = useCallback((participant: LiveParticipantState) => {
+    if (participant.hand_raised) return 'hand_raised';
+    
+    const session = getFaceSession(participant.user_id);
+    if (!session) return 'pending';
+    
+    if (session.status === 'verified' && session.success_rate >= 70) return 'verified';
+    if (session.status === 'failed' || session.success_rate < 50) return 'failed';
+    return 'pending';
+  }, [getFaceSession]);
+
+  // Grouped and sorted students
+  const groupedStudents = useMemo(() => {
+    const handRaised = studentTiles.filter(p => p.hand_raised);
+    const verified = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return session?.status === 'verified' && session.success_rate >= 70;
+    });
+    const failed = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return session && (session.status === 'failed' || session.success_rate < 50);
+    });
+    const pending = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return !session || (!verified.includes(p) && !failed.includes(p));
+    });
+    
+    return { handRaised, verified, failed, pending };
+  }, [studentTiles, getFaceSession]);
+
+  // Sorted students (for bottom strip on mobile)
+  const sortedStudents = useMemo(() => {
+    return [...studentTiles].sort((a, b) => {
+      const statusA = getVerificationStatus(a);
+      const statusB = getVerificationStatus(b);
+      
+      const priority: Record<string, number> = {
+        hand_raised: 1,
+        verified: 2,
+        failed: 3,
+        pending: 4,
+      };
+      
+      return (priority[statusA] || 4) - (priority[statusB] || 4);
+    });
+  }, [studentTiles, getVerificationStatus]);
+
   useEffect(() => {
     if (!localTracks.audio) return;
     if (userRole === "student") {
@@ -232,9 +359,15 @@ const LiveRoomPage = () => {
       try {
         await setStageUser(roomInfo.room_id, userId ?? null);
         setStageUserId(userId ?? null);
+        
+        // Auto-enable microphone for student when they become stage user
+        if (userId === localUserId && localTracks.audio) {
+          await localTracks.audio.setEnabled(true);
+          setMicEnabled(true);
+        }
       } catch {}
     },
-    [roomInfo?.room_id]
+    [roomInfo?.room_id, localUserId, localTracks.audio]
   );
 
   const stageVideoTrack = useMemo(() => {
@@ -255,6 +388,35 @@ const LiveRoomPage = () => {
   if (error) return <div className="flex-center h-screen flex-direction-column"><h2 className="text-error">Xatolik</h2><p>{error}</p><Button onClick={() => navigate(-1)}>Orqaga</Button></div>;
 
   const studentTiles = participants.filter(p => !p.is_teacher && p.user_id !== effectiveStageUserId);
+
+  // Render badge for participant
+  const renderBadge = (participant: LiveParticipantState) => {
+    const faceSession = getFaceSession(participant.user_id);
+    
+    let badgeClass = '';
+    let badgeLabel = '';
+    
+    if (participant.hand_raised) {
+      badgeClass = 'badge-hand-raised';
+      badgeLabel = '✋';
+    } else if (faceSession) {
+      if (faceSession.status === 'verified' && faceSession.success_rate >= 70) {
+        badgeClass = 'badge-verified';
+        badgeLabel = '✓';
+      } else if (faceSession.status === 'failed' || faceSession.success_rate < 50) {
+        badgeClass = 'badge-not-verified';
+        badgeLabel = '✗';
+      } else {
+        badgeClass = 'badge-pending';
+        badgeLabel = '⏳';
+      }
+    } else {
+      badgeClass = 'badge-pending';
+      badgeLabel = '⏳';
+    }
+    
+    return <div className={`verification-badge ${badgeClass}`}>{badgeLabel}</div>;
+  };
 
   return (
     <div className={`live-page ${cinemaMode ? 'cinema-mode-active' : ''}`}>
@@ -280,6 +442,131 @@ const LiveRoomPage = () => {
           {cinemaMode ? <FullscreenExitOutlined /> : <ExpandOutlined />}
         </button>
       </div>
+
+      {/* Desktop Sidebar - Right Panel */}
+      <div className={`participants-sidebar ${sidebarOpen ? 'is-open' : ''}`}>
+        <div className="sidebar-header">
+          <h3>Ishtirokchilar ({studentTiles.length})</h3>
+          <button className="sidebar-close" onClick={toggleSidebar}>×</button>
+        </div>
+        
+        <div className="sidebar-content">
+          {/* Hand Raised Section */}
+          {groupedStudents.handRaised.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-header">
+                <span className="sidebar-section-icon">🔵</span>
+                <span className="sidebar-section-title">Qo'l ko'targanlar ({groupedStudents.handRaised.length})</span>
+              </div>
+              <div className="sidebar-section-list">
+                {groupedStudents.handRaised.map(p => (
+                  <ParticipantSidebarItem
+                    key={p.user_id}
+                    participant={p}
+                    badge={renderBadge(p)}
+                    onClick={() => isTeacher && handleStageSelect(p.user_id)}
+                    isTeacher={isTeacher}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Verified Section */}
+          {groupedStudents.verified.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-header">
+                <span className="sidebar-section-icon">🟢</span>
+                <span className="sidebar-section-title">Tasdiqlangan ({groupedStudents.verified.length})</span>
+              </div>
+              <div className="sidebar-section-list">
+                {groupedStudents.verified.map(p => (
+                  <ParticipantSidebarItem
+                    key={p.user_id}
+                    participant={p}
+                    badge={renderBadge(p)}
+                    onClick={() => isTeacher && handleStageSelect(p.user_id)}
+                    isTeacher={isTeacher}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Failed Section */}
+          {groupedStudents.failed.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-header">
+                <span className="sidebar-section-icon">🔴</span>
+                <span className="sidebar-section-title">Tasdiqlanmagan ({groupedStudents.failed.length})</span>
+              </div>
+              <div className="sidebar-section-list">
+                {groupedStudents.failed.map(p => (
+                  <ParticipantSidebarItem
+                    key={p.user_id}
+                    participant={p}
+                    badge={renderBadge(p)}
+                    onClick={() => isTeacher && handleStageSelect(p.user_id)}
+                    isTeacher={isTeacher}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pending Section */}
+          {groupedStudents.pending.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-section-header">
+                <span className="sidebar-section-icon">🟡</span>
+                <span className="sidebar-section-title">Kutilmoqda ({groupedStudents.pending.length})</span>
+              </div>
+              <div className="sidebar-section-list">
+                {groupedStudents.pending.map(p => (
+                  <ParticipantSidebarItem
+                    key={p.user_id}
+                    participant={p}
+                    badge={renderBadge(p)}
+                    onClick={() => isTeacher && handleStageSelect(p.user_id)}
+                    isTeacher={isTeacher}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile/Tablet - Bottom Strip (Sorted) */}
+      {studentTiles.length > 0 && (
+        <div className="students-strip">
+          <div className="students-strip-container">
+            {sortedStudents.map(p => {
+              const studentRemote = remoteMap.get(p.user_id);
+              const videoTrack = p.user_id === localUserId ? localTracks.video : studentRemote?.videoTrack;
+              const faceSession = getFaceSession(p.user_id);
+              
+              return (
+                <div 
+                  key={p.user_id} 
+                  className={`student-thumbnail ${p.hand_raised ? 'is-hand-raised' : ''}`}
+                  onClick={() => isTeacher && p.hand_raised && handleStageSelect(p.user_id)}
+                  style={{ cursor: isTeacher && p.hand_raised ? 'pointer' : 'default' }}
+                  title={faceSession ? `${p.user_name} - Verification: ${Math.round(faceSession.success_rate)}%` : p.user_name}
+                >
+                  <ParticipantTile
+                    label={p.user_name}
+                    videoTrack={videoTrack}
+                    isRaised={p.hand_raised}
+                    isClickable={false}
+                    badge={renderBadge(p)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showParticipants && (
         <div className="participants-drawer animate-slide-up">
@@ -337,9 +624,9 @@ const LiveRoomPage = () => {
         )}
         <Button
           variant="ghost"
-          className="control-btn"
+          className={`control-btn ${sidebarOpen ? 'is-active' : ''}`}
           icon={<TeamOutlined />}
-          onClick={() => setShowParticipants(true)}
+          onClick={toggleSidebar}
         />
         <Button
           variant="error"

@@ -90,3 +90,38 @@ export async function togglePushToTalk(roomId: number, enabled: boolean) {
   const res = await api.post("/api/live/ptt/", { room_id: roomId, enabled });
   return res.data;
 }
+
+// Face verification types
+export type FaceSessionStatus = 'active' | 'verified' | 'failed' | 'ended';
+
+export type LiveFaceSession = {
+  id: number;
+  user: number;
+  user_username: string;
+  user_full_name: string;
+  status: FaceSessionStatus;
+  last_verification_at: string | null;
+  verification_count: number;
+  success_count: number;
+  fail_count: number;
+  success_rate: number;
+  started_at: string;
+};
+
+export type LiveMonitoringData = {
+  room_name: string;
+  room_id: number;
+  lesson_topic: string;
+  is_active: boolean;
+  total_participants: number;
+  verified_participants: number;
+  sessions: LiveFaceSession[];
+};
+
+// Face verification API
+export async function fetchLiveMonitoring(roomName: string): Promise<LiveMonitoringData> {
+  const res = await api.get<LiveMonitoringData>('/api/live/face/monitoring/', {
+    params: { room_name: roomName }
+  });
+  return res.data;
+}
