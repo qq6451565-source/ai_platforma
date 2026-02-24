@@ -170,6 +170,15 @@ Kod debug qilish uchun bir nechta console.log qo'shildi:
 
 Bu loglar production-da o'chirilishi kerak.
 
+## TypeScript Xatolari Tuzatildi
+
+Build xatolari tuzatildi:
+- ✅ `useMe()` hook-dan to'g'ri `data` property olindi
+- ✅ `handleAudioToggle` signature-i to'g'rilandi (studentId: number)
+- ✅ Button `type="primary"` prop-lari olib tashlandi (custom button komponenti uchun)
+- ✅ `liveState.room_name` -> `liveState.room` ga o'zgartirildi
+- ✅ `user.uid` number va string type muammosi hal qilindi
+
 ## Keyingi Qadamlar
 
 1. **Testing** - Live darsda real test o'tkazish

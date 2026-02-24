@@ -71,7 +71,7 @@ const getInitials = (value: string) => {
 export default function Room() {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
-  const me = useMe();
+  const { data: me } = useMe();
 
   // State management
   const [state, setState] = useState<RoomState>({
@@ -183,7 +183,7 @@ export default function Room() {
           videoTracksMap.current.delete(Number(user.uid));
           setState((prev) => ({
             ...prev,
-            participants: prev.participants.filter((p) => p.user_id !== String(user.uid)),
+            participants: prev.participants.filter((p) => p.user_id !== Number(user.uid)),
           }));
         });
 
@@ -302,13 +302,13 @@ export default function Room() {
   }, [roomId]);
 
   // Handle audio toggle for teacher (control student audio)
-  const handleAudioToggle = useCallback(async (studentId: string, enabled: boolean) => {
+  const handleAudioToggle = useCallback(async (studentId: number) => {
     if (!isTeacher || !roomId) return;
 
     try {
       // This would require backend implementation to control remote audio
       // For now, just log the action
-      console.log(`Audio toggle for student ${studentId}: ${enabled}`);
+      console.log(`Audio toggle for student ${studentId}`);
     } catch (error) {
       console.error("Audio toggle error:", error);
     }
@@ -383,7 +383,7 @@ export default function Room() {
           <div className="stage-video-container" ref={stageVideoRef} />
           <div className="stage-overlay">
             <div className="stage-top-info">
-              <div className="stage-title">{liveState?.room_name || "Live Class"}</div>
+              <div className="stage-title">{liveState?.room || "Live Class"}</div>
               <div className="stage-subtitle">
                 {state.participants.length} participants
                 {monitoringConnected_ && ` • Monitoring Active`}
@@ -391,7 +391,7 @@ export default function Room() {
             </div>
             <div className="stage-bottom-info">
               <div className="stage-user-label">
-                {getInitials(me?.full_name || "?")} • {me?.full_name}
+                {getInitials(me?.full_name || "?")} • {me?.full_name || "User"}
               </div>
             </div>
           </div>
@@ -423,14 +423,12 @@ export default function Room() {
         <Button
           className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}
           onClick={handleMicToggle}
-          type="primary"
           icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
         />
 
         <Button
           className={`control-btn ${state.cameraOn ? "is-active" : "is-off"}`}
           onClick={handleCameraToggle}
-          type="primary"
           icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
         />
 
@@ -438,7 +436,6 @@ export default function Room() {
           <Button
             className={`control-btn ${state.handRaised ? "is-active" : ""}`}
             onClick={handleHandRaise}
-            type="primary"
             icon={<HighlightOutlined />}
           />
         )}
@@ -447,7 +444,6 @@ export default function Room() {
           <Button
             className={`control-btn ${state.showStudentsGrid ? "is-active" : ""}`}
             onClick={() => setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))}
-            type="primary"
             icon={state.showStudentsGrid ? <EyeInvisibleOutlined /> : <EyeOutlined />}
           />
         )}
@@ -455,7 +451,6 @@ export default function Room() {
         <Button
           className="control-btn exit-btn"
           onClick={handleExitRoom}
-          type="primary"
           icon={<LogoutOutlined />}
         />
       </div>
