@@ -391,7 +391,7 @@ export default function Room() {
             </div>
             <div className="stage-bottom-info">
               <div className="stage-user-label">
-                {getInitials(me?.full_name || "?")} • {me?.full_name || "User"}
+                {getInitials(`${me?.first_name || ""} ${me?.last_name || ""}`.trim() || "?")} • {`${me?.first_name || ""} ${me?.last_name || ""}`.trim() || "User"}
               </div>
             </div>
           </div>
