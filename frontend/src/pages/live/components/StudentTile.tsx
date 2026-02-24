@@ -23,14 +23,27 @@ export const StudentTile: React.FC<StudentTileProps> = ({
 
   // Play video track
   useEffect(() => {
-    if (!videoTrack || !videoRef.current) return;
+    if (!videoTrack || !videoRef.current) {
+      console.log("No video track or ref:", { videoTrack, hasRef: !!videoRef.current, studentId: student.user_id });
+      return;
+    }
 
-    videoTrack.play(videoRef.current);
+    console.log("Playing video for student:", student.user_id, student.user_name);
+    
+    try {
+      videoTrack.play(videoRef.current);
+    } catch (error) {
+      console.error("Error playing video track:", error);
+    }
 
     return () => {
-      videoTrack.stop();
+      try {
+        videoTrack.stop();
+      } catch (error) {
+        console.error("Error stopping video track:", error);
+      }
     };
-  }, [videoTrack]);
+  }, [videoTrack, student.user_id, student.user_name]);
 
   const faceStatus = status?.faceStatus || "CHECKING";
   const confidence = status?.confidence || 0;

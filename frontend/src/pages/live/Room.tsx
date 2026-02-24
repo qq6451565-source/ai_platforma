@@ -31,8 +31,6 @@ import {
   fetchLiveMonitoring,
 } from "../../api/live";
 import type { LiveParticipantState, LiveMonitoringData, LiveFaceSession } from "../../api/live";
-import { sendPresence } from "../../api/attendance";
-import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
 import { Button } from "../../components/ui";
 
@@ -96,6 +94,7 @@ export default function Room() {
   const localAudioRef = useRef<any>(null);
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const remoteMap = useRef<Map<string | number, IAgoraRTCRemoteUser>>(new Map());
+  const videoTracksMap = useRef<Map<number, any>>(new Map());
 
   // User type detection
   const isTeacher = me?.role === "teacher" || me?.role === "admin";
@@ -114,11 +113,23 @@ export default function Room() {
     queryKey: ["live-state", roomId],
     queryFn: async () => {
       if (!roomId) throw new Error("No room ID");
-      return fetchLiveState(roomId);
+      return fetchLiveState({ lesson_id: Number(roomId) });
     },
     enabled: !!roomId,
     refetchInterval: 2000,
   });
+
+  // Update participants from liveState
+  useEffect(() => {
+    if (liveState?.participants) {
+      console.log("Updating participants from liveState:", liveState.participants);
+      setState((prev) => ({
+        ...prev,
+        participants: liveState.participants,
+        stageUser: liveState.stage_user_id ? String(liveState.stage_user_id) : prev.stageUser,
+      }));
+    }
+  }, [liveState]);
 
   // Initialize Agora
   useEffect(() => {
@@ -131,17 +142,45 @@ export default function Room() {
 
         // Handle user joined
         client.on("user-joined", async (user) => {
+          console.log("User joined:", user.uid);
           remoteMap.current.set(user.uid, user);
-          await client.subscribe(user, "video");
-          setState((prev) => ({
-            ...prev,
-            participants: [...prev.participants, { user_id: String(user.uid), user_name: "User", audio_enabled: true, video_enabled: true }],
-          }));
+        });
+
+        // Handle user published (when user starts video/audio)
+        client.on("user-published", async (user, mediaType) => {
+          console.log("User published:", user.uid, mediaType);
+          
+          try {
+            await client.subscribe(user, mediaType);
+            
+            if (mediaType === "video") {
+              videoTracksMap.current.set(Number(user.uid), user.videoTrack);
+              setState((prev) => ({ ...prev })); // Force re-render
+            }
+            
+            if (mediaType === "audio" && user.audioTrack) {
+              user.audioTrack.play();
+            }
+          } catch (error) {
+            console.error("Error subscribing to user:", error);
+          }
+        });
+
+        // Handle user unpublished
+        client.on("user-unpublished", (user, mediaType) => {
+          console.log("User unpublished:", user.uid, mediaType);
+          
+          if (mediaType === "video") {
+            videoTracksMap.current.delete(Number(user.uid));
+            setState((prev) => ({ ...prev })); // Force re-render
+          }
         });
 
         // Handle user left
         client.on("user-left", (user) => {
+          console.log("User left:", user.uid);
           remoteMap.current.delete(user.uid);
+          videoTracksMap.current.delete(Number(user.uid));
           setState((prev) => ({
             ...prev,
             participants: prev.participants.filter((p) => p.user_id !== String(user.uid)),
@@ -149,8 +188,8 @@ export default function Room() {
         });
 
         // Join channel
-        const token = await fetchAgoraToken(roomId, me.id);
-        await client.join(appId, roomId, token, me.id);
+        const tokenData = await fetchAgoraToken({ lesson_id: Number(roomId) });
+        await client.join(appId, tokenData.channel, tokenData.token, tokenData.uid);
 
         // Create local tracks
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
@@ -163,10 +202,7 @@ export default function Room() {
         await client.publish([audioTrack, videoTrack]);
 
         // Join lesson API
-        await joinLiveLesson(roomId, me.id);
-
-        // Send presence
-        await sendPresence(roomId, "online");
+        await joinLiveLesson(Number(roomId));
 
         setState((prev) => ({
           ...prev,
@@ -237,10 +273,10 @@ export default function Room() {
 
   // Handle hand raise
   const handleHandRaise = useCallback(async () => {
-    if (!roomId || !me?.id) return;
+    if (!roomId) return;
 
     try {
-      await raiseHand(roomId, me.id, !state.handRaised);
+      await raiseHand(Number(roomId), !state.handRaised);
       setState((prev) => ({
         ...prev,
         handRaised: !prev.handRaised,
@@ -248,17 +284,17 @@ export default function Room() {
     } catch (error) {
       console.error("Hand raise error:", error);
     }
-  }, [roomId, me?.id, state.handRaised]);
+  }, [roomId, state.handRaised]);
 
   // Handle stage user set
-  const handleSetStage = useCallback(async (userId: string) => {
+  const handleSetStage = useCallback(async (userId: number) => {
     if (!roomId) return;
 
     try {
-      await setStageUser(roomId, userId);
+      await setStageUser(Number(roomId), userId);
       setState((prev) => ({
         ...prev,
-        stageUser: userId,
+        stageUser: String(userId),
       }));
     } catch (error) {
       console.error("Set stage error:", error);
@@ -280,29 +316,40 @@ export default function Room() {
 
   // Handle exit room
   const handleExitRoom = useCallback(async () => {
-    if (!roomId || !me?.id) return;
+    if (!roomId) return;
 
     try {
       localVideoRef.current?.close();
       localAudioRef.current?.close();
       await clientRef.current?.leave();
-      await leaveLiveRoom(roomId, me.id);
-      await sendPresence(roomId, "offline");
+      await leaveLiveRoom(Number(roomId));
       navigate("/lessons");
     } catch (error) {
       console.error("Exit room error:", error);
       navigate("/lessons");
     }
-  }, [roomId, me?.id, navigate]);
+  }, [roomId, navigate]);
 
   // Get stage user video track
   const stageVideoTrack = useMemo(() => {
-    if (!state.stageUser || !remoteMap.current.has(state.stageUser)) {
+    if (!state.stageUser) {
       return null;
     }
-    const user = remoteMap.current.get(state.stageUser) as IAgoraRTCRemoteUser;
-    return user?.videoTrack;
+    const videoTrack = videoTracksMap.current.get(Number(state.stageUser));
+    return videoTrack;
   }, [state.stageUser]);
+
+  // Play stage video
+  useEffect(() => {
+    if (!stageVideoTrack || !stageVideoRef.current) return;
+
+    console.log("Playing stage video for user:", state.stageUser);
+    stageVideoTrack.play(stageVideoRef.current);
+
+    return () => {
+      stageVideoTrack.stop();
+    };
+  }, [stageVideoTrack, state.stageUser]);
 
   // Sort participants by face status
   const sortedParticipants = useMemo(() => {
@@ -355,7 +402,7 @@ export default function Room() {
           <StudentGridSection
             participants={state.participants}
             studentStatuses={studentStatuses}
-            videoTracks={remoteMap.current}
+            videoTracks={videoTracksMap.current}
             isTeacher={isTeacher}
             onClose={() => setState((prev) => ({ ...prev, showStudentsGrid: false }))}
             onAudioToggle={handleAudioToggle}
