@@ -133,10 +133,16 @@ export default function Room() {
 
   // Initialize Agora
   useEffect(() => {
-    if (!appId || !roomId || !me?.id) return;
+    if (!appId || !roomId || !me?.id) {
+      console.log("Waiting for initialization:", { appId: !!appId, roomId, meId: me?.id });
+      return;
+    }
+
+    console.log("Starting Agora initialization...", { roomId, userId: me.id });
 
     const initAgora = async () => {
       try {
+        console.log("Creating Agora client...");
         const client = AgoraRTC.createClient({ mode: "live", codec: "vp9" });
         clientRef.current = client;
 
@@ -188,21 +194,30 @@ export default function Room() {
         });
 
         // Join channel
+        console.log("Fetching Agora token...");
         const tokenData = await fetchAgoraToken({ lesson_id: Number(roomId) });
+        console.log("Token received:", { channel: tokenData.channel, uid: tokenData.uid });
+        
+        console.log("Joining Agora channel...");
         await client.join(appId, tokenData.channel, tokenData.token, tokenData.uid);
 
         // Create local tracks
+        console.log("Creating local audio track...");
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        console.log("Creating local video track...");
         const videoTrack = await AgoraRTC.createCameraVideoTrack();
 
         localAudioRef.current = audioTrack;
         localVideoRef.current = videoTrack;
 
         // Publish tracks
+        console.log("Publishing local tracks...");
         await client.publish([audioTrack, videoTrack]);
 
         // Join lesson API
+        console.log("Joining live lesson via API...");
         await joinLiveLesson(Number(roomId));
+        console.log("Successfully joined live lesson!");
 
         setState((prev) => ({
           ...prev,
