@@ -1,9 +1,10 @@
 /**
  * Student sorting utilities for live session.
- * Sorts students by: hand_raised → verified → not_verified
+ * Priority: hand raised -> verified -> not verified -> pending.
  */
 
 export type FaceDetectionStatus = "DETECTED" | "NOT_DETECTED" | "MULTIPLE" | "CHECKING";
+export type StudentTier = "hand_raised" | "verified" | "failed" | "pending";
 
 export interface StudentStatus {
   faceStatus: FaceDetectionStatus;
@@ -21,17 +22,32 @@ export interface Student {
 }
 
 export interface StudentGroup {
+  key: StudentTier;
   group: string;
   icon: string;
   students: Student[];
 }
 
-/**
- * Sort students into a flat array based on priority:
- * 1. Hand raised (priority 1)
- * 2. Verified/DETECTED (priority 2)
- * 3. Not verified/NOT_DETECTED (priority 3)
- */
+const tierPriority: Record<StudentTier, number> = {
+  hand_raised: 1,
+  verified: 2,
+  failed: 3,
+  pending: 4,
+};
+
+export const resolveStudentTier = (
+  student: Student,
+  status?: StudentStatus
+): StudentTier => {
+  const isHandRaised = Boolean(status?.handRaised || student.hand_raised);
+  if (isHandRaised) return "hand_raised";
+
+  const faceStatus = status?.faceStatus ?? "CHECKING";
+  if (faceStatus === "DETECTED") return "verified";
+  if (faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE") return "failed";
+  return "pending";
+};
+
 export const sortStudents = (
   students: Student[],
   statuses: Map<number, StudentStatus>
@@ -42,84 +58,46 @@ export const sortStudents = (
     const statusA = statuses.get(a.user_id);
     const statusB = statuses.get(b.user_id);
 
-    // GROUP 1: Hand raised first
-    const handRaisedA = statusA?.handRaised || a.hand_raised || false;
-    const handRaisedB = statusB?.handRaised || b.hand_raised || false;
+    const tierA = resolveStudentTier(a, statusA);
+    const tierB = resolveStudentTier(b, statusB);
+    const tierDelta = tierPriority[tierA] - tierPriority[tierB];
+    if (tierDelta !== 0) return tierDelta;
 
-    if (handRaisedA !== handRaisedB) {
-      return handRaisedA ? -1 : 1;
-    }
-
-    // GROUP 2: Verified (DETECTED) second
-    const verifiedA = statusA?.faceStatus === "DETECTED" || false;
-    const verifiedB = statusB?.faceStatus === "DETECTED" || false;
-
-    if (verifiedA !== verifiedB) {
-      return verifiedA ? -1 : 1;
-    }
-
-    // GROUP 3: Within same group, sort by confidence (descending)
     const confidenceA = statusA?.confidence || 0;
     const confidenceB = statusB?.confidence || 0;
+    if (confidenceA !== confidenceB) return confidenceB - confidenceA;
 
-    return confidenceB - confidenceA;
+    return a.user_name.localeCompare(b.user_name, "uz", { sensitivity: "base" });
   });
 };
 
-/**
- * Get students grouped with headers.
- * Returns array of groups with category info.
- */
 export const getGroupedStudents = (
   students: Student[],
   statuses: Map<number, StudentStatus>
 ): StudentGroup[] => {
   const sorted = sortStudents(students, statuses);
-  const groups: StudentGroup[] = [];
+  const groupsMap: Record<StudentTier, Student[]> = {
+    hand_raised: [],
+    verified: [],
+    failed: [],
+    pending: [],
+  };
 
-  // GROUP 1: Hand raised
-  const handRaised = sorted.filter(
-    (s) => statuses.get(s.user_id)?.handRaised || s.hand_raised || false
-  );
-  if (handRaised.length > 0) {
-    groups.push({
-      group: "🔵 QOL KO'TAGANLAR",
-      icon: "🔵",
-      students: handRaised,
-    });
-  }
+  sorted.forEach((student) => {
+    const tier = resolveStudentTier(student, statuses.get(student.user_id));
+    groupsMap[tier].push(student);
+  });
 
-  // GROUP 2: Verified
-  const verified = sorted.filter(
-    (s) =>
-      (statuses.get(s.user_id)?.faceStatus === "DETECTED" ||
-        !statuses.has(s.user_id)) &&
-      !(statuses.get(s.user_id)?.handRaised || s.hand_raised || false)
-  );
-  if (verified.length > 0) {
-    groups.push({
-      group: "✅ TASDIQLANDI",
-      icon: "✅",
-      students: verified,
-    });
-  }
+  const groupMeta: Array<Pick<StudentGroup, "key" | "group" | "icon">> = [
+    { key: "hand_raised", group: "Qol ko'targanlar", icon: "🔵" },
+    { key: "verified", group: "Tasdiqlangan", icon: "✅" },
+    { key: "failed", group: "Tasdiqlanmagan", icon: "❌" },
+    { key: "pending", group: "Kutilmoqda", icon: "⏳" },
+  ];
 
-  // GROUP 3: Not verified
-  const notVerified = sorted.filter(
-    (s) =>
-      (statuses.get(s.user_id)?.faceStatus === "NOT_DETECTED" ||
-        statuses.get(s.user_id)?.faceStatus === "MULTIPLE") &&
-      !(statuses.get(s.user_id)?.handRaised || s.hand_raised || false)
-  );
-  if (notVerified.length > 0) {
-    groups.push({
-      group: "❌ TASDIQLANDI EMAS",
-      icon: "❌",
-      students: notVerified,
-    });
-  }
-
-  return groups;
+  return groupMeta
+    .map((meta) => ({ ...meta, students: groupsMap[meta.key] }))
+    .filter((group) => group.students.length > 0);
 };
 
 /**

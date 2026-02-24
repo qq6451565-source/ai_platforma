@@ -128,6 +128,10 @@
   transform: translateX(2px);
 }
 
+.panel-participant-row.is-clickable {
+  cursor: pointer;
+}
+
 .panel-participant-row.hand-raised {
   background: rgba(59, 130, 246, 0.1) !important;
   border-left-color: #3b82f6 !important;
@@ -141,6 +145,11 @@
 .panel-participant-row.not-verified {
   background: rgba(239, 68, 68, 0.05) !important;
   border-left-color: #ef4444 !important;
+}
+
+.panel-participant-row.stage-user {
+  border: 1px solid rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25) inset;
 }
 
 /* Status Badge */

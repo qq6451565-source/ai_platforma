@@ -9,6 +9,8 @@ interface SidePanelProps {
   studentStatuses: Map<number, StudentStatus>;
   isTeacher: boolean;
   onStudentAudioToggle?: (studentId: number) => void;
+  onStudentSelect?: (studentId: number) => void;
+  stageUserId?: number | null;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -16,6 +18,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   studentStatuses,
   isTeacher,
   onStudentAudioToggle,
+  onStudentSelect,
+  stageUserId = null,
 }) => {
   const groupedStudents = getGroupedStudents(participants, studentStatuses);
   const totalCount = participants.filter((p) => !p.is_teacher).length;
@@ -36,7 +40,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           </div>
         ) : (
           groupedStudents.map((group) => (
-            <div key={group.group} className="student-group">
+            <div key={group.key} className="student-group">
               {/* Group Header */}
               <div className="group-header">
                 <span className="group-title">{group.group}</span>
@@ -62,10 +66,17 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                         faceStatus === "DETECTED" ? "verified" : ""
                       } ${
                         faceStatus === "NOT_DETECTED" ? "not-verified" : ""
+                      } ${stageUserId === student.user_id ? "stage-user" : ""} ${
+                        isTeacher && onStudentSelect ? "is-clickable" : ""
                       }`}
                       style={{
                         borderLeftColor: statusDisplay.color,
                         background: statusDisplay.bgColor,
+                      }}
+                      onClick={() => {
+                        if (isTeacher) {
+                          onStudentSelect?.(student.user_id);
+                        }
                       }}
                     >
                       {/* Status Badge */}
@@ -80,6 +91,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                       {/* Student Info */}
                       <div className="participant-info">
                         <span className="name">{student.user_name}</span>
+                        {stageUserId === student.user_id && (
+                          <span className="confidence">Markazda</span>
+                        )}
                         {confidence > 0 && (
                           <span className="confidence">
                             {(confidence * 100).toFixed(0)}%
@@ -88,10 +102,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                       </div>
 
                       {/* Audio Control (teacher only) */}
-                      {isTeacher && (
+                      {isTeacher && onStudentAudioToggle && (
                         <button
                           className="audio-control-btn"
-                          onClick={() => onStudentAudioToggle?.(student.user_id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onStudentAudioToggle?.(student.user_id);
+                          }}
                           title={
                             status?.audioEnabled
                               ? "Mikrofon o'chirib yuborish"

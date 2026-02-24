@@ -20,6 +20,15 @@
   transform: translateY(-2px);
 }
 
+.student-tile.is-clickable {
+  cursor: pointer;
+}
+
+.student-tile.is-stage {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35) inset;
+}
+
 .student-tile.detected {
   border-color: rgba(16, 185, 129, 0.3);
 }
@@ -155,6 +164,12 @@
   color: white;
   animation: pulse-blue 1.5s ease-in-out infinite;
   font-size: 11px;
+}
+
+.badge.stage {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: #dbeafe;
 }
 
 .badge.confidence {

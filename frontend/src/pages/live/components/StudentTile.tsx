@@ -4,12 +4,19 @@ import { getFaceStatusDisplay } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import "../styles/StudentTile.css";
 
+interface PlayableVideoTrack {
+  play: (element: HTMLElement) => void;
+  stop: () => void;
+}
+
 interface StudentTileProps {
   student: Student;
   status?: StudentStatus;
-  videoTrack?: any;
+  videoTrack?: PlayableVideoTrack;
   isTeacher?: boolean;
   onAudioToggle?: (studentId: number) => void;
+  onSelect?: (studentId: number) => void;
+  isStage?: boolean;
 }
 
 export const StudentTile: React.FC<StudentTileProps> = ({
@@ -18,18 +25,13 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   videoTrack,
   isTeacher = false,
   onAudioToggle,
+  onSelect,
+  isStage = false,
 }) => {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
-  // Play video track
   useEffect(() => {
-    if (!videoTrack || !videoRef.current) {
-      console.log("No video track or ref:", { videoTrack, hasRef: !!videoRef.current, studentId: student.user_id });
-      return;
-    }
-
-    console.log("Playing video for student:", student.user_id, student.user_name);
-    
+    if (!videoTrack || !videoRef.current) return;
     try {
       videoTrack.play(videoRef.current);
     } catch (error) {
@@ -53,8 +55,9 @@ export const StudentTile: React.FC<StudentTileProps> = ({
 
   return (
     <div
-      className={`student-tile ${faceStatus.toLowerCase()}`}
+      className={`student-tile ${faceStatus.toLowerCase()} ${isStage ? "is-stage" : ""} ${onSelect ? "is-clickable" : ""}`}
       title={student.user_name}
+      onClick={() => onSelect?.(student.user_id)}
     >
       {/* Video Container */}
       <div className="student-video-container">
@@ -84,6 +87,11 @@ export const StudentTile: React.FC<StudentTileProps> = ({
 
         {/* Status Badges */}
         <div className="student-badges">
+          {isStage && (
+            <span className="badge stage" title="Markazda">
+              STAGE
+            </span>
+          )}
           {isHandRaised && (
             <span className="badge hand-raised" title="Qol ko'tarilgan">
               🔵
@@ -98,10 +106,13 @@ export const StudentTile: React.FC<StudentTileProps> = ({
       </div>
 
       {/* Audio Control Button (if teacher) */}
-      {isTeacher && (
+      {isTeacher && onAudioToggle && (
         <button
           className={`audio-control-btn ${isAudioEnabled ? "enabled" : ""}`}
-          onClick={() => onAudioToggle?.(student.user_id)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAudioToggle?.(student.user_id);
+          }}
           title={
             isAudioEnabled
               ? "Mikrofon o'chirib yuborish"

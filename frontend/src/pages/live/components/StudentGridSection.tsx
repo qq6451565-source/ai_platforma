@@ -4,13 +4,20 @@ import { StudentTile } from "./StudentTile";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import "../styles/StudentGridSection.css";
 
+interface PlayableVideoTrack {
+  play: (element: HTMLElement) => void;
+  stop: () => void;
+}
+
 interface StudentGridSectionProps {
   participants: Student[];
   studentStatuses: Map<number, StudentStatus>;
-  videoTracks: Map<number, any>;
+  videoTracks: Map<number, PlayableVideoTrack>;
   isTeacher?: boolean;
   onClose: () => void;
   onAudioToggle?: (studentId: number) => void;
+  onStudentSelect?: (studentId: number) => void;
+  stageUserId?: number | null;
 }
 
 export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
@@ -20,6 +27,8 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
   isTeacher = false,
   onClose,
   onAudioToggle,
+  onStudentSelect,
+  stageUserId = null,
 }) => {
   const sortedStudents = sortStudents(participants, studentStatuses);
 
@@ -31,7 +40,7 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
           Talabalar ({participants.filter((p) => !p.is_teacher).length})
         </span>
         <button className="close-btn" onClick={onClose} title="Yashirish">
-          ↑
+          Yopish
         </button>
       </div>
 
@@ -54,6 +63,8 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
                 videoTrack={videoTrack}
                 isTeacher={isTeacher}
                 onAudioToggle={onAudioToggle}
+                onSelect={onStudentSelect}
+                isStage={stageUserId === student.user_id}
               />
             );
           })
