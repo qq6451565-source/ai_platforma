@@ -156,10 +156,25 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
             **result
         }))
         
+        # Broadcast to monitoring group (for teacher dashboard)
+        await self.channel_layer.group_send(
+            f"live_monitoring_{self.room_name}",
+            {
+                "type": "student_status_update",
+                "room_name": self.room_name,
+                "student_id": self.user.id,
+                "student_name": self.user.get_full_name() or self.user.username,
+                "face_detection_status": result.get("face_detection_status", "CHECKING"),
+                "confidence": result.get("confidence", 0),
+                "verified": result.get("verified", False),
+                "timestamp": timezone.now().isoformat(),
+            }
+        )
+        
         # Broadcast to admin/teacher if alert
         if result.get("alert"):
             await self.channel_layer.group_send(
-                f"admin_monitoring_{self.room_name}",
+                f"live_monitoring_{self.room_name}",
                 {
                     "type": "verification_alert",
                     "user_id": self.user.id,
@@ -237,3 +252,167 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
         
         except Exception:
             pass
+
+
+class LiveMonitoringConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket consumer for real-time monitoring dashboard.
+    Broadcasts student status updates to teacher/admin.
+    
+    Connects to: ws/live-monitoring/{room_name}/
+    
+    Broadcasts every 1-2 seconds:
+    {
+        "type": "student_status_update",
+        "room_id": 123,
+        "timestamp": "2026-02-24T10:30:45Z",
+        "updates": [
+            {
+                "student_id": 456,
+                "face_detection_status": "DETECTED",
+                "confidence": 0.94,
+                "hand_raised": false,
+                "audio_enabled": true,
+                "last_verified_at": "2026-02-24T10:30:40Z"
+            },
+            ...
+        ]
+    }
+    """
+
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room"]
+        self.user = self.scope.get("user")
+
+        if not self.user or not self.user.is_authenticated:
+            await self.close(code=4001)
+            return
+
+        # Only teachers/admins can monitor
+        user_role = getattr(self.user, "role", None)
+        is_teacher = self.user.is_superuser or user_role in ["admin", "teacher"]
+
+        if not is_teacher:
+            await self.close(code=4003)  # Forbidden
+            return
+
+        self.monitoring_group_name = f"live_monitoring_{self.room_name}"
+
+        # Join monitoring group
+        await self.channel_layer.group_add(
+            self.monitoring_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+        # Send initial data
+        initial_data = await self.get_initial_monitoring_data()
+        await self.send(text_data=json.dumps({
+            "type": "monitoring_started",
+            "room_name": self.room_name,
+            "timestamp": timezone.now().isoformat(),
+            "data": initial_data,
+        }))
+
+    async def disconnect(self, close_code):
+        # Leave monitoring group
+        await self.channel_layer.group_discard(
+            self.monitoring_group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data):
+        """Handle incoming messages (usually ping/keep-alive)."""
+        try:
+            data = json.loads(text_data)
+            message_type = data.get("type")
+
+            if message_type == "ping":
+                await self.send(text_data=json.dumps({"type": "pong"}))
+            elif message_type == "request_update":
+                update_data = await self.get_current_monitoring_data()
+                await self.send(text_data=json.dumps({
+                    "type": "student_status_update",
+                    **update_data,
+                }))
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                "type": "error",
+                "message": f"Error: {str(e)}"
+            }))
+
+    async def student_status_update(self, event):
+        """
+        Receive student status update from channel layer.
+        Broadcast to all monitoring clients.
+        """
+        await self.send(text_data=json.dumps(event))
+
+    @database_sync_to_async
+    def get_initial_monitoring_data(self) -> Dict[str, Any]:
+        """Get initial monitoring data when client connects."""
+        from .models import LiveRoom, LiveFaceSession
+
+        try:
+            room = LiveRoom.objects.get(room_name=self.room_name)
+
+            # Get all students (non-teacher participants)
+            sessions = LiveFaceSession.objects.filter(
+                room=room,
+                status='active',
+                user__role='student'
+            ).select_related('user', 'participant')
+
+            students_data = []
+            for session in sessions:
+                latest_event = session.events.order_by('-created_at').first()
+
+                student_data = {
+                    "student_id": session.user_id,
+                    "student_name": session.user.get_full_name() or session.user.username,
+                    "face_detection_status": self._get_face_status(latest_event),
+                    "confidence": float(latest_event.confidence) if latest_event and latest_event.confidence else 0.0,
+                    "hand_raised": session.participant.hand_raised if session.participant else False,
+                    "audio_enabled": room.stage_user_id == session.user_id,
+                    "last_verified_at": latest_event.created_at.isoformat() if latest_event else None,
+                    "success_rate": session.success_rate,
+                }
+                students_data.append(student_data)
+
+            return {
+                "room_id": room.id,
+                "room_name": room.room_name,
+                "total_students": len(students_data),
+                "verified_count": sum(1 for s in students_data if s["face_detection_status"] == "DETECTED"),
+                "updates": students_data,
+                "timestamp": timezone.now().isoformat(),
+            }
+
+        except Exception as e:
+            return {
+                "room_name": self.room_name,
+                "error": str(e),
+                "updates": [],
+            }
+
+    @database_sync_to_async
+    def get_current_monitoring_data(self) -> Dict[str, Any]:
+        """Get current student statuses for broadcast."""
+        return self.get_initial_monitoring_data()
+
+    @staticmethod
+    def _get_face_status(event) -> str:
+        """Map event type to face detection status."""
+        if not event:
+            return "CHECKING"
+
+        event_type = event.event_type
+        if event_type == "success":
+            return "DETECTED"
+        elif event_type == "no_face":
+            return "NOT_DETECTED"
+        elif event_type == "multiple_faces":
+            return "MULTIPLE"
+        else:
+            return "CHECKING"

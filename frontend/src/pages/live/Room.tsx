@@ -277,45 +277,6 @@ const LiveRoomPage = () => {
     return 'pending';
   }, [getFaceSession]);
 
-  // Grouped and sorted students
-  const groupedStudents = useMemo(() => {
-    const handRaised = studentTiles.filter(p => p.hand_raised);
-    const verified = studentTiles.filter(p => {
-      if (p.hand_raised) return false;
-      const session = getFaceSession(p.user_id);
-      return session?.status === 'verified' && session.success_rate >= 70;
-    });
-    const failed = studentTiles.filter(p => {
-      if (p.hand_raised) return false;
-      const session = getFaceSession(p.user_id);
-      return session && (session.status === 'failed' || session.success_rate < 50);
-    });
-    const pending = studentTiles.filter(p => {
-      if (p.hand_raised) return false;
-      const session = getFaceSession(p.user_id);
-      return !session || (!verified.includes(p) && !failed.includes(p));
-    });
-    
-    return { handRaised, verified, failed, pending };
-  }, [studentTiles, getFaceSession]);
-
-  // Sorted students (for bottom strip on mobile)
-  const sortedStudents = useMemo(() => {
-    return [...studentTiles].sort((a, b) => {
-      const statusA = getVerificationStatus(a);
-      const statusB = getVerificationStatus(b);
-      
-      const priority: Record<string, number> = {
-        hand_raised: 1,
-        verified: 2,
-        failed: 3,
-        pending: 4,
-      };
-      
-      return (priority[statusA] || 4) - (priority[statusB] || 4);
-    });
-  }, [studentTiles, getVerificationStatus]);
-
   useEffect(() => {
     if (!localTracks.audio) return;
     if (userRole === "student") {
@@ -388,6 +349,45 @@ const LiveRoomPage = () => {
   if (error) return <div className="flex-center h-screen flex-direction-column"><h2 className="text-error">Xatolik</h2><p>{error}</p><Button onClick={() => navigate(-1)}>Orqaga</Button></div>;
 
   const studentTiles = participants.filter(p => !p.is_teacher && p.user_id !== effectiveStageUserId);
+
+  // Grouped and sorted students
+  const groupedStudents = useMemo(() => {
+    const handRaised = studentTiles.filter(p => p.hand_raised);
+    const verified = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return session?.status === 'verified' && session.success_rate >= 70;
+    });
+    const failed = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return session && (session.status === 'failed' || session.success_rate < 50);
+    });
+    const pending = studentTiles.filter(p => {
+      if (p.hand_raised) return false;
+      const session = getFaceSession(p.user_id);
+      return !session || (!verified.includes(p) && !failed.includes(p));
+    });
+    
+    return { handRaised, verified, failed, pending };
+  }, [studentTiles, getFaceSession]);
+
+  // Sorted students (for bottom strip on mobile)
+  const sortedStudents = useMemo(() => {
+    return [...studentTiles].sort((a, b) => {
+      const statusA = getVerificationStatus(a);
+      const statusB = getVerificationStatus(b);
+      
+      const priority: Record<string, number> = {
+        hand_raised: 1,
+        verified: 2,
+        failed: 3,
+        pending: 4,
+      };
+      
+      return (priority[statusA] || 4) - (priority[statusB] || 4);
+    });
+  }, [studentTiles, getVerificationStatus]);
 
   // Render badge for participant
   const renderBadge = (participant: LiveParticipantState) => {

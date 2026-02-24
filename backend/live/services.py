@@ -327,11 +327,22 @@ class FaceVerificationService:
         
         session.save()
         
+        # Determine face detection status
+        if event_type == "success":
+            face_detection_status = "DETECTED"
+        elif event_type == "no_face":
+            face_detection_status = "NOT_DETECTED"
+        elif event_type == "multiple_faces":
+            face_detection_status = "MULTIPLE"
+        else:
+            face_detection_status = "CHECKING"
+        
         return {
             "verified": verified,
             "confidence": confidence,
             "faces_detected": faces_detected,
             "event_type": event_type,
+            "face_detection_status": face_detection_status,
             "event_id": event.id,
             "message": message,
             "alert": alert,

@@ -1,0 +1,320 @@
+/* Student Tile Container */
+.student-tile {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  flex: 0 0 140px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+}
+
+.student-tile:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.student-tile.detected {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.student-tile.not_detected {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.student-tile.multiple {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* Video Container */
+.student-video-container {
+  width: 100%;
+  flex: 1;
+  background: #000;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+}
+
+.video-element > video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(59, 130, 246, 0.2));
+  font-size: 32px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Face Status Indicator Ring */
+.face-status-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.face-status-indicator.detected {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.face-status-indicator.not_detected {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+  animation: shake-red 0.5s ease-in-out infinite;
+}
+
+.face-status-indicator.multiple {
+  background: linear-gradient(135deg, #f59e0b, #fcd34d);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
+  animation: pulse-yellow 2s ease-in-out infinite;
+}
+
+.face-status-indicator.checking {
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
+  animation: spin 1s linear infinite;
+}
+
+.status-ring {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+
+/* Student Info Section */
+.student-info {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+/* Student Name */
+.student-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: white;
+}
+
+/* Status Badges */
+.student-badges {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+  margin-top: 2px;
+  align-items: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge.hand-raised {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: white;
+  animation: pulse-blue 1.5s ease-in-out infinite;
+  font-size: 11px;
+}
+
+.badge.confidence {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Audio Control Button */
+.audio-control-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 5;
+  padding: 0;
+  font-size: 12px;
+}
+
+.audio-control-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.audio-control-btn.enabled {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.audio-control-btn.enabled:hover {
+  background: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+/* Animations */
+@keyframes pulse-green {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 1);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-yellow {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 1);
+  }
+}
+
+@keyframes pulse-blue {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+}
+
+@keyframes shake-red {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1023px) {
+  .student-tile {
+    flex: 0 0 110px;
+    height: 150px;
+  }
+
+  .face-status-indicator {
+    width: 20px;
+    height: 20px;
+  }
+
+  .student-name {
+    font-size: 11px;
+  }
+
+  .badge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .audio-control-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .student-tile {
+    flex: 0 0 100%;
+    height: 140px;
+  }
+
+  .face-status-indicator {
+    width: 18px;
+    height: 18px;
+    top: 4px;
+    right: 4px;
+  }
+
+  .student-name {
+    font-size: 10px;
+  }
+
+  .badge {
+    font-size: 8px;
+    padding: 1px 3px;
+  }
+
+  .audio-control-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 9px;
+  }
+}
