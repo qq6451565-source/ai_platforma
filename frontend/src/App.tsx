@@ -56,6 +56,7 @@ import { getAccessToken } from "./utils/token";
 import { getDefaultRedirect } from "./utils/roleRedirect";
 import { useMe } from "./hooks/useMe";
 import { ResponsiveLayout } from "./components/Layout";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 import "./App.css";
 
 const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
@@ -138,13 +139,18 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
   useEffect(() => {
     if (!user || isLoading) return;
+    const role = user.role;
+    const canSync = role === "teacher" || role === "admin";
+    const liveRouteActive = location.pathname.startsWith("/app/live/");
+    if (!canSync || liveRouteActive) return;
+
     const runSync = async () => {
       try { await syncLiveRooms(); } catch {}
     };
     runSync();
     const timer = setInterval(runSync, 60_000);
     return () => clearInterval(timer);
-  }, [user, isLoading]);
+  }, [user, isLoading, location.pathname]);
 
   const selectedPath = location.pathname.startsWith("/app/") ? location.pathname.replace("/app/", "") : "";
   const isLiveRoute = selectedPath.startsWith("live/");
@@ -166,6 +172,9 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
   return (
     <ResponsiveLayout user={user} items={items} onLogout={handleLogout} title={title}>
+      <div style={{ position: 'absolute', top: '20px', right: '150px', zIndex: 100 }}>
+        <LanguageSwitcher />
+      </div>
       <Outlet />
     </ResponsiveLayout>
   );

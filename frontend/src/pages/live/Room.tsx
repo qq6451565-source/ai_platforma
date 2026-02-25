@@ -44,7 +44,7 @@ import "./styles/SidePanel.css";
 import "./styles/StudentTile.css";
 import "./styles/StudentGridSection.css";
 
-const appId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
+const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
 const FACE_VERIFY_INTERVAL_MS = 4000;
 
 interface RoomState {
@@ -73,6 +73,39 @@ const getInitials = (value: string) => {
     .map((part) => (part[0] ? part[0].toUpperCase() : ""))
     .join("");
 };
+
+type ApiErrorPayload = {
+  error?: string;
+  detail?: string;
+  message?: string;
+};
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const axiosLike = error as {
+      message?: string;
+      response?: {
+        status?: number;
+        data?: ApiErrorPayload;
+      };
+    };
+    const payloadMessage =
+      axiosLike.response?.data?.error ||
+      axiosLike.response?.data?.detail ||
+      axiosLike.response?.data?.message;
+    if (payloadMessage) return payloadMessage;
+
+    const status = axiosLike.response?.status;
+    if (status === 403) return "Bu darsga kirish uchun ruxsat yo'q.";
+    if (status === 404) return "Live xona topilmadi.";
+    if (status === 503) return "Live servis sozlanmagan (Agora konfiguratsiyasini tekshiring).";
+    if (axiosLike.message) return axiosLike.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export default function Room() {
   const navigate = useNavigate();
@@ -151,7 +184,7 @@ export default function Room() {
   }, [liveState, localUserId]);
 
   useEffect(() => {
-    if (!appId || !lessonId || !me?.id) return;
+    if (!lessonId || !me?.id) return;
     let cancelled = false;
 
     const initialize = async () => {
@@ -173,6 +206,12 @@ export default function Room() {
           lesson_id: Number(lessonId),
         });
         if (cancelled) return;
+        const resolvedAppId = tokenData.app_id || fallbackAgoraAppId;
+        if (!resolvedAppId) {
+          throw new Error(
+            "Agora App ID topilmadi. Backend `AGORA_APP_ID` yoki frontend `VITE_AGORA_APP_ID` sozlamasini tekshiring."
+          );
+        }
 
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         clientRef.current = client;
@@ -224,21 +263,30 @@ export default function Room() {
           setTrackVersion((prev) => prev + 1);
         });
 
-        await client.join(appId, tokenData.channel, tokenData.token, tokenData.uid || null);
+        await client.join(resolvedAppId, tokenData.channel, tokenData.token, tokenData.uid || null);
 
         // Existing publishers may already be in the room before this user joins.
         await Promise.all(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
 
-        const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-        localAudioRef.current = audioTrack;
+        const videoTrack = await AgoraRTC.createCameraVideoTrack();
         localVideoRef.current = videoTrack;
+
+        let audioTrack: ILocalAudioTrack | null = null;
+        try {
+          audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        } catch (audioError) {
+          console.error("Audio track init error:", audioError);
+          audioTrack = null;
+        }
+        localAudioRef.current = audioTrack;
         setLocalTrackVersion((prev) => prev + 1);
 
-        if (!isTeacher) {
+        if (audioTrack && !isTeacher) {
           await audioTrack.setEnabled(false);
         }
 
-        await client.publish([audioTrack, videoTrack]);
+        const tracksToPublish = audioTrack ? [videoTrack, audioTrack] : [videoTrack];
+        await client.publish(tracksToPublish);
 
         if (cancelled) return;
         setState((prev) => ({
@@ -246,13 +294,10 @@ export default function Room() {
           connected: true,
           loading: false,
           cameraOn: true,
-          micOn: isTeacher,
+          micOn: Boolean(isTeacher && audioTrack),
         }));
       } catch (error: unknown) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Live darsga ulanishda xatolik yuz berdi";
+        const message = getErrorMessage(error, "Live darsga ulanishda xatolik yuz berdi");
         if (!cancelled) {
           setState((prev) => ({
             ...prev,

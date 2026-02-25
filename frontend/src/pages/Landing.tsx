@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../components/ui';
-import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import './Landing.css';
 

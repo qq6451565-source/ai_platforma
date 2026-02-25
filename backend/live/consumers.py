@@ -10,6 +10,16 @@ from profiles.models import StudentProfile
 from .models import LiveFaceSession, LiveParticipant, LiveRoom
 
 
+def _student_group_id(user):
+    try:
+        group_id = user.student_profile.group_id
+        if group_id:
+            return group_id
+    except StudentProfile.DoesNotExist:
+        pass
+    return getattr(user, "group_id", None)
+
+
 class LiveLessonConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room"]
@@ -71,10 +81,8 @@ class LiveLessonConsumer(AsyncWebsocketConsumer):
             return True
 
         if role == "student":
-            try:
-                return user.student_profile.group_id == room.lesson.group_id
-            except StudentProfile.DoesNotExist:
-                return False
+            group_id = _student_group_id(user)
+            return bool(group_id and group_id == room.lesson.group_id)
         return False
 
 
@@ -206,10 +214,8 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
             return True
 
         if role == "student":
-            try:
-                return user.student_profile.group_id == room.lesson.group_id
-            except StudentProfile.DoesNotExist:
-                return False
+            group_id = _student_group_id(user)
+            return bool(group_id and group_id == room.lesson.group_id)
         return False
 
     @database_sync_to_async

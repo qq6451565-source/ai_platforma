@@ -35,18 +35,20 @@ from .serializers import (
 )
 
 try:
-    from agora_token_builder import RtcTokenBuilder, Role_Publisher, Role_Subscriber
+    from agora_token_builder import RtcTokenBuilder, Role_Publisher
 except Exception:  # pragma: no cover - optional dependency
     RtcTokenBuilder = None
     Role_Publisher = 1
-    Role_Subscriber = 2
 
 
 def _student_group_id(user: User):
     try:
-        return user.student_profile.group_id
+        group_id = user.student_profile.group_id
+        if group_id:
+            return group_id
     except StudentProfile.DoesNotExist:
-        return None
+        pass
+    return getattr(user, "group_id", None)
 
 
 def _ensure_teacher_can_access(request, lesson: Lesson):
@@ -116,10 +118,8 @@ def _build_livekit_token(user: User, room_name: str) -> str:
 
 
 def _agora_role_for(user: User) -> int:
-    role = getattr(user, "role", None)
-    if user.is_superuser or role in ["admin", "teacher"]:
-        return Role_Publisher
-    return Role_Subscriber
+    # Studentlar ham video publish qiladi (mic stage bo'yicha frontendda boshqariladi).
+    return Role_Publisher
 
 
 def _build_agora_token(user: User, room_name: str) -> str:
@@ -480,7 +480,7 @@ class PushToTalkView(APIView):
 
 
 class SyncLiveRoomsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTeacherOrAdmin]
 
     def post(self, request):
         result = sync_live_rooms()

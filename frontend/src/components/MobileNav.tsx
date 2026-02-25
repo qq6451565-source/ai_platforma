@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { Button } from './ui';
 import { Sidebar } from './Layout/Sidebar';
-import { LanguageSwitcher } from './LanguageSwitcher';
+import LanguageSwitcher from './LanguageSwitcher';
 import './MobileNav.css';
 
 interface MobileNavProps {

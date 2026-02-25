@@ -9,7 +9,7 @@ import {
   LogoutOutlined,
   DownOutlined
 } from '@ant-design/icons';
-import { LanguageSwitcher } from '../LanguageSwitcher';
+import LanguageSwitcher from '../LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import './DesktopLayout.css';
