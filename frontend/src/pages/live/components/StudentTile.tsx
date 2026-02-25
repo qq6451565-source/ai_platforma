@@ -39,10 +39,11 @@ export const StudentTile: React.FC<StudentTileProps> = ({
     }
 
     return () => {
-      try {
-        videoTrack.stop();
-      } catch (error) {
-        console.error("Error stopping video track:", error);
+      // WHY: Agora remote tracks are often shared between multiple UI surfaces (stage + grid).
+      // Calling stop() here tears down playback globally and can blank out other active views.
+      // We only detach this tile's DOM node and let the owner lifecycle close tracks (without innerHTML writes).
+      if (videoRef.current) {
+        videoRef.current.replaceChildren();
       }
     };
   }, [videoTrack, student.user_id, student.user_name]);

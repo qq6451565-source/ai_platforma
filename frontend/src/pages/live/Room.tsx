@@ -459,13 +459,18 @@ export default function Room() {
   useEffect(() => {
     if (!stageVideoRef.current) return;
     if (!stageVideoTrack) {
-      stageVideoRef.current.innerHTML = "";
+      stageVideoRef.current.replaceChildren();
       return;
     }
 
     stageVideoTrack.play(stageVideoRef.current);
     return () => {
-      stageVideoTrack.stop();
+      // WHY: the same remote video track can be rendered in multiple places (stage/grid).
+      // stop() tears down playback across all bound elements, causing random blank videos.
+      // Clearing only this container prevents cross-component side effects and avoids innerHTML CSP issues.
+      if (stageVideoRef.current) {
+        stageVideoRef.current.replaceChildren();
+      }
     };
   }, [stageVideoTrack]);
 
