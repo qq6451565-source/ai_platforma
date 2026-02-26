@@ -402,16 +402,17 @@ export default function Room() {
         localAudioRef.current = audioTrack;
         setLocalTrackVersion((prev) => prev + 1);
 
-        if (audioTrack && !isTeacher) {
-          await audioTrack.setEnabled(false);
-        }
-
         const tracksToPublish = audioTrack ? [videoTrack, audioTrack] : [videoTrack];
         await client.publish(tracksToPublish);
         pushDebug("local tracks published", {
           video: true,
           audio: Boolean(audioTrack),
         });
+
+        if (audioTrack && !isTeacher) {
+          await audioTrack.setEnabled(false);
+          pushDebug("student mic disabled after publish");
+        }
 
         if (cancelled) return;
         setState((prev) => ({
