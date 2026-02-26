@@ -5,6 +5,7 @@
 
 export type FaceDetectionStatus = "DETECTED" | "NOT_DETECTED" | "MULTIPLE" | "CHECKING";
 export type StudentTier = "hand_raised" | "verified" | "failed" | "pending";
+export type VisualStatus = "engaged" | "verified" | "unverified" | "checking";
 
 export interface StudentStatus {
   faceStatus: FaceDetectionStatus;
@@ -35,16 +36,27 @@ const tierPriority: Record<StudentTier, number> = {
   pending: 4,
 };
 
+export const resolveVisualStatus = (
+  student: Student,
+  status?: StudentStatus
+): VisualStatus => {
+  const isHandRaised = Boolean(status?.handRaised || student.hand_raised);
+  if (isHandRaised) return "engaged";
+
+  const faceStatus = status?.faceStatus ?? "CHECKING";
+  if (faceStatus === "DETECTED") return "verified";
+  if (faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE") return "unverified";
+  return "checking";
+};
+
 export const resolveStudentTier = (
   student: Student,
   status?: StudentStatus
 ): StudentTier => {
-  const isHandRaised = Boolean(status?.handRaised || student.hand_raised);
-  if (isHandRaised) return "hand_raised";
-
-  const faceStatus = status?.faceStatus ?? "CHECKING";
-  if (faceStatus === "DETECTED") return "verified";
-  if (faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE") return "failed";
+  const visualStatus = resolveVisualStatus(student, status);
+  if (visualStatus === "engaged") return "hand_raised";
+  if (visualStatus === "verified") return "verified";
+  if (visualStatus === "unverified") return "failed";
   return "pending";
 };
 

@@ -3,6 +3,8 @@ import time
 import uuid
 
 import jwt
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -204,6 +206,65 @@ def _get_or_create_participant(room: LiveRoom, user: User, is_teacher: bool):
     return LiveParticipant.objects.create(room=room, user=user, is_teacher=is_teacher), True
 
 
+def _serialize_room_participants(room: LiveRoom):
+    participants = (
+        LiveParticipant.objects.filter(room=room, left_at__isnull=True)
+        .select_related("user")
+        .order_by("-joined_at")
+    )
+    payload = []
+    for participant in participants:
+        user = participant.user
+        role = getattr(user, "role", None) or ("admin" if user.is_superuser else "user")
+        payload.append(
+            {
+                "user_id": user.id,
+                "user_name": user.get_full_name() or user.username,
+                "role": role,
+                "is_teacher": participant.is_teacher,
+                "hand_raised": participant.hand_raised,
+            }
+        )
+
+    resolved_stage_user_id = room.stage_user_id
+    if resolved_stage_user_id is None:
+        active_teacher = participants.filter(is_teacher=True).first()
+        resolved_stage_user_id = active_teacher.user_id if active_teacher else None
+
+    return payload, resolved_stage_user_id
+
+
+def _build_room_state_payload(room: LiveRoom):
+    participants, resolved_stage_user_id = _serialize_room_participants(room)
+    return {
+        "type": "room_state_update",
+        "room_id": room.id,
+        "room_name": room.room_name,
+        "stage_user_id": room.stage_user_id,
+        "resolved_stage_user_id": resolved_stage_user_id,
+        "participants": participants,
+        "timestamp": timezone.now().isoformat(),
+    }
+
+
+def _broadcast_room_state(room: LiveRoom):
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+    payload = _build_room_state_payload(room)
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f"live_monitoring_{room.room_name}",
+            {
+                "type": "room_state_update_event",
+                "payload": payload,
+            },
+        )
+    except Exception:
+        # WebSocket broadcast failure must not break HTTP request flow.
+        return
+
+
 class LiveRoomViewSet(viewsets.ModelViewSet):
     queryset = LiveRoom.objects.select_related("lesson", "lesson__teacher_subject__teacher")
     serializer_class = LiveRoomSerializer
@@ -281,6 +342,8 @@ class JoinLiveLessonView(APIView):
             room.stage_user = request.user
             room.save(update_fields=["stage_user"])
 
+        _broadcast_room_state(room)
+
         return Response(
             {
                 "room_id": room.id,
@@ -312,6 +375,8 @@ class JoinLiveRoomView(APIView):
         if room.stage_user_id is None and (request.user.is_superuser or role in ["admin", "teacher"]):
             room.stage_user = request.user
             room.save(update_fields=["stage_user"])
+
+        _broadcast_room_state(room)
 
         return Response(
             {
@@ -378,29 +443,7 @@ class LiveRoomStateView(APIView):
 
         _ensure_user_can_join(request, room.lesson)
 
-        participants = (
-            LiveParticipant.objects.filter(room=room, left_at__isnull=True)
-            .select_related("user")
-            .order_by("-joined_at")
-        )
-        resolved_stage_user_id = room.stage_user_id
-        if resolved_stage_user_id is None:
-            active_teacher = participants.filter(is_teacher=True).first()
-            resolved_stage_user_id = active_teacher.user_id if active_teacher else None
-
-        payload = []
-        for p in participants:
-            user = p.user
-            role = getattr(user, "role", None) or ("admin" if user.is_superuser else "user")
-            payload.append(
-                {
-                    "user_id": user.id,
-                    "user_name": user.get_full_name() or user.username,
-                    "role": role,
-                    "is_teacher": p.is_teacher,
-                    "hand_raised": p.hand_raised,
-                }
-            )
+        payload, resolved_stage_user_id = _serialize_room_participants(room)
 
         return Response(
             {
@@ -432,6 +475,7 @@ class RaiseHandView(APIView):
         raised = bool(request.data.get("raised", True))
         participant.hand_raised = raised
         participant.save(update_fields=["hand_raised"])
+        _broadcast_room_state(room)
         return Response({"hand_raised": participant.hand_raised})
 
 
@@ -465,6 +509,7 @@ class SetStageUserView(APIView):
             participant.hand_raised = False
             participant.save(update_fields=["hand_raised"])
 
+        _broadcast_room_state(room)
         return Response({"stage_user_id": room.stage_user_id})
 
 
@@ -482,6 +527,7 @@ class PushToTalkView(APIView):
         enabled = bool(request.data.get("enabled", False))
         room.allow_ptt = enabled
         room.save(update_fields=["allow_ptt"])
+        _broadcast_room_state(room)
         return Response({"allow_ptt": room.allow_ptt})
 
 
@@ -514,6 +560,7 @@ class LeaveLiveRoomView(APIView):
             )
             room.stage_user = next_teacher.user if next_teacher else None
             room.save(update_fields=["stage_user"])
+        _broadcast_room_state(room)
         return Response({"message": "Left room"})
 
 

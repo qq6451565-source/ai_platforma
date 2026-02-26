@@ -20,6 +20,23 @@ def _student_group_id(user):
     return getattr(user, "group_id", None)
 
 
+def _user_can_access_room(user, room) -> bool:
+    role = getattr(user, "role", None)
+    if user.is_superuser or role in ["admin", "teacher"]:
+        if role == "teacher":
+            try:
+                teacher_id = getattr(room.lesson.teacher_subject, "teacher_id", None)
+            except Exception:
+                teacher_id = None
+            return teacher_id == user.id
+        return True
+
+    if role == "student":
+        group_id = _student_group_id(user)
+        return bool(group_id and group_id == room.lesson.group_id)
+    return False
+
+
 class LiveLessonConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room"]
@@ -69,21 +86,7 @@ class LiveLessonConsumer(AsyncWebsocketConsumer):
         except LiveRoom.DoesNotExist:
             return False
 
-        user = self.user
-        role = getattr(user, "role", None)
-        if user.is_superuser or role in ["admin", "teacher"]:
-            if role == "teacher":
-                try:
-                    teacher_id = getattr(room.lesson.teacher_subject, "teacher_id", None)
-                except Exception:
-                    teacher_id = None
-                return teacher_id == user.id
-            return True
-
-        if role == "student":
-            group_id = _student_group_id(user)
-            return bool(group_id and group_id == room.lesson.group_id)
-        return False
+        return _user_can_access_room(self.user, room)
 
 
 class FaceVerificationConsumer(AsyncWebsocketConsumer):
@@ -202,21 +205,7 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
         except LiveRoom.DoesNotExist:
             return False
 
-        user = self.user
-        role = getattr(user, "role", None)
-        if user.is_superuser or role in ["admin", "teacher"]:
-            if role == "teacher":
-                try:
-                    teacher_id = getattr(room.lesson.teacher_subject, "teacher_id", None)
-                except Exception:
-                    teacher_id = None
-                return teacher_id == user.id
-            return True
-
-        if role == "student":
-            group_id = _student_group_id(user)
-            return bool(group_id and group_id == room.lesson.group_id)
-        return False
+        return _user_can_access_room(self.user, room)
 
     @database_sync_to_async
     def get_or_create_session(self) -> Dict[str, Any]:
@@ -308,8 +297,8 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
             await self.close(code=4001)
             return
 
-        can_monitor = await self.teacher_can_monitor_room()
-        if not can_monitor:
+        can_access = await self.user_can_access_room()
+        if not can_access:
             await self.close(code=4003)
             return
 
@@ -318,6 +307,7 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         initial_data = await self.get_current_monitoring_data()
+        room_state_payload = await self.get_current_room_state()
         await self.send(
             text_data=json.dumps(
                 {
@@ -325,9 +315,11 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                     "room_name": self.room_name,
                     "timestamp": timezone.now().isoformat(),
                     "data": initial_data,
+                    "room_state": room_state_payload,
                 }
             )
         )
+        await self.send(text_data=json.dumps(room_state_payload))
 
     async def disconnect(self, close_code):
         if hasattr(self, "monitoring_group_name"):
@@ -348,6 +340,8 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
         if message_type == "request_update":
             payload = await self.get_current_monitoring_data()
             await self.send(text_data=json.dumps({"type": "student_status_update", **payload}))
+            room_state_payload = await self.get_current_room_state()
+            await self.send(text_data=json.dumps(room_state_payload))
             return
 
         await self.send(text_data=json.dumps({"type": "error", "message": f"Unknown type: {message_type}"}))
@@ -358,8 +352,11 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
     async def verification_alert_event(self, event):
         await self.send(text_data=json.dumps(event["payload"]))
 
+    async def room_state_update_event(self, event):
+        await self.send(text_data=json.dumps(event["payload"]))
+
     @database_sync_to_async
-    def teacher_can_monitor_room(self) -> bool:
+    def user_can_access_room(self) -> bool:
         try:
             room = LiveRoom.objects.select_related("lesson", "lesson__teacher_subject__teacher").get(
                 room_name=self.room_name
@@ -367,21 +364,15 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
         except LiveRoom.DoesNotExist:
             return False
 
-        user = self.user
-        role = getattr(user, "role", None)
-        if user.is_superuser or role == "admin":
-            return True
-        if role == "teacher":
-            try:
-                teacher_id = getattr(room.lesson.teacher_subject, "teacher_id", None)
-            except Exception:
-                teacher_id = None
-            return teacher_id == user.id
-        return False
+        return _user_can_access_room(self.user, room)
 
     @database_sync_to_async
     def get_current_monitoring_data(self) -> Dict[str, Any]:
         return self._build_monitoring_data()
+
+    @database_sync_to_async
+    def get_current_room_state(self) -> Dict[str, Any]:
+        return self._build_room_state_data()
 
     def _build_monitoring_data(self) -> Dict[str, Any]:
         try:
@@ -421,6 +412,51 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                 "room_name": self.room_name,
                 "error": str(exc),
                 "updates": [],
+                "timestamp": timezone.now().isoformat(),
+            }
+
+    def _build_room_state_data(self) -> Dict[str, Any]:
+        try:
+            room = LiveRoom.objects.get(room_name=self.room_name)
+            participants = (
+                LiveParticipant.objects.filter(room=room, left_at__isnull=True)
+                .select_related("user")
+                .order_by("-joined_at")
+            )
+            payload = []
+            for participant in participants:
+                user = participant.user
+                role = getattr(user, "role", None) or ("admin" if user.is_superuser else "user")
+                payload.append(
+                    {
+                        "user_id": user.id,
+                        "user_name": user.get_full_name() or user.username,
+                        "role": role,
+                        "is_teacher": participant.is_teacher,
+                        "hand_raised": participant.hand_raised,
+                    }
+                )
+
+            resolved_stage_user_id = room.stage_user_id
+            if resolved_stage_user_id is None:
+                active_teacher = participants.filter(is_teacher=True).first()
+                resolved_stage_user_id = active_teacher.user_id if active_teacher else None
+
+            return {
+                "type": "room_state_update",
+                "room_id": room.id,
+                "room_name": room.room_name,
+                "stage_user_id": room.stage_user_id,
+                "resolved_stage_user_id": resolved_stage_user_id,
+                "participants": payload,
+                "timestamp": timezone.now().isoformat(),
+            }
+        except Exception as exc:
+            return {
+                "type": "room_state_update",
+                "room_name": self.room_name,
+                "participants": [],
+                "error": str(exc),
                 "timestamp": timezone.now().isoformat(),
             }
 

@@ -18,7 +18,7 @@ interface VerificationResult {
 interface StudentStatusUpdate {
   student_id: number;
   student_name?: string;
-  face_detection_status: FaceDetectionStatus;
+  face_detection_status?: FaceDetectionStatus;
   confidence?: number;
   hand_raised?: boolean;
   audio_enabled?: boolean;
@@ -38,10 +38,31 @@ interface MonitoringUpdateMessage {
 interface SingleStudentUpdateMessage {
   type: "student_status_update";
   student_id: number;
-  face_detection_status: FaceDetectionStatus;
+  face_detection_status?: FaceDetectionStatus;
   confidence?: number;
   hand_raised?: boolean;
   audio_enabled?: boolean;
+}
+
+export interface MonitoringRoomParticipant {
+  user_id: number;
+  user_name: string;
+  role: string;
+  is_teacher: boolean;
+  hand_raised: boolean;
+}
+
+export interface MonitoringRoomState {
+  room_id: number;
+  room_name: string;
+  stage_user_id: number | null;
+  resolved_stage_user_id: number | null;
+  participants: MonitoringRoomParticipant[];
+  timestamp: string;
+}
+
+interface RoomStateUpdateMessage extends MonitoringRoomState {
+  type: "room_state_update";
 }
 
 interface MonitoringStartedMessage {
@@ -49,6 +70,7 @@ interface MonitoringStartedMessage {
   data?: {
     updates?: StudentStatusUpdate[];
   };
+  room_state?: RoomStateUpdateMessage;
 }
 
 const RECONNECT_DELAY_MS = 2500;
@@ -77,11 +99,21 @@ function applyUpdatesToMap(
 ): Map<number, StudentStatus> {
   const next = new Map(previous);
   updates.forEach((update) => {
+    const existing = next.get(update.student_id);
     next.set(update.student_id, {
-      faceStatus: update.face_detection_status ?? "CHECKING",
-      confidence: Number(update.confidence ?? 0),
-      handRaised: Boolean(update.hand_raised),
-      audioEnabled: Boolean(update.audio_enabled),
+      faceStatus: update.face_detection_status ?? existing?.faceStatus ?? "CHECKING",
+      confidence:
+        update.confidence !== undefined
+          ? Number(update.confidence)
+          : existing?.confidence ?? 0,
+      handRaised:
+        update.hand_raised !== undefined
+          ? Boolean(update.hand_raised)
+          : existing?.handRaised ?? false,
+      audioEnabled:
+        update.audio_enabled !== undefined
+          ? Boolean(update.audio_enabled)
+          : existing?.audioEnabled ?? false,
       timestamp: Date.now(),
     });
   });
@@ -177,21 +209,30 @@ export const useFaceVerification = (
 
 export const useStudentMonitoring = (
   roomName: string,
-  isTeacher: boolean = false
+  enabled: boolean = false
 ) => {
   const [studentStatuses, setStudentStatuses] = useState<Map<number, StudentStatus>>(
     new Map()
   );
   const [connected, setConnected] = useState(false);
+  const [roomState, setRoomState] = useState<MonitoringRoomState | null>(null);
+  const [lastStatusEventAt, setLastStatusEventAt] = useState<string | null>(null);
+  const [lastRoomStateEventAt, setLastRoomStateEventAt] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
 
   const applyIncomingUpdate = useCallback((updates: StudentStatusUpdate[]) => {
     setStudentStatuses((previous) => applyUpdatesToMap(previous, updates));
+    setLastStatusEventAt(new Date().toISOString());
+  }, []);
+
+  const applyRoomState = useCallback((payload: MonitoringRoomState) => {
+    setRoomState(payload);
+    setLastRoomStateEventAt(payload.timestamp || new Date().toISOString());
   }, []);
 
   const connect = useCallback(() => {
-    if (!isTeacher || !roomName) return;
+    if (!enabled || !roomName) return;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
     const wsUrl = buildWebSocketUrl(`/ws/live-monitoring/${roomName}/`);
@@ -207,11 +248,18 @@ export const useStudentMonitoring = (
         const raw = JSON.parse(event.data) as
           | MonitoringUpdateMessage
           | SingleStudentUpdateMessage
-          | MonitoringStartedMessage;
+          | MonitoringStartedMessage
+          | RoomStateUpdateMessage;
 
         if (raw.type === "monitoring_started") {
           const updates = raw.data?.updates ?? [];
           if (updates.length) applyIncomingUpdate(updates);
+          if (raw.room_state) applyRoomState(raw.room_state);
+          return;
+        }
+
+        if (raw.type === "room_state_update") {
+          applyRoomState(raw);
           return;
         }
 
@@ -245,12 +293,12 @@ export const useStudentMonitoring = (
     ws.onclose = () => {
       setConnected(false);
       wsRef.current = null;
-      if (!isTeacher || !roomName) return;
+      if (!enabled || !roomName) return;
       reconnectTimerRef.current = window.setTimeout(() => {
         connect();
       }, RECONNECT_DELAY_MS);
     };
-  }, [applyIncomingUpdate, isTeacher, roomName]);
+  }, [applyIncomingUpdate, applyRoomState, enabled, roomName]);
 
   useEffect(() => {
     connect();
@@ -276,21 +324,21 @@ export const useStudentMonitoring = (
   }, []);
 
   useEffect(() => {
-    if (!connected) return;
+    if (!connected || !enabled) return;
     const interval = window.setInterval(() => {
       requestUpdate();
     }, 3000);
     return () => clearInterval(interval);
-  }, [connected, requestUpdate]);
+  }, [connected, enabled, requestUpdate]);
 
   useEffect(() => {
-    if (!connected) return;
+    if (!connected || !enabled) return;
     const pingInterval = window.setInterval(() => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
       wsRef.current.send(JSON.stringify({ type: "ping" }));
     }, 30000);
     return () => clearInterval(pingInterval);
-  }, [connected]);
+  }, [connected, enabled]);
 
   const monitoringData = useMemo(
     () => ({
@@ -311,6 +359,8 @@ export const useStudentMonitoring = (
     monitoringData,
     connected,
     requestUpdate,
+    roomState,
+    lastStatusEventAt,
+    lastRoomStateEventAt,
   };
 };
-

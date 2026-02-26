@@ -38,7 +38,7 @@ import { Button } from "../../components/ui";
 import SidePanel from "./components/SidePanel";
 import StudentGridSection from "./components/StudentGridSection";
 import { useFaceVerification, useStudentMonitoring } from "./hooks/useFaceVerification";
-import { sortStudents } from "./utils/studentSorting";
+import { resolveVisualStatus, sortStudents } from "./utils/studentSorting";
 import i18next from "../../i18n";
 
 import "./Room_NEW.css";
@@ -50,6 +50,7 @@ const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefin
 const FACE_VERIFY_INTERVAL_MS = 4000;
 const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
+const SIDEBAR_ACTIVE_VIDEO_CAP = 10;
 
 interface RoomState {
   connected: boolean;
@@ -186,7 +187,6 @@ export default function Room() {
 
   const roomName = roomMeta?.roomName ?? "";
   const {
-    studentStatuses: studentFaceStatuses,
     connected: faceConnected,
     verifyFrame,
   } = useFaceVerification(roomName, Boolean(!isTeacher && state.connected && roomName));
@@ -194,10 +194,13 @@ export default function Room() {
     studentStatuses: monitoringStatuses,
     connected: monitoringConnected,
     requestUpdate: requestMonitoringUpdate,
-  } = useStudentMonitoring(roomName, Boolean(isTeacher && state.connected && roomName));
+    roomState: monitoringRoomState,
+    lastStatusEventAt,
+    lastRoomStateEventAt,
+  } = useStudentMonitoring(roomName, Boolean(state.connected && roomName));
 
-  const studentStatuses = isTeacher ? monitoringStatuses : studentFaceStatuses;
-  const monitoringIsConnected = isTeacher ? monitoringConnected : faceConnected;
+  const studentStatuses = monitoringStatuses;
+  const monitoringIsConnected = monitoringConnected;
 
   const { data: liveState } = useQuery({
     queryKey: ["live-state", roomMeta?.roomId, lessonId],
@@ -211,10 +214,11 @@ export default function Room() {
       return fetchLiveState({ lesson_id: Number(lessonId) });
     },
     enabled: Boolean(lessonId),
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {
+    if (monitoringConnected && monitoringRoomState) return;
     if (!liveState) return;
     const resolvedStageUserId =
       liveState.stage_user_id ?? liveState.resolved_stage_user_id ?? null;
@@ -236,7 +240,31 @@ export default function Room() {
       stage_user_id: liveState.stage_user_id,
       resolved_stage_user_id: liveState.resolved_stage_user_id,
     });
-  }, [liveState, localUserUid, pushDebug]);
+  }, [liveState, localUserUid, monitoringConnected, monitoringRoomState, pushDebug]);
+
+  useEffect(() => {
+    if (!monitoringRoomState) return;
+    const resolvedStageUserId =
+      monitoringRoomState.stage_user_id ?? monitoringRoomState.resolved_stage_user_id ?? null;
+
+    setState((prev) => {
+      const currentParticipant = monitoringRoomState.participants.find(
+        (participant) => normalizeUid(participant.user_id) === localUserUid
+      );
+      return {
+        ...prev,
+        participants: monitoringRoomState.participants,
+        stageUser: resolvedStageUserId ? normalizeUid(resolvedStageUserId) : null,
+        handRaised: Boolean(currentParticipant?.hand_raised),
+      };
+    });
+
+    pushDebug("room_state_update", {
+      participants: monitoringRoomState.participants.length,
+      stage_user_id: monitoringRoomState.stage_user_id,
+      resolved_stage_user_id: monitoringRoomState.resolved_stage_user_id,
+    });
+  }, [localUserUid, monitoringRoomState, pushDebug]);
 
   useEffect(() => {
     if (!lessonId || !me?.id) return;
@@ -477,10 +505,10 @@ export default function Room() {
 
   useEffect(() => {
     if (!state.connected || !roomMeta?.roomId) return;
-    if (isTeacher && monitoringConnected) {
+    if (monitoringConnected) {
       requestMonitoringUpdate();
     }
-  }, [isTeacher, monitoringConnected, requestMonitoringUpdate, roomMeta?.roomId, state.connected]);
+  }, [monitoringConnected, requestMonitoringUpdate, roomMeta?.roomId, state.connected]);
 
   const stageUserId = state.stageUser;
   const isStageUser = Boolean(stageUserId && stageUserId === localUserUid);
@@ -709,6 +737,45 @@ export default function Room() {
     [state.participants, studentStatuses]
   );
 
+  const activeVideoUids = useMemo(() => {
+    const visualPriority: Record<ReturnType<typeof resolveVisualStatus>, number> = {
+      engaged: 0,
+      unverified: 1,
+      verified: 2,
+      checking: 3,
+    };
+
+    const ranked = state.participants
+      .filter((participant) => !participant.is_teacher)
+      .map((participant) => {
+        const status = studentStatuses.get(participant.user_id);
+        const visualStatus = resolveVisualStatus(participant, status);
+        const uid = normalizeUid(participant.user_id);
+        const hasVideo = videoTracksMap.current.has(uid);
+        return {
+          uid,
+          hasVideo,
+          visualStatus,
+          confidence: status?.confidence ?? 0,
+          name: participant.user_name || "",
+        };
+      })
+      .sort((a, b) => {
+        if (a.hasVideo !== b.hasVideo) return a.hasVideo ? -1 : 1;
+        const priorityDelta = visualPriority[a.visualStatus] - visualPriority[b.visualStatus];
+        if (priorityDelta !== 0) return priorityDelta;
+        if (a.confidence !== b.confidence) return b.confidence - a.confidence;
+        return a.name.localeCompare(b.name, "uz", { sensitivity: "base" });
+      });
+
+    return new Set(
+      ranked
+        .slice(0, SIDEBAR_ACTIVE_VIDEO_CAP)
+        .filter((entry) => entry.hasVideo)
+        .map((entry) => entry.uid)
+    );
+  }, [state.participants, studentStatuses, trackVersion]);
+
   const stageParticipant = useMemo(() => {
     if (stageUserId) {
       return (
@@ -792,9 +859,13 @@ export default function Room() {
               <div>channel: {tokenMeta?.channel || "-"}</div>
               <div>local_video_track: {localVideoRef.current ? "yes" : "no"}</div>
               <div>remote_video_count: {videoTracksMap.current.size}</div>
+              <div>active_video_cap: {SIDEBAR_ACTIVE_VIDEO_CAP}</div>
+              <div>active_video_count: {activeVideoUids.size}</div>
               <div>stage_user_id: {stageUserId || "-"}</div>
               <div>resolved_stage_user_id: {liveState?.resolved_stage_user_id ?? "-"}</div>
               <div>participants: {state.participants.length}</div>
+              <div>last_room_state_event: {lastRoomStateEventAt || "-"}</div>
+              <div>last_status_event: {lastStatusEventAt || "-"}</div>
               <div style={{ marginTop: 6, opacity: 0.9 }}>
                 last_event: {debugEvents[0] || "-"}
               </div>
@@ -818,6 +889,8 @@ export default function Room() {
         <SidePanel
           participants={sortedParticipants}
           studentStatuses={studentStatuses}
+          videoTracks={videoTracksMap.current}
+          activeVideoUids={activeVideoUids}
           isTeacher={isTeacher}
           onStudentSelect={isTeacher ? handleSetStage : undefined}
           stageUserId={stageUserId}
