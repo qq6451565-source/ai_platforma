@@ -279,6 +279,8 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                         "confidence": result.get("confidence", 0),
                         "hand_raised": bool(participant.hand_raised) if participant else False,
                         "audio_enabled": room.stage_user_id == self.user.id,
+                        "event_type": result.get("event_type"),
+                        "status_reason": result.get("status_reason") or result.get("event_type"),
                         "last_verified_at": timezone.now().isoformat(),
                     }
                 ],
@@ -394,6 +396,8 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                         "confidence": float(latest_event.confidence) if latest_event and latest_event.confidence else 0.0,
                         "hand_raised": bool(session.participant.hand_raised) if session.participant else False,
                         "audio_enabled": room.stage_user_id == session.user_id,
+                        "event_type": latest_event.event_type if latest_event else None,
+                        "status_reason": latest_event.event_type if latest_event else None,
                         "last_verified_at": latest_event.created_at.isoformat() if latest_event else None,
                         "success_rate": session.success_rate,
                     }

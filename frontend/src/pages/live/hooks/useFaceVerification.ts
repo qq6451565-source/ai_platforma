@@ -22,6 +22,8 @@ interface StudentStatusUpdate {
   confidence?: number;
   hand_raised?: boolean;
   audio_enabled?: boolean;
+  event_type?: string;
+  status_reason?: string;
   last_verified_at?: string;
   success_rate?: number;
 }
@@ -42,6 +44,8 @@ interface SingleStudentUpdateMessage {
   confidence?: number;
   hand_raised?: boolean;
   audio_enabled?: boolean;
+  event_type?: string;
+  status_reason?: string;
 }
 
 export interface MonitoringRoomParticipant {
@@ -217,6 +221,7 @@ export const useStudentMonitoring = (
   const [connected, setConnected] = useState(false);
   const [roomState, setRoomState] = useState<MonitoringRoomState | null>(null);
   const [lastStatusEventAt, setLastStatusEventAt] = useState<string | null>(null);
+  const [lastStatusReason, setLastStatusReason] = useState<string | null>(null);
   const [lastRoomStateEventAt, setLastRoomStateEventAt] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
@@ -224,6 +229,13 @@ export const useStudentMonitoring = (
   const applyIncomingUpdate = useCallback((updates: StudentStatusUpdate[]) => {
     setStudentStatuses((previous) => applyUpdatesToMap(previous, updates));
     setLastStatusEventAt(new Date().toISOString());
+    for (let index = updates.length - 1; index >= 0; index -= 1) {
+      const statusReason = updates[index].status_reason || updates[index].event_type;
+      if (statusReason) {
+        setLastStatusReason(statusReason);
+        break;
+      }
+    }
   }, []);
 
   const applyRoomState = useCallback((payload: MonitoringRoomState) => {
@@ -278,6 +290,8 @@ export const useStudentMonitoring = (
               confidence: raw.confidence ?? 0,
               hand_raised: raw.hand_raised ?? false,
               audio_enabled: raw.audio_enabled ?? false,
+              event_type: raw.event_type,
+              status_reason: raw.status_reason,
             },
           ]);
         }
@@ -361,6 +375,7 @@ export const useStudentMonitoring = (
     requestUpdate,
     roomState,
     lastStatusEventAt,
+    lastStatusReason,
     lastRoomStateEventAt,
   };
 };

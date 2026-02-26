@@ -51,6 +51,8 @@ const FACE_VERIFY_INTERVAL_MS = 4000;
 const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
 const SIDEBAR_ACTIVE_VIDEO_CAP = 10;
+const REMOTE_RESUBSCRIBE_INTERVAL_MS = 4000;
+const VIDEO_RECOVERY_BACKOFF_MS = [400, 900, 1800] as const;
 
 interface RoomState {
   connected: boolean;
@@ -161,15 +163,27 @@ export default function Room() {
   const [localTrackVersion, setLocalTrackVersion] = useState(0);
   const [tokenMeta, setTokenMeta] = useState<TokenMeta | null>(null);
   const [debugEvents, setDebugEvents] = useState<string[]>([]);
+  const [videoPublished, setVideoPublished] = useState(false);
+  const [publishRetries, setPublishRetries] = useState(0);
+  const [cameraStreamUnavailable, setCameraStreamUnavailable] = useState(false);
+  const [localTrackReadyState, setLocalTrackReadyState] = useState("-");
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
   const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
+  const teacherSelfPreviewRef = useRef<HTMLDivElement | null>(null);
   const captureIntervalRef = useRef<number | null>(null);
   const captureVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const stagePlayTimerRef = useRef<number | null>(null);
+  const subscribeRemoteUserRef = useRef<(
+    (user: IAgoraRTCRemoteUser, mediaType?: "audio" | "video") => Promise<void>
+  ) | null>(null);
+  const localTrackEndedHandlerRef = useRef<(() => void) | null>(null);
+  const videoPublishedRef = useRef(false);
+  const publishRecoveryInFlightRef = useRef(false);
+  const cameraOnRef = useRef(true);
 
   const pushDebug = useCallback(
     (label: string, payload?: unknown) => {
@@ -196,11 +210,16 @@ export default function Room() {
     requestUpdate: requestMonitoringUpdate,
     roomState: monitoringRoomState,
     lastStatusEventAt,
+    lastStatusReason,
     lastRoomStateEventAt,
   } = useStudentMonitoring(roomName, Boolean(state.connected && roomName));
 
   const studentStatuses = monitoringStatuses;
   const monitoringIsConnected = monitoringConnected;
+
+  useEffect(() => {
+    cameraOnRef.current = state.cameraOn;
+  }, [state.cameraOn]);
 
   const { data: liveState } = useQuery({
     queryKey: ["live-state", roomMeta?.roomId, lessonId],
@@ -323,6 +342,48 @@ export default function Room() {
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         clientRef.current = client;
 
+        const sleep = (ms: number) =>
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, ms);
+          });
+
+        const detachTrackEndedHandler = (track: ILocalVideoTrack | null) => {
+          const handler = localTrackEndedHandlerRef.current;
+          if (!track || !handler) return;
+          const trackWithEvents = track as unknown as {
+            off?: (event: string, cb: () => void) => void;
+          };
+          trackWithEvents.off?.("track-ended", handler);
+        };
+
+        const bindLocalVideoTrack = (track: ILocalVideoTrack, debugLabel: string) => {
+          const previousTrack = localVideoRef.current;
+          if (previousTrack && previousTrack !== track) {
+            detachTrackEndedHandler(previousTrack);
+          }
+          localVideoRef.current = track;
+          const readyState = track.getMediaStreamTrack?.()?.readyState ?? "unknown";
+          setLocalTrackReadyState(readyState);
+          setLocalTrackVersion((prev) => prev + 1);
+          pushDebug(debugLabel, { readyState });
+        };
+
+        const attachTrackEndedHandler = (track: ILocalVideoTrack) => {
+          const onTrackEnded = () => {
+            setLocalTrackReadyState("ended");
+            videoPublishedRef.current = false;
+            setVideoPublished(false);
+            setCameraStreamUnavailable(true);
+            pushDebug("local video track ended");
+            void republishVideoTrack("track-ended");
+          };
+          localTrackEndedHandlerRef.current = onTrackEnded;
+          const trackWithEvents = track as unknown as {
+            on?: (event: string, cb: () => void) => void;
+          };
+          trackWithEvents.on?.("track-ended", onTrackEnded);
+        };
+
         const syncRemoteVideoTrack = (user: IAgoraRTCRemoteUser, label: string) => {
           const remoteUid = normalizeUid(user.uid);
           if (user.videoTrack) {
@@ -362,6 +423,60 @@ export default function Room() {
             pushDebug("subscribe error", { uid: remoteUid, mediaType, error: toErrorText(error) });
           }
         };
+        subscribeRemoteUserRef.current = subscribeRemoteUser;
+
+        async function republishVideoTrack(reason: string): Promise<boolean> {
+          if (publishRecoveryInFlightRef.current || cancelled) return false;
+          const activeClient = clientRef.current;
+          if (!activeClient) return false;
+
+          publishRecoveryInFlightRef.current = true;
+          videoPublishedRef.current = false;
+          setVideoPublished(false);
+          setCameraStreamUnavailable(true);
+
+          for (let attempt = 0; attempt < VIDEO_RECOVERY_BACKOFF_MS.length; attempt += 1) {
+            const retryNumber = attempt + 1;
+            setPublishRetries(retryNumber);
+            try {
+              const oldTrack = localVideoRef.current;
+              if (oldTrack) {
+                detachTrackEndedHandler(oldTrack);
+                await activeClient.unpublish(oldTrack).catch(() => undefined);
+                oldTrack.close();
+                localVideoRef.current = null;
+                setLocalTrackReadyState("recovering");
+                setLocalTrackVersion((prev) => prev + 1);
+              }
+
+              const freshVideoTrack = await AgoraRTC.createCameraVideoTrack();
+              await freshVideoTrack.setEnabled(true).catch(() => undefined);
+              attachTrackEndedHandler(freshVideoTrack);
+              bindLocalVideoTrack(freshVideoTrack, "local video track recovered");
+
+              await activeClient.publish(freshVideoTrack);
+              videoPublishedRef.current = true;
+              setVideoPublished(true);
+              setCameraStreamUnavailable(false);
+              pushDebug("video republish success", { reason, retry: retryNumber });
+              publishRecoveryInFlightRef.current = false;
+              return true;
+            } catch (republishError) {
+              pushDebug("video republish attempt failed", {
+                reason,
+                retry: retryNumber,
+                error: toErrorText(republishError),
+              });
+              if (attempt < VIDEO_RECOVERY_BACKOFF_MS.length - 1) {
+                await sleep(VIDEO_RECOVERY_BACKOFF_MS[attempt]);
+              }
+            }
+          }
+
+          pushDebug("video republish exhausted", { reason });
+          publishRecoveryInFlightRef.current = false;
+          return false;
+        }
 
         client.on("user-published", async (user: IAgoraRTCRemoteUser, mediaType) => {
           if (mediaType === "video" || mediaType === "audio") {
@@ -411,6 +526,9 @@ export default function Room() {
             current: currentState,
             reason,
           });
+          if (String(currentState) === "CONNECTED" && cameraOnRef.current && !videoPublishedRef.current) {
+            void republishVideoTrack("connection-state-change");
+          }
         }) as (...args: any[]) => void);
 
         await client.join(resolvedAppId, tokenData.channel, tokenData.token, tokenData.uid || null);
@@ -420,8 +538,9 @@ export default function Room() {
         await Promise.allSettled(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
 
         const videoTrack = await AgoraRTC.createCameraVideoTrack();
-        localVideoRef.current = videoTrack;
-        pushDebug("local video track created");
+        await videoTrack.setEnabled(true).catch(() => undefined);
+        attachTrackEndedHandler(videoTrack);
+        bindLocalVideoTrack(videoTrack, "local video track created");
 
         let audioTrack: ILocalAudioTrack | null = null;
         try {
@@ -431,7 +550,6 @@ export default function Room() {
           audioTrack = null;
         }
         localAudioRef.current = audioTrack;
-        setLocalTrackVersion((prev) => prev + 1);
 
         const tracksToPublish = audioTrack ? [videoTrack, audioTrack] : [videoTrack];
         await client.publish(tracksToPublish);
@@ -439,6 +557,10 @@ export default function Room() {
           video: true,
           audio: Boolean(audioTrack),
         });
+        videoPublishedRef.current = true;
+        setVideoPublished(true);
+        setPublishRetries(0);
+        setCameraStreamUnavailable(false);
 
         if (audioTrack && !isTeacher) {
           await audioTrack.setEnabled(false);
@@ -456,6 +578,9 @@ export default function Room() {
       } catch (error: unknown) {
         const message = getErrorMessage(error, t("live.errors.joinFailed"));
         pushDebug("initialize error", { message, raw: toErrorText(error) });
+        videoPublishedRef.current = false;
+        setVideoPublished(false);
+        setCameraStreamUnavailable(true);
         if (!cancelled) {
           setState((prev) => ({
             ...prev,
@@ -479,9 +604,19 @@ export default function Room() {
         stagePlayTimerRef.current = null;
       }
       captureVideoElementRef.current = null;
+      if (localVideoRef.current && localTrackEndedHandlerRef.current) {
+        const trackWithEvents = localVideoRef.current as unknown as {
+          off?: (event: string, cb: () => void) => void;
+        };
+        trackWithEvents.off?.("track-ended", localTrackEndedHandlerRef.current);
+      }
       localVideoRef.current?.close();
       localAudioRef.current?.close();
       videoTracksMap.current.clear();
+      subscribeRemoteUserRef.current = null;
+      videoPublishedRef.current = false;
+      publishRecoveryInFlightRef.current = false;
+      localTrackEndedHandlerRef.current = null;
       clientRef.current?.removeAllListeners();
       clientRef.current?.leave().catch(() => undefined);
       clientRef.current = null;
@@ -512,6 +647,25 @@ export default function Room() {
       requestMonitoringUpdate();
     }
   }, [monitoringConnected, requestMonitoringUpdate, roomMeta?.roomId, state.connected]);
+
+  useEffect(() => {
+    if (!state.connected) return;
+    const interval = window.setInterval(() => {
+      const client = clientRef.current;
+      const subscribeRemoteUser = subscribeRemoteUserRef.current;
+      if (!client || !subscribeRemoteUser) return;
+      if ((client as { connectionState?: string }).connectionState !== "CONNECTED") return;
+
+      if (client.remoteUsers.length > 0) {
+        pushDebug("periodic resubscribe", { remoteUsers: client.remoteUsers.length });
+      }
+      client.remoteUsers.forEach((remoteUser) => {
+        void subscribeRemoteUser(remoteUser, "video");
+      });
+    }, REMOTE_RESUBSCRIBE_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [pushDebug, state.connected]);
 
   const stageUserId = state.stageUser;
   const isStageUser = Boolean(stageUserId && stageUserId === localUserUid);
@@ -575,6 +729,10 @@ export default function Room() {
     try {
       await videoTrack.setEnabled(next);
       setState((prev) => ({ ...prev, cameraOn: next }));
+      setLocalTrackReadyState(videoTrack.getMediaStreamTrack?.()?.readyState ?? "unknown");
+      if (!next) {
+        setCameraStreamUnavailable(false);
+      }
       setLocalTrackVersion((prev) => prev + 1);
       pushDebug("camera toggled", { enabled: next });
     } catch (error) {
@@ -639,8 +797,17 @@ export default function Room() {
     } catch (error) {
       pushDebug("leave room error", toErrorText(error));
     } finally {
+      if (localVideoRef.current && localTrackEndedHandlerRef.current) {
+        const trackWithEvents = localVideoRef.current as unknown as {
+          off?: (event: string, cb: () => void) => void;
+        };
+        trackWithEvents.off?.("track-ended", localTrackEndedHandlerRef.current);
+      }
       localVideoRef.current?.close();
       localAudioRef.current?.close();
+      videoPublishedRef.current = false;
+      setVideoPublished(false);
+      localTrackEndedHandlerRef.current = null;
       await clientRef.current?.leave().catch(() => undefined);
       navigate(-1);
     }
@@ -768,6 +935,76 @@ export default function Room() {
     };
   }, [isTeacher, pushDebug, stageVideoTrack]);
 
+  useEffect(() => {
+    if (!isTeacher || !teacherSelfPreviewRef.current) return;
+
+    const container = teacherSelfPreviewRef.current;
+    let fallbackVideo: HTMLVideoElement | null = null;
+
+    const clearPreview = () => {
+      if (fallbackVideo) {
+        fallbackVideo.pause();
+        fallbackVideo.srcObject = null;
+        fallbackVideo = null;
+      }
+      container.innerHTML = "";
+    };
+
+    if (!state.cameraOn) {
+      clearPreview();
+      return;
+    }
+
+    const localTrack = localVideoRef.current;
+    if (!localTrack) {
+      clearPreview();
+      return;
+    }
+
+    const mediaTrack = localTrack.getMediaStreamTrack?.();
+    if (mediaTrack) {
+      clearPreview();
+      const videoElement = document.createElement("video");
+      videoElement.autoplay = true;
+      videoElement.muted = true;
+      videoElement.playsInline = true;
+      videoElement.srcObject = new MediaStream([mediaTrack]);
+      videoElement.style.width = "100%";
+      videoElement.style.height = "100%";
+      videoElement.style.objectFit = "cover";
+      container.appendChild(videoElement);
+      fallbackVideo = videoElement;
+
+      Promise.resolve(videoElement.play())
+        .then(() => {
+          setCameraStreamUnavailable(false);
+          setLocalTrackReadyState(mediaTrack.readyState || "live");
+          pushDebug("teacher self preview mounted");
+        })
+        .catch((error) => {
+          pushDebug("teacher self preview play error", toErrorText(error));
+        });
+      return clearPreview;
+    }
+
+    try {
+      clearPreview();
+      const playResult = localTrack.play(container);
+      Promise.resolve(playResult)
+        .then(() => {
+          setCameraStreamUnavailable(false);
+          pushDebug("teacher self preview via track.play");
+        })
+        .catch((error) => {
+          pushDebug("teacher self preview track.play error", toErrorText(error));
+        });
+    } catch (error) {
+      pushDebug("teacher self preview mount error", toErrorText(error));
+    }
+
+    return clearPreview;
+  }, [isTeacher, localTrackVersion, pushDebug, state.cameraOn]);
+
   const sortedParticipants = useMemo(
     () => sortStudents(state.participants, studentStatuses),
     [state.participants, studentStatuses]
@@ -830,6 +1067,12 @@ export default function Room() {
     return meName || me?.username || t("live.room.lecturer");
   }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name, t]);
 
+  const showCameraUnavailable =
+    isTeacher &&
+    state.connected &&
+    state.cameraOn &&
+    (cameraStreamUnavailable || !localVideoRef.current || !videoPublished);
+
   if (state.loading) {
     return (
       <div className="live-page">
@@ -854,6 +1097,17 @@ export default function Room() {
         <div className="stage-section">
           <div className="stage-video-container" ref={stageVideoRef} />
           {!stageVideoTrack && <div className="stage-empty">{t("live.room.noVideo")}</div>}
+          {showCameraUnavailable && (
+            <div className="stage-warning">{t("live.room.cameraUnavailable")}</div>
+          )}
+
+          {isTeacher && (
+            <div className="teacher-self-preview-wrapper">
+              <div className="teacher-self-preview" ref={teacherSelfPreviewRef} />
+              <div className="teacher-self-preview-label">{t("live.room.selfPreview")}</div>
+            </div>
+          )}
+
           <div className="stage-overlay">
             <div className="stage-top-info">
               <div className="stage-title">{roomMeta?.roomName || t("live.room.defaultRoomTitle")}</div>
@@ -894,6 +1148,9 @@ export default function Room() {
               <div>token_uid: {tokenMeta?.uid || "-"}</div>
               <div>channel: {tokenMeta?.channel || "-"}</div>
               <div>local_video_track: {localVideoRef.current ? "yes" : "no"}</div>
+              <div>video_published: {videoPublished ? "yes" : "no"}</div>
+              <div>local_track_ready_state: {localTrackReadyState}</div>
+              <div>publish_retries: {publishRetries}</div>
               <div>remote_video_count: {videoTracksMap.current.size}</div>
               <div>active_video_cap: {SIDEBAR_ACTIVE_VIDEO_CAP}</div>
               <div>active_video_count: {activeVideoUids.size}</div>
@@ -902,6 +1159,7 @@ export default function Room() {
               <div>participants: {state.participants.length}</div>
               <div>last_room_state_event: {lastRoomStateEventAt || "-"}</div>
               <div>last_status_event: {lastStatusEventAt || "-"}</div>
+              <div>last_status_reason: {lastStatusReason || "-"}</div>
               <div style={{ marginTop: 6, opacity: 0.9 }}>
                 last_event: {debugEvents[0] || "-"}
               </div>

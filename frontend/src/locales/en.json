@@ -350,7 +350,9 @@
       "noVideo": "No video",
       "defaultRoomTitle": "Live class",
       "participants": "{{count}} participants",
-      "monitoringActive": "Monitoring active"
+      "monitoringActive": "Monitoring active",
+      "cameraUnavailable": "Camera stream unavailable",
+      "selfPreview": "Your preview"
     },
     "panel": {
       "participants": "Participants",

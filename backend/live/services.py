@@ -60,6 +60,8 @@ class FaceVerificationService:
                     "confidence": 1.0,
                     "faces_detected": 1,
                     "event_type": "disabled",
+                    "status_reason": "disabled",
+                    "face_detection_status": "DETECTED",
                     "message": "Face verification is disabled",
                     "alert": False,
                 }
@@ -200,6 +202,7 @@ class FaceVerificationService:
             return {
                 "verified": False,
                 "event_type": "error",
+                "status_reason": "error",
                 "face_detection_status": "NOT_DETECTED",
                 "message": "Live room not found",
                 "alert": False,
@@ -208,6 +211,7 @@ class FaceVerificationService:
             return {
                 "verified": False,
                 "event_type": "error",
+                "status_reason": "error",
                 "face_detection_status": "NOT_DETECTED",
                 "message": f"Verification error: {str(e)}",
                 "alert": False,
@@ -352,6 +356,7 @@ class FaceVerificationService:
             "confidence": confidence,
             "faces_detected": faces_detected,
             "event_type": event_type,
+            "status_reason": event_type,
             "face_detection_status": face_detection_status,
             "event_id": event.id,
             "message": message,

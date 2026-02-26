@@ -350,7 +350,9 @@
       "noVideo": "Video yo'q",
       "defaultRoomTitle": "Live dars",
       "participants": "{{count}} ishtirokchi",
-      "monitoringActive": "Monitoring faol"
+      "monitoringActive": "Monitoring faol",
+      "cameraUnavailable": "Kamera oqimi mavjud emas",
+      "selfPreview": "Sizning preview"
     },
     "panel": {
       "participants": "Ishtirokchilar",
