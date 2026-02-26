@@ -11,7 +11,7 @@ interface SidePanelProps {
   isTeacher: boolean;
   onStudentAudioToggle?: (studentId: number) => void;
   onStudentSelect?: (studentId: number) => void;
-  stageUserId?: number | null;
+  stageUserId?: string | null;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -53,6 +53,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               <div className="group-students">
                 {group.students.map((student) => {
                   const status = studentStatuses.get(student.user_id);
+                  const normalizedStudentId = String(student.user_id);
                   const isHandRaised =
                     status?.handRaised || student.hand_raised;
                   const faceStatus = status?.faceStatus || "CHECKING";
@@ -68,7 +69,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                         faceStatus === "DETECTED" ? "verified" : ""
                       } ${
                         faceStatus === "NOT_DETECTED" ? "not-verified" : ""
-                      } ${stageUserId === student.user_id ? "stage-user" : ""} ${
+                      } ${stageUserId === normalizedStudentId ? "stage-user" : ""} ${
                         isTeacher && onStudentSelect ? "is-clickable" : ""
                       }`}
                       style={{
@@ -93,7 +94,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                       {/* Student Info */}
                       <div className="participant-info">
                         <span className="name">{student.user_name}</span>
-                        {stageUserId === student.user_id && (
+                        {stageUserId === normalizedStudentId && (
                           <span className="confidence">{t("live.panel.onStage")}</span>
                         )}
                         {confidence > 0 && (

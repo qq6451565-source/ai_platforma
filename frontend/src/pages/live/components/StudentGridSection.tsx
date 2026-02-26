@@ -13,12 +13,12 @@ interface PlayableVideoTrack {
 interface StudentGridSectionProps {
   participants: Student[];
   studentStatuses: Map<number, StudentStatus>;
-  videoTracks: Map<number, PlayableVideoTrack>;
+  videoTracks: Map<string, PlayableVideoTrack>;
   isTeacher?: boolean;
   onClose: () => void;
   onAudioToggle?: (studentId: number) => void;
   onStudentSelect?: (studentId: number) => void;
-  stageUserId?: number | null;
+  stageUserId?: string | null;
 }
 
 export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
@@ -55,7 +55,8 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
         ) : (
           sortedStudents.map((student) => {
             const status = studentStatuses.get(student.user_id);
-            const videoTrack = videoTracks.get(student.user_id);
+            const normalizedStudentId = String(student.user_id);
+            const videoTrack = videoTracks.get(normalizedStudentId);
 
             return (
               <StudentTile
@@ -66,7 +67,7 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
                 isTeacher={isTeacher}
                 onAudioToggle={onAudioToggle}
                 onSelect={onStudentSelect}
-                isStage={stageUserId === student.user_id}
+                isStage={stageUserId === normalizedStudentId}
               />
             );
           })

@@ -383,6 +383,11 @@ class LiveRoomStateView(APIView):
             .select_related("user")
             .order_by("-joined_at")
         )
+        resolved_stage_user_id = room.stage_user_id
+        if resolved_stage_user_id is None:
+            active_teacher = participants.filter(is_teacher=True).first()
+            resolved_stage_user_id = active_teacher.user_id if active_teacher else None
+
         payload = []
         for p in participants:
             user = p.user
@@ -402,6 +407,7 @@ class LiveRoomStateView(APIView):
                 "room_id": room.id,
                 "room": room.room_name,
                 "stage_user_id": room.stage_user_id,
+                "resolved_stage_user_id": resolved_stage_user_id,
                 "allow_ptt": room.allow_ptt,
                 "participants": payload,
             }

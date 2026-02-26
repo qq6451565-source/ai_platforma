@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AgoraRTC, {
   IAgoraRTCClient,
@@ -48,6 +48,8 @@ import "./styles/StudentGridSection.css";
 
 const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
 const FACE_VERIFY_INTERVAL_MS = 4000;
+const STAGE_PLAY_RETRY_MS = 180;
+const STAGE_PLAY_MAX_RETRY = 2;
 
 interface RoomState {
   connected: boolean;
@@ -66,6 +68,18 @@ interface RoomMeta {
   roomName: string;
 }
 
+interface TokenMeta {
+  appId: string;
+  channel: string;
+  uid: string;
+  hasToken: boolean;
+}
+
+const normalizeUid = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  return String(value);
+};
+
 const getInitials = (value: string) => {
   const cleaned = value.trim();
   if (!cleaned) return "?";
@@ -80,6 +94,16 @@ type ApiErrorPayload = {
   error?: string;
   detail?: string;
   message?: string;
+};
+
+const toErrorText = (error: unknown): string => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -115,6 +139,11 @@ export default function Room() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const { data: me } = useMe();
 
+  const debugEnabled = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("debug_live") === "1";
+  }, []);
+
   const [state, setState] = useState<RoomState>({
     connected: false,
     loading: true,
@@ -129,17 +158,31 @@ export default function Room() {
   const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
   const [trackVersion, setTrackVersion] = useState(0);
   const [localTrackVersion, setLocalTrackVersion] = useState(0);
+  const [tokenMeta, setTokenMeta] = useState<TokenMeta | null>(null);
+  const [debugEvents, setDebugEvents] = useState<string[]>([]);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
-  const videoTracksMap = useRef<Map<number, IRemoteVideoTrack>>(new Map());
+  const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const captureIntervalRef = useRef<number | null>(null);
   const captureVideoElementRef = useRef<HTMLVideoElement | null>(null);
+  const stagePlayTimerRef = useRef<number | null>(null);
+
+  const pushDebug = useCallback(
+    (label: string, payload?: unknown) => {
+      if (!debugEnabled) return;
+      const ts = new Date().toISOString().slice(11, 19);
+      const suffix = payload === undefined ? "" : ` | ${toErrorText(payload)}`;
+      const line = `${ts} ${label}${suffix}`;
+      setDebugEvents((prev) => [line, ...prev].slice(0, 40));
+    },
+    [debugEnabled]
+  );
 
   const isTeacher = me?.role === "teacher" || me?.role === "admin";
-  const localUserId = Number(me?.id ?? 0);
+  const localUserUid = normalizeUid(me?.id);
 
   const roomName = roomMeta?.roomName ?? "";
   const {
@@ -173,18 +216,27 @@ export default function Room() {
 
   useEffect(() => {
     if (!liveState) return;
+    const resolvedStageUserId =
+      liveState.stage_user_id ?? liveState.resolved_stage_user_id ?? null;
+
     setState((prev) => {
       const currentParticipant = liveState.participants.find(
-        (participant) => participant.user_id === localUserId
+        (participant) => normalizeUid(participant.user_id) === localUserUid
       );
       return {
         ...prev,
         participants: liveState.participants,
-        stageUser: liveState.stage_user_id ? String(liveState.stage_user_id) : null,
+        stageUser: resolvedStageUserId ? normalizeUid(resolvedStageUserId) : null,
         handRaised: Boolean(currentParticipant?.hand_raised),
       };
     });
-  }, [liveState, localUserId]);
+
+    pushDebug("live-state update", {
+      participants: liveState.participants.length,
+      stage_user_id: liveState.stage_user_id,
+      resolved_stage_user_id: liveState.resolved_stage_user_id,
+    });
+  }, [liveState, localUserUid, pushDebug]);
 
   useEffect(() => {
     if (!lessonId || !me?.id) return;
@@ -209,76 +261,142 @@ export default function Room() {
           lesson_id: Number(lessonId),
         });
         if (cancelled) return;
+
+        if (!tokenData.channel || !tokenData.token) {
+          throw new Error("Invalid Agora token response: missing channel/token");
+        }
+        if (tokenData.uid === null || tokenData.uid === undefined) {
+          throw new Error("Invalid Agora token response: missing uid");
+        }
+
         const resolvedAppId = tokenData.app_id || fallbackAgoraAppId;
         if (!resolvedAppId) {
-          throw new Error(
-            t("live.errors.missingAppId")
-          );
+          throw new Error(t("live.errors.missingAppId"));
+        }
+
+        const tokenUid = normalizeUid(tokenData.uid);
+        setTokenMeta({
+          appId: resolvedAppId,
+          channel: tokenData.channel,
+          uid: tokenUid,
+          hasToken: Boolean(tokenData.token),
+        });
+
+        if (roomData.room && tokenData.channel && roomData.room !== tokenData.channel) {
+          pushDebug("token channel mismatch", {
+            room: roomData.room,
+            token_channel: tokenData.channel,
+          });
+        }
+        if (tokenUid && localUserUid && tokenUid !== localUserUid) {
+          pushDebug("token uid mismatch", { token_uid: tokenUid, local_uid: localUserUid });
         }
 
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         clientRef.current = client;
 
+        const syncRemoteVideoTrack = (user: IAgoraRTCRemoteUser, label: string) => {
+          const remoteUid = normalizeUid(user.uid);
+          if (user.videoTrack) {
+            videoTracksMap.current.set(remoteUid, user.videoTrack);
+            setTrackVersion((prev) => prev + 1);
+            pushDebug(label, { uid: remoteUid, hasVideoTrack: true });
+            return;
+          }
+          videoTracksMap.current.delete(remoteUid);
+          setTrackVersion((prev) => prev + 1);
+          pushDebug(label, { uid: remoteUid, hasVideoTrack: false });
+        };
+
         const subscribeRemoteUser = async (
           user: IAgoraRTCRemoteUser,
           mediaType?: "audio" | "video"
         ) => {
+          const remoteUid = normalizeUid(user.uid);
           try {
-            if (!mediaType || mediaType === "video") {
-              if (user.hasVideo) {
-                await client.subscribe(user, "video");
-                if (user.videoTrack) {
-                  videoTracksMap.current.set(Number(user.uid), user.videoTrack);
-                  setTrackVersion((prev) => prev + 1);
-                }
-              } else {
-                videoTracksMap.current.delete(Number(user.uid));
-                setTrackVersion((prev) => prev + 1);
-              }
+            const shouldTryVideo =
+              mediaType === "video" ||
+              (!mediaType && (Boolean(user.videoTrack) || Boolean(user.hasVideo)));
+            const shouldTryAudio =
+              mediaType === "audio" ||
+              (!mediaType && (Boolean(user.audioTrack) || Boolean(user.hasAudio)));
+
+            if (shouldTryVideo) {
+              await client.subscribe(user, "video");
+              syncRemoteVideoTrack(user, "video subscribed");
             }
 
-            if ((!mediaType || mediaType === "audio") && user.hasAudio) {
+            if (shouldTryAudio) {
               await client.subscribe(user, "audio");
               if (user.audioTrack) {
                 user.audioTrack.play();
               }
             }
           } catch (error) {
-            console.error("Subscribe error:", error);
+            pushDebug("subscribe error", { uid: remoteUid, mediaType, error: toErrorText(error) });
           }
         };
 
         client.on("user-published", async (user: IAgoraRTCRemoteUser, mediaType) => {
           if (mediaType === "video" || mediaType === "audio") {
+            pushDebug("user-published", { uid: normalizeUid(user.uid), mediaType });
             await subscribeRemoteUser(user, mediaType);
           }
         });
 
         client.on("user-unpublished", (user: IAgoraRTCRemoteUser, mediaType) => {
           if (mediaType === "video") {
-            videoTracksMap.current.delete(Number(user.uid));
+            const remoteUid = normalizeUid(user.uid);
+            videoTracksMap.current.delete(remoteUid);
             setTrackVersion((prev) => prev + 1);
+            pushDebug("user-unpublished", { uid: remoteUid, mediaType });
           }
         });
 
         client.on("user-left", (user: IAgoraRTCRemoteUser) => {
-          videoTracksMap.current.delete(Number(user.uid));
+          const remoteUid = normalizeUid(user.uid);
+          videoTracksMap.current.delete(remoteUid);
           setTrackVersion((prev) => prev + 1);
+          pushDebug("user-left", { uid: remoteUid });
         });
 
-        await client.join(resolvedAppId, tokenData.channel, tokenData.token, tokenData.uid || null);
+        client.on(
+          "user-info-updated",
+          ((uid: unknown, msg: unknown) => {
+            const normalized = normalizeUid(uid);
+            pushDebug("user-info-updated", { uid: normalized, msg });
+            const remoteUser = client.remoteUsers.find(
+              (user) => normalizeUid(user.uid) === normalized
+            );
+            if (remoteUser) {
+              void subscribeRemoteUser(remoteUser);
+            }
+          }) as (...args: any[]) => void
+        );
 
-        // Existing publishers may already be in the room before this user joins.
-        await Promise.all(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
+        client.on("connection-state-change", ((currentState: unknown, previousState: unknown, reason: unknown) => {
+          pushDebug("connection-state-change", {
+            previous: previousState,
+            current: currentState,
+            reason,
+          });
+        }) as (...args: any[]) => void);
+
+        await client.join(resolvedAppId, tokenData.channel, tokenData.token, tokenData.uid || null);
+        pushDebug("joined channel", { channel: tokenData.channel, uid: tokenUid || "(empty)" });
+
+        pushDebug("initial remote scan", { count: client.remoteUsers.length });
+        await Promise.allSettled(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
 
         const videoTrack = await AgoraRTC.createCameraVideoTrack();
         localVideoRef.current = videoTrack;
+        pushDebug("local video track created");
 
         let audioTrack: ILocalAudioTrack | null = null;
         try {
           audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         } catch (audioError) {
-          console.error("Audio track init error:", audioError);
+          pushDebug("audio track init error", toErrorText(audioError));
           audioTrack = null;
         }
         localAudioRef.current = audioTrack;
@@ -290,6 +408,10 @@ export default function Room() {
 
         const tracksToPublish = audioTrack ? [videoTrack, audioTrack] : [videoTrack];
         await client.publish(tracksToPublish);
+        pushDebug("local tracks published", {
+          video: true,
+          audio: Boolean(audioTrack),
+        });
 
         if (cancelled) return;
         setState((prev) => ({
@@ -301,6 +423,7 @@ export default function Room() {
         }));
       } catch (error: unknown) {
         const message = getErrorMessage(error, t("live.errors.joinFailed"));
+        pushDebug("initialize error", { message, raw: toErrorText(error) });
         if (!cancelled) {
           setState((prev) => ({
             ...prev,
@@ -319,14 +442,37 @@ export default function Room() {
         clearInterval(captureIntervalRef.current);
         captureIntervalRef.current = null;
       }
+      if (stagePlayTimerRef.current) {
+        clearTimeout(stagePlayTimerRef.current);
+        stagePlayTimerRef.current = null;
+      }
       captureVideoElementRef.current = null;
       localVideoRef.current?.close();
       localAudioRef.current?.close();
       videoTracksMap.current.clear();
+      clientRef.current?.removeAllListeners();
       clientRef.current?.leave().catch(() => undefined);
       clientRef.current = null;
     };
-  }, [lessonId, me?.id, isTeacher, t]);
+  }, [lessonId, me?.id, isTeacher, localUserUid, pushDebug, t]);
+
+  useEffect(() => {
+    if (!liveState) return;
+    if (!Array.isArray(liveState.participants)) {
+      pushDebug("live-state invalid participants", liveState);
+      setState((prev) => ({
+        ...prev,
+        error: t("live.errors.joinFailed"),
+      }));
+      return;
+    }
+    if (roomMeta?.roomName && liveState.room && roomMeta.roomName !== liveState.room) {
+      pushDebug("live-state room mismatch", {
+        room_meta: roomMeta.roomName,
+        state_room: liveState.room,
+      });
+    }
+  }, [liveState, pushDebug, roomMeta?.roomName, t]);
 
   useEffect(() => {
     if (!state.connected || !roomMeta?.roomId) return;
@@ -335,8 +481,8 @@ export default function Room() {
     }
   }, [isTeacher, monitoringConnected, requestMonitoringUpdate, roomMeta?.roomId, state.connected]);
 
-  const stageUserId = state.stageUser ? Number(state.stageUser) : null;
-  const isStageUser = stageUserId === localUserId;
+  const stageUserId = state.stageUser;
+  const isStageUser = Boolean(stageUserId && stageUserId === localUserUid);
 
   useEffect(() => {
     if (isTeacher) return;
@@ -398,10 +544,11 @@ export default function Room() {
       await videoTrack.setEnabled(next);
       setState((prev) => ({ ...prev, cameraOn: next }));
       setLocalTrackVersion((prev) => prev + 1);
+      pushDebug("camera toggled", { enabled: next });
     } catch (error) {
-      console.error("Camera toggle error:", error);
+      pushDebug("camera toggle error", toErrorText(error));
     }
-  }, [state.cameraOn]);
+  }, [pushDebug, state.cameraOn]);
 
   const handleMicToggle = useCallback(async () => {
     const audioTrack = localAudioRef.current;
@@ -411,10 +558,11 @@ export default function Room() {
     try {
       await audioTrack.setEnabled(next);
       setState((prev) => ({ ...prev, micOn: next }));
+      pushDebug("mic toggled", { enabled: next });
     } catch (error) {
-      console.error("Mic toggle error:", error);
+      pushDebug("mic toggle error", toErrorText(error));
     }
-  }, [state.micOn]);
+  }, [pushDebug, state.micOn]);
 
   const handleHandRaise = useCallback(async () => {
     if (!roomMeta?.roomId) return;
@@ -423,10 +571,11 @@ export default function Room() {
     try {
       await raiseHand(roomMeta.roomId, next);
       setState((prev) => ({ ...prev, handRaised: next }));
+      pushDebug("hand raise", { raised: next });
     } catch (error) {
-      console.error("Hand raise error:", error);
+      pushDebug("hand raise error", toErrorText(error));
     }
-  }, [roomMeta?.roomId, state.handRaised]);
+  }, [pushDebug, roomMeta?.roomId, state.handRaised]);
 
   const handleSetStage = useCallback(
     async (userId: number) => {
@@ -435,18 +584,19 @@ export default function Room() {
         await setStageUser(roomMeta.roomId, userId);
         setState((prev) => ({
           ...prev,
-          stageUser: String(userId),
+          stageUser: normalizeUid(userId),
           participants: prev.participants.map((participant) =>
             participant.user_id === userId
               ? { ...participant, hand_raised: false }
               : participant
           ),
         }));
+        pushDebug("set stage user", { userId });
       } catch (error) {
-        console.error("Stage set error:", error);
+        pushDebug("set stage error", toErrorText(error));
       }
     },
-    [isTeacher, roomMeta?.roomId]
+    [isTeacher, pushDebug, roomMeta?.roomId]
   );
 
   const handleExitRoom = useCallback(async () => {
@@ -455,72 +605,103 @@ export default function Room() {
         await leaveLiveRoom(roomMeta.roomId);
       }
     } catch (error) {
-      console.error("Leave room error:", error);
+      pushDebug("leave room error", toErrorText(error));
     } finally {
       localVideoRef.current?.close();
       localAudioRef.current?.close();
       await clientRef.current?.leave().catch(() => undefined);
       navigate(-1);
     }
-  }, [navigate, roomMeta?.roomId]);
+  }, [navigate, pushDebug, roomMeta?.roomId]);
 
   const handleEndRoom = useCallback(async () => {
     if (!isTeacher || !roomMeta?.roomId) return;
     try {
       await endLiveRoom(roomMeta.roomId);
     } catch (error) {
-      console.error("End room error:", error);
+      pushDebug("end room error", toErrorText(error));
     } finally {
       await handleExitRoom();
     }
-  }, [handleExitRoom, isTeacher, roomMeta?.roomId]);
+  }, [handleExitRoom, isTeacher, pushDebug, roomMeta?.roomId]);
 
   const stageVideoTrack = useMemo(() => {
-    let track: ILocalVideoTrack | IRemoteVideoTrack | null = null;
+    const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
 
     if (stageUserId) {
-      if (stageUserId === localUserId) {
-        track = localVideoRef.current;
-      } else {
-        track = videoTracksMap.current.get(stageUserId) || null;
+      const stageRemoteTrack = videoTracksMap.current.get(stageUserId);
+      if (stageRemoteTrack) {
+        return stageRemoteTrack;
       }
     }
 
-    if (!track) {
-      const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
-      if (teacherParticipant) {
-        if (teacherParticipant.user_id === localUserId) {
-          track = localVideoRef.current;
-        } else {
-          track = videoTracksMap.current.get(teacherParticipant.user_id) || null;
-        }
+    if (isTeacher && localVideoRef.current) {
+      return localVideoRef.current;
+    }
+
+    if (teacherParticipant) {
+      const teacherUid = normalizeUid(teacherParticipant.user_id);
+      const teacherRemoteTrack = videoTracksMap.current.get(teacherUid);
+      if (teacherRemoteTrack) {
+        return teacherRemoteTrack;
       }
     }
 
-    if (!track && isTeacher) {
-      track = localVideoRef.current;
-    }
-
-    return track;
-  }, [isTeacher, localTrackVersion, localUserId, stageUserId, state.participants, trackVersion]);
+    const firstRemote = videoTracksMap.current.values().next().value as IRemoteVideoTrack | undefined;
+    return firstRemote || null;
+  }, [isTeacher, localTrackVersion, stageUserId, state.participants, trackVersion]);
 
   useEffect(() => {
     if (!stageVideoRef.current) return;
+
+    const container = stageVideoRef.current;
+
+    const clearStage = () => {
+      container.innerHTML = "";
+    };
+
     if (!stageVideoTrack) {
-      stageVideoRef.current.innerHTML = "";
+      clearStage();
       return;
     }
 
-    stageVideoTrack.play(stageVideoRef.current);
-    return () => {
-      // WHY: the same remote video track can be rendered in multiple places (stage/grid).
-      // stop() tears down playback across all bound elements, causing random blank videos.
-      // Clearing only this container prevents cross-component side effects.
-      if (stageVideoRef.current) {
-        stageVideoRef.current.innerHTML = "";
+    const scheduleRetry = (attempt: number, error: unknown) => {
+      pushDebug("stage play error", { attempt, error: toErrorText(error) });
+      if (attempt < STAGE_PLAY_MAX_RETRY) {
+        stagePlayTimerRef.current = window.setTimeout(
+          () => playWithRetry(attempt + 1),
+          STAGE_PLAY_RETRY_MS
+        );
       }
     };
-  }, [stageVideoTrack]);
+
+    const playWithRetry = (attempt: number) => {
+      if (!stageVideoRef.current) return;
+      try {
+        clearStage();
+        const playResult = stageVideoTrack.play(stageVideoRef.current);
+        Promise.resolve(playResult)
+          .then(() => {
+            pushDebug("stage play success", { attempt });
+          })
+          .catch((error) => {
+            scheduleRetry(attempt, error);
+          });
+      } catch (error) {
+        scheduleRetry(attempt, error);
+      }
+    };
+
+    playWithRetry(0);
+
+    return () => {
+      if (stagePlayTimerRef.current) {
+        clearTimeout(stagePlayTimerRef.current);
+        stagePlayTimerRef.current = null;
+      }
+      clearStage();
+    };
+  }, [pushDebug, stageVideoTrack]);
 
   const sortedParticipants = useMemo(
     () => sortStudents(state.participants, studentStatuses),
@@ -529,7 +710,11 @@ export default function Room() {
 
   const stageParticipant = useMemo(() => {
     if (stageUserId) {
-      return state.participants.find((participant) => participant.user_id === stageUserId) || null;
+      return (
+        state.participants.find(
+          (participant) => normalizeUid(participant.user_id) === stageUserId
+        ) || null
+      );
     }
     const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
     return teacherParticipant || null;
@@ -579,6 +764,41 @@ export default function Room() {
               </div>
             </div>
           </div>
+
+          {debugEnabled && (
+            <div
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                width: 360,
+                maxHeight: 220,
+                overflow: "auto",
+                background: "rgba(0,0,0,0.72)",
+                border: "1px solid rgba(255,255,255,0.18)",
+                borderRadius: 8,
+                padding: 10,
+                fontSize: 12,
+                lineHeight: 1.4,
+                pointerEvents: "auto",
+              }}
+            >
+              <div><strong>debug_live</strong></div>
+              <div>role: {me?.role || "-"}</div>
+              <div>local_uid: {localUserUid || "-"}</div>
+              <div>app_id: {tokenMeta?.appId || "-"}</div>
+              <div>token_uid: {tokenMeta?.uid || "-"}</div>
+              <div>channel: {tokenMeta?.channel || "-"}</div>
+              <div>local_video_track: {localVideoRef.current ? "yes" : "no"}</div>
+              <div>remote_video_count: {videoTracksMap.current.size}</div>
+              <div>stage_user_id: {stageUserId || "-"}</div>
+              <div>resolved_stage_user_id: {liveState?.resolved_stage_user_id ?? "-"}</div>
+              <div>participants: {state.participants.length}</div>
+              <div style={{ marginTop: 6, opacity: 0.9 }}>
+                last_event: {debugEvents[0] || "-"}
+              </div>
+            </div>
+          )}
         </div>
 
         {state.showStudentsGrid && (
@@ -594,13 +814,13 @@ export default function Room() {
         )}
       </div>
 
-      <SidePanel
-        participants={sortedParticipants}
-        studentStatuses={studentStatuses}
-        isTeacher={isTeacher}
-        onStudentSelect={isTeacher ? handleSetStage : undefined}
-        stageUserId={stageUserId}
-      />
+        <SidePanel
+          participants={sortedParticipants}
+          studentStatuses={studentStatuses}
+          isTeacher={isTeacher}
+          onStudentSelect={isTeacher ? handleSetStage : undefined}
+          stageUserId={stageUserId}
+        />
 
       <div className="live-controls">
         <Button

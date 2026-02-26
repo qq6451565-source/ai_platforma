@@ -12,7 +12,7 @@ export type JoinLiveResponse = {
 export type AgoraTokenResponse = {
   app_id: string;
   channel: string;
-  uid: number;
+  uid: number | string;
   token: string;
   expires_in: number;
 };
@@ -30,6 +30,7 @@ export type LiveRoomState = {
   room_id: number;
   room: string;
   stage_user_id: number | null;
+  resolved_stage_user_id: number | null;
   allow_ptt: boolean;
   participants: LiveParticipantState[];
 };
