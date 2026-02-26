@@ -151,8 +151,8 @@
 }
 
 .panel-participant-row.status-checking {
-  background: rgba(99, 102, 241, 0.08) !important;
-  border-left-color: #6366f1 !important;
+  background: rgba(148, 163, 184, 0.12) !important;
+  border-left-color: #94a3b8 !important;
 }
 
 .panel-participant-row.stage-user {

@@ -466,8 +466,16 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
             return "CHECKING"
         if event.event_type == "success":
             return "DETECTED"
-        if event.event_type == "no_face":
-            return "NOT_DETECTED"
         if event.event_type == "multiple_faces":
             return "MULTIPLE"
+        if event.event_type in {
+            "no_face",
+            "low_confidence",
+            "no_reference",
+            "ai_error",
+            "invalid_frame",
+            "no_embedding",
+            "error",
+        }:
+            return "NOT_DETECTED"
         return "CHECKING"

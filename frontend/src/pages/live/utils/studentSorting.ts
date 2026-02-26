@@ -144,11 +144,11 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
     case "CHECKING":
     default:
       return {
-        color: "#6366f1",
+        color: "#94a3b8",
         animation: "spin",
         icon: "⏳",
         label: "Tekshirilmoqda",
-        bgColor: "rgba(99, 102, 241, 0.1)",
+        bgColor: "rgba(148, 163, 184, 0.12)",
       };
   }
 };

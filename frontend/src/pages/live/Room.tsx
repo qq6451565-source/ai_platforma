@@ -657,15 +657,15 @@ export default function Room() {
   const stageVideoTrack = useMemo(() => {
     const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
 
+    if (isTeacher && state.cameraOn && localVideoRef.current) {
+      return localVideoRef.current;
+    }
+
     if (stageUserId) {
       const stageRemoteTrack = videoTracksMap.current.get(stageUserId);
       if (stageRemoteTrack) {
         return stageRemoteTrack;
       }
-    }
-
-    if (isTeacher && localVideoRef.current) {
-      return localVideoRef.current;
     }
 
     if (teacherParticipant) {
@@ -678,14 +678,20 @@ export default function Room() {
 
     const firstRemote = videoTracksMap.current.values().next().value as IRemoteVideoTrack | undefined;
     return firstRemote || null;
-  }, [isTeacher, localTrackVersion, stageUserId, state.participants, trackVersion]);
+  }, [isTeacher, localTrackVersion, stageUserId, state.cameraOn, state.participants, trackVersion]);
 
   useEffect(() => {
     if (!stageVideoRef.current) return;
 
     const container = stageVideoRef.current;
+    let localFallbackVideo: HTMLVideoElement | null = null;
 
     const clearStage = () => {
+      if (localFallbackVideo) {
+        localFallbackVideo.pause();
+        localFallbackVideo.srcObject = null;
+        localFallbackVideo = null;
+      }
       container.innerHTML = "";
     };
 
@@ -694,6 +700,30 @@ export default function Room() {
       return;
     }
 
+    const tryMountLocalFallback = () => {
+      if (!isTeacher) return false;
+      const localTrack = localVideoRef.current;
+      if (!localTrack || stageVideoTrack !== localTrack) return false;
+
+      const mediaTrack = localTrack.getMediaStreamTrack?.();
+      if (!mediaTrack || !stageVideoRef.current) return false;
+
+      clearStage();
+      const videoElement = document.createElement("video");
+      videoElement.autoplay = true;
+      videoElement.muted = true;
+      videoElement.playsInline = true;
+      videoElement.srcObject = new MediaStream([mediaTrack]);
+      videoElement.style.width = "100%";
+      videoElement.style.height = "100%";
+      videoElement.style.objectFit = "cover";
+      stageVideoRef.current.appendChild(videoElement);
+      localFallbackVideo = videoElement;
+      Promise.resolve(videoElement.play()).catch(() => undefined);
+      pushDebug("stage local fallback mounted");
+      return true;
+    };
+
     const scheduleRetry = (attempt: number, error: unknown) => {
       pushDebug("stage play error", { attempt, error: toErrorText(error) });
       if (attempt < STAGE_PLAY_MAX_RETRY) {
@@ -701,7 +731,9 @@ export default function Room() {
           () => playWithRetry(attempt + 1),
           STAGE_PLAY_RETRY_MS
         );
+        return;
       }
+      void tryMountLocalFallback();
     };
 
     const playWithRetry = (attempt: number) => {
@@ -730,7 +762,7 @@ export default function Room() {
       }
       clearStage();
     };
-  }, [pushDebug, stageVideoTrack]);
+  }, [isTeacher, pushDebug, stageVideoTrack]);
 
   const sortedParticipants = useMemo(
     () => sortStudents(state.participants, studentStatuses),

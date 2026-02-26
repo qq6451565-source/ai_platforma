@@ -200,6 +200,7 @@ class FaceVerificationService:
             return {
                 "verified": False,
                 "event_type": "error",
+                "face_detection_status": "NOT_DETECTED",
                 "message": "Live room not found",
                 "alert": False,
             }
@@ -207,6 +208,7 @@ class FaceVerificationService:
             return {
                 "verified": False,
                 "event_type": "error",
+                "face_detection_status": "NOT_DETECTED",
                 "message": f"Verification error: {str(e)}",
                 "alert": False,
             }
@@ -330,10 +332,18 @@ class FaceVerificationService:
         # Determine face detection status
         if event_type == "success":
             face_detection_status = "DETECTED"
-        elif event_type == "no_face":
-            face_detection_status = "NOT_DETECTED"
         elif event_type == "multiple_faces":
             face_detection_status = "MULTIPLE"
+        elif event_type in {
+            "no_face",
+            "no_reference",
+            "low_confidence",
+            "no_embedding",
+            "invalid_frame",
+            "ai_error",
+            "error",
+        }:
+            face_detection_status = "NOT_DETECTED"
         else:
             face_detection_status = "CHECKING"
         
