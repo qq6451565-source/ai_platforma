@@ -342,9 +342,7 @@ export default function Room() {
         ) => {
           const remoteUid = normalizeUid(user.uid);
           try {
-            const shouldTryVideo =
-              mediaType === "video" ||
-              (!mediaType && (Boolean(user.videoTrack) || Boolean(user.hasVideo)));
+            const shouldTryVideo = mediaType !== "audio";
             const shouldTryAudio =
               mediaType === "audio" ||
               (!mediaType && (Boolean(user.audioTrack) || Boolean(user.hasAudio)));
@@ -370,6 +368,11 @@ export default function Room() {
             pushDebug("user-published", { uid: normalizeUid(user.uid), mediaType });
             await subscribeRemoteUser(user, mediaType);
           }
+        });
+
+        client.on("user-joined", (user: IAgoraRTCRemoteUser) => {
+          pushDebug("user-joined", { uid: normalizeUid(user.uid) });
+          void subscribeRemoteUser(user);
         });
 
         client.on("user-unpublished", (user: IAgoraRTCRemoteUser, mediaType) => {
@@ -657,7 +660,7 @@ export default function Room() {
   const stageVideoTrack = useMemo(() => {
     const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
 
-    if (isTeacher && state.cameraOn && localVideoRef.current) {
+    if (isTeacher && localVideoRef.current) {
       return localVideoRef.current;
     }
 
@@ -678,7 +681,7 @@ export default function Room() {
 
     const firstRemote = videoTracksMap.current.values().next().value as IRemoteVideoTrack | undefined;
     return firstRemote || null;
-  }, [isTeacher, localTrackVersion, stageUserId, state.cameraOn, state.participants, trackVersion]);
+  }, [isTeacher, localTrackVersion, stageUserId, state.participants, trackVersion]);
 
   useEffect(() => {
     if (!stageVideoRef.current) return;
@@ -700,7 +703,7 @@ export default function Room() {
       return;
     }
 
-    const tryMountLocalFallback = () => {
+    const mountLocalPreview = () => {
       if (!isTeacher) return false;
       const localTrack = localVideoRef.current;
       if (!localTrack || stageVideoTrack !== localTrack) return false;
@@ -720,7 +723,7 @@ export default function Room() {
       stageVideoRef.current.appendChild(videoElement);
       localFallbackVideo = videoElement;
       Promise.resolve(videoElement.play()).catch(() => undefined);
-      pushDebug("stage local fallback mounted");
+      pushDebug("stage local preview mounted");
       return true;
     };
 
@@ -733,11 +736,12 @@ export default function Room() {
         );
         return;
       }
-      void tryMountLocalFallback();
+      void mountLocalPreview();
     };
 
     const playWithRetry = (attempt: number) => {
       if (!stageVideoRef.current) return;
+      if (mountLocalPreview()) return;
       try {
         clearStage();
         const playResult = stageVideoTrack.play(stageVideoRef.current);
