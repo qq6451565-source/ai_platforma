@@ -61,7 +61,9 @@
     "university": "University",
     "learning": "Learning",
     "aiSettings": "AI Settings",
-    "submissions": "Submissions"
+    "submissions": "Submissions",
+    "student": "Student",
+    "teacher": "Teacher"
   },
   "schedule": {
     "title": "Schedule",
@@ -92,11 +94,14 @@
     "loginError": "Invalid email or password",
     "logoutConfirm": "Are you sure you want to logout?",
     "adminLogin": "Sign in as admin",
-    "adminSeparateLogin": "Please use the dedicated admin login page"
+    "adminSeparateLogin": "Please use the dedicated admin login page",
+    "username": "Username",
+    "usernamePlaceholder": "username"
   },
   "layout": {
     "welcome": "Welcome",
-    "language": "Language"
+    "language": "Language",
+    "menu": "Menu"
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -251,5 +256,301 @@
     "fullName": "Full name",
     "fullNameRequired": "Enter full name",
     "fullNamePlaceholder": "Ali Valiyev"
+  },
+  "adminLogin": {
+    "title": "Admin System",
+    "backToUserLogin": "Regular login",
+    "onlyAdmin": "Admins only",
+    "success": "Signed in as admin",
+    "failed": "Login failed",
+    "submit": "Sign in as admin",
+    "usernamePlaceholder": "admin_username"
+  },
+  "adminHub": {
+    "users": {
+      "users": "Users"
+    },
+    "enrollment": {
+      "applicants": "Applicants",
+      "windows": "Enrollment windows"
+    },
+    "university": {
+      "directions": "Directions",
+      "subjects": "Subjects",
+      "teacherSubjects": "Teacher-Subject",
+      "groups": "Groups"
+    },
+    "learning": {
+      "lessons": "Lesson schedule",
+      "materials": "Materials",
+      "assignments": "Assignments",
+      "submissions": "Submissions",
+      "tests": "Tests",
+      "attendance": "Attendance",
+      "gradebook": "Grades"
+    }
+  },
+  "aiSettings": {
+    "title": "AI settings",
+    "messages": {
+      "updated": "AI settings updated",
+      "updateError": "Update failed"
+    },
+    "status": {
+      "ok": "Connected",
+      "disabled": "Disabled",
+      "unconfigured": "Unconfigured",
+      "unreachable": "Unreachable",
+      "unknown": "Unknown"
+    },
+    "gateway": {
+      "title": "AI Gateway status",
+      "refresh": "Refresh",
+      "aiEnabled": "AI enabled",
+      "apiKeyPresent": "API key set",
+      "timeout": "Timeout (seconds)",
+      "gatewayStatus": "Gateway status"
+    },
+    "sections": {
+      "connection": "Connection settings",
+      "ocr": "OCR settings",
+      "faceMatch": "Face match settings",
+      "presence": "Presence settings",
+      "proctor": "Proctor settings"
+    },
+    "fields": {
+      "aiEnabled": "AI enabled",
+      "apiBaseUrl": "AI Gateway URL",
+      "apiKey": "API key",
+      "timeoutSeconds": "Timeout (seconds)",
+      "retryCount": "Retry count",
+      "ocrThreshold": "OCR threshold",
+      "maxImageSizeMb": "Max image size (MB)",
+      "faceMatchEnabled": "Face match enabled",
+      "faceMatchThreshold": "Face match threshold",
+      "faceModel": "Face model",
+      "detectionBackend": "Detection backend",
+      "enforceDetection": "Enforce detection",
+      "presenceEnabled": "Presence enabled",
+      "presenceThreshold": "Presence threshold",
+      "proctorStrict": "Strict proctoring",
+      "proctorMissingSeconds": "Missing limit (seconds)"
+    }
+  },
+  "live": {
+    "errors": {
+      "forbidden": "You do not have permission to join this lesson.",
+      "notFound": "Live room not found.",
+      "serviceUnavailable": "Live service is not configured (check Agora configuration).",
+      "missingAppId": "Agora App ID not found. Check backend `AGORA_APP_ID` or frontend `VITE_AGORA_APP_ID`.",
+      "joinFailed": "Failed to connect to live lesson"
+    },
+    "room": {
+      "lecturer": "Lecturer",
+      "noVideo": "No video",
+      "defaultRoomTitle": "Live class",
+      "participants": "{{count}} participants",
+      "monitoringActive": "Monitoring active"
+    },
+    "panel": {
+      "participants": "Participants",
+      "noStudents": "No students",
+      "onStage": "On stage",
+      "enableMic": "Enable microphone",
+      "disableMic": "Disable microphone"
+    },
+    "grid": {
+      "students": "Students ({{count}})",
+      "hide": "Hide",
+      "noStudents": "No students"
+    },
+    "tile": {
+      "onStage": "On stage",
+      "handRaised": "Hand raised",
+      "confidence": "Confidence: {{value}}%",
+      "enableMic": "Enable microphone",
+      "disableMic": "Disable microphone"
+    }
+  },
+  "demo": {
+    "vibrant": {
+      "title": "Vibrant UI Design",
+      "subtitle": "Bright, colorful, and energetic",
+      "primaryButton": "Primary button",
+      "neonButton": "Neon effect",
+      "outlineButton": "Outline style",
+      "clicked": "Clicked {{count}} times",
+      "cards": {
+        "purple": {
+          "title": "Purple Glass",
+          "description": "Beautiful glassmorphism with purple tint and glow effect"
+        },
+        "pink": {
+          "title": "Pink Glass",
+          "description": "Vibrant pink glassmorphism with a striking glow"
+        },
+        "rainbow": {
+          "title": "Rainbow Glass",
+          "description": "Multi-color gradient with rainbow glow effect"
+        }
+      },
+      "neonTitle": "Neon Rainbow Border",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "outline": "Outline",
+      "ghost": "Ghost",
+      "neon": "Neon",
+      "error": "Error",
+      "holographicTitle": "Holographic Effect",
+      "holographicDescription": "This card has an animated holographic shimmer effect",
+      "magicButton": "Experience magic",
+      "paletteTitle": "Color palette",
+      "palette": {
+        "purple": "Purple",
+        "pink": "Pink",
+        "orange": "Orange",
+        "primaryAccent": "Primary accent",
+        "secondaryAccent": "Secondary accent",
+        "tertiaryAccent": "Tertiary accent"
+      },
+      "animatedTitle": "Animated Gradient",
+      "animatedDescription": "This background continuously shifts colors"
+    },
+    "showcase": {
+      "title": "UI Component Showcase",
+      "completed": "Completed",
+      "inProgress": "In Progress",
+      "pending": "Pending",
+      "weeklyActivity": "Weekly activity",
+      "taskDistribution": "Task distribution",
+      "openMenu": "Open menu",
+      "tabs": {
+        "components": "Components",
+        "charts": "Charts",
+        "stats": "Statistics",
+        "notifications": "Notifications"
+      },
+      "sections": {
+        "buttons": "Buttons",
+        "badges": "Badges",
+        "avatars": "Avatars",
+        "progress": "Progress Bars",
+        "dropdown": "Dropdown"
+      },
+      "buttons": {
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "outline": "Outline",
+        "ghost": "Ghost",
+        "neon": "Neon",
+        "error": "Error",
+        "small": "Small",
+        "large": "Large",
+        "loading": "Loading"
+      },
+      "badges": {
+        "default": "Default",
+        "primary": "Primary",
+        "success": "Success",
+        "warning": "Warning",
+        "error": "Error",
+        "info": "Info",
+        "live": "Live"
+      },
+      "progress": {
+        "completion": "Completion"
+      },
+      "menu": {
+        "profile": "Profile",
+        "settings": "Settings",
+        "logout": "Logout"
+      },
+      "stats": {
+        "totalStudents": "Total students",
+        "activeCourses": "Active courses",
+        "pendingTasks": "Pending tasks",
+        "completionRate": "Completion rate"
+      },
+      "notifications": {
+        "assignmentTitle": "New assignment",
+        "assignmentMessage": "You have a new assignment in Mathematics",
+        "resultTitle": "Test results",
+        "resultMessage": "Your test results are now available",
+        "time5m": "5 minutes ago",
+        "time1h": "1 hour ago"
+      },
+      "actions": {
+        "success": "Show success toast",
+        "error": "Show error toast",
+        "warning": "Show warning toast",
+        "openSheet": "Open bottom sheet"
+      },
+      "toast": {
+        "success": "Success message!",
+        "error": "Error occurred!",
+        "warning": "Warning message!",
+        "profile": "Profile clicked",
+        "settings": "Settings clicked",
+        "logout": "Logged out",
+        "notification": "Clicked notification {{id}}",
+        "markAllRead": "All marked as read"
+      },
+      "sheet": {
+        "title": "Bottom sheet example",
+        "subtitle": "This is a mobile-friendly bottom sheet!",
+        "description": "You can drag it to resize or swipe down to close."
+      }
+    },
+    "clean": {
+      "title": "Clean & Simple Design",
+      "subtitle": "Professional, minimal, and easy to use",
+      "sections": {
+        "buttons": "Buttons",
+        "form": "Form elements",
+        "badges": "Badges",
+        "avatars": "Avatars",
+        "progress": "Progress indicators"
+      },
+      "buttons": {
+        "primary": "Primary button",
+        "secondary": "Secondary",
+        "outline": "Outline",
+        "ghost": "Ghost",
+        "accent": "Accent",
+        "delete": "Delete"
+      },
+      "form": {
+        "name": "Enter your name",
+        "email": "Email address",
+        "password": "Password"
+      },
+      "badges": {
+        "default": "Default",
+        "primary": "Primary",
+        "success": "Success",
+        "warning": "Warning",
+        "error": "Error",
+        "info": "Info"
+      },
+      "progress": {
+        "inProgress": "In progress (25%)",
+        "completed": "Completed (60%)",
+        "almostDone": "Almost done (85%)"
+      },
+      "cards": {
+        "analytics": {
+          "title": "Analytics",
+          "description": "Track progress with detailed analytics and insights."
+        },
+        "tasks": {
+          "title": "Tasks",
+          "description": "Manage tasks efficiently with a simple interface."
+        },
+        "notifications": {
+          "title": "Notifications",
+          "description": "Stay updated with real-time notifications."
+        }
+      }
+    }
   }
 }

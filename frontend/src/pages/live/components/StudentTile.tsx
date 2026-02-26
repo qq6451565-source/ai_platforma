@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from "react";
+﻿import React, { useEffect, useRef } from "react";
 import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import { getFaceStatusDisplay } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import "../styles/StudentTile.css";
@@ -28,6 +29,7 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   onSelect,
   isStage = false,
 }) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -60,7 +62,6 @@ export const StudentTile: React.FC<StudentTileProps> = ({
       title={student.user_name}
       onClick={() => onSelect?.(student.user_id)}
     >
-      {/* Video Container */}
       <div className="student-video-container">
         {videoTrack ? (
           <div ref={videoRef} className="video-element" />
@@ -71,7 +72,6 @@ export const StudentTile: React.FC<StudentTileProps> = ({
         )}
       </div>
 
-      {/* Face Status Indicator */}
       <div
         className={`face-status-indicator ${faceStatus.toLowerCase()}`}
         style={{
@@ -82,31 +82,28 @@ export const StudentTile: React.FC<StudentTileProps> = ({
         <div className="status-ring" />
       </div>
 
-      {/* Student Info Section */}
       <div className="student-info">
         <div className="student-name">{student.user_name}</div>
 
-        {/* Status Badges */}
         <div className="student-badges">
           {isStage && (
-            <span className="badge stage" title="Markazda">
+            <span className="badge stage" title={t("live.tile.onStage")}>
               STAGE
             </span>
           )}
           {isHandRaised && (
-            <span className="badge hand-raised" title="Qol ko'tarilgan">
-              🔵
+            <span className="badge hand-raised" title={t("live.tile.handRaised")}>
+              !
             </span>
           )}
           {confidence > 0 && (
-            <span className="badge confidence" title={`Aniqlik: ${(confidence * 100).toFixed(0)}%`}>
+            <span className="badge confidence" title={t("live.tile.confidence", { value: (confidence * 100).toFixed(0) })}>
               {(confidence * 100).toFixed(0)}%
             </span>
           )}
         </div>
       </div>
 
-      {/* Audio Control Button (if teacher) */}
       {isTeacher && onAudioToggle && (
         <button
           className={`audio-control-btn ${isAudioEnabled ? "enabled" : ""}`}
@@ -116,8 +113,8 @@ export const StudentTile: React.FC<StudentTileProps> = ({
           }}
           title={
             isAudioEnabled
-              ? "Mikrofon o'chirib yuborish"
-              : "Mikrofon qo'shish"
+              ? t("live.tile.disableMic")
+              : t("live.tile.enableMic")
           }
         >
           {isAudioEnabled ? (

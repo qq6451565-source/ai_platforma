@@ -2,6 +2,7 @@ import React from "react";
 import { getGroupedStudents, getFaceStatusDisplay } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import "../styles/SidePanel.css";
 
 interface SidePanelProps {
@@ -21,6 +22,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   onStudentSelect,
   stageUserId = null,
 }) => {
+  const { t } = useTranslation();
   const groupedStudents = getGroupedStudents(participants, studentStatuses);
   const totalCount = participants.filter((p) => !p.is_teacher).length;
 
@@ -28,7 +30,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     <aside className="side-panel">
       {/* Header */}
       <div className="panel-header">
-        <h3>Ishtirokchilar</h3>
+        <h3>{t("live.panel.participants")}</h3>
         <span className="count">({totalCount})</span>
       </div>
 
@@ -36,7 +38,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
       <div className="panel-body">
         {groupedStudents.length === 0 ? (
           <div className="empty-state">
-            <p>Talabalar yo'q</p>
+            <p>{t("live.panel.noStudents")}</p>
           </div>
         ) : (
           groupedStudents.map((group) => (
@@ -92,7 +94,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                       <div className="participant-info">
                         <span className="name">{student.user_name}</span>
                         {stageUserId === student.user_id && (
-                          <span className="confidence">Markazda</span>
+                          <span className="confidence">{t("live.panel.onStage")}</span>
                         )}
                         {confidence > 0 && (
                           <span className="confidence">
@@ -111,8 +113,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                           }}
                           title={
                             status?.audioEnabled
-                              ? "Mikrofon o'chirib yuborish"
-                              : "Mikrofon qo'shish"
+                              ? t("live.panel.disableMic")
+                              : t("live.panel.enableMic")
                           }
                         >
                           {status?.audioEnabled ? (

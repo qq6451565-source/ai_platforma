@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
-import { Button } from './ui';
-import { Sidebar } from './Layout/Sidebar';
-import LanguageSwitcher from './LanguageSwitcher';
-import './MobileNav.css';
+﻿import React, { useState } from "react";
+import { MenuOutlined, CloseOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import { Button } from "./ui";
+import { Sidebar } from "./Layout/Sidebar";
+import LanguageSwitcher from "./LanguageSwitcher";
+import "./MobileNav.css";
 
 interface MobileNavProps {
   title: string;
@@ -13,6 +14,7 @@ interface MobileNavProps {
 }
 
 export const MobileNav: React.FC<MobileNavProps> = ({ title, items, user, onLogout }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -25,7 +27,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ title, items, user, onLogo
           className="mobile-menu-toggle"
         />
         <div className="mobile-header-title">{title}</div>
-        <div className="mobile-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="mobile-header-right" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <LanguageSwitcher />
           <div className="mobile-header-user">
             {user?.first_name?.[0]}{user?.last_name?.[0]}
@@ -35,15 +37,15 @@ export const MobileNav: React.FC<MobileNavProps> = ({ title, items, user, onLogo
 
       {isOpen && (
         <div className="mobile-sidebar-overlay" onClick={() => setIsOpen(false)}>
-          <div className="mobile-sidebar-container" onClick={e => e.stopPropagation()}>
+          <div className="mobile-sidebar-container" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-sidebar-header">
-              <div className="h4 m-0">Menu</div>
+              <div className="h4 m-0">{t("layout.menu")}</div>
               <Button variant="ghost" icon={<CloseOutlined />} onClick={() => setIsOpen(false)} />
             </div>
             <Sidebar items={items} onItemClick={() => setIsOpen(false)} />
             <div className="mobile-sidebar-footer">
               <Button variant="outline" block onClick={onLogout}>
-                Chiqish
+                {t("common.logout")}
               </Button>
             </div>
           </div>

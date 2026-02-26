@@ -9,6 +9,7 @@ import AgoraRTC, {
 } from "agora-rtc-sdk-ng";
 import { Spin, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   AudioOutlined,
   AudioMutedOutlined,
@@ -38,6 +39,7 @@ import SidePanel from "./components/SidePanel";
 import StudentGridSection from "./components/StudentGridSection";
 import { useFaceVerification, useStudentMonitoring } from "./hooks/useFaceVerification";
 import { sortStudents } from "./utils/studentSorting";
+import i18next from "../../i18n";
 
 import "./Room_NEW.css";
 import "./styles/SidePanel.css";
@@ -96,9 +98,9 @@ function getErrorMessage(error: unknown, fallback: string): string {
     if (payloadMessage) return payloadMessage;
 
     const status = axiosLike.response?.status;
-    if (status === 403) return "Bu darsga kirish uchun ruxsat yo'q.";
-    if (status === 404) return "Live xona topilmadi.";
-    if (status === 503) return "Live servis sozlanmagan (Agora konfiguratsiyasini tekshiring).";
+    if (status === 403) return i18next.t("live.errors.forbidden");
+    if (status === 404) return i18next.t("live.errors.notFound");
+    if (status === 503) return i18next.t("live.errors.serviceUnavailable");
     if (axiosLike.message) return axiosLike.message;
   }
   if (error instanceof Error && error.message) {
@@ -108,6 +110,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function Room() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { lessonId } = useParams<{ lessonId: string }>();
   const { data: me } = useMe();
@@ -192,7 +195,7 @@ export default function Room() {
       try {
         const roomData = await joinLiveLesson(Number(lessonId));
         if (!roomData.room_id) {
-          throw new Error("Live xona topilmadi");
+          throw new Error(t("live.errors.notFound"));
         }
         if (cancelled) return;
 
@@ -209,7 +212,7 @@ export default function Room() {
         const resolvedAppId = tokenData.app_id || fallbackAgoraAppId;
         if (!resolvedAppId) {
           throw new Error(
-            "Agora App ID topilmadi. Backend `AGORA_APP_ID` yoki frontend `VITE_AGORA_APP_ID` sozlamasini tekshiring."
+            t("live.errors.missingAppId")
           );
         }
 
@@ -297,7 +300,7 @@ export default function Room() {
           micOn: Boolean(isTeacher && audioTrack),
         }));
       } catch (error: unknown) {
-        const message = getErrorMessage(error, "Live darsga ulanishda xatolik yuz berdi");
+        const message = getErrorMessage(error, t("live.errors.joinFailed"));
         if (!cancelled) {
           setState((prev) => ({
             ...prev,
@@ -323,7 +326,7 @@ export default function Room() {
       clientRef.current?.leave().catch(() => undefined);
       clientRef.current = null;
     };
-  }, [lessonId, me?.id, isTeacher]);
+  }, [lessonId, me?.id, isTeacher, t]);
 
   useEffect(() => {
     if (!state.connected || !roomMeta?.roomId) return;
@@ -535,8 +538,8 @@ export default function Room() {
   const stageName = useMemo(() => {
     if (stageParticipant?.user_name) return stageParticipant.user_name;
     const meName = `${me?.first_name || ""} ${me?.last_name || ""}`.trim();
-    return meName || me?.username || "Ma'ruzachi";
-  }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name]);
+    return meName || me?.username || t("live.room.lecturer");
+  }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name, t]);
 
   if (state.loading) {
     return (
@@ -561,13 +564,13 @@ export default function Room() {
       <div className="main-content">
         <div className="stage-section">
           <div className="stage-video-container" ref={stageVideoRef} />
-          {!stageVideoTrack && <div className="stage-empty">Video yo'q</div>}
+          {!stageVideoTrack && <div className="stage-empty">{t("live.room.noVideo")}</div>}
           <div className="stage-overlay">
             <div className="stage-top-info">
-              <div className="stage-title">{roomMeta?.roomName || "Live class"}</div>
+              <div className="stage-title">{roomMeta?.roomName || t("live.room.defaultRoomTitle")}</div>
               <div className="stage-subtitle">
-                {state.participants.length} ishtirokchi
-                {monitoringIsConnected ? " | Monitoring active" : ""}
+                {t("live.room.participants", { count: state.participants.length })}
+                {monitoringIsConnected ? ` | ${t("live.room.monitoringActive")}` : ""}
               </div>
             </div>
             <div className="stage-bottom-info">

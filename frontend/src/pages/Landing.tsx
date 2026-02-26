@@ -1,9 +1,9 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card } from '../components/ui';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import { useTranslation } from 'react-i18next';
-import './Landing.css';
+﻿import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Button, Card } from "../components/ui";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import "./Landing.css";
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
@@ -27,10 +27,10 @@ const Landing: React.FC = () => {
                   <stop offset="100%" stopColor="#00ffff" />
                 </linearGradient>
                 <filter id="glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                   <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
+                    <feMergeNode in="coloredBlur" />
+                    <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
               </defs>
@@ -59,49 +59,39 @@ const Landing: React.FC = () => {
             </svg>
           </div>
 
-          <h1 className="hero-title">
-            {t('landing.title')}
-          </h1>
+          <h1 className="hero-title">{t("landing.title")}</h1>
 
           <p className="hero-subtitle">
-            {t('landing.subtitle')}
+            {t("landing.subtitle")}
             <br />
-            {t('landing.subtitleLine2')}
+            {t("landing.subtitleLine2")}
           </p>
 
           <div className="cta-buttons">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => navigate('/login')}
-            >
-              {t('landing.exploreNow')}
+            <Button variant="primary" size="lg" onClick={() => navigate("/login")}>
+              {t("landing.exploreNow")}
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate('/register')}
-            >
-              {t('landing.getStarted')}
+            <Button variant="outline" size="lg" onClick={() => navigate("/register")}>
+              {t("landing.getStarted")}
             </Button>
           </div>
         </div>
 
         <div className="features-grid">
           <Card className="feature-card" hoverable>
-            <div className="feature-icon">🚀</div>
-            <h3>{t('landing.featureAI.title')}</h3>
-            <p>{t('landing.featureAI.description')}</p>
+            <div className="feature-icon">AI</div>
+            <h3>{t("landing.featureAI.title")}</h3>
+            <p>{t("landing.featureAI.description")}</p>
           </Card>
           <Card className="feature-card" hoverable>
-            <div className="feature-icon">⚡</div>
-            <h3>{t('landing.featureLightning.title')}</h3>
-            <p>{t('landing.featureLightning.description')}</p>
+            <div className="feature-icon">FX</div>
+            <h3>{t("landing.featureLightning.title")}</h3>
+            <p>{t("landing.featureLightning.description")}</p>
           </Card>
           <Card className="feature-card" hoverable>
-            <div className="feature-icon">🎯</div>
-            <h3>{t('landing.featureAnalytics.title')}</h3>
-            <p>{t('landing.featureAnalytics.description')}</p>
+            <div className="feature-icon">AN</div>
+            <h3>{t("landing.featureAnalytics.title")}</h3>
+            <p>{t("landing.featureAnalytics.description")}</p>
           </Card>
         </div>
       </div>

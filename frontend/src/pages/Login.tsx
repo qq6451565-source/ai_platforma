@@ -1,4 +1,4 @@
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+﻿import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -69,9 +69,9 @@ const LoginPage = () => {
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
             <Input
-              label="Username"
+              label={t("auth.username")}
               icon={<UserOutlined />}
-              placeholder="username"
+              placeholder={t("auth.usernamePlaceholder")}
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               required
@@ -80,7 +80,7 @@ const LoginPage = () => {
               label={t("auth.password")}
               type="password"
               icon={<LockOutlined />}
-              placeholder="••••••••"
+              placeholder="********"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required

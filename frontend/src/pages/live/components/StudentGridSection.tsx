@@ -2,6 +2,7 @@ import React from "react";
 import { sortStudents } from "../utils/studentSorting";
 import { StudentTile } from "./StudentTile";
 import type { Student, StudentStatus } from "../utils/studentSorting";
+import { useTranslation } from "react-i18next";
 import "../styles/StudentGridSection.css";
 
 interface PlayableVideoTrack {
@@ -30,6 +31,7 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
   onStudentSelect,
   stageUserId = null,
 }) => {
+  const { t } = useTranslation();
   const sortedStudents = sortStudents(participants, studentStatuses);
 
   return (
@@ -37,10 +39,10 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
       {/* Header */}
       <div className="students-grid-header">
         <span className="grid-title">
-          Talabalar ({participants.filter((p) => !p.is_teacher).length})
+          {t("live.grid.students", { count: participants.filter((p) => !p.is_teacher).length })}
         </span>
-        <button className="close-btn" onClick={onClose} title="Yashirish">
-          Yopish
+        <button className="close-btn" onClick={onClose} title={t("live.grid.hide")}>
+          {t("common.close")}
         </button>
       </div>
 
@@ -48,7 +50,7 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
       <div className="students-grid">
         {sortedStudents.length === 0 ? (
           <div className="empty-grid">
-            <p>Talabalar yo'q</p>
+            <p>{t("live.grid.noStudents")}</p>
           </div>
         ) : (
           sortedStudents.map((student) => {

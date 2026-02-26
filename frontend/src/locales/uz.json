@@ -61,7 +61,9 @@
     "university": "Tuzilma",
     "learning": "O'quv jarayoni",
     "aiSettings": "AI sozlamalari",
-    "submissions": "Yuborilgan topshiriqlar"
+    "submissions": "Yuborilgan topshiriqlar",
+    "student": "Talaba",
+    "teacher": "O'qituvchi"
   },
   "schedule": {
     "title": "Dars jadvali",
@@ -92,11 +94,14 @@
     "loginError": "Login yoki parol noto'g'ri",
     "logoutConfirm": "Chiqishni tasdiqlaysizmi?",
     "adminLogin": "Admin sifatida kirish",
-    "adminSeparateLogin": "Admin uchun alohida kirish sahifasidan foydalaning"
+    "adminSeparateLogin": "Admin uchun alohida kirish sahifasidan foydalaning",
+    "username": "Username",
+    "usernamePlaceholder": "username"
   },
   "layout": {
     "welcome": "Xush kelibsiz",
-    "language": "Til"
+    "language": "Til",
+    "menu": "Menyu"
   },
   "errors": {
     "somethingWentWrong": "Xatolik yuz berdi",
@@ -251,5 +256,301 @@
     "fullName": "Ism va familiya",
     "fullNameRequired": "Ism va familiyani kiriting",
     "fullNamePlaceholder": "Ali Valiyev"
+  },
+  "adminLogin": {
+    "title": "Admin tizimi",
+    "backToUserLogin": "Oddiy kirish",
+    "onlyAdmin": "Faqat admin uchun",
+    "success": "Admin sifatida kirdingiz",
+    "failed": "Kirish muvaffaqiyatsiz",
+    "submit": "Admin bo'lib kirish",
+    "usernamePlaceholder": "admin_username"
+  },
+  "adminHub": {
+    "users": {
+      "users": "Foydalanuvchilar"
+    },
+    "enrollment": {
+      "applicants": "Arizachilar",
+      "windows": "Ro'yxatdan o'tish oynalari"
+    },
+    "university": {
+      "directions": "Yo'nalishlar",
+      "subjects": "Fanlar",
+      "teacherSubjects": "O'qituvchi-fan",
+      "groups": "Guruhlar"
+    },
+    "learning": {
+      "lessons": "Dars jadvali",
+      "materials": "Materiallar",
+      "assignments": "Topshiriqlar",
+      "submissions": "Yuborilganlar",
+      "tests": "Testlar",
+      "attendance": "Davomat",
+      "gradebook": "Baholar"
+    }
+  },
+  "aiSettings": {
+    "title": "AI sozlamalari",
+    "messages": {
+      "updated": "AI sozlamalari yangilandi",
+      "updateError": "Yangilashda xato"
+    },
+    "status": {
+      "ok": "Ulangan",
+      "disabled": "O'chirilgan",
+      "unconfigured": "Sozlanmagan",
+      "unreachable": "Ulanmadi",
+      "unknown": "Noma'lum"
+    },
+    "gateway": {
+      "title": "AI Gateway holati",
+      "refresh": "Yangilash",
+      "aiEnabled": "AI yoqilgan",
+      "apiKeyPresent": "API key mavjud",
+      "timeout": "Timeout (sekund)",
+      "gatewayStatus": "Gateway holati"
+    },
+    "sections": {
+      "connection": "Ulanish sozlamalari",
+      "ocr": "OCR sozlamalari",
+      "faceMatch": "Face match sozlamalari",
+      "presence": "Presence sozlamalari",
+      "proctor": "Proktor sozlamalari"
+    },
+    "fields": {
+      "aiEnabled": "AI yoqilgan",
+      "apiBaseUrl": "AI Gateway URL",
+      "apiKey": "API key",
+      "timeoutSeconds": "Timeout (sekund)",
+      "retryCount": "Qayta urinish soni",
+      "ocrThreshold": "OCR threshold",
+      "maxImageSizeMb": "Maks rasm hajmi (MB)",
+      "faceMatchEnabled": "Face match yoqilgan",
+      "faceMatchThreshold": "Face match threshold",
+      "faceModel": "Face modeli",
+      "detectionBackend": "Detection backend",
+      "enforceDetection": "Detection majburiy",
+      "presenceEnabled": "Presence yoqilgan",
+      "presenceThreshold": "Presence threshold",
+      "proctorStrict": "Proktor qat'iy",
+      "proctorMissingSeconds": "Yo'qolish limiti (sekund)"
+    }
+  },
+  "live": {
+    "errors": {
+      "forbidden": "Bu darsga kirish uchun ruxsat yo'q.",
+      "notFound": "Live xona topilmadi.",
+      "serviceUnavailable": "Live servis sozlanmagan (Agora konfiguratsiyasini tekshiring).",
+      "missingAppId": "Agora App ID topilmadi. Backend `AGORA_APP_ID` yoki frontend `VITE_AGORA_APP_ID` sozlamasini tekshiring.",
+      "joinFailed": "Live darsga ulanishda xatolik yuz berdi"
+    },
+    "room": {
+      "lecturer": "Ma'ruzachi",
+      "noVideo": "Video yo'q",
+      "defaultRoomTitle": "Live dars",
+      "participants": "{{count}} ishtirokchi",
+      "monitoringActive": "Monitoring faol"
+    },
+    "panel": {
+      "participants": "Ishtirokchilar",
+      "noStudents": "Talabalar yo'q",
+      "onStage": "Markazda",
+      "enableMic": "Mikrofonni yoqish",
+      "disableMic": "Mikrofonni o'chirish"
+    },
+    "grid": {
+      "students": "Talabalar ({{count}})",
+      "hide": "Yashirish",
+      "noStudents": "Talabalar yo'q"
+    },
+    "tile": {
+      "onStage": "Markazda",
+      "handRaised": "Qo'l ko'tarilgan",
+      "confidence": "Aniqlik: {{value}}%",
+      "enableMic": "Mikrofonni yoqish",
+      "disableMic": "Mikrofonni o'chirish"
+    }
+  },
+  "demo": {
+    "vibrant": {
+      "title": "Yorqin UI dizayn",
+      "subtitle": "Yorqin, rang-barang va energiyaga boy",
+      "primaryButton": "Asosiy tugma",
+      "neonButton": "Neon effekt",
+      "outlineButton": "Kontur uslubi",
+      "clicked": "{{count}} marta bosildi",
+      "cards": {
+        "purple": {
+          "title": "Binafsha shisha",
+          "description": "Binafsha rangli va yaltirash effektli chiroyli glassmorphism"
+        },
+        "pink": {
+          "title": "Pushti shisha",
+          "description": "Yorqin pushti glassmorphism va kuchli glow effekti"
+        },
+        "rainbow": {
+          "title": "Kamalak shisha",
+          "description": "Ko'p rangli gradient va kamalak glow effekti"
+        }
+      },
+      "neonTitle": "Neon kamalak border",
+      "primary": "Asosiy",
+      "secondary": "Ikkinchi",
+      "outline": "Kontur",
+      "ghost": "Yumshoq",
+      "neon": "Neon",
+      "error": "Xato",
+      "holographicTitle": "Golografik effekt",
+      "holographicDescription": "Bu kartada animatsion golografik shimmer effekti bor",
+      "magicButton": "Sehrni sinash",
+      "paletteTitle": "Rang palitrasi",
+      "palette": {
+        "purple": "Binafsha",
+        "pink": "Pushti",
+        "orange": "To'q sariq",
+        "primaryAccent": "Asosiy aksent",
+        "secondaryAccent": "Ikkinchi aksent",
+        "tertiaryAccent": "Uchinchi aksent"
+      },
+      "animatedTitle": "Animatsion gradient",
+      "animatedDescription": "Bu fon ranglarni doimiy ravishda o'zgartirib turadi"
+    },
+    "showcase": {
+      "title": "UI komponentlar namoyishi",
+      "completed": "Bajarilgan",
+      "inProgress": "Jarayonda",
+      "pending": "Kutilmoqda",
+      "weeklyActivity": "Haftalik faollik",
+      "taskDistribution": "Vazifalar taqsimoti",
+      "openMenu": "Menyuni ochish",
+      "tabs": {
+        "components": "Komponentlar",
+        "charts": "Grafiklar",
+        "stats": "Statistika",
+        "notifications": "Bildirishnomalar"
+      },
+      "sections": {
+        "buttons": "Tugmalar",
+        "badges": "Badge'lar",
+        "avatars": "Avatarlar",
+        "progress": "Progress paneli",
+        "dropdown": "Dropdown"
+      },
+      "buttons": {
+        "primary": "Asosiy",
+        "secondary": "Ikkinchi",
+        "outline": "Kontur",
+        "ghost": "Yumshoq",
+        "neon": "Neon",
+        "error": "Xato",
+        "small": "Kichik",
+        "large": "Katta",
+        "loading": "Yuklanmoqda"
+      },
+      "badges": {
+        "default": "Oddiy",
+        "primary": "Asosiy",
+        "success": "Muvaffaqiyat",
+        "warning": "Ogohlantirish",
+        "error": "Xato",
+        "info": "Ma'lumot",
+        "live": "Jonli"
+      },
+      "progress": {
+        "completion": "Bajarilish"
+      },
+      "menu": {
+        "profile": "Profil",
+        "settings": "Sozlamalar",
+        "logout": "Chiqish"
+      },
+      "stats": {
+        "totalStudents": "Jami talabalar",
+        "activeCourses": "Faol kurslar",
+        "pendingTasks": "Kutilayotgan vazifalar",
+        "completionRate": "Bajarilish darajasi"
+      },
+      "notifications": {
+        "assignmentTitle": "Yangi topshiriq",
+        "assignmentMessage": "Matematika fanidan yangi topshiriq berildi",
+        "resultTitle": "Test natijalari",
+        "resultMessage": "Sizning test natijalaringiz tayyor",
+        "time5m": "5 daqiqa oldin",
+        "time1h": "1 soat oldin"
+      },
+      "actions": {
+        "success": "Success toast",
+        "error": "Error toast",
+        "warning": "Warning toast",
+        "openSheet": "Bottom sheet ochish"
+      },
+      "toast": {
+        "success": "Muvaffaqiyat xabari!",
+        "error": "Xatolik yuz berdi!",
+        "warning": "Ogohlantirish xabari!",
+        "profile": "Profil bosildi",
+        "settings": "Sozlamalar bosildi",
+        "logout": "Tizimdan chiqildi",
+        "notification": "Bildirishnoma bosildi: {{id}}",
+        "markAllRead": "Barchasi o'qildi deb belgilandi"
+      },
+      "sheet": {
+        "title": "Bottom sheet namunasi",
+        "subtitle": "Bu mobilga mos bottom sheet!",
+        "description": "Uni tortib o'lchamini o'zgartirishingiz yoki pastga surib yopishingiz mumkin."
+      }
+    },
+    "clean": {
+      "title": "Soddalashtirilgan dizayn",
+      "subtitle": "Professional, minimal va foydalanish oson",
+      "sections": {
+        "buttons": "Tugmalar",
+        "form": "Forma elementlari",
+        "badges": "Badge'lar",
+        "avatars": "Avatarlar",
+        "progress": "Progress indikatorlari"
+      },
+      "buttons": {
+        "primary": "Asosiy tugma",
+        "secondary": "Ikkinchi",
+        "outline": "Kontur",
+        "ghost": "Yumshoq",
+        "accent": "Aksent",
+        "delete": "O'chirish"
+      },
+      "form": {
+        "name": "Ismingizni kiriting",
+        "email": "Email manzil",
+        "password": "Parol"
+      },
+      "badges": {
+        "default": "Oddiy",
+        "primary": "Asosiy",
+        "success": "Muvaffaqiyat",
+        "warning": "Ogohlantirish",
+        "error": "Xato",
+        "info": "Ma'lumot"
+      },
+      "progress": {
+        "inProgress": "Jarayonda (25%)",
+        "completed": "Bajarilgan (60%)",
+        "almostDone": "Deyarli tayyor (85%)"
+      },
+      "cards": {
+        "analytics": {
+          "title": "Analitika",
+          "description": "Batafsil analitika va insightlar orqali o'sishni kuzating."
+        },
+        "tasks": {
+          "title": "Vazifalar",
+          "description": "Vazifalaringizni sodda interfeys orqali samarali boshqaring."
+        },
+        "notifications": {
+          "title": "Bildirishnomalar",
+          "description": "Real vaqtdagi bildirishnomalar bilan doim xabardor bo'ling."
+        }
+      }
+    }
   }
 }

@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Tabs } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import AdminUsers from "./Users";
 
 const UsersHubPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const tabs = ["users"];
@@ -35,7 +37,7 @@ const UsersHubPage = () => {
       onChange={onChange}
       destroyInactiveTabPane
       items={[
-        { key: "users", label: "Foydalanuvchilar", children: renderTab("users", <AdminUsers />) },
+        { key: "users", label: t("adminHub.users.users"), children: renderTab("users", <AdminUsers />) },
       ]}
     />
   );

@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Tabs } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import AdminEnrollment from "./Enrollment";
 import EnrollmentWindowsPage from "./EnrollmentWindows";
 
 const EnrollmentHubPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const tabs = ["applicants", "windows"];
@@ -36,8 +38,8 @@ const EnrollmentHubPage = () => {
       onChange={onChange}
       destroyInactiveTabPane
       items={[
-        { key: "applicants", label: "Arizachilar", children: renderTab("applicants", <AdminEnrollment />) },
-        { key: "windows", label: "Ro'yxatdan o'tish", children: renderTab("windows", <EnrollmentWindowsPage />) },
+        { key: "applicants", label: t("adminHub.enrollment.applicants"), children: renderTab("applicants", <AdminEnrollment />) },
+        { key: "windows", label: t("adminHub.enrollment.windows"), children: renderTab("windows", <EnrollmentWindowsPage />) },
       ]}
     />
   );

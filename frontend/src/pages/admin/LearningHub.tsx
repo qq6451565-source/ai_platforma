@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Tabs } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import AdminLessons from "./Lessons";
 import AdminMaterials from "./Materials";
 import AdminAssignments from "./Assignments";
@@ -10,6 +11,7 @@ import AdminAttendance from "./Attendance";
 import AdminGradebook from "./Gradebook";
 
 const LearningHubPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const sections = ["lessons", "materials", "assignments", "submissions", "tests", "attendance", "gradebook"];
@@ -46,13 +48,13 @@ const LearningHubPage = () => {
       onChange={onChange}
       destroyInactiveTabPane
       items={[
-        { key: "lessons", label: "Dars jadvali", children: renderTab("lessons", <AdminLessons />) },
-        { key: "materials", label: "Materiallar", children: renderTab("materials", <AdminMaterials />) },
-        { key: "assignments", label: "Topshiriqlar", children: renderTab("assignments", <AdminAssignments />) },
-        { key: "submissions", label: "Yuborilganlar", children: renderTab("submissions", <AdminSubmissions />) },
-        { key: "tests", label: "Testlar", children: renderTab("tests", <AdminTests />) },
-        { key: "attendance", label: "Davomat", children: renderTab("attendance", <AdminAttendance />) },
-        { key: "gradebook", label: "Baholar", children: renderTab("gradebook", <AdminGradebook />) },
+        { key: "lessons", label: t("adminHub.learning.lessons"), children: renderTab("lessons", <AdminLessons />) },
+        { key: "materials", label: t("adminHub.learning.materials"), children: renderTab("materials", <AdminMaterials />) },
+        { key: "assignments", label: t("adminHub.learning.assignments"), children: renderTab("assignments", <AdminAssignments />) },
+        { key: "submissions", label: t("adminHub.learning.submissions"), children: renderTab("submissions", <AdminSubmissions />) },
+        { key: "tests", label: t("adminHub.learning.tests"), children: renderTab("tests", <AdminTests />) },
+        { key: "attendance", label: t("adminHub.learning.attendance"), children: renderTab("attendance", <AdminAttendance />) },
+        { key: "gradebook", label: t("adminHub.learning.gradebook"), children: renderTab("gradebook", <AdminGradebook />) },
       ]}
     />
   );
