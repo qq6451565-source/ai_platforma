@@ -17,13 +17,10 @@ import {
   StopOutlined,
   HighlightOutlined,
   LogoutOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
 
 import {
-  endLiveRoom,
   fetchAgoraToken,
   fetchLiveState,
   joinLiveLesson,
@@ -166,6 +163,13 @@ export default function Room() {
   const [localTrackReadyState, setLocalTrackReadyState] = useState("-");
   const [stageMountVersion, setStageMountVersion] = useState(0);
   const [selfPreviewMountVersion, setSelfPreviewMountVersion] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 1024
+  );
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) return false;
+    return window.localStorage.getItem("live-sidebar-open") === "true";
+  });
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
@@ -210,6 +214,28 @@ export default function Room() {
 
   const isTeacher = me?.role === "teacher" || me?.role === "admin";
   const localUserUid = normalizeUid(me?.id);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+      if (!desktop) {
+        setSidebarOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isDesktop) return;
+    window.localStorage.setItem("live-sidebar-open", sidebarOpen ? "true" : "false");
+  }, [isDesktop, sidebarOpen]);
 
   const roomName = roomMeta?.roomName ?? "";
   const {
@@ -843,17 +869,6 @@ export default function Room() {
     }
   }, [navigate, pushDebug, roomMeta?.roomId]);
 
-  const handleEndRoom = useCallback(async () => {
-    if (!isTeacher || !roomMeta?.roomId) return;
-    try {
-      await endLiveRoom(roomMeta.roomId);
-    } catch (error) {
-      pushDebug("end room error", toErrorText(error));
-    } finally {
-      await handleExitRoom();
-    }
-  }, [handleExitRoom, isTeacher, pushDebug, roomMeta?.roomId]);
-
   const stageVideoTrack = useMemo(() => {
     const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
 
@@ -1132,7 +1147,7 @@ export default function Room() {
   }
 
   return (
-    <div className="live-page">
+    <div className={`live-page ${isDesktop && sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <div className="main-content">
         <div className="stage-section">
           <div className="stage-video-container" ref={setStageVideoContainerRef} />
@@ -1220,6 +1235,7 @@ export default function Room() {
         )}
       </div>
 
+      {isDesktop && sidebarOpen && (
         <SidePanel
           participants={sortedParticipants}
           studentStatuses={studentStatuses}
@@ -1229,6 +1245,7 @@ export default function Room() {
           onStudentSelect={isTeacher ? handleSetStage : undefined}
           stageUserId={stageUserId}
         />
+      )}
 
       <div className="live-controls">
         <Button
@@ -1252,18 +1269,12 @@ export default function Room() {
           />
         )}
 
-        {isTeacher && (
+        {isDesktop && (
           <Button
-            className={`control-btn ${state.showStudentsGrid ? "is-active" : ""}`}
-            onClick={() =>
-              setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
-            }
-            icon={state.showStudentsGrid ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+            className={`control-btn ${sidebarOpen ? "is-active" : ""}`}
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            icon={<TeamOutlined />}
           />
-        )}
-
-        {isTeacher && (
-          <Button className="control-btn is-off" onClick={handleEndRoom} icon={<TeamOutlined />} />
         )}
 
         <Button className="control-btn exit-btn" onClick={handleExitRoom} icon={<LogoutOutlined />} />
