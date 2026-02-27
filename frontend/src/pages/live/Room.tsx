@@ -42,9 +42,6 @@ import { resolveVisualStatus, sortStudents } from "./utils/studentSorting";
 import i18next from "../../i18n";
 
 import "./Room_NEW.css";
-import "./styles/SidePanel.css";
-import "./styles/StudentTile.css";
-import "./styles/StudentGridSection.css";
 
 const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
 const FACE_VERIFY_INTERVAL_MS = 4000;
@@ -167,6 +164,8 @@ export default function Room() {
   const [publishRetries, setPublishRetries] = useState(0);
   const [cameraStreamUnavailable, setCameraStreamUnavailable] = useState(false);
   const [localTrackReadyState, setLocalTrackReadyState] = useState("-");
+  const [stageMountVersion, setStageMountVersion] = useState(0);
+  const [selfPreviewMountVersion, setSelfPreviewMountVersion] = useState(0);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
@@ -185,6 +184,18 @@ export default function Room() {
   const publishRecoveryInFlightRef = useRef(false);
   const cameraOnRef = useRef(true);
   const initialPublishDoneRef = useRef(false);
+
+  const setStageVideoContainerRef = useCallback((node: HTMLDivElement | null) => {
+    if (stageVideoRef.current === node) return;
+    stageVideoRef.current = node;
+    setStageMountVersion((prev) => prev + 1);
+  }, []);
+
+  const setTeacherSelfPreviewContainerRef = useCallback((node: HTMLDivElement | null) => {
+    if (teacherSelfPreviewRef.current === node) return;
+    teacherSelfPreviewRef.current = node;
+    setSelfPreviewMountVersion((prev) => prev + 1);
+  }, []);
 
   const pushDebug = useCallback(
     (label: string, payload?: unknown) => {
@@ -870,6 +881,7 @@ export default function Room() {
   }, [isTeacher, localTrackVersion, stageUserId, state.participants, trackVersion]);
 
   useEffect(() => {
+    if (!state.connected) return;
     if (!stageVideoRef.current) return;
 
     const container = stageVideoRef.current;
@@ -952,10 +964,19 @@ export default function Room() {
       }
       clearStage();
     };
-  }, [isTeacher, pushDebug, stageVideoTrack]);
+  }, [
+    isTeacher,
+    localTrackVersion,
+    pushDebug,
+    stageMountVersion,
+    stageVideoTrack,
+    state.cameraOn,
+    state.connected,
+    trackVersion,
+  ]);
 
   useEffect(() => {
-    if (!isTeacher || !teacherSelfPreviewRef.current) return;
+    if (!state.connected || !isTeacher || !teacherSelfPreviewRef.current) return;
 
     const container = teacherSelfPreviewRef.current;
     let fallbackVideo: HTMLVideoElement | null = null;
@@ -1022,7 +1043,7 @@ export default function Room() {
     }
 
     return clearPreview;
-  }, [isTeacher, localTrackVersion, pushDebug, state.cameraOn]);
+  }, [isTeacher, localTrackVersion, pushDebug, selfPreviewMountVersion, state.cameraOn, state.connected]);
 
   const sortedParticipants = useMemo(
     () => sortStudents(state.participants, studentStatuses),
@@ -1114,7 +1135,7 @@ export default function Room() {
     <div className="live-page">
       <div className="main-content">
         <div className="stage-section">
-          <div className="stage-video-container" ref={stageVideoRef} />
+          <div className="stage-video-container" ref={setStageVideoContainerRef} />
           {!stageVideoTrack && <div className="stage-empty">{t("live.room.noVideo")}</div>}
           {showCameraUnavailable && (
             <div className="stage-warning">{t("live.room.cameraUnavailable")}</div>
@@ -1122,7 +1143,7 @@ export default function Room() {
 
           {isTeacher && (
             <div className="teacher-self-preview-wrapper">
-              <div className="teacher-self-preview" ref={teacherSelfPreviewRef} />
+              <div className="teacher-self-preview" ref={setTeacherSelfPreviewContainerRef} />
               <div className="teacher-self-preview-label">{t("live.room.selfPreview")}</div>
             </div>
           )}
