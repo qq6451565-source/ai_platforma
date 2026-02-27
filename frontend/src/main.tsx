@@ -6,7 +6,6 @@ import { ConfigProvider } from "antd";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import App from "./App";
-import "@livekit/components-styles";
 import "./index.css";
 import "./i18n";
 import { loadSavedTheme } from "./utils/themeManager";
