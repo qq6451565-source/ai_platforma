@@ -1,0 +1,74 @@
+.card {
+  display: grid;
+  grid-template-columns: 5.6rem minmax(0, 1fr);
+  gap: 0.55rem;
+  border: 2px solid transparent;
+  border-radius: 0.7rem;
+  background: #0f172a;
+  padding: 0.45rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.55rem 1rem rgba(0, 0, 0, 0.28);
+}
+
+.preview {
+  width: 100%;
+  height: 3.9rem;
+  border-radius: 0.55rem;
+  overflow: hidden;
+  background: #02040a;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #a9bbe1;
+  background: linear-gradient(145deg, #23395d, #121b2f);
+}
+
+.info {
+  min-width: 0;
+}
+
+.name {
+  margin: 0.1rem 0;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group {
+  margin: 0.1rem 0;
+  font-size: 0.75rem;
+  color: #9aacce;
+}
+
+.verified {
+  border-color: #1db954;
+}
+
+.unverified {
+  border-color: #ff4d4f;
+}
+
+.requesting {
+  border-color: #3f8cff;
+}
+
