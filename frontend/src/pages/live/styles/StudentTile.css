@@ -1,63 +1,49 @@
-/* Student Tile Container */
 .student-tile {
   position: relative;
-  border-radius: 12px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 10.2rem;
+  min-width: 9.8rem;
+  height: 11rem;
+  border-radius: 0.82rem;
+  border: 0.0625rem solid rgba(86, 126, 197, 0.35);
+  background: rgba(7, 22, 52, 0.78);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-  flex: 0 0 140px;
-  height: 180px;
-  display: flex;
-  flex-direction: column;
-  min-width: 130px;
+  transition: border-color 0.18s ease, transform 0.18s ease;
 }
 
 .student-tile:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-  transform: translateY(-2px);
+  border-color: rgba(162, 193, 242, 0.62);
 }
 
 .student-tile.is-clickable {
   cursor: pointer;
 }
 
+.student-tile.is-clickable:hover {
+  transform: translateY(-0.0625rem);
+}
+
 .student-tile.is-stage {
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35) inset;
+  border-color: rgba(46, 141, 255, 0.78);
 }
 
 .student-tile.detected {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(17, 214, 128, 0.66);
 }
 
-.student-tile.not_detected {
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
+.student-tile.not_detected,
 .student-tile.multiple {
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(255, 79, 99, 0.7);
 }
 
-/* Video Container */
 .student-video-container {
-  width: 100%;
-  flex: 1;
-  background: #000;
-  overflow: hidden;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
+  background: #000;
 }
 
-.video-element {
-  width: 100%;
-  height: 100%;
-}
-
+.video-element,
 .video-element > video {
   width: 100%;
   height: 100%;
@@ -70,266 +56,113 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(59, 130, 246, 0.2));
-  font-size: 32px;
+  background: linear-gradient(135deg, rgba(26, 56, 112, 0.95), rgba(11, 35, 77, 0.95));
+  color: #deecff;
+  font-size: 2rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
 }
 
-/* Face Status Indicator Ring */
 .face-status-indicator {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.face-status-indicator.detected {
-  background: linear-gradient(135deg, #10b981, #34d399);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
-  animation: pulse-green 2s ease-in-out infinite;
-}
-
-.face-status-indicator.not_detected {
-  background: linear-gradient(135deg, #ef4444, #f87171);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
-  animation: shake-red 0.5s ease-in-out infinite;
-}
-
-.face-status-indicator.multiple {
-  background: linear-gradient(135deg, #f59e0b, #fcd34d);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
-  animation: pulse-yellow 2s ease-in-out infinite;
-}
-
-.face-status-indicator.checking {
-  background: linear-gradient(135deg, #6366f1, #818cf8);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
-  animation: spin 1s linear infinite;
+  top: 0.42rem;
+  right: 0.42rem;
+  width: 0.74rem;
+  height: 0.74rem;
+  border-radius: 999px;
+  border: 0.125rem solid rgba(255, 255, 255, 0.26);
 }
 
 .status-ring {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
+  display: none;
 }
 
-/* Student Info Section */
 .student-info {
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  flex-shrink: 0;
-  min-height: 40px;
+  display: grid;
+  gap: 0.22rem;
+  padding: 0.45rem 0.5rem;
+  background: rgba(4, 13, 33, 0.9);
+  border-top: 0.0625rem solid rgba(82, 122, 191, 0.22);
 }
 
-/* Student Name */
 .student-name {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 0.76rem;
+  color: #e2eeff;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: white;
 }
 
-/* Status Badges */
 .student-badges {
   display: flex;
-  gap: 4px;
-  font-size: 10px;
-  margin-top: 2px;
-  align-items: center;
+  gap: 0.24rem;
+  min-height: 1rem;
 }
 
 .badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.badge.hand-raised {
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
-  color: white;
-  animation: pulse-blue 1.5s ease-in-out infinite;
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  height: 1rem;
+  padding: 0 0.34rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .badge.stage {
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.45);
-  color: #dbeafe;
+  border: 0.0625rem solid rgba(46, 141, 255, 0.52);
+  color: #d5e8ff;
+  background: rgba(46, 141, 255, 0.16);
+}
+
+.badge.hand-raised {
+  border: 0.0625rem solid rgba(46, 141, 255, 0.64);
+  color: #deedff;
+  background: rgba(46, 141, 255, 0.2);
 }
 
 .badge.confidence {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 0.0625rem solid rgba(137, 169, 220, 0.44);
+  color: #c9dcff;
+  background: rgba(13, 29, 67, 0.7);
 }
 
-/* Audio Control Button */
 .audio-control-btn {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  cursor: pointer;
-  display: flex;
+  right: 0.4rem;
+  bottom: 2.05rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 0.0625rem solid rgba(127, 160, 219, 0.4);
+  background: rgba(8, 24, 55, 0.78);
+  color: #d8e8ff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 5;
   padding: 0;
-  font-size: 12px;
-}
-
-.audio-control-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-  border-color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  z-index: 3;
 }
 
 .audio-control-btn.enabled {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: #10b981;
-  color: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  border-color: rgba(17, 214, 128, 0.62);
+  color: #baf9db;
 }
 
-.audio-control-btn.enabled:hover {
-  background: rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
-}
-
-/* Animations */
-@keyframes pulse-green {
-  0%,
-  100% {
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 1);
-    transform: scale(1.05);
-  }
-}
-
-@keyframes pulse-yellow {
-  0%,
-  100% {
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 1);
-  }
-}
-
-@keyframes pulse-blue {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.7;
-  }
-}
-
-@keyframes shake-red {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-2px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(2px);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive Design */
 @media (max-width: 1023px) {
   .student-tile {
-    flex: 0 0 110px;
-    height: 150px;
-  }
-
-  .face-status-indicator {
-    width: 20px;
-    height: 20px;
-  }
-
-  .student-name {
-    font-size: 11px;
-  }
-
-  .badge {
-    font-size: 9px;
-    padding: 1px 4px;
-  }
-
-  .audio-control-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    width: 8.8rem;
+    min-width: 8.5rem;
+    height: 9.8rem;
   }
 }
 
 @media (max-width: 767px) {
   .student-tile {
-    flex: 0 0 100%;
-    height: 140px;
-  }
-
-  .face-status-indicator {
-    width: 18px;
-    height: 18px;
-    top: 4px;
-    right: 4px;
-  }
-
-  .student-name {
-    font-size: 10px;
-  }
-
-  .badge {
-    font-size: 8px;
-    padding: 1px 3px;
-  }
-
-  .audio-control-btn {
-    width: 22px;
-    height: 22px;
-    font-size: 9px;
+    width: 100%;
+    min-width: 0;
+    height: 8.8rem;
   }
 }

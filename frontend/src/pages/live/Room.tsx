@@ -7,12 +7,13 @@ import AgoraRTC, {
   ILocalVideoTrack,
   IRemoteVideoTrack,
 } from "agora-rtc-sdk-ng";
-import { Spin, Typography } from "antd";
+import { Spin } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   AudioOutlined,
   AudioMutedOutlined,
+  DesktopOutlined,
   VideoCameraOutlined,
   StopOutlined,
   HighlightOutlined,
@@ -56,6 +57,7 @@ interface RoomState {
   participants: LiveParticipantState[];
   cameraOn: boolean;
   micOn: boolean;
+  screenSharing: boolean;
   handRaised: boolean;
   showStudentsGrid: boolean;
 }
@@ -75,16 +77,6 @@ interface TokenMeta {
 const normalizeUid = (value: unknown): string => {
   if (value === null || value === undefined) return "";
   return String(value);
-};
-
-const getInitials = (value: string) => {
-  const cleaned = value.trim();
-  if (!cleaned) return "?";
-  const parts = cleaned.split(/\s+/).filter(Boolean);
-  return parts
-    .slice(0, 2)
-    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
-    .join("");
 };
 
 type ApiErrorPayload = {
@@ -149,6 +141,7 @@ export default function Room() {
     participants: [],
     cameraOn: true,
     micOn: true,
+    screenSharing: false,
     handRaised: false,
     showStudentsGrid: false,
   });
@@ -168,12 +161,14 @@ export default function Room() {
   );
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === "undefined" || window.innerWidth < 1024) return false;
-    return window.localStorage.getItem("live-sidebar-open") === "true";
+    const saved = window.localStorage.getItem("live-sidebar-open");
+    return saved === null ? true : saved === "true";
   });
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
+  const screenVideoRef = useRef<ILocalVideoTrack | null>(null);
   const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const teacherSelfPreviewRef = useRef<HTMLDivElement | null>(null);
@@ -184,6 +179,7 @@ export default function Room() {
     (user: IAgoraRTCRemoteUser, mediaType?: "audio" | "video") => Promise<void>
   ) | null>(null);
   const localTrackEndedHandlerRef = useRef<(() => void) | null>(null);
+  const screenTrackEndedHandlerRef = useRef<(() => void) | null>(null);
   const videoPublishedRef = useRef(false);
   const publishRecoveryInFlightRef = useRef(false);
   const cameraOnRef = useRef(true);
@@ -569,6 +565,7 @@ export default function Room() {
             String(currentState) === "CONNECTED" &&
             initialPublishDoneRef.current &&
             cameraOnRef.current &&
+            !screenVideoRef.current &&
             !videoPublishedRef.current
           ) {
             void republishVideoTrack("connection-state-change");
@@ -626,8 +623,10 @@ export default function Room() {
           ...prev,
           connected: true,
           loading: false,
+          error: null,
           cameraOn: true,
           micOn: Boolean(isTeacher && audioTrack),
+          screenSharing: false,
         }));
       } catch (error: unknown) {
         const message = getErrorMessage(error, t("live.errors.joinFailed"));
@@ -666,6 +665,14 @@ export default function Room() {
       }
       localVideoRef.current?.close();
       localAudioRef.current?.close();
+      if (screenVideoRef.current && screenTrackEndedHandlerRef.current) {
+        const trackWithEvents = screenVideoRef.current as unknown as {
+          off?: (event: string, cb: () => void) => void;
+        };
+        trackWithEvents.off?.("track-ended", screenTrackEndedHandlerRef.current);
+      }
+      screenVideoRef.current?.close();
+      screenTrackEndedHandlerRef.current = null;
       videoTracksMap.current.clear();
       subscribeRemoteUserRef.current = null;
       videoPublishedRef.current = false;
@@ -776,6 +783,104 @@ export default function Room() {
     };
   }, [faceConnected, isTeacher, state.connected, verifyFrame]);
 
+  const detachScreenTrackEndedHandler = useCallback((track: ILocalVideoTrack | null) => {
+    const handler = screenTrackEndedHandlerRef.current;
+    if (!track || !handler) return;
+    const trackWithEvents = track as unknown as {
+      off?: (event: string, cb: () => void) => void;
+    };
+    trackWithEvents.off?.("track-ended", handler);
+  }, []);
+
+  const stopScreenShare = useCallback(
+    async (reason: string, restoreCamera: boolean) => {
+      const client = clientRef.current;
+      const screenTrack = screenVideoRef.current;
+      if (!screenTrack) return;
+
+      detachScreenTrackEndedHandler(screenTrack);
+      screenVideoRef.current = null;
+      screenTrackEndedHandlerRef.current = null;
+
+      try {
+        if (client) {
+          await client.unpublish(screenTrack).catch(() => undefined);
+        }
+      } catch (error) {
+        pushDebug("screen unpublish error", toErrorText(error));
+      }
+      screenTrack.close();
+
+      setState((prev) => ({ ...prev, screenSharing: false }));
+      setLocalTrackVersion((prev) => prev + 1);
+      pushDebug("screen share stopped", { reason });
+
+      if (
+        restoreCamera &&
+        client &&
+        state.connected &&
+        cameraOnRef.current &&
+        localVideoRef.current
+      ) {
+        try {
+          await client.publish(localVideoRef.current);
+          videoPublishedRef.current = true;
+          setVideoPublished(true);
+          setCameraStreamUnavailable(false);
+          setPublishRetries(0);
+          pushDebug("camera republished after screen share");
+        } catch (error) {
+          videoPublishedRef.current = false;
+          setVideoPublished(false);
+          setCameraStreamUnavailable(true);
+          pushDebug("camera republish after screen share failed", toErrorText(error));
+        }
+      }
+    },
+    [detachScreenTrackEndedHandler, pushDebug, state.connected]
+  );
+
+  const handleScreenShareToggle = useCallback(async () => {
+    if (!isTeacher || !state.connected) return;
+    const client = clientRef.current;
+    if (!client) return;
+
+    if (screenVideoRef.current) {
+      await stopScreenShare("manual-stop", true);
+      return;
+    }
+
+    try {
+      const screenTrackResult = await AgoraRTC.createScreenVideoTrack({});
+      const screenTrack = Array.isArray(screenTrackResult)
+        ? screenTrackResult[0]
+        : screenTrackResult;
+
+      const onTrackEnded = () => {
+        void stopScreenShare("track-ended", true);
+      };
+      screenTrackEndedHandlerRef.current = onTrackEnded;
+      const trackWithEvents = screenTrack as unknown as {
+        on?: (event: string, cb: () => void) => void;
+      };
+      trackWithEvents.on?.("track-ended", onTrackEnded);
+
+      if (videoPublishedRef.current && localVideoRef.current) {
+        await client.unpublish(localVideoRef.current).catch(() => undefined);
+        videoPublishedRef.current = false;
+        setVideoPublished(false);
+      }
+
+      await client.publish(screenTrack);
+      screenVideoRef.current = screenTrack;
+      setState((prev) => ({ ...prev, screenSharing: true }));
+      setLocalTrackVersion((prev) => prev + 1);
+      pushDebug("screen share started");
+    } catch (error) {
+      pushDebug("screen share start error", toErrorText(error));
+    }
+  }, [isTeacher, pushDebug, state.connected, stopScreenShare]);
+
   const handleCameraToggle = useCallback(async () => {
     const videoTrack = localVideoRef.current;
     if (!videoTrack) return;
@@ -846,6 +951,9 @@ export default function Room() {
 
   const handleExitRoom = useCallback(async () => {
     try {
+      if (screenVideoRef.current) {
+        await stopScreenShare("leave-room", false);
+      }
       if (roomMeta?.roomId) {
         await leaveLiveRoom(roomMeta.roomId);
       }
@@ -860,6 +968,15 @@ export default function Room() {
       }
       localVideoRef.current?.close();
       localAudioRef.current?.close();
+      if (screenVideoRef.current && screenTrackEndedHandlerRef.current) {
+        const trackWithEvents = screenVideoRef.current as unknown as {
+          off?: (event: string, cb: () => void) => void;
+        };
+        trackWithEvents.off?.("track-ended", screenTrackEndedHandlerRef.current);
+      }
+      screenVideoRef.current?.close();
+      screenVideoRef.current = null;
+      screenTrackEndedHandlerRef.current = null;
       videoPublishedRef.current = false;
       setVideoPublished(false);
       localTrackEndedHandlerRef.current = null;
@@ -867,12 +984,16 @@ export default function Room() {
       await clientRef.current?.leave().catch(() => undefined);
       navigate(-1);
     }
-  }, [navigate, pushDebug, roomMeta?.roomId]);
+  }, [navigate, pushDebug, roomMeta?.roomId, stopScreenShare]);
 
   const stageVideoTrack = useMemo(() => {
     const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
 
-    if (isTeacher && localVideoRef.current) {
+    if (isTeacher && screenVideoRef.current) {
+      return screenVideoRef.current;
+    }
+
+    if (isTeacher && state.cameraOn && localVideoRef.current) {
       return localVideoRef.current;
     }
 
@@ -893,7 +1014,7 @@ export default function Room() {
 
     const firstRemote = videoTracksMap.current.values().next().value as IRemoteVideoTrack | undefined;
     return firstRemote || null;
-  }, [isTeacher, localTrackVersion, stageUserId, state.participants, trackVersion]);
+  }, [isTeacher, localTrackVersion, stageUserId, state.cameraOn, state.participants, trackVersion]);
 
   useEffect(() => {
     if (!state.connected) return;
@@ -1122,36 +1243,110 @@ export default function Room() {
     return meName || me?.username || t("live.room.lecturer");
   }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name, t]);
 
+  const studentsCount = useMemo(
+    () => state.participants.filter((participant) => !participant.is_teacher).length,
+    [state.participants]
+  );
+
+  const raisedHandsCount = useMemo(
+    () =>
+      state.participants.filter((participant) => {
+        if (participant.is_teacher) return false;
+        const status = studentStatuses.get(participant.user_id);
+        return Boolean(status?.handRaised || participant.hand_raised);
+      }).length,
+    [state.participants, studentStatuses]
+  );
+
+  const verificationStats = useMemo(() => {
+    let verified = 0;
+    let unverified = 0;
+    state.participants.forEach((participant) => {
+      if (participant.is_teacher) return;
+      const status = studentStatuses.get(participant.user_id);
+      if (status?.faceStatus === "DETECTED") {
+        verified += 1;
+      } else if (status?.faceStatus === "NOT_DETECTED" || status?.faceStatus === "MULTIPLE") {
+        unverified += 1;
+      }
+    });
+    return { verified, unverified };
+  }, [state.participants, studentStatuses]);
+
+  const handleParticipantsToggle = useCallback(() => {
+    if (isDesktop) {
+      setSidebarOpen((prev) => !prev);
+      return;
+    }
+    setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }));
+  }, [isDesktop]);
+
   const showCameraUnavailable =
     isTeacher &&
     state.connected &&
     state.cameraOn &&
+    !state.screenSharing &&
     (cameraStreamUnavailable || !localVideoRef.current || !videoPublished);
-
-  if (state.loading) {
-    return (
-      <div className="live-page">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-          <Spin size="large" />
-        </div>
-      </div>
-    );
-  }
-
-  if (state.error) {
-    return (
-      <div className="live-page">
-        <Typography.Text type="danger">{state.error}</Typography.Text>
-      </div>
-    );
-  }
+  const participantsPanelOpen = isDesktop ? sidebarOpen : state.showStudentsGrid;
 
   return (
     <div className={`live-page ${isDesktop && sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
+      <header className="room-meta-bar">
+        <div className="room-meta-main">
+          <div className="room-meta-title">
+            {roomMeta?.roomName || t("live.room.defaultRoomTitle")}
+          </div>
+          <div className="room-meta-subtitle">
+            {t("live.room.participants", { count: state.participants.length })}
+          </div>
+        </div>
+        <div className="room-meta-stats">
+          <span className={`meta-pill ${state.connected ? "ok" : state.loading ? "loading" : "warn"}`}>
+            {state.loading ? t("common.loading") : state.connected ? "Ulangan" : "Ulanmagan"}
+          </span>
+          <span className="meta-pill neutral">
+            Talaba: {studentsCount}
+          </span>
+          <span className="meta-pill neutral">
+            Qo'l: {raisedHandsCount}
+          </span>
+          <span className="meta-pill success">
+            Verified: {verificationStats.verified}
+          </span>
+          <span className="meta-pill danger">
+            Unverified: {verificationStats.unverified}
+          </span>
+          {monitoringIsConnected && (
+            <span className="meta-pill info">{t("live.room.monitoringActive")}</span>
+          )}
+          {state.screenSharing && (
+            <span className="meta-pill share">Screen Share</span>
+          )}
+        </div>
+      </header>
+
+      {state.error && (
+        <div className="room-alert room-alert-error">{state.error}</div>
+      )}
+
+      {!state.error && !state.loading && !state.connected && (
+        <div className="room-alert room-alert-warning">
+          Signal ulanishi mavjud emas. Ulanish qayta tiklanmoqda.
+        </div>
+      )}
+
       <div className="main-content">
         <div className="stage-section">
           <div className="stage-video-container" ref={setStageVideoContainerRef} />
-          {!stageVideoTrack && <div className="stage-empty">{t("live.room.noVideo")}</div>}
+          {state.loading && (
+            <div className="stage-loading">
+              <Spin size="large" />
+              <span>{t("common.loading")}</span>
+            </div>
+          )}
+          {!state.loading && !stageVideoTrack && (
+            <div className="stage-empty">{t("live.room.noVideo")}</div>
+          )}
           {showCameraUnavailable && (
             <div className="stage-warning">{t("live.room.cameraUnavailable")}</div>
           )}
@@ -1165,15 +1360,19 @@ export default function Room() {
 
           <div className="stage-overlay">
             <div className="stage-top-info">
-              <div className="stage-title">{roomMeta?.roomName || t("live.room.defaultRoomTitle")}</div>
+              <div className="stage-title">
+                {state.screenSharing ? "Ekran ulashish" : "Markaziy sahna"}
+              </div>
               <div className="stage-subtitle">
-                {t("live.room.participants", { count: state.participants.length })}
-                {monitoringIsConnected ? ` | ${t("live.room.monitoringActive")}` : ""}
+                {stageParticipant?.is_teacher ? "O'qituvchi markazda" : "Talaba markazda"}
               </div>
             </div>
             <div className="stage-bottom-info">
               <div className="stage-user-label">
-                {getInitials(stageName)} | {stageName}
+                {stageName}
+              </div>
+              <div className="stage-role-label">
+                {stageParticipant?.is_teacher ? "O'qituvchi" : "Talaba"}
               </div>
             </div>
           </div>
@@ -1249,35 +1448,66 @@ export default function Room() {
 
       <div className="live-controls">
         <Button
+          variant="ghost"
           className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}
           onClick={handleMicToggle}
           icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
-          disabled={!isTeacher && !isStageUser}
-        />
+          disabled={!state.connected || (!isTeacher && !isStageUser)}
+        >
+          {state.micOn ? "Mic On" : "Mic Off"}
+        </Button>
 
         <Button
+          variant="ghost"
           className={`control-btn ${state.cameraOn ? "is-active" : "is-off"}`}
           onClick={handleCameraToggle}
           icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
-        />
+          disabled={!state.connected || state.screenSharing}
+        >
+          {state.cameraOn ? "Cam On" : "Cam Off"}
+        </Button>
+
+        {isTeacher && (
+          <Button
+            variant="ghost"
+            className={`control-btn ${state.screenSharing ? "is-active" : ""}`}
+            onClick={handleScreenShareToggle}
+            icon={<DesktopOutlined />}
+            disabled={!state.connected}
+          >
+            {state.screenSharing ? "Stop Share" : "Screen Share"}
+          </Button>
+        )}
 
         {!isTeacher && (
           <Button
+            variant="ghost"
             className={`control-btn ${state.handRaised ? "is-active" : ""}`}
             onClick={handleHandRaise}
             icon={<HighlightOutlined />}
-          />
+            disabled={!state.connected}
+          >
+            {state.handRaised ? "So'z so'raldi" : "So'z so'rash"}
+          </Button>
         )}
 
-        {isDesktop && (
-          <Button
-            className={`control-btn ${sidebarOpen ? "is-active" : ""}`}
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            icon={<TeamOutlined />}
-          />
-        )}
+        <Button
+          variant="ghost"
+          className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
+          onClick={handleParticipantsToggle}
+          icon={<TeamOutlined />}
+        >
+          Talabalar
+        </Button>
 
-        <Button className="control-btn exit-btn" onClick={handleExitRoom} icon={<LogoutOutlined />} />
+        <Button
+          variant="ghost"
+          className="control-btn exit-btn"
+          onClick={handleExitRoom}
+          icon={<LogoutOutlined />}
+        >
+          Chiqish
+        </Button>
       </div>
     </div>
   );
