@@ -1,7 +1,7 @@
 import React from "react";
 import {
   getFaceStatusDisplay,
-  resolveVisualStatus,
+  resolveStudentGroup,
 } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
@@ -9,7 +9,10 @@ import { useTranslation } from "react-i18next";
 import "../styles/SidePanel.css";
 
 interface PlayableVideoTrack {
-  play: (element: HTMLElement) => void | Promise<void>;
+  play: (
+    element: HTMLElement,
+    options?: { fit?: "cover" | "contain" | "fill"; mirror?: boolean }
+  ) => void | Promise<void>;
   stop: () => void;
 }
 
@@ -51,7 +54,7 @@ const SidebarMiniVideo: React.FC<{
     }
 
     try {
-      const playResult = track.play(container);
+      const playResult = track.play(container, { fit: "cover", mirror: false });
       Promise.resolve(playResult).catch(() => undefined);
     } catch {
       // Sidebar preview is best-effort and should not break class flow.
@@ -100,18 +103,23 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           students.map((student) => {
             const status = studentStatuses.get(student.user_id);
             const normalizedStudentId = String(student.user_id);
-            const visualStatus = resolveVisualStatus(student, status);
             const faceStatus = status?.faceStatus || "CHECKING";
             const statusDisplay = getFaceStatusDisplay(faceStatus);
-            const confidence = status?.confidence || 0;
+            const isHandRaised = Boolean(status?.handRaised || student.hand_raised);
             const videoTrack = videoTracks.get(normalizedStudentId);
             const canPlayMiniVideo = activeVideoUids.has(normalizedStudentId);
             const isStage = stageUserId === normalizedStudentId;
+            const verificationClass =
+              faceStatus === "DETECTED"
+                ? "status-verified"
+                : faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE"
+                ? "status-unverified"
+                : "status-checking";
 
             return (
               <div
                 key={student.user_id}
-                className={`panel-participant-row status-${visualStatus} ${
+                className={`panel-participant-row ${verificationClass} ${
                   isStage ? "stage-user" : ""
                 } ${isTeacher && onStudentSelect ? "is-clickable" : ""}`}
                 onClick={() => {
@@ -131,7 +139,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 <div className="participant-info">
                   <span className="name">{student.user_name}</span>
                   <span className="meta">
-                    {isStage ? t("live.panel.onStage") : `ID: ${student.user_id}`}
+                    {resolveStudentGroup(student)}
                   </span>
                 </div>
 
@@ -141,8 +149,18 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   title={statusDisplay.label}
                 />
 
-                {confidence > 0 && (
-                  <span className="confidence">{(confidence * 100).toFixed(0)}%</span>
+                <span className={`status-label ${verificationClass.replace("status-", "")}`}>
+                  {faceStatus === "DETECTED"
+                    ? "Verified"
+                    : faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE"
+                    ? "Unverified"
+                    : "Checking"}
+                </span>
+
+                {isHandRaised && (
+                  <span className="hand-raised-indicator" title={t("live.tile.handRaised")}>
+                    <AudioOutlined />
+                  </span>
                 )}
 
                 {isTeacher && onStudentAudioToggle && (

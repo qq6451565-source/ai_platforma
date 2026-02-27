@@ -84,10 +84,6 @@
   border-color: rgba(255, 79, 99, 0.7);
 }
 
-.panel-participant-row.status-engaged {
-  border-color: rgba(46, 141, 255, 0.75);
-}
-
 .panel-participant-row.status-checking {
   border-color: rgba(148, 163, 184, 0.6);
 }
@@ -111,6 +107,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: none !important;
 }
 
 .mini-avatar {
@@ -154,12 +151,47 @@
   flex-shrink: 0;
 }
 
-.confidence {
-  min-width: 2rem;
-  text-align: right;
-  font-size: 0.73rem;
-  color: #c3d8fb;
+.status-label {
+  min-width: 4.75rem;
+  text-align: center;
+  font-size: 0.68rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.42rem;
   font-weight: 600;
+  border: 0.0625rem solid rgba(127, 160, 219, 0.4);
+  color: #c3d8fb;
+  background: rgba(8, 24, 55, 0.78);
+}
+
+.status-label.verified {
+  border-color: rgba(17, 214, 128, 0.66);
+  color: #baf9db;
+  background: rgba(17, 214, 128, 0.14);
+}
+
+.status-label.unverified {
+  border-color: rgba(255, 79, 99, 0.66);
+  color: #ffd2d8;
+  background: rgba(255, 79, 99, 0.14);
+}
+
+.status-label.checking {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #d1ddf1;
+  background: rgba(148, 163, 184, 0.14);
+}
+
+.hand-raised-indicator {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 0.0625rem solid rgba(46, 141, 255, 0.66);
+  color: #d6e9ff;
+  background: rgba(46, 141, 255, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .audio-control-btn {

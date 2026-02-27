@@ -24,6 +24,10 @@ export type LiveParticipantState = {
   role: string;
   is_teacher: boolean;
   hand_raised: boolean;
+  group_name?: string;
+  group?: string;
+  group_code?: string;
+  group_title?: string;
 };
 
 export type LiveRoomState = {

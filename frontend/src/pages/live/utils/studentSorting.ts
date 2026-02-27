@@ -20,6 +20,11 @@ export interface Student {
   user_name: string;
   is_teacher: boolean;
   hand_raised: boolean;
+  role?: string;
+  group_name?: string;
+  group?: string;
+  group_code?: string;
+  group_title?: string;
 }
 
 export interface StudentGroup {
@@ -34,6 +39,25 @@ const tierPriority: Record<StudentTier, number> = {
   verified: 2,
   failed: 3,
   pending: 4,
+};
+
+export const resolveStudentGroup = (student: Student): string => {
+  const group =
+    student.group_name ||
+    student.group ||
+    student.group_code ||
+    student.group_title ||
+    "";
+
+  const normalized = String(group).trim();
+  if (normalized) return normalized;
+
+  const role = (student.role || "").toLowerCase();
+  if (role && !["student", "teacher", "admin"].includes(role)) {
+    return student.role as string;
+  }
+
+  return "Guruh belgilanmagan";
 };
 
 export const resolveVisualStatus = (

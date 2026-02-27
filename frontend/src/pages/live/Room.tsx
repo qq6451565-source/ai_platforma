@@ -65,6 +65,7 @@ interface RoomState {
 interface RoomMeta {
   roomId: number;
   roomName: string;
+  subjectName: string;
 }
 
 interface TokenMeta {
@@ -155,15 +156,9 @@ export default function Room() {
   const [cameraStreamUnavailable, setCameraStreamUnavailable] = useState(false);
   const [localTrackReadyState, setLocalTrackReadyState] = useState("-");
   const [stageMountVersion, setStageMountVersion] = useState(0);
-  const [selfPreviewMountVersion, setSelfPreviewMountVersion] = useState(0);
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 1024
   );
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    if (typeof window === "undefined" || window.innerWidth < 1024) return false;
-    const saved = window.localStorage.getItem("live-sidebar-open");
-    return saved === null ? true : saved === "true";
-  });
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
@@ -171,7 +166,6 @@ export default function Room() {
   const screenVideoRef = useRef<ILocalVideoTrack | null>(null);
   const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
-  const teacherSelfPreviewRef = useRef<HTMLDivElement | null>(null);
   const captureIntervalRef = useRef<number | null>(null);
   const captureVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const stagePlayTimerRef = useRef<number | null>(null);
@@ -189,12 +183,6 @@ export default function Room() {
     if (stageVideoRef.current === node) return;
     stageVideoRef.current = node;
     setStageMountVersion((prev) => prev + 1);
-  }, []);
-
-  const setTeacherSelfPreviewContainerRef = useCallback((node: HTMLDivElement | null) => {
-    if (teacherSelfPreviewRef.current === node) return;
-    teacherSelfPreviewRef.current = node;
-    setSelfPreviewMountVersion((prev) => prev + 1);
   }, []);
 
   const pushDebug = useCallback(
@@ -216,8 +204,10 @@ export default function Room() {
     const handleResize = () => {
       const desktop = window.innerWidth >= 1024;
       setIsDesktop(desktop);
-      if (!desktop) {
-        setSidebarOpen(false);
+      if (desktop) {
+        setState((prev) =>
+          prev.showStudentsGrid ? { ...prev, showStudentsGrid: false } : prev
+        );
       }
     };
 
@@ -227,11 +217,6 @@ export default function Room() {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !isDesktop) return;
-    window.localStorage.setItem("live-sidebar-open", sidebarOpen ? "true" : "false");
-  }, [isDesktop, sidebarOpen]);
 
   const roomName = roomMeta?.roomName ?? "";
   const {
@@ -249,7 +234,6 @@ export default function Room() {
   } = useStudentMonitoring(roomName, Boolean(state.connected && roomName));
 
   const studentStatuses = monitoringStatuses;
-  const monitoringIsConnected = monitoringConnected;
 
   useEffect(() => {
     cameraOnRef.current = state.cameraOn;
@@ -335,6 +319,10 @@ export default function Room() {
         setRoomMeta({
           roomId: roomData.room_id,
           roomName: roomData.room,
+          subjectName:
+            (roomData as { lesson_topic?: string; subject_name?: string }).lesson_topic ||
+            (roomData as { lesson_topic?: string; subject_name?: string }).subject_name ||
+            roomData.room,
         });
 
         const tokenData = await fetchAgoraToken({
@@ -1078,7 +1066,10 @@ export default function Room() {
       if (mountLocalPreview()) return;
       try {
         clearStage();
-        const playResult = stageVideoTrack.play(stageVideoRef.current);
+        const playResult = stageVideoTrack.play(stageVideoRef.current, {
+          fit: "cover",
+          mirror: false,
+        });
         Promise.resolve(playResult)
           .then(() => {
             pushDebug("stage play success", { attempt });
@@ -1110,76 +1101,6 @@ export default function Room() {
     state.connected,
     trackVersion,
   ]);
-
-  useEffect(() => {
-    if (!state.connected || !isTeacher || !teacherSelfPreviewRef.current) return;
-
-    const container = teacherSelfPreviewRef.current;
-    let fallbackVideo: HTMLVideoElement | null = null;
-
-    const clearPreview = () => {
-      if (fallbackVideo) {
-        fallbackVideo.pause();
-        fallbackVideo.srcObject = null;
-        fallbackVideo = null;
-      }
-      container.innerHTML = "";
-    };
-
-    if (!state.cameraOn) {
-      clearPreview();
-      return;
-    }
-
-    const localTrack = localVideoRef.current;
-    if (!localTrack) {
-      clearPreview();
-      return;
-    }
-
-    const mediaTrack = localTrack.getMediaStreamTrack?.();
-    if (mediaTrack) {
-      clearPreview();
-      const videoElement = document.createElement("video");
-      videoElement.autoplay = true;
-      videoElement.muted = true;
-      videoElement.playsInline = true;
-      videoElement.srcObject = new MediaStream([mediaTrack]);
-      videoElement.style.width = "100%";
-      videoElement.style.height = "100%";
-      videoElement.style.objectFit = "cover";
-      container.appendChild(videoElement);
-      fallbackVideo = videoElement;
-
-      Promise.resolve(videoElement.play())
-        .then(() => {
-          setCameraStreamUnavailable(false);
-          setLocalTrackReadyState(mediaTrack.readyState || "live");
-          pushDebug("teacher self preview mounted");
-        })
-        .catch((error) => {
-          pushDebug("teacher self preview play error", toErrorText(error));
-        });
-      return clearPreview;
-    }
-
-    try {
-      clearPreview();
-      const playResult = localTrack.play(container);
-      Promise.resolve(playResult)
-        .then(() => {
-          setCameraStreamUnavailable(false);
-          pushDebug("teacher self preview via track.play");
-        })
-        .catch((error) => {
-          pushDebug("teacher self preview track.play error", toErrorText(error));
-        });
-    } catch (error) {
-      pushDebug("teacher self preview mount error", toErrorText(error));
-    }
-
-    return clearPreview;
-  }, [isTeacher, localTrackVersion, pushDebug, selfPreviewMountVersion, state.cameraOn, state.connected]);
 
   const sortedParticipants = useMemo(
     () => sortStudents(state.participants, studentStatuses),
@@ -1243,85 +1164,21 @@ export default function Room() {
     return meName || me?.username || t("live.room.lecturer");
   }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name, t]);
 
-  const studentsCount = useMemo(
-    () => state.participants.filter((participant) => !participant.is_teacher).length,
-    [state.participants]
-  );
-
-  const raisedHandsCount = useMemo(
-    () =>
-      state.participants.filter((participant) => {
-        if (participant.is_teacher) return false;
-        const status = studentStatuses.get(participant.user_id);
-        return Boolean(status?.handRaised || participant.hand_raised);
-      }).length,
-    [state.participants, studentStatuses]
-  );
-
-  const verificationStats = useMemo(() => {
-    let verified = 0;
-    let unverified = 0;
-    state.participants.forEach((participant) => {
-      if (participant.is_teacher) return;
-      const status = studentStatuses.get(participant.user_id);
-      if (status?.faceStatus === "DETECTED") {
-        verified += 1;
-      } else if (status?.faceStatus === "NOT_DETECTED" || status?.faceStatus === "MULTIPLE") {
-        unverified += 1;
-      }
-    });
-    return { verified, unverified };
-  }, [state.participants, studentStatuses]);
-
-  const handleParticipantsToggle = useCallback(() => {
-    if (isDesktop) {
-      setSidebarOpen((prev) => !prev);
-      return;
-    }
-    setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }));
-  }, [isDesktop]);
-
   const showCameraUnavailable =
     isTeacher &&
     state.connected &&
     state.cameraOn &&
     !state.screenSharing &&
     (cameraStreamUnavailable || !localVideoRef.current || !videoPublished);
-  const participantsPanelOpen = isDesktop ? sidebarOpen : state.showStudentsGrid;
+  const participantsPanelOpen = state.showStudentsGrid;
 
   return (
-    <div className={`live-page ${isDesktop && sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
+    <div className={`live-page ${isDesktop ? "sidebar-open" : "sidebar-closed"}`}>
       <header className="room-meta-bar">
         <div className="room-meta-main">
           <div className="room-meta-title">
-            {roomMeta?.roomName || t("live.room.defaultRoomTitle")}
+            {roomMeta?.subjectName || roomMeta?.roomName || t("live.room.defaultRoomTitle")}
           </div>
-          <div className="room-meta-subtitle">
-            {t("live.room.participants", { count: state.participants.length })}
-          </div>
-        </div>
-        <div className="room-meta-stats">
-          <span className={`meta-pill ${state.connected ? "ok" : state.loading ? "loading" : "warn"}`}>
-            {state.loading ? t("common.loading") : state.connected ? "Ulangan" : "Ulanmagan"}
-          </span>
-          <span className="meta-pill neutral">
-            Talaba: {studentsCount}
-          </span>
-          <span className="meta-pill neutral">
-            Qo'l: {raisedHandsCount}
-          </span>
-          <span className="meta-pill success">
-            Verified: {verificationStats.verified}
-          </span>
-          <span className="meta-pill danger">
-            Unverified: {verificationStats.unverified}
-          </span>
-          {monitoringIsConnected && (
-            <span className="meta-pill info">{t("live.room.monitoringActive")}</span>
-          )}
-          {state.screenSharing && (
-            <span className="meta-pill share">Screen Share</span>
-          )}
         </div>
       </header>
 
@@ -1349,13 +1206,6 @@ export default function Room() {
           )}
           {showCameraUnavailable && (
             <div className="stage-warning">{t("live.room.cameraUnavailable")}</div>
-          )}
-
-          {isTeacher && (
-            <div className="teacher-self-preview-wrapper">
-              <div className="teacher-self-preview" ref={setTeacherSelfPreviewContainerRef} />
-              <div className="teacher-self-preview-label">{t("live.room.selfPreview")}</div>
-            </div>
           )}
 
           <div className="stage-overlay">
@@ -1421,7 +1271,7 @@ export default function Room() {
           )}
         </div>
 
-        {state.showStudentsGrid && (
+        {!isDesktop && state.showStudentsGrid && (
           <StudentGridSection
             participants={sortedParticipants}
             studentStatuses={studentStatuses}
@@ -1434,7 +1284,7 @@ export default function Room() {
         )}
       </div>
 
-      {isDesktop && sidebarOpen && (
+      {isDesktop && (
         <SidePanel
           participants={sortedParticipants}
           studentStatuses={studentStatuses}
@@ -1491,14 +1341,18 @@ export default function Room() {
           </Button>
         )}
 
-        <Button
-          variant="ghost"
-          className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
-          onClick={handleParticipantsToggle}
-          icon={<TeamOutlined />}
-        >
-          Talabalar
-        </Button>
+        {!isDesktop && (
+          <Button
+            variant="ghost"
+            className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
+            onClick={() =>
+              setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
+            }
+            icon={<TeamOutlined />}
+          >
+            Talabalar
+          </Button>
+        )}
 
         <Button
           variant="ghost"

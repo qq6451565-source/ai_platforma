@@ -34,10 +34,10 @@
 .room-meta-bar {
   grid-column: 1 / -1;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.75rem;
-  min-height: 4.5rem;
+  min-height: 3.9rem;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-lg);
   border: 0.0625rem solid var(--line);
@@ -55,64 +55,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.room-meta-subtitle {
-  margin-top: 0.2rem;
-  color: var(--text-muted);
-  font-size: 0.89rem;
-}
-
-.room-meta-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.meta-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.32rem 0.65rem;
-  border-radius: 999px;
-  border: 0.0625rem solid var(--line-soft);
-  background: rgba(12, 29, 66, 0.82);
-  color: #c7dcff;
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-.meta-pill.ok,
-.meta-pill.success {
-  border-color: rgba(17, 214, 128, 0.55);
-  color: #baf9db;
-  background: rgba(17, 214, 128, 0.12);
-}
-
-.meta-pill.warn,
-.meta-pill.danger {
-  border-color: rgba(255, 79, 99, 0.55);
-  color: #ffd2d8;
-  background: rgba(255, 79, 99, 0.12);
-}
-
-.meta-pill.loading,
-.meta-pill.neutral {
-  border-color: rgba(138, 168, 217, 0.44);
-  color: #c8d8f7;
-}
-
-.meta-pill.info {
-  border-color: rgba(46, 141, 255, 0.55);
-  color: #cee6ff;
-  background: rgba(46, 141, 255, 0.14);
-}
-
-.meta-pill.share {
-  border-color: rgba(243, 164, 72, 0.55);
-  color: #ffe3bc;
-  background: rgba(243, 164, 72, 0.14);
 }
 
 .room-alert {
@@ -159,6 +101,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: none !important;
 }
 
 .stage-loading,
@@ -186,35 +129,6 @@
   background: rgba(93, 19, 29, 0.9);
   color: #ffd6dd;
   font-size: 0.78rem;
-}
-
-.teacher-self-preview-wrapper {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  width: 13.8rem;
-  z-index: 6;
-}
-
-.teacher-self-preview {
-  height: 8rem;
-  border-radius: 0.75rem;
-  border: 0.0625rem solid rgba(138, 168, 217, 0.4);
-  background: rgba(2, 6, 17, 0.78);
-  overflow: hidden;
-}
-
-.teacher-self-preview video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.teacher-self-preview-label {
-  margin-top: 0.35rem;
-  text-align: right;
-  font-size: 0.7rem;
-  color: #b8ccef;
 }
 
 .stage-overlay {
@@ -355,11 +269,7 @@
   }
 
   .room-meta-bar {
-    min-height: 4.2rem;
-  }
-
-  .meta-pill {
-    font-size: 0.7rem;
+    min-height: 3.6rem;
   }
 }
 
@@ -384,23 +294,6 @@
     padding: 0.72rem 0.82rem;
   }
 
-  .room-meta-stats {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .main-content {
-    gap: 0.6rem;
-  }
-
-  .teacher-self-preview-wrapper {
-    width: 11.2rem;
-  }
-
-  .teacher-self-preview {
-    height: 6.5rem;
-  }
-
   .live-controls {
     justify-content: flex-start;
     overflow-x: auto;
@@ -416,10 +309,6 @@
 @media (max-width: 767px) {
   .room-meta-title {
     font-size: 0.96rem;
-  }
-
-  .room-meta-subtitle {
-    font-size: 0.82rem;
   }
 
   .room-alert {
@@ -443,20 +332,6 @@
   .stage-role-label {
     font-size: 0.73rem;
     padding: 0.32rem 0.58rem;
-  }
-
-  .teacher-self-preview-wrapper {
-    width: 8.6rem;
-    right: 0.65rem;
-    bottom: 0.65rem;
-  }
-
-  .teacher-self-preview {
-    height: 5rem;
-  }
-
-  .teacher-self-preview-label {
-    font-size: 0.64rem;
   }
 
   .control-btn {

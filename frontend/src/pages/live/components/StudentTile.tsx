@@ -1,12 +1,15 @@
 ﻿import React, { useEffect, useRef } from "react";
 import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import { getFaceStatusDisplay } from "../utils/studentSorting";
+import { getFaceStatusDisplay, resolveStudentGroup } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import "../styles/StudentTile.css";
 
 interface PlayableVideoTrack {
-  play: (element: HTMLElement) => void;
+  play: (
+    element: HTMLElement,
+    options?: { fit?: "cover" | "contain" | "fill"; mirror?: boolean }
+  ) => void;
   stop: () => void;
 }
 
@@ -35,7 +38,7 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   useEffect(() => {
     if (!videoTrack || !videoRef.current) return;
     try {
-      videoTrack.play(videoRef.current);
+      videoTrack.play(videoRef.current, { fit: "cover", mirror: false });
     } catch (error) {
       console.error("Error playing video track:", error);
     }
@@ -51,7 +54,6 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   }, [videoTrack, student.user_id, student.user_name]);
 
   const faceStatus = status?.faceStatus || "CHECKING";
-  const confidence = status?.confidence || 0;
   const isHandRaised = status?.handRaised || student.hand_raised;
   const isAudioEnabled = status?.audioEnabled || false;
   const statusDisplay = getFaceStatusDisplay(faceStatus);
@@ -84,6 +86,7 @@ export const StudentTile: React.FC<StudentTileProps> = ({
 
       <div className="student-info">
         <div className="student-name">{student.user_name}</div>
+        <div className="student-group">{resolveStudentGroup(student)}</div>
 
         <div className="student-badges">
           {isStage && (
@@ -93,12 +96,7 @@ export const StudentTile: React.FC<StudentTileProps> = ({
           )}
           {isHandRaised && (
             <span className="badge hand-raised" title={t("live.tile.handRaised")}>
-              !
-            </span>
-          )}
-          {confidence > 0 && (
-            <span className="badge confidence" title={t("live.tile.confidence", { value: (confidence * 100).toFixed(0) })}>
-              {(confidence * 100).toFixed(0)}%
+              <AudioOutlined />
             </span>
           )}
         </div>
