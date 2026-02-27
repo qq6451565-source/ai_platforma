@@ -3,7 +3,7 @@ import styles from "./ParticipantsSidebar.module.css";
 import { useLiveRoomStore } from "./useLiveRoomStore";
 import ParticipantCard from "./ParticipantCard";
 
-export default function ParticipantsSidebar({ isTeacherView }) {
+export default function ParticipantsSidebar({ isTeacherView, onParticipantSelect }) {
   const participants = useLiveRoomStore((state) => state.participants);
   const teacherId = useLiveRoomStore((state) => state.teacherId);
 
@@ -26,6 +26,7 @@ export default function ParticipantsSidebar({ isTeacherView }) {
               key={participant.id}
               participant={participant}
               isTeacherView={isTeacherView}
+              onSelect={onParticipantSelect}
             />
           ))
         ) : (
@@ -35,4 +36,3 @@ export default function ParticipantsSidebar({ isTeacherView }) {
     </aside>
   );
 }
-

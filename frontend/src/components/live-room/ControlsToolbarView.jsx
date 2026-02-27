@@ -11,6 +11,7 @@ export default function ControlsToolbar({
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
+  onRequestToSpeak,
 }) {
   const setRequestingToSpeak = useLiveRoomStore((state) => state.setRequestingToSpeak);
   const participants = useLiveRoomStore((state) => state.participants);
@@ -50,7 +51,10 @@ export default function ControlsToolbar({
         <button
           type="button"
           className={`${styles.button} ${isRequesting ? styles.requested : styles.request}`}
-          onClick={() => setRequestingToSpeak(currentUserId, true)}
+          onClick={() => {
+            setRequestingToSpeak(currentUserId, true);
+            onRequestToSpeak?.();
+          }}
           disabled={isRequesting}
         >
           {isRequesting ? "So'rov yuborildi" : "So'z so'rash"}
@@ -59,4 +63,3 @@ export default function ControlsToolbar({
     </footer>
   );
 }
-

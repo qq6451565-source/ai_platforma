@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
 import styles from "./ParticipantCard.module.css";
-import { useLiveRoomStore } from "./useLiveRoomStore";
 
 const getInitials = (value = "") => {
   const chunks = value.trim().split(/\s+/).filter(Boolean);
@@ -38,10 +37,7 @@ function MiniTrack({ track }) {
   );
 }
 
-export default function ParticipantCard({ participant, isTeacherView }) {
-  const setActiveSpeaker = useLiveRoomStore((state) => state.setActiveSpeaker);
-  const setRequestingToSpeak = useLiveRoomStore((state) => state.setRequestingToSpeak);
-
+export default function ParticipantCard({ participant, isTeacherView, onSelect }) {
   const statusClassName = useMemo(() => {
     if (participant.isRequestingToSpeak) return styles.requesting;
     if (participant.isVerified) return styles.verified;
@@ -50,8 +46,7 @@ export default function ParticipantCard({ participant, isTeacherView }) {
 
   const handleCardClick = () => {
     if (!isTeacherView) return;
-    setActiveSpeaker(participant.id);
-    setRequestingToSpeak(participant.id, false);
+    onSelect?.(participant);
   };
 
   return (
@@ -74,4 +69,3 @@ export default function ParticipantCard({ participant, isTeacherView }) {
     </article>
   );
 }
-

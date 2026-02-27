@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Room, RoomEvent, Track } from "livekit-client";
+
+import {
+  fetchLiveMonitoring,
+  fetchLiveState,
+  joinLiveLesson,
+  leaveLiveRoom,
+  raiseHand,
+  setStageUser,
+} from "../../api/live";
+
 import styles from "./LiveRoom.module.css";
 import StageView from "./StageView";
 import ParticipantsSidebar from "./ParticipantsSidebar";
@@ -7,11 +17,13 @@ import ControlsToolbar from "./ControlsToolbar";
 import { useLiveRoomStore } from "./useLiveRoomStore";
 
 const MOCK_TEACHER_ID = "teacher-demo";
-const MOCK_JOIN_RESPONSE = {
-  token:
-    "dev-static-token",
-  url: "wss://demo.livekit.cloud",
-  roomName: "demo-live-room",
+
+const normalizeId = (value) => (value === null || value === undefined ? "" : String(value));
+
+const parseNumericId = (value) => {
+  const parsed = Number(value);
+  if (Number.isFinite(parsed)) return parsed;
+  return null;
 };
 
 const parseMetadata = (metadata) => {
@@ -37,31 +49,36 @@ const getTrackFromPublicationMap = (publicationMap, source) => {
 
 const mapLiveKitParticipant = (participant, teacherId) => {
   const metadata = parseMetadata(participant.metadata);
+  const participantId = normalizeId(participant.identity || participant.sid);
   const isTeacher =
-    participant.identity === teacherId ||
+    participantId === normalizeId(teacherId) ||
     metadata.role === "teacher" ||
     metadata.role === "admin" ||
     metadata.isTeacher === true;
 
   return {
-    id: participant.identity || participant.sid,
-    name: participant.name || metadata.fullName || participant.identity || "Noma'lum",
-    group: metadata.group || metadata.groupName || "Talabalar guruhi",
+    id: participantId,
+    name:
+      participant.name ||
+      metadata.full_name ||
+      metadata.fullName ||
+      participant.identity ||
+      "Noma'lum",
+    group:
+      metadata.group_name ||
+      metadata.group ||
+      metadata.groupName ||
+      "Talabalar guruhi",
     isTeacher,
-    isVerified: false,
-    isRequestingToSpeak: false,
     videoTrack: getTrackFromPublicationMap(participant.videoTrackPublications, Track.Source.Camera),
-    screenTrack: getTrackFromPublicationMap(
-      participant.videoTrackPublications,
-      Track.Source.ScreenShare
-    ),
+    screenTrack: getTrackFromPublicationMap(participant.videoTrackPublications, Track.Source.ScreenShare),
     audioTrack: getTrackFromPublicationMap(participant.audioTrackPublications, Track.Source.Microphone),
   };
 };
 
 const buildMockParticipants = (teacher) => [
   {
-    id: teacher.id,
+    id: normalizeId(teacher.id),
     name: teacher.name,
     group: teacher.group,
     isTeacher: true,
@@ -106,13 +123,12 @@ const buildMockParticipants = (teacher) => [
   },
 ];
 
-export default function LiveRoom({
-  lessonId,
-  currentUser,
-}) {
+export default function LiveRoom({ lessonId, currentUser }) {
   const roomRef = useRef(null);
+  const roomMetaRef = useRef({ roomId: null, roomName: "" });
 
   const [isConnected, setIsConnected] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [connectionError, setConnectionError] = useState("");
   const [roomLabel, setRoomLabel] = useState("");
 
@@ -123,13 +139,36 @@ export default function LiveRoom({
   const participants = useLiveRoomStore((state) => state.participants);
   const setParticipants = useLiveRoomStore((state) => state.setParticipants);
   const setTeacherId = useLiveRoomStore((state) => state.setTeacherId);
+  const setActiveSpeaker = useLiveRoomStore((state) => state.setActiveSpeaker);
   const setVerificationStatus = useLiveRoomStore((state) => state.setVerificationStatus);
+  const setRequestingToSpeak = useLiveRoomStore((state) => state.setRequestingToSpeak);
   const resetLiveRoom = useLiveRoomStore((state) => state.resetLiveRoom);
 
   const isTeacherView = currentUser.role === "teacher";
-  const teacherId = useMemo(
-    () => (isTeacherView ? currentUser.id : null),
-    [currentUser.id, isTeacherView]
+  const normalizedCurrentUserId = normalizeId(currentUser.id);
+  const preferredTeacherId = useMemo(
+    () => (isTeacherView ? normalizedCurrentUserId : null),
+    [isTeacherView, normalizedCurrentUserId]
+  );
+
+  const enableDemoMode = useCallback(
+    (reason) => {
+      const fallbackTeacherId = preferredTeacherId || MOCK_TEACHER_ID;
+      setConnectionError(reason);
+      setIsConnected(false);
+      setIsDemoMode(true);
+      setRoomLabel("Demo live dars");
+      roomMetaRef.current = { roomId: null, roomName: "demo-live-room" };
+      setTeacherId(fallbackTeacherId);
+      setParticipants(
+        buildMockParticipants({
+          id: fallbackTeacherId,
+          name: isTeacherView ? currentUser.name : "O'qituvchi",
+          group: isTeacherView ? currentUser.group : "Mentor",
+        })
+      );
+    },
+    [currentUser.group, currentUser.name, isTeacherView, preferredTeacherId, setParticipants, setTeacherId]
   );
 
   const syncParticipantsFromRoom = useCallback(
@@ -137,17 +176,17 @@ export default function LiveRoom({
       if (!room) return;
 
       let mapped = [
-        mapLiveKitParticipant(room.localParticipant, teacherId),
+        mapLiveKitParticipant(room.localParticipant, preferredTeacherId),
         ...Array.from(room.remoteParticipants.values()).map((participant) =>
-          mapLiveKitParticipant(participant, teacherId)
+          mapLiveKitParticipant(participant, preferredTeacherId)
         ),
       ];
 
       const hasTeacher = mapped.some((participant) => participant.isTeacher);
       if (!hasTeacher && mapped.length) {
         const fallbackTeacherId = isTeacherView
-          ? currentUser.id
-          : mapped.find((participant) => participant.id !== currentUser.id)?.id || mapped[0].id;
+          ? normalizedCurrentUserId
+          : mapped.find((participant) => participant.id !== normalizedCurrentUserId)?.id || mapped[0].id;
 
         mapped = mapped.map((participant) =>
           participant.id === fallbackTeacherId
@@ -156,71 +195,108 @@ export default function LiveRoom({
         );
       }
 
-      const resolvedTeacherId = mapped.find((participant) => participant.isTeacher)?.id || null;
-      if (resolvedTeacherId) {
-        setTeacherId(resolvedTeacherId);
+      const resolvedTeacher = mapped.find((participant) => participant.isTeacher);
+      if (resolvedTeacher) {
+        setTeacherId(resolvedTeacher.id);
       }
 
       setParticipants(mapped);
     },
-    [currentUser.id, isTeacherView, setParticipants, setTeacherId, teacherId]
+    [isTeacherView, normalizedCurrentUserId, preferredTeacherId, setParticipants, setTeacherId]
+  );
+
+  const applyLiveState = useCallback(
+    (liveState) => {
+      if (!liveState) return;
+
+      const stageId = normalizeId(liveState.stage_user_id ?? liveState.resolved_stage_user_id);
+      if (stageId) {
+        setActiveSpeaker(stageId);
+      }
+
+      if (Array.isArray(liveState.participants)) {
+        liveState.participants.forEach((participant) => {
+          const participantId = normalizeId(participant.user_id);
+          if (!participantId) return;
+          if (participant.is_teacher) {
+            setTeacherId(participantId);
+          }
+          setRequestingToSpeak(participantId, Boolean(participant.hand_raised));
+        });
+      }
+    },
+    [setActiveSpeaker, setRequestingToSpeak, setTeacherId]
+  );
+
+  const applyMonitoringState = useCallback(
+    (monitoringData) => {
+      if (!monitoringData || !Array.isArray(monitoringData.sessions)) return;
+
+      const verifiedUserIds = new Set(
+        monitoringData.sessions
+          .filter((session) => session.status === "verified" && Number(session.success_rate || 0) >= 70)
+          .map((session) => normalizeId(session.user))
+      );
+
+      const snapshot = useLiveRoomStore.getState();
+      const currentTeacherId = normalizeId(snapshot.teacherId);
+
+      snapshot.participants.forEach((participant) => {
+        const participantId = normalizeId(participant.id);
+        if (!participantId || participantId === currentTeacherId) return;
+        setVerificationStatus(participantId, verifiedUserIds.has(participantId));
+      });
+    },
+    [setVerificationStatus]
   );
 
   useEffect(() => {
-    setTeacherId(teacherId);
-  }, [setTeacherId, teacherId]);
+    if (preferredTeacherId) {
+      setTeacherId(preferredTeacherId);
+    }
+  }, [preferredTeacherId, setTeacherId]);
 
   useEffect(() => {
     let cancelled = false;
-    let intervalRef = null;
+    let pollingTimer = null;
 
     const connectRoom = async () => {
       setConnectionError("");
+      setIsDemoMode(false);
       setRoomLabel("Live darsga ulanmoqda...");
 
-      let joinResponse = MOCK_JOIN_RESPONSE;
-
+      let joinResponse;
       try {
-        const res = await fetch("/api/live/join-room", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lessonId }),
-        });
-
-        if (res.ok) {
-          const payload = await res.json();
-          joinResponse = {
-            token: payload?.token || MOCK_JOIN_RESPONSE.token,
-            url: payload?.url || payload?.wsUrl || MOCK_JOIN_RESPONSE.url,
-            roomName: payload?.roomName || payload?.room_name || MOCK_JOIN_RESPONSE.roomName,
-          };
-        }
-      } catch {
-        // Token fetch is intentionally simulated; fallback is used.
-      }
-
-      setRoomLabel(joinResponse.roomName || "Live dars");
-
-      const livekitUrl = import.meta.env.VITE_LIVEKIT_URL || joinResponse.url;
-      const token = import.meta.env.VITE_LIVEKIT_TOKEN || joinResponse.token;
-
-      if (!livekitUrl || !token) {
-        setConnectionError("LiveKit URL yoki token topilmadi, demo holat yoqildi.");
-        const fallbackTeacherId = teacherId || MOCK_TEACHER_ID;
-        setParticipants(buildMockParticipants({
-          id: fallbackTeacherId,
-          name: isTeacherView ? currentUser.name : "O'qituvchi",
-          group: isTeacherView ? currentUser.group : "Mentor",
-        }));
-        setTeacherId(fallbackTeacherId);
+        joinResponse = await joinLiveLesson(Number(lessonId));
+      } catch (error) {
+        const message = error?.response?.data?.error || error?.message || "Live darsga kirishda xatolik";
+        enableDemoMode(`${message}. Demo qatnashuvchilar yoqildi.`);
         return;
       }
 
-      const room = new Room({
-        adaptiveStream: true,
-        dynacast: true,
-      });
+      const roomId = joinResponse?.room_id ?? null;
+      const roomName = joinResponse?.room || "Live dars";
+      const livekitUrl = joinResponse?.livekit_url || joinResponse?.ws_url || import.meta.env.VITE_LIVEKIT_URL;
+      const token = joinResponse?.token || import.meta.env.VITE_LIVEKIT_TOKEN;
 
+      roomMetaRef.current = { roomId, roomName };
+      setRoomLabel(roomName);
+
+      if (!livekitUrl || !token) {
+        enableDemoMode("LiveKit token yoki URL topilmadi");
+        return;
+      }
+
+      if (
+        typeof window !== "undefined" &&
+        /^wss?:\/\/(127\\.0\\.0\\.1|localhost)/i.test(livekitUrl) &&
+        !["localhost", "127.0.0.1"].includes(window.location.hostname)
+      ) {
+        enableDemoMode("LIVEKIT_URL localhostga sozlangan. Production uchun public wss:// URL kerak.");
+        return;
+      }
+
+      const room = new Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
 
       const sync = () => {
@@ -235,7 +311,6 @@ export default function LiveRoom({
       room.on(RoomEvent.TrackUnsubscribed, sync);
       room.on(RoomEvent.LocalTrackPublished, sync);
       room.on(RoomEvent.LocalTrackUnpublished, sync);
-      room.on(RoomEvent.ActiveSpeakersChanged, sync);
       room.on(RoomEvent.Reconnected, sync);
 
       try {
@@ -245,50 +320,66 @@ export default function LiveRoom({
 
         if (cancelled) return;
 
-        setIsConnected(true);
         setMicEnabled(true);
         setCameraEnabled(true);
+        setScreenShareEnabled(false);
+        setIsConnected(true);
+        setIsDemoMode(false);
         setConnectionError("");
         syncParticipantsFromRoom(room);
       } catch (error) {
         if (cancelled) return;
-
         const message = error instanceof Error ? error.message : "LiveKit ulanishida xatolik";
-        setConnectionError(`${message}. Demo qatnashuvchilar yoqildi.`);
-        const fallbackTeacherId = teacherId || MOCK_TEACHER_ID;
-        setParticipants(
-          buildMockParticipants({
-            id: fallbackTeacherId,
-            name: isTeacherView ? currentUser.name : "O'qituvchi",
-            group: isTeacherView ? currentUser.group : "Mentor",
-          })
-        );
-        setTeacherId(fallbackTeacherId);
+        const guidance = /invalid authorization token/i.test(message)
+          ? " LIVEKIT_API_KEY/API_SECRET va server mosligini tekshiring."
+          : "";
+        enableDemoMode(`${message}.${guidance} Demo qatnashuvchilar yoqildi.`);
+        return;
       }
 
-      intervalRef = window.setInterval(() => {
-        const students = useLiveRoomStore
-          .getState()
-          .participants.filter((participant) => participant.id !== teacherId);
+      const syncServerState = async () => {
+        if (cancelled) return;
 
-        if (!students.length) return;
+        const meta = roomMetaRef.current;
+        const statePayload = meta.roomId
+          ? { room_id: meta.roomId }
+          : { lesson_id: Number(lessonId) };
 
-        const sampleSize = Math.max(1, Math.ceil(students.length / 3));
-        const shuffled = [...students].sort(() => Math.random() - 0.5);
+        try {
+          const liveState = await fetchLiveState(statePayload);
+          applyLiveState(liveState);
+        } catch {
+          // keep local livekit state if API poll fails
+        }
 
-        shuffled.slice(0, sampleSize).forEach((student) => {
-          setVerificationStatus(student.id, Math.random() >= 0.4);
-        });
-      }, 10_000);
+        try {
+          if (meta.roomName) {
+            const monitoring = await fetchLiveMonitoring(meta.roomName);
+            applyMonitoringState(monitoring);
+          }
+        } catch {
+          // face monitoring can be unavailable; UI continues without verification updates
+        }
+      };
+
+      await syncServerState();
+      pollingTimer = window.setInterval(() => {
+        void syncServerState();
+      }, 4000);
     };
 
-    connectRoom();
+    void connectRoom();
 
     return () => {
       cancelled = true;
 
-      if (intervalRef) {
-        window.clearInterval(intervalRef);
+      if (pollingTimer) {
+        window.clearInterval(pollingTimer);
+      }
+
+      const activeRoomId = roomMetaRef.current.roomId;
+      if (activeRoomId) {
+        leaveLiveRoom(activeRoomId).catch(() => undefined);
       }
 
       if (roomRef.current) {
@@ -296,57 +387,124 @@ export default function LiveRoom({
         roomRef.current = null;
       }
 
+      roomMetaRef.current = { roomId: null, roomName: "" };
       resetLiveRoom();
       setIsConnected(false);
+      setIsDemoMode(false);
     };
   }, [
-    currentUser.group,
-    currentUser.name,
-    isTeacherView,
+    applyLiveState,
+    applyMonitoringState,
+    enableDemoMode,
     lessonId,
     resetLiveRoom,
-    setParticipants,
-    setTeacherId,
-    setVerificationStatus,
     syncParticipantsFromRoom,
-    teacherId,
   ]);
 
   const toggleMicrophone = async () => {
     const room = roomRef.current;
+    const next = !micEnabled;
+
     if (!room) {
-      setMicEnabled((prev) => !prev);
+      setMicEnabled(next);
       return;
     }
 
-    const next = !micEnabled;
-    await room.localParticipant.setMicrophoneEnabled(next);
-    setMicEnabled(next);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(next);
+      setMicEnabled(next);
+    } catch {
+      // keep previous state on failure
+    }
   };
 
   const toggleCamera = async () => {
     const room = roomRef.current;
+    const next = !cameraEnabled;
+
     if (!room) {
-      setCameraEnabled((prev) => !prev);
+      setCameraEnabled(next);
       return;
     }
 
-    const next = !cameraEnabled;
-    await room.localParticipant.setCameraEnabled(next);
-    setCameraEnabled(next);
+    try {
+      await room.localParticipant.setCameraEnabled(next);
+      setCameraEnabled(next);
+    } catch {
+      // keep previous state on failure
+    }
   };
 
   const toggleScreenShare = async () => {
     const room = roomRef.current;
+    const next = !screenShareEnabled;
+
     if (!room) {
-      setScreenShareEnabled((prev) => !prev);
+      setScreenShareEnabled(next);
       return;
     }
 
-    const next = !screenShareEnabled;
-    await room.localParticipant.setScreenShareEnabled(next);
-    setScreenShareEnabled(next);
-    syncParticipantsFromRoom(room);
+    try {
+      await room.localParticipant.setScreenShareEnabled(next);
+      setScreenShareEnabled(next);
+      syncParticipantsFromRoom(room);
+    } catch {
+      // keep previous state on failure
+    }
+  };
+
+  const handleRequestToSpeak = async () => {
+    const roomId = roomMetaRef.current.roomId;
+    if (!roomId || isTeacherView) return;
+
+    try {
+      await raiseHand(roomId, true);
+      setRequestingToSpeak(normalizedCurrentUserId, true);
+    } catch {
+      setRequestingToSpeak(normalizedCurrentUserId, false);
+    }
+  };
+
+  const handleSelectParticipant = async (participant) => {
+    if (!isTeacherView) return;
+
+    const roomId = roomMetaRef.current.roomId;
+    const participantId = normalizeId(participant?.id);
+    if (!participantId) return;
+
+    setActiveSpeaker(participantId);
+    setRequestingToSpeak(participantId, false);
+
+    if (!roomId) return;
+
+    const numericUserId = parseNumericId(participantId);
+    if (numericUserId === null) return;
+
+    try {
+      await setStageUser(roomId, numericUserId);
+    } catch {
+      // stage update fallback stays local
+    }
+  };
+
+  const handleResetStageToTeacher = async () => {
+    const snapshot = useLiveRoomStore.getState();
+    const currentTeacherId = normalizeId(snapshot.teacherId);
+    if (!currentTeacherId) return;
+
+    setActiveSpeaker(currentTeacherId);
+
+    const roomId = roomMetaRef.current.roomId;
+    if (!isTeacherView || !roomId) return;
+
+    const numericTeacherId = parseNumericId(currentTeacherId);
+    if (numericTeacherId === null) return;
+
+    try {
+      await setStageUser(roomId, numericTeacherId);
+    } catch {
+      // ignore API errors; local stage still resets visually
+    }
   };
 
   return (
@@ -358,20 +516,22 @@ export default function LiveRoom({
             {roomLabel || "Virtual sinf"} | {participants.length} ishtirokchi
           </p>
         </div>
-        <span className={`${styles.badge} ${isConnected ? styles.online : styles.offline}`}>
-          {isConnected ? "Ulangan" : "Demo rejim"}
+        <span
+          className={`${styles.badge} ${isDemoMode ? styles.offline : isConnected ? styles.online : styles.offline}`}
+        >
+          {isDemoMode ? "Demo rejim" : isConnected ? "Ulangan" : "Ulanmoqda"}
         </span>
       </div>
 
       {connectionError && <div className={styles.alert}>{connectionError}</div>}
 
       <div className={styles.layout}>
-        <StageView />
-        <ParticipantsSidebar isTeacherView={isTeacherView} />
+        <StageView onResetStage={handleResetStageToTeacher} />
+        <ParticipantsSidebar isTeacherView={isTeacherView} onParticipantSelect={handleSelectParticipant} />
       </div>
 
       <ControlsToolbar
-        currentUserId={currentUser.id}
+        currentUserId={normalizedCurrentUserId}
         isTeacherView={isTeacherView}
         micEnabled={micEnabled}
         cameraEnabled={cameraEnabled}
@@ -379,6 +539,7 @@ export default function LiveRoom({
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}
         onToggleScreenShare={toggleScreenShare}
+        onRequestToSpeak={handleRequestToSpeak}
       />
     </div>
   );

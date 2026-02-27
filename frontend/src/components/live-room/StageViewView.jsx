@@ -38,7 +38,7 @@ function StageTrack({ track }) {
   );
 }
 
-export default function StageView() {
+export default function StageView({ onResetStage }) {
   const participants = useLiveRoomStore((state) => state.participants);
   const activeSpeakerId = useLiveRoomStore((state) => state.activeSpeakerId);
   const teacherId = useLiveRoomStore((state) => state.teacherId);
@@ -55,6 +55,7 @@ export default function StageView() {
   const handleStageClick = () => {
     if (!activeSpeakerId || !teacherId) return;
     if (activeSpeakerId !== teacherId) {
+      onResetStage?.();
       setActiveSpeaker(teacherId);
     }
   };
@@ -84,4 +85,3 @@ export default function StageView() {
     </section>
   );
 }
-
