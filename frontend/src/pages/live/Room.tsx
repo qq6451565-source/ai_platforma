@@ -184,6 +184,7 @@ export default function Room() {
   const videoPublishedRef = useRef(false);
   const publishRecoveryInFlightRef = useRef(false);
   const cameraOnRef = useRef(true);
+  const initialPublishDoneRef = useRef(false);
 
   const pushDebug = useCallback(
     (label: string, payload?: unknown) => {
@@ -341,6 +342,7 @@ export default function Room() {
 
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         clientRef.current = client;
+        initialPublishDoneRef.current = false;
 
         const sleep = (ms: number) =>
           new Promise<void>((resolve) => {
@@ -526,7 +528,12 @@ export default function Room() {
             current: currentState,
             reason,
           });
-          if (String(currentState) === "CONNECTED" && cameraOnRef.current && !videoPublishedRef.current) {
+          if (
+            String(currentState) === "CONNECTED" &&
+            initialPublishDoneRef.current &&
+            cameraOnRef.current &&
+            !videoPublishedRef.current
+          ) {
             void republishVideoTrack("connection-state-change");
           }
         }) as (...args: any[]) => void);
@@ -551,13 +558,23 @@ export default function Room() {
         }
         localAudioRef.current = audioTrack;
 
-        const tracksToPublish = audioTrack ? [videoTrack, audioTrack] : [videoTrack];
-        await client.publish(tracksToPublish);
-        pushDebug("local tracks published", {
-          video: true,
-          audio: Boolean(audioTrack),
-        });
+        await client.publish(videoTrack);
+        pushDebug("local video published");
+
+        if (audioTrack) {
+          try {
+            await client.publish(audioTrack);
+            pushDebug("local audio published");
+          } catch (audioPublishError) {
+            pushDebug("local audio publish failed, continue video-only", toErrorText(audioPublishError));
+            audioTrack.close();
+            localAudioRef.current = null;
+            audioTrack = null;
+          }
+        }
+
         videoPublishedRef.current = true;
+        initialPublishDoneRef.current = true;
         setVideoPublished(true);
         setPublishRetries(0);
         setCameraStreamUnavailable(false);
@@ -617,6 +634,7 @@ export default function Room() {
       videoPublishedRef.current = false;
       publishRecoveryInFlightRef.current = false;
       localTrackEndedHandlerRef.current = null;
+      initialPublishDoneRef.current = false;
       clientRef.current?.removeAllListeners();
       clientRef.current?.leave().catch(() => undefined);
       clientRef.current = null;
@@ -808,6 +826,7 @@ export default function Room() {
       videoPublishedRef.current = false;
       setVideoPublished(false);
       localTrackEndedHandlerRef.current = null;
+      initialPublishDoneRef.current = false;
       await clientRef.current?.leave().catch(() => undefined);
       navigate(-1);
     }
