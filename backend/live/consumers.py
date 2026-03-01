@@ -438,10 +438,22 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                 .select_related("user")
                 .order_by("-joined_at")
             )
+            student_ids = [
+                participant.user_id
+                for participant in participants
+                if getattr(participant.user, "role", None) == "student"
+            ]
+            profiles = (
+                StudentProfile.objects.select_related("group")
+                .filter(user_id__in=student_ids)
+            )
+            profile_map = {profile.user_id: profile for profile in profiles}
             payload = []
             for participant in participants:
                 user = participant.user
                 role = getattr(user, "role", None) or ("admin" if user.is_superuser else "user")
+                profile = profile_map.get(user.id)
+                group_name = profile.group.name if profile and profile.group else ""
                 payload.append(
                     {
                         "user_id": user.id,
@@ -449,6 +461,10 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                         "role": role,
                         "is_teacher": participant.is_teacher,
                         "hand_raised": participant.hand_raised,
+                        "group_name": group_name,
+                        "group": group_name,
+                        "group_code": group_name,
+                        "group_title": group_name,
                     }
                 )
 

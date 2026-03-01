@@ -36,7 +36,7 @@ import { Button } from "../../components/ui";
 import SidePanel from "./components/SidePanel";
 import StudentGridSection from "./components/StudentGridSection";
 import { useFaceVerification, useStudentMonitoring } from "./hooks/useFaceVerification";
-import { resolveVisualStatus, sortStudents } from "./utils/studentSorting";
+import { resolveStudentGroup, resolveVisualStatus, sortStudents } from "./utils/studentSorting";
 import i18next from "../../i18n";
 
 import "./Room_NEW.css";
@@ -1171,15 +1171,32 @@ export default function Room() {
     !state.screenSharing &&
     (cameraStreamUnavailable || !localVideoRef.current || !videoPublished);
   const participantsPanelOpen = state.showStudentsGrid;
+  const participantsCount = state.participants.length;
+  const roomDisplayName = roomMeta?.roomName || t("live.room.defaultRoomTitle");
+  const isDemoMode = useMemo(() => {
+    const errorText = (state.error || "").toLowerCase();
+    return errorText.includes("demo") || errorText.includes("invalid authorization token");
+  }, [state.error]);
+  const stageGroupLabel = useMemo(() => {
+    if (!stageParticipant) return "";
+    const group = resolveStudentGroup(stageParticipant);
+    if (group && group !== "Guruh belgilanmagan") return group;
+    return stageParticipant.is_teacher ? "O'qituvchi" : "Talaba";
+  }, [stageParticipant]);
 
   return (
     <div className={`live-page ${isDesktop ? "sidebar-open" : "sidebar-closed"}`}>
       <header className="room-meta-bar">
         <div className="room-meta-main">
           <div className="room-meta-title">
-            {roomMeta?.subjectName || roomMeta?.roomName || t("live.room.defaultRoomTitle")}
+            <span className="room-meta-name">{roomDisplayName}</span>
+            <span className="room-meta-divider">|</span>
+            <span className="room-meta-participants">
+              {t("live.room.participants", { count: participantsCount })}
+            </span>
           </div>
         </div>
+        {isDemoMode && <div className="room-mode-pill">Demo rejim</div>}
       </header>
 
       {state.error && (
@@ -1222,7 +1239,7 @@ export default function Room() {
                 {stageName}
               </div>
               <div className="stage-role-label">
-                {stageParticipant?.is_teacher ? "O'qituvchi" : "Talaba"}
+                {stageGroupLabel}
               </div>
             </div>
           </div>

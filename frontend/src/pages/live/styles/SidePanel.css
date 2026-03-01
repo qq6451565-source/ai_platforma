@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.82rem 0.9rem;
+  padding: 0.76rem 0.9rem;
   border-bottom: 0.0625rem solid rgba(76, 120, 197, 0.3);
 }
 
@@ -27,11 +27,11 @@
 
 .panel-body {
   min-height: 0;
-  padding: 0.7rem;
+  padding: 0.68rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.62rem;
+  gap: 0.56rem;
 }
 
 .panel-body::-webkit-scrollbar {
@@ -54,13 +54,15 @@
 }
 
 .panel-participant-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0.56rem;
-  border-radius: 0.75rem;
+  gap: 0.62rem;
+  padding: 0.5rem 0.54rem;
+  min-height: 6.6rem;
+  border-radius: 0.72rem;
   border: 0.0625rem solid rgba(86, 126, 197, 0.35);
-  background: rgba(7, 22, 52, 0.78);
+  background: rgba(7, 20, 47, 0.82);
   transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
@@ -93,12 +95,12 @@
 }
 
 .participant-mini-video {
-  width: 5.6rem;
-  height: 3.4rem;
-  border-radius: 0.55rem;
+  width: 5.9rem;
+  height: 3.9rem;
+  border-radius: 0.62rem;
   overflow: hidden;
-  border: 0.0625rem solid rgba(127, 160, 219, 0.34);
-  background: rgba(0, 0, 0, 0.72);
+  border: 0.0625rem solid rgba(108, 144, 208, 0.34);
+  background: rgba(6, 18, 47, 0.92);
   flex-shrink: 0;
 }
 
@@ -117,9 +119,9 @@
   align-items: center;
   justify-content: center;
   color: #dceaff;
-  font-size: 1.05rem;
+  font-size: 1.58rem;
   font-weight: 700;
-  background: linear-gradient(135deg, rgba(26, 56, 112, 0.95), rgba(11, 35, 77, 0.95));
+  background: linear-gradient(135deg, rgba(30, 58, 108, 0.95), rgba(17, 38, 78, 0.95));
 }
 
 .participant-info {
@@ -130,7 +132,7 @@
 }
 
 .participant-info .name {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #e2eeff;
   white-space: nowrap;
@@ -139,7 +141,7 @@
 }
 
 .participant-info .meta {
-  font-size: 0.74rem;
+  font-size: 0.84rem;
   color: #8eb1e8;
 }
 
@@ -152,15 +154,23 @@
 }
 
 .status-label {
-  min-width: 4.75rem;
+  display: none;
+  min-width: 0;
   text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   border-radius: 999px;
-  padding: 0.18rem 0.42rem;
+  padding: 0.16rem 0.3rem;
   font-weight: 600;
   border: 0.0625rem solid rgba(127, 160, 219, 0.4);
   color: #c3d8fb;
   background: rgba(8, 24, 55, 0.78);
+}
+
+.panel-participant-row .status-label {
+  position: absolute;
+  right: 0.42rem;
+  top: 0.38rem;
+  opacity: 0.88;
 }
 
 .status-label.verified {
