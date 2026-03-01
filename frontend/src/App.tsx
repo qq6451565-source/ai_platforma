@@ -5,6 +5,7 @@ import {
   FileDoneOutlined,
   FileTextOutlined,
   ExperimentOutlined,
+  PlayCircleOutlined,
   BookOutlined,
   TeamOutlined,
   UserOutlined,
@@ -35,6 +36,7 @@ import StudentProfile from "./pages/student/Profile";
 import StudentAttendance from "./pages/student/Attendance";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import TeacherLessons from "./pages/teacher/Lessons";
+import TeacherLive from "./pages/teacher/Live";
 import TeacherAssignments from "./pages/teacher/Assignments";
 import TeacherTests from "./pages/teacher/Tests";
 import TeacherGrades from "./pages/teacher/Grades";
@@ -101,6 +103,7 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
       children: [
         { key: "teacher/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
         { key: "teacher/lessons", label: t('nav.schedule'), icon: <CalendarOutlined /> },
+        { key: "teacher/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
         { key: "teacher/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
         { key: "teacher/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
         { key: "teacher/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
@@ -237,6 +240,7 @@ const App = () => {
             <Route path="teacher" element={<TeacherRoute isTeacher={isTeacher} role={user?.role} loading={isLoading} />}>
               <Route path="dashboard" element={<TeacherDashboard />} />
               <Route path="lessons" element={<TeacherLessons />} />
+              <Route path="live" element={<TeacherLive />} />
               <Route path="assignments" element={<TeacherAssignments />} />
               <Route path="tests" element={<TeacherTests />} />
               <Route path="grades" element={<TeacherGrades />} />
