@@ -5,6 +5,7 @@ Integrates with AI Gateway for face analysis and verification.
 import base64
 import os
 import requests
+from datetime import timedelta
 from typing import Dict, Any, Optional
 from django.utils import timezone
 from django.conf import settings
@@ -17,6 +18,7 @@ from .models import (
     FaceVerificationSettings,
 )
 from accounts.models import User
+from attendance.models import Attendance
 
 
 class FaceVerificationService:
@@ -332,6 +334,18 @@ class FaceVerificationService:
             session.fail_count += 1
         
         session.save()
+
+        attendance_state = cls._update_live_attendance(
+            session=session,
+            room=room,
+            user=user,
+        )
+        if attendance_state:
+            event.metadata = {
+                **(event.metadata or {}),
+                "attendance": attendance_state,
+            }
+            event.save(update_fields=["metadata"])
         
         # Determine face detection status
         if event_type == "success":
@@ -361,4 +375,76 @@ class FaceVerificationService:
             "event_id": event.id,
             "message": message,
             "alert": alert,
+            "attendance_status": attendance_state.get("status") if attendance_state else None,
+            "attendance_ratio": attendance_state.get("ratio") if attendance_state else None,
+            "attendance_samples": attendance_state.get("samples") if attendance_state else None,
+        }
+
+    @classmethod
+    def _update_live_attendance(
+        cls,
+        session: LiveFaceSession,
+        room: LiveRoom,
+        user: User,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update lesson attendance from rolling face verification results.
+
+        Decision model:
+        - Check rolling window (default 60s) and cumulative session success.
+        - Mark `present` only after minimum samples.
+        """
+        role = getattr(user, "role", None)
+        if role != "student":
+            return None
+
+        settings_obj = FaceVerificationSettings.get_settings()
+        if not settings_obj.auto_attendance:
+            return None
+
+        window_seconds = max(15, int(getattr(settings, "FACE_ATTENDANCE_WINDOW_SECONDS", 60) or 60))
+        min_samples = max(1, int(getattr(settings, "FACE_ATTENDANCE_MIN_SAMPLES", 6) or 6))
+        ratio_threshold = float(getattr(settings, "FACE_ATTENDANCE_PRESENT_RATIO", 0.70) or 0.70)
+        ratio_threshold = max(0.1, min(1.0, ratio_threshold))
+
+        window_start = timezone.now() - timedelta(seconds=window_seconds)
+        window_events = (
+            LiveFaceEvent.objects.filter(session=session, created_at__gte=window_start)
+            .exclude(event_type__in=["disabled", "invalid_frame", "ai_error", "error"])
+        )
+        rolling_samples = window_events.count()
+        rolling_success = window_events.filter(is_verified=True).count()
+        rolling_ratio = (rolling_success / rolling_samples) if rolling_samples else 0.0
+
+        total_samples = int(session.verification_count or 0)
+        total_success = int(session.success_count or 0)
+        cumulative_ratio = (total_success / total_samples) if total_samples else 0.0
+
+        decision_ready = rolling_samples >= min_samples or total_samples >= min_samples
+        is_present = bool(
+            decision_ready and (
+                rolling_ratio >= ratio_threshold or cumulative_ratio >= ratio_threshold
+            )
+        )
+
+        attendance, _ = Attendance.objects.get_or_create(
+            lesson=room.lesson,
+            student=user,
+            defaults={"status": "absent"},
+        )
+        next_status = "present" if is_present else "absent"
+        if attendance.status != next_status:
+            attendance.status = next_status
+            attendance.save(update_fields=["status", "timestamp"])
+
+        return {
+            "status": next_status,
+            "ratio": round(cumulative_ratio, 4),
+            "rolling_ratio": round(rolling_ratio, 4),
+            "samples": total_samples,
+            "rolling_samples": rolling_samples,
+            "threshold": ratio_threshold,
+            "window_seconds": window_seconds,
+            "min_samples": min_samples,
+            "updated_at": timezone.now().isoformat(),
         }

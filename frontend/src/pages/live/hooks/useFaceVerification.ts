@@ -26,6 +26,9 @@ interface StudentStatusUpdate {
   status_reason?: string;
   last_verified_at?: string;
   success_rate?: number;
+  attendance_status?: "present" | "absent";
+  attendance_ratio?: number;
+  attendance_samples?: number;
 }
 
 interface MonitoringUpdateMessage {

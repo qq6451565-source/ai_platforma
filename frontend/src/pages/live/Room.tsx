@@ -42,7 +42,7 @@ import i18next from "../../i18n";
 import "./Room_NEW.css";
 
 const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
-const FACE_VERIFY_INTERVAL_MS = 4000;
+const FACE_VERIFY_INTERVAL_MS = 5000;
 const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
 const SIDEBAR_ACTIVE_VIDEO_CAP = 10;

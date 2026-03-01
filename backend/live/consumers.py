@@ -281,6 +281,9 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                         "audio_enabled": room.stage_user_id == self.user.id,
                         "event_type": result.get("event_type"),
                         "status_reason": result.get("status_reason") or result.get("event_type"),
+                        "attendance_status": result.get("attendance_status"),
+                        "attendance_ratio": result.get("attendance_ratio"),
+                        "attendance_samples": result.get("attendance_samples"),
                         "last_verified_at": timezone.now().isoformat(),
                     }
                 ],
@@ -388,6 +391,11 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
             updates = []
             for session in sessions:
                 latest_event = session.events.order_by("-created_at").first()
+                attendance_meta = (
+                    latest_event.metadata.get("attendance", {})
+                    if latest_event and isinstance(latest_event.metadata, dict)
+                    else {}
+                )
                 updates.append(
                     {
                         "student_id": session.user_id,
@@ -400,6 +408,9 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                         "status_reason": latest_event.event_type if latest_event else None,
                         "last_verified_at": latest_event.created_at.isoformat() if latest_event else None,
                         "success_rate": session.success_rate,
+                        "attendance_status": attendance_meta.get("status"),
+                        "attendance_ratio": attendance_meta.get("ratio"),
+                        "attendance_samples": attendance_meta.get("samples"),
                     }
                 )
 
