@@ -344,7 +344,7 @@ export const useStudentMonitoring = (
     if (!connected || !enabled) return;
     const interval = window.setInterval(() => {
       requestUpdate();
-    }, 3000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [connected, enabled, requestUpdate]);
 

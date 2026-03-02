@@ -18,6 +18,7 @@ import {
   StopOutlined,
   HighlightOutlined,
   LogoutOutlined,
+  RollbackOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
 
@@ -46,8 +47,21 @@ const FACE_VERIFY_INTERVAL_MS = 5000;
 const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
 const SIDEBAR_ACTIVE_VIDEO_CAP = 10;
-const REMOTE_RESUBSCRIBE_INTERVAL_MS = 4000;
+const REMOTE_TRACK_RECOVERY_INTERVAL_MS = 12000;
 const VIDEO_RECOVERY_BACKOFF_MS = [400, 900, 1800] as const;
+const CAMERA_ENCODER_CONFIG = {
+  width: 1280,
+  height: 720,
+  frameRate: 24,
+  bitrateMin: 900,
+  bitrateMax: 2200,
+} as const;
+const LOW_STREAM_PARAMETER = {
+  width: 320,
+  height: 180,
+  framerate: 15,
+  bitrate: 240,
+} as const;
 
 interface RoomState {
   connected: boolean;
@@ -165,6 +179,7 @@ export default function Room() {
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
   const screenVideoRef = useRef<ILocalVideoTrack | null>(null);
   const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
+  const remoteStreamTypeMapRef = useRef<Map<string, 0 | 1>>(new Map());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const captureIntervalRef = useRef<number | null>(null);
   const captureVideoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -198,6 +213,16 @@ export default function Room() {
 
   const isTeacher = me?.role === "teacher" || me?.role === "admin";
   const localUserUid = normalizeUid(me?.id);
+  const createOptimizedCameraTrack = useCallback(async () => {
+    try {
+      return await AgoraRTC.createCameraVideoTrack({
+        encoderConfig: CAMERA_ENCODER_CONFIG,
+      });
+    } catch (error) {
+      pushDebug("optimized camera init failed, fallback default", toErrorText(error));
+      return AgoraRTC.createCameraVideoTrack();
+    }
+  }, [pushDebug]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -251,7 +276,7 @@ export default function Room() {
       return fetchLiveState({ lesson_id: Number(lessonId) });
     },
     enabled: Boolean(lessonId),
-    refetchInterval: 5000,
+    refetchInterval: monitoringConnected ? 30000 : 5000,
   });
 
   useEffect(() => {
@@ -364,6 +389,19 @@ export default function Room() {
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         clientRef.current = client;
         initialPublishDoneRef.current = false;
+        remoteStreamTypeMapRef.current.clear();
+
+        try {
+          client.setLowStreamParameter(LOW_STREAM_PARAMETER);
+        } catch (error) {
+          pushDebug("set low stream parameter failed", toErrorText(error));
+        }
+        await client.enableDualStream().catch((error) => {
+          pushDebug("enable dual stream failed", toErrorText(error));
+        });
+        await client.setRemoteDefaultVideoStreamType(1).catch((error) => {
+          pushDebug("set default remote stream type failed", toErrorText(error));
+        });
 
         const sleep = (ms: number) =>
           new Promise<void>((resolve) => {
@@ -448,6 +486,26 @@ export default function Room() {
         };
         subscribeRemoteUserRef.current = subscribeRemoteUser;
 
+        const refreshAgoraToken = async (reason: string) => {
+          try {
+            const refreshed = await fetchAgoraToken({
+              room_id: roomData.room_id,
+              lesson_id: Number(lessonId),
+            });
+            if (!refreshed.token) {
+              pushDebug("token refresh skipped: empty token", { reason });
+              return;
+            }
+            await client.renewToken(refreshed.token);
+            pushDebug("token renewed", {
+              reason,
+              expires_in: refreshed.expires_in,
+            });
+          } catch (error) {
+            pushDebug("token renew failed", { reason, error: toErrorText(error) });
+          }
+        };
+
         async function republishVideoTrack(reason: string): Promise<boolean> {
           if (publishRecoveryInFlightRef.current || cancelled) return false;
           const activeClient = clientRef.current;
@@ -472,7 +530,7 @@ export default function Room() {
                 setLocalTrackVersion((prev) => prev + 1);
               }
 
-              const freshVideoTrack = await AgoraRTC.createCameraVideoTrack();
+              const freshVideoTrack = await createOptimizedCameraTrack();
               await freshVideoTrack.setEnabled(true).catch(() => undefined);
               attachTrackEndedHandler(freshVideoTrack);
               bindLocalVideoTrack(freshVideoTrack, "local video track recovered");
@@ -510,13 +568,13 @@ export default function Room() {
 
         client.on("user-joined", (user: IAgoraRTCRemoteUser) => {
           pushDebug("user-joined", { uid: normalizeUid(user.uid) });
-          void subscribeRemoteUser(user);
         });
 
         client.on("user-unpublished", (user: IAgoraRTCRemoteUser, mediaType) => {
           if (mediaType === "video") {
             const remoteUid = normalizeUid(user.uid);
             videoTracksMap.current.delete(remoteUid);
+            remoteStreamTypeMapRef.current.delete(remoteUid);
             setTrackVersion((prev) => prev + 1);
             pushDebug("user-unpublished", { uid: remoteUid, mediaType });
           }
@@ -525,6 +583,7 @@ export default function Room() {
         client.on("user-left", (user: IAgoraRTCRemoteUser) => {
           const remoteUid = normalizeUid(user.uid);
           videoTracksMap.current.delete(remoteUid);
+          remoteStreamTypeMapRef.current.delete(remoteUid);
           setTrackVersion((prev) => prev + 1);
           pushDebug("user-left", { uid: remoteUid });
         });
@@ -537,8 +596,8 @@ export default function Room() {
             const remoteUser = client.remoteUsers.find(
               (user) => normalizeUid(user.uid) === normalized
             );
-            if (remoteUser) {
-              void subscribeRemoteUser(remoteUser);
+            if (remoteUser && remoteUser.hasVideo && !videoTracksMap.current.has(normalized)) {
+              void subscribeRemoteUser(remoteUser, "video");
             }
           }) as (...args: any[]) => void
         );
@@ -560,13 +619,21 @@ export default function Room() {
           }
         }) as (...args: any[]) => void);
 
+        client.on("token-privilege-will-expire", (() => {
+          void refreshAgoraToken("will-expire");
+        }) as (...args: any[]) => void);
+
+        client.on("token-privilege-did-expire", (() => {
+          void refreshAgoraToken("did-expire");
+        }) as (...args: any[]) => void);
+
         await client.join(resolvedAppId, tokenData.channel, tokenData.token, tokenData.uid || null);
         pushDebug("joined channel", { channel: tokenData.channel, uid: tokenUid || "(empty)" });
 
         pushDebug("initial remote scan", { count: client.remoteUsers.length });
         await Promise.allSettled(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
 
-        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+        const videoTrack = await createOptimizedCameraTrack();
         await videoTrack.setEnabled(true).catch(() => undefined);
         attachTrackEndedHandler(videoTrack);
         bindLocalVideoTrack(videoTrack, "local video track created");
@@ -662,6 +729,7 @@ export default function Room() {
       screenVideoRef.current?.close();
       screenTrackEndedHandlerRef.current = null;
       videoTracksMap.current.clear();
+      remoteStreamTypeMapRef.current.clear();
       subscribeRemoteUserRef.current = null;
       videoPublishedRef.current = false;
       publishRecoveryInFlightRef.current = false;
@@ -671,7 +739,7 @@ export default function Room() {
       clientRef.current?.leave().catch(() => undefined);
       clientRef.current = null;
     };
-  }, [lessonId, me?.id, isTeacher, localUserUid, pushDebug, t]);
+  }, [createOptimizedCameraTrack, isTeacher, lessonId, localUserUid, me?.id, pushDebug, t]);
 
   useEffect(() => {
     if (!liveState) return;
@@ -706,19 +774,79 @@ export default function Room() {
       if (!client || !subscribeRemoteUser) return;
       if ((client as { connectionState?: string }).connectionState !== "CONNECTED") return;
 
-      if (client.remoteUsers.length > 0) {
-        pushDebug("periodic resubscribe", { remoteUsers: client.remoteUsers.length });
-      }
-      client.remoteUsers.forEach((remoteUser) => {
+      const missingVideoUsers = client.remoteUsers.filter(
+        (remoteUser) =>
+          (remoteUser.hasVideo || Boolean(remoteUser.videoTrack)) &&
+          !videoTracksMap.current.has(normalizeUid(remoteUser.uid))
+      );
+      if (!missingVideoUsers.length) return;
+
+      pushDebug("recover missing remote tracks", { count: missingVideoUsers.length });
+      missingVideoUsers.forEach((remoteUser) => {
         void subscribeRemoteUser(remoteUser, "video");
       });
-    }, REMOTE_RESUBSCRIBE_INTERVAL_MS);
+    }, REMOTE_TRACK_RECOVERY_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [pushDebug, state.connected]);
 
   const stageUserId = state.stageUser;
   const isStageUser = Boolean(stageUserId && stageUserId === localUserUid);
+  const teacherStageOwnerId = useMemo(() => {
+    const localTeacher = state.participants.find(
+      (participant) =>
+        participant.is_teacher && normalizeUid(participant.user_id) === localUserUid
+    );
+    if (localTeacher) return localTeacher.user_id;
+    const anyTeacher = state.participants.find((participant) => participant.is_teacher);
+    if (anyTeacher) return anyTeacher.user_id;
+    return me?.id ?? null;
+  }, [localUserUid, me?.id, state.participants]);
+  const teacherStageOwnerUid = teacherStageOwnerId
+    ? normalizeUid(teacherStageOwnerId)
+    : null;
+  const canReturnStageToTeacher = Boolean(
+    isTeacher &&
+    stageUserId &&
+    teacherStageOwnerUid &&
+    stageUserId !== teacherStageOwnerUid
+  );
+
+  useEffect(() => {
+    if (!state.connected) return;
+    const client = clientRef.current;
+    if (!client) return;
+    if ((client as { connectionState?: string }).connectionState !== "CONNECTED") return;
+
+    const teacherParticipant = state.participants.find((participant) => participant.is_teacher);
+    const preferredHighUid =
+      stageUserId || (teacherParticipant ? normalizeUid(teacherParticipant.user_id) : null);
+    if (!preferredHighUid) return;
+
+    const syncStreamPriority = async () => {
+      await Promise.allSettled(
+        client.remoteUsers.map(async (remoteUser) => {
+          const remoteUid = normalizeUid(remoteUser.uid);
+          const nextType: 0 | 1 = remoteUid === preferredHighUid ? 0 : 1;
+          const prevType = remoteStreamTypeMapRef.current.get(remoteUid);
+          if (prevType === nextType) return;
+
+          try {
+            await client.setRemoteVideoStreamType(remoteUser.uid, nextType);
+            remoteStreamTypeMapRef.current.set(remoteUid, nextType);
+          } catch (error) {
+            pushDebug("set remote stream type failed", {
+              uid: remoteUid,
+              streamType: nextType,
+              error: toErrorText(error),
+            });
+          }
+        })
+      );
+    };
+
+    void syncStreamPriority();
+  }, [pushDebug, stageUserId, state.connected, state.participants, trackVersion]);
 
   useEffect(() => {
     if (isTeacher) return;
@@ -937,6 +1065,25 @@ export default function Room() {
     [isTeacher, pushDebug, roomMeta?.roomId]
   );
 
+  const handleReturnStageToTeacher = useCallback(async () => {
+    if (!isTeacher || !roomMeta?.roomId || !teacherStageOwnerId) return;
+    try {
+      await setStageUser(roomMeta.roomId, teacherStageOwnerId);
+      setState((prev) => ({
+        ...prev,
+        stageUser: normalizeUid(teacherStageOwnerId),
+        participants: prev.participants.map((participant) =>
+          participant.user_id === teacherStageOwnerId
+            ? participant
+            : { ...participant, hand_raised: false }
+        ),
+      }));
+      pushDebug("stage reset to teacher", { userId: teacherStageOwnerId });
+    } catch (error) {
+      pushDebug("stage reset failed", toErrorText(error));
+    }
+  }, [isTeacher, pushDebug, roomMeta?.roomId, teacherStageOwnerId]);
+
   const handleExitRoom = useCallback(async () => {
     try {
       if (screenVideoRef.current) {
@@ -1042,6 +1189,7 @@ export default function Room() {
       videoElement.style.width = "100%";
       videoElement.style.height = "100%";
       videoElement.style.objectFit = "cover";
+      videoElement.style.transform = "scaleX(1)";
       stageVideoRef.current.appendChild(videoElement);
       localFallbackVideo = videoElement;
       Promise.resolve(videoElement.play()).catch(() => undefined);
@@ -1093,13 +1241,10 @@ export default function Room() {
     };
   }, [
     isTeacher,
-    localTrackVersion,
     pushDebug,
     stageMountVersion,
     stageVideoTrack,
-    state.cameraOn,
     state.connected,
-    trackVersion,
   ]);
 
   const sortedParticipants = useMemo(
@@ -1343,6 +1488,18 @@ export default function Room() {
             disabled={!state.connected}
           >
             {state.screenSharing ? "Stop Share" : "Screen Share"}
+          </Button>
+        )}
+
+        {isTeacher && canReturnStageToTeacher && (
+          <Button
+            variant="ghost"
+            className="control-btn"
+            onClick={handleReturnStageToTeacher}
+            icon={<RollbackOutlined />}
+            disabled={!state.connected}
+          >
+            O'qituvchiga qaytarish
           </Button>
         )}
 
