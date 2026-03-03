@@ -496,21 +496,32 @@ class SetStageUserView(APIView):
 
     def post(self, request):
         room_id = request.data.get("room_id")
-        user_id = request.data.get("user_id")
+        raw_user_id = request.data.get("user_id")
         if not room_id:
             return Response({"error": "room_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
 
         room = get_object_or_404(LiveRoom, id=room_id)
         _ensure_teacher_can_access(request, room.lesson)
 
-        if not user_id:
-            user_id = request.user.id
-
-        participant = (
-            LiveParticipant.objects.filter(room=room, user_id=user_id, left_at__isnull=True)
-            .select_related("user")
-            .first()
-        )
+        participant = None
+        if raw_user_id in [None, "", "null"]:
+            participant = (
+                LiveParticipant.objects.filter(room=room, is_teacher=True, left_at__isnull=True)
+                .select_related("user")
+                .first()
+            )
+            if not participant:
+                participant = (
+                    LiveParticipant.objects.filter(room=room, user=request.user, left_at__isnull=True)
+                    .select_related("user")
+                    .first()
+                )
+        else:
+            participant = (
+                LiveParticipant.objects.filter(room=room, user_id=raw_user_id, left_at__isnull=True)
+                .select_related("user")
+                .first()
+            )
         if not participant:
             return Response({"error": "Ishtirokchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 

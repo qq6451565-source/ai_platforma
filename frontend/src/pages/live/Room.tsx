@@ -180,6 +180,8 @@ export default function Room() {
   const screenVideoRef = useRef<ILocalVideoTrack | null>(null);
   const videoTracksMap = useRef<Map<string, IRemoteVideoTrack>>(new Map());
   const remoteStreamTypeMapRef = useRef<Map<string, 0 | 1>>(new Map());
+  const videoSubscribeInFlightRef = useRef<Set<string>>(new Set());
+  const audioSubscribeInFlightRef = useRef<Set<string>>(new Set());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const captureIntervalRef = useRef<number | null>(null);
   const captureVideoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -470,14 +472,40 @@ export default function Room() {
               (!mediaType && (Boolean(user.audioTrack) || Boolean(user.hasAudio)));
 
             if (shouldTryVideo) {
-              await client.subscribe(user, "video");
-              syncRemoteVideoTrack(user, "video subscribed");
+              const existingTrack = videoTracksMap.current.get(remoteUid);
+              const alreadySyncedVideo = Boolean(existingTrack && user.videoTrack);
+              if (alreadySyncedVideo) {
+                syncRemoteVideoTrack(user, "video already subscribed");
+              }
+              const videoInFlight = videoSubscribeInFlightRef.current;
+              if (!alreadySyncedVideo && !videoInFlight.has(remoteUid)) {
+                videoInFlight.add(remoteUid);
+                try {
+                  await client.subscribe(user, "video");
+                  syncRemoteVideoTrack(user, "video subscribed");
+                } finally {
+                  videoInFlight.delete(remoteUid);
+                }
+              }
             }
 
             if (shouldTryAudio) {
-              await client.subscribe(user, "audio");
-              if (user.audioTrack) {
-                user.audioTrack.play();
+              const currentAudioTrack = user.audioTrack;
+              if (currentAudioTrack) {
+                currentAudioTrack.play();
+              }
+              const audioInFlight = audioSubscribeInFlightRef.current;
+              if (!currentAudioTrack && !audioInFlight.has(remoteUid)) {
+                audioInFlight.add(remoteUid);
+                try {
+                  await client.subscribe(user, "audio");
+                  const subscribedAudioTrack = user.audioTrack;
+                  if (subscribedAudioTrack) {
+                    subscribedAudioTrack.play();
+                  }
+                } finally {
+                  audioInFlight.delete(remoteUid);
+                }
               }
             }
           } catch (error) {
@@ -575,8 +603,13 @@ export default function Room() {
             const remoteUid = normalizeUid(user.uid);
             videoTracksMap.current.delete(remoteUid);
             remoteStreamTypeMapRef.current.delete(remoteUid);
+            videoSubscribeInFlightRef.current.delete(remoteUid);
             setTrackVersion((prev) => prev + 1);
             pushDebug("user-unpublished", { uid: remoteUid, mediaType });
+            return;
+          }
+          if (mediaType === "audio") {
+            audioSubscribeInFlightRef.current.delete(normalizeUid(user.uid));
           }
         });
 
@@ -584,6 +617,8 @@ export default function Room() {
           const remoteUid = normalizeUid(user.uid);
           videoTracksMap.current.delete(remoteUid);
           remoteStreamTypeMapRef.current.delete(remoteUid);
+          videoSubscribeInFlightRef.current.delete(remoteUid);
+          audioSubscribeInFlightRef.current.delete(remoteUid);
           setTrackVersion((prev) => prev + 1);
           pushDebug("user-left", { uid: remoteUid });
         });
@@ -730,6 +765,8 @@ export default function Room() {
       screenTrackEndedHandlerRef.current = null;
       videoTracksMap.current.clear();
       remoteStreamTypeMapRef.current.clear();
+      videoSubscribeInFlightRef.current.clear();
+      audioSubscribeInFlightRef.current.clear();
       subscribeRemoteUserRef.current = null;
       videoPublishedRef.current = false;
       publishRecoveryInFlightRef.current = false;
@@ -799,9 +836,8 @@ export default function Room() {
     );
     if (localTeacher) return localTeacher.user_id;
     const anyTeacher = state.participants.find((participant) => participant.is_teacher);
-    if (anyTeacher) return anyTeacher.user_id;
-    return me?.id ?? null;
-  }, [localUserUid, me?.id, state.participants]);
+    return anyTeacher ? anyTeacher.user_id : null;
+  }, [localUserUid, state.participants]);
   const teacherStageOwnerUid = teacherStageOwnerId
     ? normalizeUid(teacherStageOwnerId)
     : null;
@@ -1057,32 +1093,29 @@ export default function Room() {
               : participant
           ),
         }));
+        requestMonitoringUpdate();
         pushDebug("set stage user", { userId });
       } catch (error) {
         pushDebug("set stage error", toErrorText(error));
       }
     },
-    [isTeacher, pushDebug, roomMeta?.roomId]
+    [isTeacher, pushDebug, requestMonitoringUpdate, roomMeta?.roomId]
   );
 
   const handleReturnStageToTeacher = useCallback(async () => {
     if (!isTeacher || !roomMeta?.roomId || !teacherStageOwnerId) return;
     try {
-      await setStageUser(roomMeta.roomId, teacherStageOwnerId);
+      await setStageUser(roomMeta.roomId, null);
       setState((prev) => ({
         ...prev,
         stageUser: normalizeUid(teacherStageOwnerId),
-        participants: prev.participants.map((participant) =>
-          participant.user_id === teacherStageOwnerId
-            ? participant
-            : { ...participant, hand_raised: false }
-        ),
       }));
+      requestMonitoringUpdate();
       pushDebug("stage reset to teacher", { userId: teacherStageOwnerId });
     } catch (error) {
       pushDebug("stage reset failed", toErrorText(error));
     }
-  }, [isTeacher, pushDebug, roomMeta?.roomId, teacherStageOwnerId]);
+  }, [isTeacher, pushDebug, requestMonitoringUpdate, roomMeta?.roomId, teacherStageOwnerId]);
 
   const handleExitRoom = useCallback(async () => {
     try {
