@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from ai.clients import AIConnectionError, face_match, health_check, ocr_passport
+from ai.clients import AIConnectionError, face_analyze, face_match, health_check, ocr_passport
 from ai.models import AISettings
 from accounts.models import User, PassportData
 from groups.models import Group
@@ -375,16 +375,26 @@ class ApplicantRegisterFinalizeView(APIView):
                 applicant.status = "pending"
                 applicant.save(update_fields=["status"])
 
+            # AI verification: OCR + face_match + face_embedding saqlash
+            ai_warning = None
+            try:
+                ai_warning = _run_ai_verification(document)
+            except Exception as exc:
+                logger.warning("AI verification failed during finalize applicant=%s: %s", applicant.id, exc)
+                ai_warning = "AI tekshiruvi amalga oshmadi. Admin tekshiradi."
+
+            applicant.refresh_from_db()
+
             response_status = status.HTTP_200_OK
-            return Response(
-                {
-                    "detail": "Ariza yakunlandi. Admin tasdiqlashi kutilmoqda.",
-                    "applicant_id": applicant.id,
-                    "status": applicant.status,
-                    "login_username": request.user.username,
-                },
-                status=response_status,
-            )
+            payload = {
+                "detail": "Ariza yakunlandi. Admin tasdiqlashi kutilmoqda.",
+                "applicant_id": applicant.id,
+                "status": applicant.status,
+                "login_username": request.user.username,
+            }
+            if ai_warning:
+                payload["warning"] = ai_warning
+            return Response(payload, status=response_status)
         finally:
             duration_ms = (perf_counter() - start_ts) * 1000
             logger.info(
@@ -831,6 +841,34 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         if not confidence and ocr_result:
             confidence = float(ocr_result.get("confidence") or 0.0)
 
+    # ── Face embedding extraction ──────────────────────────────────────────────
+    # Selfie rasmidan yuz embedding olib, User modeliga saqlaymiz.
+    # Bu keyinchalik live dars va test proctoring uchun zarur.
+    face_embedding = None
+    if selfie_bytes:
+        try:
+            analyze_result = face_analyze(selfie_bytes)
+            if analyze_result and isinstance(analyze_result, dict):
+                faces = analyze_result.get("faces") or []
+                if faces:
+                    face_embedding = faces[0].get("embedding")
+        except Exception as exc:
+            logger.warning("Face analyze failed for applicant %s: %s", applicant.id, exc)
+
+    if face_embedding and applicant.user_id:
+        try:
+            User.objects.filter(pk=applicant.user_id).update(face_embedding=face_embedding)
+            logger.info("face_embedding saved for user_id=%s", applicant.user_id)
+        except Exception as exc:
+            logger.warning("Could not save face_embedding for user %s: %s", applicant.user_id, exc)
+
+    events.append({
+        "type": "face_embedding",
+        "status": "ok" if face_embedding else "failed",
+        "embedding_length": len(face_embedding) if face_embedding else 0,
+    })
+    # ──────────────────────────────────────────────────────────────────────────
+
     VerificationResult.objects.create(
         applicant=applicant,
         verified=verified,
@@ -1032,9 +1070,28 @@ class ApproveApplicantView(APIView):
                 user.save(update_fields=["group"])
 
             documents = getattr(applicant, "documents", None)
-            if documents and documents.face_image and not user.face_image:
-                user.face_image = documents.face_image
-                user.save(update_fields=["face_image"])
+            if documents and documents.face_image:
+                user_fields_to_save = []
+                if not user.face_image:
+                    user.face_image = documents.face_image
+                    user_fields_to_save.append("face_image")
+                # face_embedding yo'q bo'lsa → face_analyze orqali olib saqlaymiz
+                if not user.face_embedding:
+                    try:
+                        _face_bytes = _read_field_bytes(documents.face_image)
+                        if _face_bytes:
+                            _analyze = face_analyze(_face_bytes)
+                            if _analyze and isinstance(_analyze, dict):
+                                _faces = _analyze.get("faces") or []
+                                if _faces:
+                                    user.face_embedding = _faces[0].get("embedding")
+                                    if user.face_embedding:
+                                        user_fields_to_save.append("face_embedding")
+                                        logger.info("face_embedding set for user_id=%s during approval", user.id)
+                    except Exception as _exc:
+                        logger.warning("face_analyze failed during approval user=%s: %s", user.id, _exc)
+                if user_fields_to_save:
+                    user.save(update_fields=user_fields_to_save)
 
             try:
                 profile = user.student_profile
@@ -1093,9 +1150,26 @@ class ApproveApplicantView(APIView):
                 TeacherProfile.objects.create(user=user)
 
             documents = getattr(applicant, "documents", None)
-            if documents and documents.face_image and not user.face_image:
-                user.face_image = documents.face_image
-                user.save(update_fields=["face_image"])
+            if documents and documents.face_image:
+                _teacher_fields = []
+                if not user.face_image:
+                    user.face_image = documents.face_image
+                    _teacher_fields.append("face_image")
+                if not user.face_embedding:
+                    try:
+                        _face_bytes = _read_field_bytes(documents.face_image)
+                        if _face_bytes:
+                            _analyze = face_analyze(_face_bytes)
+                            if _analyze and isinstance(_analyze, dict):
+                                _faces = _analyze.get("faces") or []
+                                if _faces:
+                                    user.face_embedding = _faces[0].get("embedding")
+                                    if user.face_embedding:
+                                        _teacher_fields.append("face_embedding")
+                    except Exception as _exc:
+                        logger.warning("face_analyze failed during teacher approval user=%s: %s", user.id, _exc)
+                if _teacher_fields:
+                    user.save(update_fields=_teacher_fields)
 
             teacher_subject = TeacherSubject.objects.create(
                 teacher=user,

@@ -30,6 +30,7 @@ const StudentTests = () => {
   const [proctorSessionId, setProctorSessionId] = useState<number | null>(null);
   const [proctorVerified, setProctorVerified] = useState(false);
   const [proctorBlocked, setProctorBlocked] = useState(false);
+  const [faceStatus, setFaceStatus] = useState<"DETECTED" | "NOT_DETECTED" | "CHECKING">("CHECKING");
   const [sending, setSending] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -153,9 +154,11 @@ const StudentTests = () => {
       const resp = await verifyProctoring(proctorSessionId, frame);
       setProctorBlocked(!!resp.blocked);
       if (resp.verified) {
+        setFaceStatus("DETECTED");
         setProctorVerified(true);
         verifyDoneRef.current = true;
       } else {
+        setFaceStatus("NOT_DETECTED");
         setProctorVerified(false);
         message.error("Yuz tasdiqlanmadi. Qayta urinib ko'ring.");
       }
@@ -228,6 +231,7 @@ const StudentTests = () => {
       setProctorSessionId(null);
       setProctorVerified(false);
       setProctorBlocked(false);
+      setFaceStatus("CHECKING");
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Finish xato");
     } finally {
@@ -262,6 +266,7 @@ const StudentTests = () => {
           presenceBusyRef.current = true;
           try {
             const resp = await presenceProctoring(proctorSessionId, frame);
+            setFaceStatus(resp.present ? "DETECTED" : "NOT_DETECTED");
             if (resp.blocked) {
               setProctorBlocked(true);
               message.error("Proktor blokladi: yuz uzoq vaqt yo'q");
@@ -376,6 +381,7 @@ const StudentTests = () => {
           setProctorSessionId(null);
           setProctorVerified(false);
           setProctorBlocked(false);
+          setFaceStatus("CHECKING");
           stopPresenceLoop();
           stopCamera();
         }}
@@ -391,6 +397,67 @@ const StudentTests = () => {
           </Button>,
         ]}
       >
+        {proctorSessionId && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+            <div
+              style={{
+                position: "relative",
+                width: 140,
+                height: 105,
+                borderRadius: 8,
+                overflow: "hidden",
+                border: `2.5px solid ${
+                  faceStatus === "DETECTED"
+                    ? "#11d680"
+                    : faceStatus === "NOT_DETECTED"
+                    ? "#ff4f63"
+                    : "rgba(134,166,219,0.35)"
+                }`,
+                boxShadow:
+                  faceStatus === "DETECTED"
+                    ? "0 0 8px rgba(17,214,128,0.5)"
+                    : faceStatus === "NOT_DETECTED"
+                    ? "0 0 8px rgba(255,79,99,0.5)"
+                    : "none",
+                transition: "border-color 0.3s, box-shadow 0.3s",
+                background: "#111",
+                flexShrink: 0,
+              }}
+            >
+              <video
+                ref={videoRef}
+                style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}
+                muted
+                playsInline
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  background: "rgba(0,0,0,0.55)",
+                  padding: "2px 6px",
+                  textAlign: "center",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color:
+                    faceStatus === "DETECTED"
+                      ? "#11d680"
+                      : faceStatus === "NOT_DETECTED"
+                      ? "#ff4f63"
+                      : "#86a7da",
+                }}
+              >
+                {faceStatus === "DETECTED"
+                  ? "✓ Yuz aniqlandi"
+                  : faceStatus === "NOT_DETECTED"
+                  ? "✗ Yuz ko'rinmaydi"
+                  : "Tekshirilmoqda..."}
+              </div>
+            </div>
+          </div>
+        )}
         {current?.question ? (
           <>
             <Typography.Title level={5}>{current.question.text}</Typography.Title>
@@ -410,7 +477,6 @@ const StudentTests = () => {
           <Typography.Text>Savollar tugagan, yakunlash tugmasini bosing.</Typography.Text>
         )}
       </Modal>
-      <video ref={videoRef} style={{ display: "none" }} muted playsInline />
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );

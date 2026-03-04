@@ -249,7 +249,8 @@ export default function Room() {
   const {
     connected: faceConnected,
     verifyFrame,
-  } = useFaceVerification(roomName, Boolean(!isTeacher && state.connected && roomName));
+    localFaceStatus,
+  } = useFaceVerification(roomName, Boolean(state.connected && roomName));
   const {
     studentStatuses: monitoringStatuses,
     connected: monitoringConnected,
@@ -260,7 +261,21 @@ export default function Room() {
     lastRoomStateEventAt,
   } = useStudentMonitoring(roomName, Boolean(state.connected && roomName));
 
-  const studentStatuses = monitoringStatuses;
+  // Merge the local user's live face status into the shared map so their own tile gets a border
+  const studentStatuses = useMemo(() => {
+    const myId = me?.id;
+    if (!myId || localFaceStatus === "CHECKING") return monitoringStatuses;
+    const merged = new Map(monitoringStatuses);
+    const existing = merged.get(myId);
+    merged.set(myId, {
+      faceStatus: localFaceStatus,
+      confidence: localFaceStatus === "DETECTED" ? 1.0 : 0.0,
+      handRaised: existing?.handRaised ?? false,
+      audioEnabled: existing?.audioEnabled ?? false,
+      timestamp: Date.now(),
+    });
+    return merged;
+  }, [monitoringStatuses, localFaceStatus, me?.id]);
 
   useEffect(() => {
     cameraOnRef.current = state.cameraOn;
@@ -893,7 +908,8 @@ export default function Room() {
   }, [isTeacher, isStageUser]);
 
   useEffect(() => {
-    if (isTeacher || !state.connected || !faceConnected) return;
+    // Teacher and student both send frames: teacher → presence-only, student → embedding compare
+    if (!state.connected || !faceConnected) return;
     const localTrack = localVideoRef.current;
     if (!localTrack) return;
 
@@ -933,7 +949,7 @@ export default function Room() {
         captureVideoElementRef.current = null;
       }
     };
-  }, [faceConnected, isTeacher, state.connected, verifyFrame]);
+  }, [faceConnected, state.connected, verifyFrame]);
 
   const detachScreenTrackEndedHandler = useCallback((track: ILocalVideoTrack | null) => {
     const handler = screenTrackEndedHandlerRef.current;
@@ -1492,6 +1508,21 @@ export default function Room() {
       )}
 
       <div className="live-controls">
+        {state.connected && (
+          <div className={`face-status-badge face-status-${localFaceStatus.toLowerCase()}`}>
+            <span className="face-status-dot" />
+            <span className="face-status-label">
+              {localFaceStatus === "DETECTED"
+                ? "Yuz aniqlandi"
+                : localFaceStatus === "NOT_DETECTED"
+                ? "Yuz ko'rinmaydi"
+                : localFaceStatus === "MULTIPLE"
+                ? "Ko'p yuz"
+                : "Tekshirilmoqda..."}
+            </span>
+          </div>
+        )}
+
         <Button
           variant="ghost"
           className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}

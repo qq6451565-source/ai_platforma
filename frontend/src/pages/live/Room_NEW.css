@@ -243,6 +243,85 @@
   background: linear-gradient(180deg, rgba(7, 20, 49, 0.94), rgba(4, 12, 30, 0.94));
 }
 
+/* ── Face status badge in controls bar ─────────────────────────────────── */
+.face-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.38rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 0.0625rem solid transparent;
+  transition: background 0.35s, border-color 0.35s, color 0.35s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.face-status-dot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.35s;
+}
+
+.face-status-badge.face-status-detected {
+  background: rgba(17, 214, 128, 0.14);
+  border-color: rgba(17, 214, 128, 0.65);
+  color: #11d680;
+}
+.face-status-badge.face-status-detected .face-status-dot {
+  background: #11d680;
+  box-shadow: 0 0 6px #11d680;
+  animation: face-dot-pulse-green 2s ease-in-out infinite;
+}
+
+.face-status-badge.face-status-not_detected {
+  background: rgba(255, 79, 99, 0.14);
+  border-color: rgba(255, 79, 99, 0.65);
+  color: #ff4f63;
+}
+.face-status-badge.face-status-not_detected .face-status-dot {
+  background: #ff4f63;
+  box-shadow: 0 0 6px #ff4f63;
+  animation: face-dot-pulse-red 1.2s ease-in-out infinite;
+}
+
+.face-status-badge.face-status-multiple {
+  background: rgba(243, 164, 72, 0.14);
+  border-color: rgba(243, 164, 72, 0.65);
+  color: #f3a448;
+}
+.face-status-badge.face-status-multiple .face-status-dot {
+  background: #f3a448;
+  box-shadow: 0 0 6px #f3a448;
+}
+
+.face-status-badge.face-status-checking {
+  background: rgba(134, 166, 219, 0.1);
+  border-color: rgba(134, 166, 219, 0.35);
+  color: #86a7da;
+}
+.face-status-badge.face-status-checking .face-status-dot {
+  background: #86a7da;
+  opacity: 0.6;
+  animation: face-dot-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes face-dot-pulse-green {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #11d680; }
+  50%       { opacity: 0.6; box-shadow: 0 0 10px #11d680; }
+}
+@keyframes face-dot-pulse-red {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #ff4f63; }
+  50%       { opacity: 0.6; box-shadow: 0 0 12px #ff4f63; }
+}
+@keyframes face-dot-blink {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 0.2; }
+}
+
 .control-btn {
   min-height: 2.75rem !important;
   border-radius: 999px !important;

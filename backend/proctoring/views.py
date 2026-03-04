@@ -12,7 +12,11 @@ from tests_app.permissions import IsTeacherOrAdmin
 
 from assessment.models import ExamAttempt
 from student_tests.models import StudentTest
-from ai.clients import presence_check, face_match
+import logging
+import numpy as np
+from ai.clients import presence_check, face_match, face_analyze
+
+logger = logging.getLogger(__name__)
 from ai.models import AISettings
 
 from .models import ProctorSession, ProctorEvent
@@ -224,12 +228,49 @@ class VerifyProctorSessionView(APIView):
         if not ai_settings.enable_face_match:
             return Response({"detail": "Face match o'chirilgan"}, status=status.HTTP_400_BAD_REQUEST)
 
-        reference = _read_field_bytes(request.user.face_image)
-        if not reference:
-            raise ValidationError({"detail": "User uchun yuz rasmi topilmadi."})
+        frame_bytes = frame.read()
 
-        confidence = face_match(reference, frame.read()) or 0.0
-        verified = confidence >= ai_settings.face_match_threshold
+        # ── Strategy 1: embedding cosine similarity (preferred) ───────────────
+        # user.face_embedding ro'yxatdan o'tishda saqlanadi.
+        # Bu usul tezroq va aniqroq (DeepFace.verify ga nisbatan).
+        reference_embedding = request.user.face_embedding
+        confidence = 0.0
+        verified = False
+
+        if reference_embedding:
+            try:
+                analyze_result = face_analyze(frame_bytes)
+                if analyze_result and isinstance(analyze_result, dict):
+                    faces = analyze_result.get("faces") or []
+                    if faces:
+                        frame_embedding = faces[0].get("embedding") or []
+                        if frame_embedding:
+                            ref = np.array(reference_embedding, dtype=np.float32)
+                            frm = np.array(frame_embedding, dtype=np.float32)
+                            n_ref = np.linalg.norm(ref)
+                            n_frm = np.linalg.norm(frm)
+                            if n_ref > 0 and n_frm > 0:
+                                cosine = float(np.dot(ref, frm) / (n_ref * n_frm))
+                                confidence = float(max(0.0, min(1.0, (cosine + 1) / 2)))
+                            verified = confidence >= float(ai_settings.face_match_threshold or 0.55)
+            except Exception as exc:
+                logger.warning("Embedding verify failed for session %s: %s", session_id, exc)
+
+        # ── Strategy 2: face_image fallback ───────────────────────────────────
+        # face_embedding yo'q bo'lsa yoki embedding verify ishlamasa,
+        # klassik face_match (DeepFace.verify rasm vs rasm) ga o'tamiz.
+        if not reference_embedding or confidence == 0.0:
+            reference_image = _read_field_bytes(request.user.face_image)
+            if not reference_image:
+                raise ValidationError({"detail": "Yuz ma'lumoti topilmadi. Avval ro'yxatdan o'ting."})
+            try:
+                match_result = face_match(reference_image, frame_bytes)
+                if match_result and isinstance(match_result, dict):
+                    confidence = float(match_result.get("confidence") or 0.0)
+                    verified = confidence >= float(ai_settings.face_match_threshold or 0.55)
+            except Exception as exc:
+                logger.warning("face_match fallback failed for session %s: %s", session_id, exc)
+
         session.verified = verified
         session.confidence = confidence
         session.save(update_fields=["verified", "confidence"])
