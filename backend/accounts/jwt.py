@@ -65,4 +65,7 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
             raise AuthenticationFailed("Token eskirgan.")
         if getattr(user, "role", None) != token_role:
             raise AuthenticationFailed("Token role mos emas.")
+        # Refresh orqali yangi token olishdan oldin version tekshiriladi
+        if token_version is not None and int(token_version) != int(getattr(user, "token_version", 1)):
+            raise AuthenticationFailed("Token bekor qilingan. Qayta kiring.")
         return data

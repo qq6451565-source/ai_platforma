@@ -8,6 +8,12 @@ from .models import User, PassportData, AuditLog
 
 
 class UserSerializer(serializers.ModelSerializer):
+    has_face_embedding = serializers.SerializerMethodField()
+
+    def get_has_face_embedding(self, obj):
+        emb = obj.face_embedding
+        return bool(emb and isinstance(emb, list) and len(emb) > 0)
+
     class Meta:
         model = User
         fields = [
@@ -26,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
             'email_verified',
             'face_image',
             'group',
+            'has_face_embedding',
         ]
 
 

@@ -352,6 +352,79 @@ class AdminSetRoleView(APIView):
         return Response({"detail": "Role yangilandi", "user_id": target.id, "role": target.role})
 
 
+class AdminReanalyzeFaceView(APIView):
+    """
+    Admin uchun: foydalanuvchining face_image sidan qayta face_embedding olish.
+    Enrollment vaqtida AI offline bo'lgan yoki embedding saqlanmagan holatlar uchun.
+    POST /api/accounts/admin/reanalyze-face/  { "user_id": int }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not (request.user.is_superuser or getattr(request.user, "role", None) == "admin"):
+            raise PermissionDenied("Faqat admin bajarishi mumkin.")
+
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"detail": "user_id kerak"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "Foydalanuvchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        face_field = target.face_image
+        if not face_field:
+            return Response(
+                {"detail": "Foydalanuvchida yuz rasmi yo'q. Avval selfie yuklash kerak."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            if hasattr(face_field, "open"):
+                face_field.open("rb")
+            image_bytes = face_field.read()
+        except Exception as exc:
+            return Response({"detail": f"Rasm o'qishda xato: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            try:
+                face_field.close()
+            except Exception:
+                pass
+
+        try:
+            result = face_analyze(image_bytes)
+        except Exception as exc:
+            return Response({"detail": f"AI gateway xatosi: {exc}"}, status=status.HTTP_502_BAD_GATEWAY)
+
+        faces = (result or {}).get("faces") or []
+        if not faces:
+            return Response(
+                {"detail": "Rasmda yuz aniqlanmadi. Boshqa selfie yuklash kerak."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        embedding = faces[0].get("embedding")
+        if not embedding:
+            return Response({"detail": "Embedding olinmadi."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        target.face_embedding = embedding
+        target.save(update_fields=["face_embedding"])
+
+        log_audit(
+            request,
+            "face_reanalyzed",
+            user=request.user,
+            role=getattr(request.user, "role", None),
+            extra={"target_user_id": target.id, "embedding_length": len(embedding)},
+        )
+        return Response({
+            "detail": "Face embedding muvaffaqiyatli yangilandi.",
+            "user_id": target.id,
+            "embedding_length": len(embedding),
+        })
+
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

@@ -46,7 +46,7 @@ class FaceVerificationSettings(models.Model):
     
     verification_enabled = models.BooleanField(default=True)
     verification_interval = models.IntegerField(default=5, help_text="Verification interval in seconds")
-    confidence_threshold = models.FloatField(default=0.7, help_text="Minimum confidence for verification")
+    confidence_threshold = models.FloatField(default=0.80, help_text="Minimum confidence for verification (cosine mapped to [0,1]; 0.80 ≈ raw cosine 0.60)")
     max_faces_allowed = models.IntegerField(default=1, help_text="Maximum faces allowed in frame")
     auto_attendance = models.BooleanField(default=True, help_text="Automatically mark attendance on verification")
     alert_on_multiple_faces = models.BooleanField(default=True)
