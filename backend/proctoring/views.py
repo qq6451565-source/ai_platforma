@@ -320,7 +320,9 @@ class PresenceProctorSessionView(APIView):
             present = False
 
         now = timezone.now()
+        session.total_checks = (session.total_checks or 0) + 1
         if present:
+            session.success_checks = (session.success_checks or 0) + 1
             session.last_present_at = now
             if session.missing_since:
                 session.missing_since = None
@@ -335,7 +337,11 @@ class PresenceProctorSessionView(APIView):
                         session.blocked = True
                         session.blocked_reason = "face_missing_timeout"
 
-        session.save(update_fields=["last_present_at", "missing_since", "blocked", "blocked_reason"])
+        session.save(update_fields=[
+            "total_checks", "success_checks",
+            "last_present_at", "missing_since", "blocked", "blocked_reason",
+        ])
+
 
         last_event = session.events.order_by("-timestamp").first()
         new_event = None

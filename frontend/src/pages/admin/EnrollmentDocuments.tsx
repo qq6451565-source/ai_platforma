@@ -28,10 +28,8 @@ const buildFormData = (values: any) => {
   const fd = new FormData();
   if (values.applicant) fd.append("applicant", String(values.applicant));
   const front = values.passport_front?.[0]?.originFileObj;
-  const back = values.passport_back?.[0]?.originFileObj;
   const face = values.face_image?.[0]?.originFileObj;
   if (front) fd.append("passport_front", front);
-  if (back) fd.append("passport_back", back);
   if (face) fd.append("face_image", face);
   return fd;
 };
@@ -85,17 +83,6 @@ const EnrollmentDocumentsPage = () => {
           valuePropName="fileList"
           getValueFromEvent={normFile}
           rules={[{ required: true, message: "Pasport oldi kerak" }]}
-        >
-          <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
-          </Upload>
-        </Form.Item>
-        <Form.Item
-          name="passport_back"
-          label="Pasport orqasi"
-          valuePropName="fileList"
-          getValueFromEvent={normFile}
-          rules={[{ required: true, message: "Pasport orqasi kerak" }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
             <Button>Yuklash</Button>

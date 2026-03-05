@@ -38,7 +38,7 @@ export async function register(payload: RegisterPayload): Promise<RegisterRespon
   if (payload.birth_date) form.append("birth_date", payload.birth_date);
   if (payload.passport_series) form.append("passport_series", payload.passport_series);
   if (payload.passport_front) form.append("passport_front", payload.passport_front);
-  if (payload.passport_back) form.append("passport_back", payload.passport_back);
+
   if (payload.selfie_image) form.append("selfie_image", payload.selfie_image);
 
   const res = await publicApi.post<RegisterResponse>("/api/enrollment/register/", form, {
@@ -55,7 +55,6 @@ export async function registerStart(payload: RegisterStartPayload): Promise<Regi
 export async function registerFinalize(payload: RegisterFinalizePayload): Promise<RegisterResponse> {
   const form = new FormData();
   form.append("passport_front", payload.passport_front);
-  if (payload.passport_back) form.append("passport_back", payload.passport_back);
   form.append("selfie_image", payload.selfie_image);
   if (payload.direction_choice) form.append("direction_choice", String(payload.direction_choice));
 

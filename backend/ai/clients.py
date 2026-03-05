@@ -166,11 +166,15 @@ def _request_exception_reason(exc: Exception) -> str:
 
 
 def _prepare_file(file_obj, filename="image.jpg", content_type="image/jpeg"):
-    """Fayl obyekti yoki baytlarni requests uchun tayyorlaydi."""
+    """Fayl obyekti yoki baytlarni requests multipart uchun tayyorlaydi."""
     if hasattr(file_obj, "read"):
-        # Bu Django UploadedFile yoki ochiq fayl
-        return (file_obj.name, file_obj, file_obj.content_type)
-    # Bu shunchaki bytes
+        # Django UploadedFile: name disk yoli bo'lishi mumkin → basename olamiz
+        import os as _os
+        raw_name = getattr(file_obj, "name", None) or filename
+        safe_name = _os.path.basename(str(raw_name)) or filename
+        ct = getattr(file_obj, "content_type", None) or content_type
+        return (safe_name, file_obj, ct)
+    # bytes yoki BytesIO
     return (filename, file_obj, content_type)
 
 

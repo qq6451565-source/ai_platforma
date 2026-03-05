@@ -6,10 +6,10 @@
   min-width: 9.8rem;
   height: 11rem;
   border-radius: 0.82rem;
-  border: 0.0625rem solid rgba(86, 126, 197, 0.35);
+  border: 2px solid rgba(86, 126, 197, 0.35);
   background: rgba(7, 22, 52, 0.78);
   overflow: hidden;
-  transition: border-color 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.18s ease;
 }
 
 .student-tile:hover {
@@ -26,15 +26,31 @@
 
 .student-tile.is-stage {
   border-color: rgba(46, 141, 255, 0.78);
+  box-shadow: 0 0 16px rgba(46, 141, 255, 0.30);
 }
 
+/* 🟢 Yuz aniqlangan — yashil */
 .student-tile.detected {
-  border-color: rgba(17, 214, 128, 0.66);
+  border-color: rgba(17, 214, 128, 0.90);
+  box-shadow:
+    0 0 0 2px rgba(17, 214, 128, 0.20),
+    0 0 18px rgba(17, 214, 128, 0.35);
 }
 
-.student-tile.not_detected,
+/* 🔴 Yuz aniqlanmagan — qizil */
+.student-tile.not_detected {
+  border-color: rgba(255, 68, 88, 0.95);
+  box-shadow:
+    0 0 0 2px rgba(255, 68, 88, 0.18),
+    0 0 18px rgba(255, 68, 88, 0.32);
+}
+
+/* 🟡 Bir nechta yuz — sariq */
 .student-tile.multiple {
-  border-color: rgba(255, 79, 99, 0.7);
+  border-color: rgba(250, 180, 40, 0.90);
+  box-shadow:
+    0 0 0 2px rgba(250, 180, 40, 0.18),
+    0 0 18px rgba(250, 180, 40, 0.30);
 }
 
 .student-video-container {
@@ -44,7 +60,7 @@
 }
 
 .video-element,
-.video-element > video {
+.video-element>video {
   width: 100%;
   height: 100%;
   object-fit: cover;

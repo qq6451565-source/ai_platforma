@@ -30,8 +30,19 @@ class ProctorSession(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 
+    # Proctoring statistikasi
+    total_checks = models.PositiveIntegerField(default=0)
+    success_checks = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f"Session {self.user_id}"
+
+    @property
+    def face_verified_ratio(self) -> float:
+        """Muvaffaqiyatli yuz tekshiruvi nisbati."""
+        if not self.total_checks:
+            return 0.0
+        return round(self.success_checks / self.total_checks, 4)
 
 
 class ProctorEvent(models.Model):

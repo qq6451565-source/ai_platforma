@@ -1,14 +1,18 @@
 import {
   CheckOutlined,
   IdcardOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  LoadingOutlined,
   PhoneOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Form, message } from "antd";
+import { Form, Spin, message } from "antd";
 import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import api from "../api/client";
 import { login, registerFinalize, registerStart } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { Button, Input, Card } from "../components/ui";
@@ -175,6 +179,13 @@ const RegisterPage = () => {
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{
+    success: boolean;
+    warning?: string;
+    data: Record<string, string>;
+    fields_found?: Record<string, boolean>;
+  } | null>(null);
 
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
@@ -211,7 +222,7 @@ const RegisterPage = () => {
   const livenessTasks = useMemo(
     () => [
       { key: "align", label: t("register.alignFace") },
-      { key: "left",  label: t("register.lookLeft") },
+      { key: "left", label: t("register.lookLeft") },
       { key: "right", label: t("register.lookRight") },
       { key: "blink", label: t("register.blinkEyes") },
     ],
@@ -219,27 +230,27 @@ const RegisterPage = () => {
   );
 
   const livenessInstruction = useMemo(() => {
-    if (livenessStage === "align")     return t("register.alignFaceHint");
-    if (livenessStage === "left")      return t("register.lookLeftHint");
-    if (livenessStage === "right")     return t("register.lookRightHint");
-    if (livenessStage === "blink")     return t("register.blinkEyesHint");
+    if (livenessStage === "align") return t("register.alignFaceHint");
+    if (livenessStage === "left") return t("register.lookLeftHint");
+    if (livenessStage === "right") return t("register.lookRightHint");
+    if (livenessStage === "blink") return t("register.blinkEyesHint");
     if (livenessStage === "capturing") return t("register.capturingHint");
-    if (livenessStage === "done")      return t("register.submittingHint");
+    if (livenessStage === "done") return t("register.submittingHint");
     return null;
   }, [livenessStage, t]);
 
   const livenessProgress = useMemo(() => {
-    if (livenessStage === "idle")      return 0;
-    if (livenessStage === "align")     return 25;
-    if (livenessStage === "left")      return 50;
-    if (livenessStage === "right")     return 75;
-    if (livenessStage === "blink")     return 90;
+    if (livenessStage === "idle") return 0;
+    if (livenessStage === "align") return 25;
+    if (livenessStage === "left") return 50;
+    if (livenessStage === "right") return 75;
+    if (livenessStage === "blink") return 90;
     if (livenessStage === "capturing") return 95;
     return 100;
   }, [livenessStage]);
 
   useEffect(() => {
-    if (!passportFile) { setPassportPreview(null); return; }
+    if (!passportFile) { setPassportPreview(null); setOcrResult(null); return; }
     const url = URL.createObjectURL(passportFile);
     setPassportPreview(url);
     return () => URL.revokeObjectURL(url);
@@ -333,7 +344,7 @@ const RegisterPage = () => {
   useEffect(() => {
     return () => {
       stopCamera();
-      try { landmarkerRef.current?.close(); } catch {}
+      try { landmarkerRef.current?.close(); } catch { }
       landmarkerRef.current = null;
     };
   }, []);
@@ -357,7 +368,7 @@ const RegisterPage = () => {
     savePendingCredentials(username, password);
     const tokens = await login({ username, password });
     saveTokens(tokens.access, tokens.refresh);
-    try { await fetchMe(); } catch {}
+    try { await fetchMe(); } catch { }
     return true;
   };
 
@@ -377,7 +388,7 @@ const RegisterPage = () => {
       }
       if (res.access) {
         saveTokens(res.access, res.refresh);
-        try { await fetchMe(); } catch {}
+        try { await fetchMe(); } catch { }
       } else if (res.login_username && res.login_password) {
         await ensureSessionTokens(res.login_username, res.login_password);
       }
@@ -389,6 +400,31 @@ const RegisterPage = () => {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePassportFileChange = async (file: File) => {
+    setPassportFile(file);
+    setOcrResult(null);
+    setOcrLoading(true);
+    try {
+      const form = new FormData();
+      form.append("passport_front", file);
+      const res = await api.post("/api/enrollment/register/ocr/", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
+      });
+      setOcrResult(res.data);
+      if (res.data.success) {
+        message.success("Passport ma'lumotlari aniqlandi ✓");
+      } else if (res.data.warning) {
+        message.warning(res.data.warning);
+      }
+    } catch {
+      // OCR xato bo'lsa ham davom etish mumkin
+      setOcrResult({ success: false, warning: "OCR bajarilmadi. Keyingi bosqichda davom eting.", data: {} });
+    } finally {
+      setOcrLoading(false);
     }
   };
 
@@ -563,7 +599,7 @@ const RegisterPage = () => {
       if (Math.abs(metrics.roll) > ROLL_MAX_RAD) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.straightHead")); return; }
 
       const centeredStrict = Math.abs(metrics.cx - 0.5) <= ALIGN_CENTER_X_MAX && Math.abs(metrics.cy - 0.5) <= ALIGN_CENTER_Y_MAX;
-      const centeredLoose  = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
+      const centeredLoose = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
       const yaw = metrics.yaw * yawDirectionRef.current;
 
       if (stage === "align") {
@@ -595,14 +631,14 @@ const RegisterPage = () => {
 
       if (stage === "blink") {
         const baselineEar = baselineEarRef.current ?? metrics.ear;
-        const closedByEar   = metrics.ear <= baselineEar * BLINK_CLOSED_RATIO;
-        const openedByEar   = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
-        const leftBlink     = metrics.blinkLeft;
-        const rightBlink    = metrics.blinkRight;
+        const closedByEar = metrics.ear <= baselineEar * BLINK_CLOSED_RATIO;
+        const openedByEar = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
+        const leftBlink = metrics.blinkLeft;
+        const rightBlink = metrics.blinkRight;
         const closedByBlend = leftBlink !== null && rightBlink !== null && leftBlink > 0.45 && rightBlink > 0.45;
         const openedByBlend = leftBlink !== null && rightBlink !== null && leftBlink < 0.2 && rightBlink < 0.2;
-        const eyesClosed    = closedByBlend || closedByEar;
-        const eyesOpened    = openedByBlend || openedByEar;
+        const eyesClosed = closedByBlend || closedByEar;
+        const eyesOpened = openedByBlend || openedByEar;
 
         if (!blinkClosedRef.current) {
           if (eyesClosed) {
@@ -775,7 +811,10 @@ const RegisterPage = () => {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setPassportFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handlePassportFileChange(file);
+                }}
                 className="hidden-file-input"
                 id="passport-upload-input"
               />
@@ -784,11 +823,16 @@ const RegisterPage = () => {
                 htmlFor="passport-upload-input"
                 className={`passport-upload-zone ${passportFile ? "has-file" : ""}`}
               >
-                <IdcardOutlined className="upload-zone-icon" />
+                {ocrLoading
+                  ? <Spin indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />} />
+                  : <IdcardOutlined className="upload-zone-icon" />
+                }
                 <span className="upload-zone-title">
                   {passportFile ? passportFile.name : t("register.passportUpload")}
                 </span>
-                <span className="upload-zone-hint">{t("register.passportUploadHint")}</span>
+                <span className="upload-zone-hint">
+                  {ocrLoading ? "Passport skanerlanmoqda..." : t("register.passportUploadHint")}
+                </span>
               </label>
 
               {passportPreview && (
@@ -797,16 +841,53 @@ const RegisterPage = () => {
                 </div>
               )}
 
+              {/* OCR Natijasi */}
+              {ocrResult && (
+                <div className={`ocr-result-card ${ocrResult.success ? "ocr-success" : "ocr-warn"}`}>
+                  <div className="ocr-result-header">
+                    {ocrResult.success
+                      ? <><CheckCircleOutlined style={{ color: "#22c55e" }} /> <span>Passport ma'lumotlari aniqlandi</span></>
+                      : <><ExclamationCircleOutlined style={{ color: "#f59e0b" }} /> <span>{ocrResult.warning || "Qisman aniqlandi"}</span></>
+                    }
+                  </div>
+                  {ocrResult.success && ocrResult.data && (
+                    <div className="ocr-fields">
+                      {(ocrResult.data.fio || (ocrResult.data.surname && ocrResult.data.name)) && (
+                        <div className="ocr-field">
+                          <span className="ocr-label">Ism-Familiya</span>
+                          <span className="ocr-value">
+                            {ocrResult.data.fio || [ocrResult.data.surname, ocrResult.data.name].filter(Boolean).join(" ")}
+                          </span>
+                        </div>
+                      )}
+                      {ocrResult.data.card_number && (
+                        <div className="ocr-field">
+                          <span className="ocr-label">Seriya raqam</span>
+                          <span className="ocr-value">{ocrResult.data.card_number}</span>
+                        </div>
+                      )}
+                      {ocrResult.data.birthdate && (
+                        <div className="ocr-field">
+                          <span className="ocr-label">Tug'ilgan sana</span>
+                          <span className="ocr-value">{ocrResult.data.birthdate}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="wizard-actions">
                 <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handlePassportNext} isLoading={loading}>
+                <Button onClick={handlePassportNext} isLoading={loading || ocrLoading}>
                   {t("common.next")}
                 </Button>
               </div>
             </div>
           )}
+
 
           {/* ── Step 2: Face scan ───────────────────────────── */}
           {currentStep === 2 && (
@@ -865,8 +946,8 @@ const RegisterPage = () => {
                   <div className="scanner-tasks">
                     {livenessTasks.map((task) => {
                       const currentIndex = livenessTasks.findIndex((item) => item.key === livenessStage);
-                      const itemIndex    = livenessTasks.findIndex((item) => item.key === task.key);
-                      const done   = currentIndex > itemIndex || livenessStage === "done";
+                      const itemIndex = livenessTasks.findIndex((item) => item.key === task.key);
+                      const done = currentIndex > itemIndex || livenessStage === "done";
                       const active = livenessStage === task.key;
                       return (
                         <div

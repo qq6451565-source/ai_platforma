@@ -108,11 +108,10 @@ class ApplicantRegisterView(APIView):
         direction_id = data.get("direction_choice")
 
         passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
-        passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
         selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
 
         if not passport_front or not selfie:
-            raise ValidationError({"documents": "Passport oldi va selfie majburiy."})
+            raise ValidationError({"documents": "Passport va selfie majburiy."})
 
         if direction_id:
             try:
@@ -121,13 +120,11 @@ class ApplicantRegisterView(APIView):
                 raise ValidationError({"direction_choice": "Direction topilmadi."})
 
         passport_front_bytes = _read_upload_bytes(passport_front)
-        passport_back_bytes = _read_upload_bytes(passport_back)
         ocr_result = {}
         ai_warning = None
         try:
             ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
-            ocr_back = ocr_passport(passport_back_bytes) if passport_back_bytes else None
-            ocr_result = _merge_ocr_results(ocr_front, ocr_back) or {}
+            ocr_result = _merge_ocr_results(ocr_front, None) or {}
         except AIConnectionError as exc:
             logger.warning("AI OCR unavailable during registration: %s", exc)
             ai_warning = "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
@@ -184,7 +181,6 @@ class ApplicantRegisterView(APIView):
             surname=ocr_surname or None,
             passport_id=passport_series or None,
             card_number=ocr_result.get("card_number") or None,
-            personal_number=ocr_result.get("personal_number") or None,
             sex=ocr_result.get("sex") or None,
             citizenship=ocr_result.get("citizenship") or None,
             birth_place=ocr_result.get("birth_place") or None,
@@ -193,7 +189,6 @@ class ApplicantRegisterView(APIView):
         document = ApplicantDocument.objects.create(
             applicant=applicant,
             passport_front=passport_front,
-            passport_back=passport_back,
             face_image=selfie,
         )
         verification_warning = _run_ai_verification(document)
@@ -339,12 +334,11 @@ class ApplicantRegisterFinalizeView(APIView):
             applicant_id = applicant.id
 
             passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
-            passport_back = request.FILES.get("passport_back") or request.FILES.get("passport_back_image")
             selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
             direction_id = request.data.get("direction_choice")
 
             if not passport_front:
-                raise ValidationError({"passport_front": "Passport old tomoni majburiy."})
+                raise ValidationError({"passport_front": "Passport majburiy."})
             if not selfie:
                 raise ValidationError({"selfie": "Selfie rasmi majburiy."})
 
@@ -360,16 +354,20 @@ class ApplicantRegisterFinalizeView(APIView):
                 applicant=applicant,
                 defaults={
                     "passport_front": passport_front,
-                    "passport_back": passport_back,
                     "face_image": selfie,
                 },
             )
             if not created:
                 document.passport_front = passport_front
-                if passport_back:
-                    document.passport_back = passport_back
                 document.face_image = selfie
                 document.save()
+
+            # user.face_image ni ham saqlaymiz (proctoring fallback uchun)
+            try:
+                request.user.face_image = selfie
+                request.user.save(update_fields=["face_image"])
+            except Exception as _exc:
+                logger.warning("user.face_image saqlashda xato applicant=%s: %s", applicant.id, _exc)
 
             if applicant.status not in ["approved", "rejected"]:
                 applicant.status = "pending"
@@ -592,7 +590,6 @@ def _ensure_passport_data(user, applicant, documents):
         "passport_series": series,
         "passport_number": number,
         "card_number": applicant.card_number or applicant.passport_id,
-        "personal_number": applicant.personal_number,
         "birth_date": applicant.birth_date,
         "extracted_fullname": applicant.full_name or "",
         "surname": applicant.surname,
@@ -602,7 +599,6 @@ def _ensure_passport_data(user, applicant, documents):
         "citizenship": applicant.citizenship,
         "birth_place": applicant.birth_place,
         "front_image": documents.passport_front,
-        "back_image": documents.passport_back,
         "selfie_image": documents.face_image,
     }
     passport, created = PassportData.objects.get_or_create(user=user, defaults=defaults)
@@ -619,8 +615,6 @@ def _ensure_passport_data(user, applicant, documents):
         updates["passport_number"] = number
     if applicant.card_number and not passport.card_number:
         updates["card_number"] = applicant.card_number
-    if applicant.personal_number and not passport.personal_number:
-        updates["personal_number"] = applicant.personal_number
     if applicant.surname and not passport.surname:
         updates["surname"] = applicant.surname
     if applicant.name and not passport.name:
@@ -635,8 +629,6 @@ def _ensure_passport_data(user, applicant, documents):
         updates["birth_place"] = applicant.birth_place
     if documents.passport_front and not passport.front_image:
         updates["front_image"] = documents.passport_front
-    if documents.passport_back and not passport.back_image:
-        updates["back_image"] = documents.passport_back
     if documents.face_image and not passport.selfie_image:
         updates["selfie_image"] = documents.face_image
     if updates:
@@ -674,7 +666,6 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         )
 
     passport_front_bytes = _read_field_bytes(document.passport_front)
-    passport_back_bytes = _read_field_bytes(document.passport_back)
     selfie_bytes = _read_field_bytes(document.face_image)
     timeout_override = None
     retries_override = None
@@ -692,16 +683,7 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
             if passport_front_bytes
             else None
         )
-        ocr_back = (
-            ocr_passport(
-                passport_back_bytes,
-                timeout_override=timeout_override,
-                retries_override=retries_override,
-            )
-            if passport_back_bytes
-            else None
-        )
-        ocr_result = _merge_ocr_results(ocr_front, ocr_back)
+        ocr_result = _merge_ocr_results(ocr_front, None)
     except AIConnectionError as exc:
         logger.warning("AI OCR unavailable for applicant %s: %s", applicant.id, exc)
         return _mark_ai_unavailable(applicant, events, reason=_infer_ai_error_reason(exc))
@@ -709,7 +691,6 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         events.append({"type": "ocr", "status": "failed"})
     else:
         ocr_card_number = ocr_result.get("card_number") or ocr_result.get("passport_id")
-        ocr_personal_number = ocr_result.get("personal_number")
         ocr_birthdate = _parse_date(ocr_result.get("birthdate"))
         ocr_name = ocr_result.get("fio")
         ocr_surname = ocr_result.get("surname")
@@ -771,9 +752,7 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         if ocr_card_number and (not _is_valid_card_number(applicant.passport_id)):
             applicant.passport_id = ocr_card_number
             updates.append("passport_id")
-        if ocr_personal_number and (not _is_valid_personal_number(applicant.personal_number)):
-            applicant.personal_number = ocr_personal_number
-            updates.append("personal_number")
+
         if ocr_surname and _should_update_name(applicant.surname, ocr_surname):
             applicant.surname = ocr_surname
             updates.append("surname")
@@ -807,7 +786,7 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
     if settings_ai.enable_face_match:
         try:
             face_result = face_match(
-                passport_front_bytes or passport_back_bytes,
+                passport_front_bytes,
                 selfie_bytes,
                 timeout_override=timeout_override,
                 retries_override=retries_override,
@@ -954,9 +933,6 @@ def _merge_ocr_results(front, back):
             "passport_id", validator=_is_valid_card_number
         )
 
-    def _pick_personal_number():
-        return _pick("personal_number", prefer_back=True, validator=_is_valid_personal_number)
-
     def _pick_birthdate():
         return _pick("birthdate", validator=_is_plausible_birthdate)
 
@@ -983,7 +959,6 @@ def _merge_ocr_results(front, back):
         "citizenship": _pick("citizenship"),
         "birth_place": _pick("birth_place", prefer_back=True),
         "card_number": _pick_card_number(),
-        "personal_number": _pick_personal_number(),
         "confidence": round(confidence, 2),
     }
 
@@ -1326,3 +1301,78 @@ def _verification_has_ai_unavailable(verification: VerificationResult) -> bool:
         and event.get("status") == "unavailable"
         for event in events
     )
+
+
+class PassportOCRPreviewView(APIView):
+    """
+    Ro'yxatdan o'tishning 2-bosqichi: passport yuklanganida OCR natijasini qaytaradi.
+    Hech narsa saqlanmaydi — faqat preview uchun.
+    Auth: JWT kerak (1-bosqichdan keyin token bor).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
+        if not passport_front:
+            raise ValidationError({"passport_front": "Passport fayli majburiy."})
+
+        settings_ai = AISettings.get_active()
+        ai_base_url = settings_ai.api_base_url or getattr(settings, "AI_BASE_URL", None)
+        if not (settings_ai.ai_enabled and ai_base_url):
+            return Response(
+                {"success": False, "warning": "AI xizmati o'chirilgan.", "data": {}},
+                status=200,
+            )
+
+        try:
+            front_bytes = _read_upload_bytes(passport_front)
+            ocr_result = ocr_passport(front_bytes) if front_bytes else None
+        except AIConnectionError:
+            return Response(
+                {
+                    "success": False,
+                    "warning": "AI xizmati hozircha mavjud emas. Keyingi bosqichda davom eting.",
+                    "data": {},
+                    "fields_found": {},
+                },
+                status=200,
+            )
+        except Exception as exc:
+            logger.warning("PassportOCRPreview xato: %s", exc)
+            return Response(
+                {"success": False, "warning": "OCR muvaffaqiyatsiz. Davom eting.", "data": {}},
+                status=200,
+            )
+
+        if not ocr_result:
+            return Response(
+                {"success": False, "warning": "Passport maʼlumotlari aniqlanmadi. Rasmni tekshiring.", "data": {}},
+                status=200,
+            )
+
+        # Foydalanuvchiga ko'rsatish uchun xavfsiz maydonlar
+        safe = {
+            "fio": ocr_result.get("fio") or "",
+            "surname": ocr_result.get("surname") or "",
+            "name": ocr_result.get("name") or "",
+            "patronymic": ocr_result.get("patronymic") or "",
+            "card_number": ocr_result.get("card_number") or ocr_result.get("passport_id") or "",
+            "birthdate": ocr_result.get("birthdate") or "",
+            "sex": ocr_result.get("sex") or "",
+            "citizenship": ocr_result.get("citizenship") or "",
+        }
+        fields_found = {
+            "name": bool(safe["fio"] or safe["surname"] or safe["name"]),
+            "card_number": bool(safe["card_number"]),
+            "birthdate": bool(safe["birthdate"]),
+        }
+        success = fields_found["name"] or fields_found["card_number"]
+        return Response(
+            {
+                "success": success,
+                "data": safe,
+                "fields_found": fields_found,
+            },
+            status=200,
+        )
+

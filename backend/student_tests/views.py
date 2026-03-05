@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.conf import settings
 from django.db.models import Q, Sum
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -230,10 +231,49 @@ class FinishStudentTestView(APIView):
         st.is_finished = True
         st.finished_at = timezone.now()
         st.score_percent = score
-        st.save(update_fields=["is_finished", "finished_at", "score_percent"])
+
+        # Proctoring nisbatini tekshirish
+        ratio_threshold = float(getattr(settings, "PROCTOR_MIN_FACE_RATIO", 0.50))
+        is_accepted = True
+        rejected_reason = ""
+        face_ratio = None
+
+        try:
+            from proctoring.models import ProctorSession
+            proctor_session = (
+                ProctorSession.objects
+                .filter(student_test=st)
+                .order_by("-started_at")
+                .first()
+            )
+            if proctor_session and proctor_session.total_checks > 0:
+                face_ratio = proctor_session.face_verified_ratio  # property
+                if face_ratio < ratio_threshold:
+                    is_accepted = False
+                    rejected_reason = (
+                        f"Yuz aniqlash nisbati {round(face_ratio * 100)}% — "
+                        f"minimal {int(ratio_threshold * 100)}% kerak."
+                    )
+        except Exception as _exc:
+            import logging
+            logging.getLogger(__name__).warning("Proctoring session tekshirishda xato: %s", _exc)
+
+        st.is_accepted = is_accepted
+        st.rejected_reason = rejected_reason
+        if face_ratio is not None:
+            st.face_verified_ratio = round(face_ratio, 4)
+
+        st.save(update_fields=[
+            "is_finished", "finished_at", "score_percent",
+            "is_accepted", "rejected_reason", "face_verified_ratio",
+        ])
+
         return Response({
             "student_test_id": st.id,
             "total_questions": total_questions,
             "correct": st.answers.filter(is_correct=True).count(),
             "score_percent": round(score, 2),
+            "is_accepted": is_accepted,
+            "rejected_reason": rejected_reason,
+            "face_verified_ratio": face_ratio,
         }, status=200)

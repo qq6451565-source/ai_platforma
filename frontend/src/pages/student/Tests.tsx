@@ -31,6 +31,8 @@ const StudentTests = () => {
   const [proctorVerified, setProctorVerified] = useState(false);
   const [proctorBlocked, setProctorBlocked] = useState(false);
   const [faceStatus, setFaceStatus] = useState<"DETECTED" | "NOT_DETECTED" | "CHECKING">("CHECKING");
+  const [faceRatio, setFaceRatio] = useState<number>(0);
+  const [totalChecks, setTotalChecks] = useState<number>(0);
   const [sending, setSending] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -39,6 +41,7 @@ const StudentTests = () => {
   const presenceBusyRef = useRef(false);
   const verifyDoneRef = useRef(false);
   const presenceWarnedRef = useRef(false);
+  const presenceStatsRef = useRef({ ok: 0, total: 0 });
 
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
@@ -114,6 +117,7 @@ const StudentTests = () => {
     }
     verifyDoneRef.current = false;
     presenceWarnedRef.current = false;
+    presenceStatsRef.current = { ok: 0, total: 0 };
   };
 
   const startCamera = async () => {
@@ -224,7 +228,20 @@ const StudentTests = () => {
           message.warning(err?.response?.data?.detail || "Proktor yakunlanmadi");
         }
       }
-      message.success(`Test yakunlandi: ${resp.score_percent ?? "-"}%`);
+
+      // Foiz yakuniy baholash
+      const stats = presenceStatsRef.current;
+      const finalRatio = stats.total > 0 ? stats.ok / stats.total : null;
+
+      if ((resp as any).is_accepted === false) {
+        message.error(
+          `Test qabul qilinmadi: yuz aniqlash ${finalRatio !== null ? Math.round(finalRatio * 100) : "?"}% (minimal 50% kerak)`,
+          8
+        );
+      } else {
+        message.success(`Test yakunlandi: ${resp.score_percent ?? "-"}%`);
+      }
+
       setOpen(false);
       setCurrent(null);
       setStudentTestId(null);
@@ -232,6 +249,8 @@ const StudentTests = () => {
       setProctorVerified(false);
       setProctorBlocked(false);
       setFaceStatus("CHECKING");
+      setFaceRatio(0);
+      setTotalChecks(0);
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Finish xato");
     } finally {
@@ -266,7 +285,26 @@ const StudentTests = () => {
           presenceBusyRef.current = true;
           try {
             const resp = await presenceProctoring(proctorSessionId, frame);
-            setFaceStatus(resp.present ? "DETECTED" : "NOT_DETECTED");
+            const isPresent = !!resp.present;
+            setFaceStatus(isPresent ? "DETECTED" : "NOT_DETECTED");
+
+            // Foiz hisoblash
+            const stats = presenceStatsRef.current;
+            stats.total += 1;
+            if (isPresent) stats.ok += 1;
+            const ratio = stats.total > 0 ? stats.ok / stats.total : 0;
+            setFaceRatio(ratio);
+            setTotalChecks(stats.total);
+
+            // 50% dan pastga tushsa ogohlantirish
+            if (stats.total >= 3 && ratio < 0.5 && !presenceWarnedRef.current) {
+              presenceWarnedRef.current = true;
+              message.warning(
+                `Diqqat! Yuz aniqlash ko'rsatkichi ${Math.round(ratio * 100)}% — 50% dan past. Test qabul qilinmasligi mumkin.`,
+                6
+              );
+            }
+
             if (resp.blocked) {
               setProctorBlocked(true);
               message.error("Proktor blokladi: yuz uzoq vaqt yo'q");
@@ -406,19 +444,18 @@ const StudentTests = () => {
                 height: 105,
                 borderRadius: 8,
                 overflow: "hidden",
-                border: `2.5px solid ${
-                  faceStatus === "DETECTED"
+                border: `2.5px solid ${faceStatus === "DETECTED"
                     ? "#11d680"
                     : faceStatus === "NOT_DETECTED"
-                    ? "#ff4f63"
-                    : "rgba(134,166,219,0.35)"
-                }`,
+                      ? "#ff4f63"
+                      : "rgba(134,166,219,0.35)"
+                  }`,
                 boxShadow:
                   faceStatus === "DETECTED"
                     ? "0 0 8px rgba(17,214,128,0.5)"
                     : faceStatus === "NOT_DETECTED"
-                    ? "0 0 8px rgba(255,79,99,0.5)"
-                    : "none",
+                      ? "0 0 8px rgba(255,79,99,0.5)"
+                      : "none",
                 transition: "border-color 0.3s, box-shadow 0.3s",
                 background: "#111",
                 flexShrink: 0,
@@ -436,8 +473,8 @@ const StudentTests = () => {
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  background: "rgba(0,0,0,0.55)",
-                  padding: "2px 6px",
+                  background: "rgba(0,0,0,0.62)",
+                  padding: "3px 6px",
                   textAlign: "center",
                   fontSize: 11,
                   fontWeight: 600,
@@ -445,16 +482,34 @@ const StudentTests = () => {
                     faceStatus === "DETECTED"
                       ? "#11d680"
                       : faceStatus === "NOT_DETECTED"
-                      ? "#ff4f63"
-                      : "#86a7da",
+                        ? "#ff4f63"
+                        : "#86a7da",
                 }}
               >
                 {faceStatus === "DETECTED"
                   ? "✓ Yuz aniqlandi"
                   : faceStatus === "NOT_DETECTED"
-                  ? "✗ Yuz ko'rinmaydi"
-                  : "Tekshirilmoqda..."}
+                    ? "✗ Yuz ko'rinmaydi"
+                    : "Tekshirilmoqda..."}
               </div>
+              {totalChecks > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    background: "rgba(0,0,0,0.52)",
+                    padding: "2px 6px",
+                    textAlign: "center",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: faceRatio >= 0.5 ? "#11d680" : "#ff4f63",
+                  }}
+                >
+                  {Math.round(faceRatio * 100)}% • {totalChecks} tekshiruv
+                </div>
+              )}
             </div>
           </div>
         )}

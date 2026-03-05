@@ -48,7 +48,6 @@ export type RegisterStartPayload = {
 
 export type RegisterFinalizePayload = {
   passport_front: File;
-  passport_back?: File;
   selfie_image: File;
   direction_choice?: number;
 };

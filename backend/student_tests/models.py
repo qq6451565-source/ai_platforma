@@ -20,6 +20,11 @@ class StudentTest(models.Model):
     score_percent = models.FloatField(default=0.0)
     is_finished = models.BooleanField(default=False)
 
+    # Proctoring natijasi
+    is_accepted = models.BooleanField(default=True)
+    rejected_reason = models.CharField(max_length=255, blank=True, default="")
+    face_verified_ratio = models.FloatField(default=0.0)
+
     class Meta:
         unique_together = ("student", "test")
 
