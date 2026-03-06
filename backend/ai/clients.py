@@ -109,7 +109,12 @@ def _request(method: str, path: str, *, timeout_override: int | None = None, ret
 
             # Boshqa xatolar (5xx) uchun exception ko'tarib, retry ga o'tamiz
             response.raise_for_status()
-            return response.json()
+            raw = response.json()
+            # AI Gateway har doim {"success": bool, "data": {...}} formatida qaytaradi.
+            # Agar shu format bo'lsa — ichidagi "data" ni olamiz.
+            if isinstance(raw, dict) and "success" in raw and "data" in raw:
+                return raw["data"]
+            return raw
 
         except requests.exceptions.RequestException as e:
             logger.warning(f"AI Request Failed (Attempt {attempt+1}/{retries+1}): {e}")
