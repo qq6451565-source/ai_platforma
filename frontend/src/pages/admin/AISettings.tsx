@@ -106,7 +106,7 @@ const AdminAISettingsPage = () => {
           </Col>
           <Col xs={24} md={16}>
             <Form.Item name="api_base_url" label={t("aiSettings.fields.apiBaseUrl")}>
-              <Input placeholder="http://127.0.0.1:8001" />
+              <Input placeholder="http://127.0.0.1:7860" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>

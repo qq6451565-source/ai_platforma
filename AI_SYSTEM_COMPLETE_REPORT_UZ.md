@@ -37,7 +37,7 @@
 ### 3. Environment Configuration ✅
 ```
 ✓ backend/.env - AI Gateway sozlamalari qo'shildi
-✓ backend/ai-gateway/.env - Gateway sozlamalari mavjud
+✓ ai-gateway/.env - Gateway sozlamalari mavjud
 ✓ API keys sozlangan
 ✓ Timeouts va retry settings to'g'ri
 ```
@@ -273,7 +273,7 @@ LIVE DARS BOSHLANGANDA
 AI Gateway dependencies o'rnatilmoqda (20-30 daqiqa):
 
 ```powershell
-cd backend/ai-gateway
+cd ai-gateway
 pip install -r requirements.txt
 ```
 
@@ -283,12 +283,12 @@ Dependencies o'rnatilgandan keyin:
 python main.py
 ```
 
-Gateway `http://localhost:8001` da ishga tushadi.
+Gateway `http://localhost:7860` da ishga tushadi.
 
 **Test qilish:**
 ```powershell
-curl http://localhost:8001/health
-# yoki brauzerda: http://localhost:8001/docs
+curl http://localhost:7860/health
+# yoki brauzerda: http://localhost:7860/docs
 ```
 
 ### 2. Django Backend ni Ishga Tushirish
@@ -439,7 +439,7 @@ WebSocket: /ws/live/{room_id}/              - Real-time communication
 ### AI Settings (Admin Panel)
 ```
 AI Enabled: ✓/✗
-Base URL: http://localhost:8001
+Base URL: http://localhost:7860
 Timeout: 120 sekund
 Retry Count: 2
 

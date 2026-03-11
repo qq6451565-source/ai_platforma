@@ -163,7 +163,7 @@ Teachers/admins can:
 ### Environment Variables
 **Backend (.env):**
 ```
-AI_BASE_URL=http://localhost:8001
+AI_BASE_URL=http://localhost:7860
 AI_API_KEY=your-secret-key
 ```
 

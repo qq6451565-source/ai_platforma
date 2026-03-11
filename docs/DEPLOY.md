@@ -3,7 +3,7 @@
 ## 0) Tayyorlangan fayllar
 - `render.yaml` (Render uchun)
 - `frontend/vercel.json` (Vercel uchun)
-- `.env.example` fayllar: `backend/.env.example`, `backend/ai-gateway/.env.example`, `frontend/.env.example`
+- `.env.example` fayllar: `backend/.env.example`, `ai-gateway/.env.example`, `frontend/.env.example`
 
 ## 1) Supabase (Postgres)
 - Supabase project oching va "Connection info" bo'limini oching.
@@ -37,7 +37,7 @@
   - `GET /api/ai/health/` (token kerak)
 
 ## 3) AI Gateway (Hugging Face Space)
-- Space uchun `backend/ai-gateway` papkasini alohida repo sifatida yuklang.
+- Space uchun rootdagi `ai-gateway` papkasini alohida repo sifatida yuklang.
 - "Docker" template ishlatish tavsiya (Dockerfile bor).
 - Secrets:
   - AI_API_KEY=<shared>

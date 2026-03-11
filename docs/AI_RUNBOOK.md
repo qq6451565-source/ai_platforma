@@ -11,17 +11,17 @@ Backend va AI Gateway **bir xil API key** ishlatishi shart.
 
 `backend/.env`:
 - `AI_ENABLED=true`
-- `AI_BASE_URL=http://127.0.0.1:8001`
+- `AI_BASE_URL=http://127.0.0.1:7860`
 - `AI_API_KEY=your_secret_api_key_here`
 
-`backend/ai-gateway/.env`:
+`ai-gateway/.env`:
 - `AI_API_KEY=your_secret_api_key_here`
 
 ## 3) Ishga tushirish
 AI Gateway:
 ```
-cd C:\Users\iPservice\Desktop\ai_platforma\backend\ai-gateway
-..\venv\Scripts\uvicorn main:app --host 0.0.0.0 --port 8001
+cd C:\Users\iPservice\Desktop\ai_platforma\ai-gateway
+..\backend\venv\Scripts\uvicorn main:app --host 0.0.0.0 --port 7860
 ```
 
 Backend:
@@ -31,7 +31,7 @@ python manage.py runserver
 ```
 
 ## 4) Health tekshiruv
-- AI Gateway: `http://127.0.0.1:8001/`
+- AI Gateway: `http://127.0.0.1:7860/health`
 - Backend health (admin token bilan): `GET http://127.0.0.1:8000/api/ai/health/`
 
 ## 5) Asosiy endpointlar
