@@ -41,9 +41,9 @@ export type RegisterResponse = {
 
 export type RegisterStartPayload = {
   full_name: string;
-  email: string;
   phone: string;
-  direction_choice?: number;
+  email?: string;
+  direction_choice: number;
 };
 
 export type RegisterFinalizePayload = {

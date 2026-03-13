@@ -183,23 +183,6 @@ def _prepare_file(file_obj, filename="image.jpg", content_type="image/jpeg"):
     return (filename, file_obj, content_type)
 
 
-def ocr_passport(image_data, *, timeout_override: int | None = None, retries_override: int | None = None):
-    """
-    Passports OCR: yuborilgan faylni tashqi AI ga multipart orqali jo'natadi.
-    """
-    if not image_data:
-        return None
-    
-    files = {"file": _prepare_file(image_data, "passport.jpg")}
-    return _request(
-        "POST",
-        "ocr/passport",
-        files=files,
-        timeout_override=timeout_override,
-        retries_override=retries_override,
-    )
-
-
 def face_match(
     passport_data,
     selfie_data,

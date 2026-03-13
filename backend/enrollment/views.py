@@ -1,6 +1,4 @@
 import logging
-from datetime import datetime
-from difflib import SequenceMatcher
 import re
 from time import perf_counter
 from django.conf import settings
@@ -12,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from ai.clients import AIConnectionError, face_analyze, face_match, health_check, ocr_passport
+from ai.clients import AIConnectionError, face_analyze, face_match, health_check
 from ai.models import AISettings
 from accounts.models import User, PassportData
 from groups.models import Group
@@ -102,10 +100,22 @@ class ApplicantRegisterView(APIView):
             raise PermissionDenied("Ro'yxatdan o'tish yopiq.")
 
         data = request.data
-        full_name_input = (data.get("full_name") or "").strip()
+        full_name = (data.get("full_name") or "").strip()
         phone = (data.get("phone") or "").strip()
         email = (data.get("email") or "").strip()
         direction_id = data.get("direction_choice")
+
+        if not full_name:
+            raise ValidationError({"full_name": "Ism va familiya majburiy."})
+        if not phone:
+            raise ValidationError({"phone": "Telefon raqami majburiy."})
+        if not direction_id:
+            raise ValidationError({"direction_choice": "Yo'nalishni tanlang."})
+
+        try:
+            Direction.objects.get(id=direction_id)
+        except Direction.DoesNotExist:
+            raise ValidationError({"direction_choice": "Direction topilmadi."})
 
         passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
         selfie = request.FILES.get("selfie") or request.FILES.get("selfie_image")
@@ -113,50 +123,13 @@ class ApplicantRegisterView(APIView):
         if not passport_front or not selfie:
             raise ValidationError({"documents": "Passport va selfie majburiy."})
 
-        if direction_id:
-            try:
-                Direction.objects.get(id=direction_id)
-            except Direction.DoesNotExist:
-                raise ValidationError({"direction_choice": "Direction topilmadi."})
-
-        passport_front_bytes = _read_upload_bytes(passport_front)
-        ocr_result = {}
         ai_warning = None
-        try:
-            ocr_front = ocr_passport(passport_front_bytes) if passport_front_bytes else None
-            ocr_result = _merge_ocr_results(ocr_front, None) or {}
-        except AIConnectionError as exc:
-            logger.warning("AI OCR unavailable during registration: %s", exc)
-            ai_warning = "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
-
-        ocr_surname = (ocr_result.get("surname") or "").strip()
-        ocr_name = (ocr_result.get("name") or "").strip()
-        ocr_patronymic = (ocr_result.get("patronymic") or "").strip()
-        fio = (ocr_result.get("fio") or "").strip()
-        if fio:
-            full_name = fio
-        else:
-            full_name = " ".join([p for p in [ocr_surname, ocr_name, ocr_patronymic] if p])
-
-        if not full_name:
-            if full_name_input:
-                full_name = full_name_input
-            else:
-                raise ValidationError({"documents": "Passportdan ism-familiya aniqlanmadi."})
-
-        passport_series = (ocr_result.get("card_number") or ocr_result.get("passport_id") or "").strip()
-
-        birth_date = _parse_date(ocr_result.get("birthdate")) if ocr_result.get("birthdate") else None
-
-        username_source = full_name_input or full_name
-        username = _build_username(username_source)
-        # Vaqtinchalik kirish paroli sifatida telefon ishlatiladi.
-        # Admin tasdiqlaganida parol passport seriyaga yangilanadi.
-        password = re.sub(r"\s+", "", phone) or passport_series or "123456"
+        username = _build_username(full_name)
+        password = re.sub(r"\s+", "", phone) or "123456"
 
         parts = full_name.split()
-        first_name = ocr_name or (parts[0] if parts else "")
-        last_name = ocr_surname or (" ".join(parts[1:]) if len(parts) > 1 else "")
+        first_name = parts[0] if parts else ""
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
         user = User.objects.create_user(
             username=username,
@@ -175,15 +148,6 @@ class ApplicantRegisterView(APIView):
             email=email,
             direction_choice_id=direction_id or None,
             status="pending",
-            birth_date=birth_date or None,
-            patronymic=ocr_patronymic or None,
-            name=ocr_name or None,
-            surname=ocr_surname or None,
-            passport_id=passport_series or None,
-            card_number=ocr_result.get("card_number") or None,
-            sex=ocr_result.get("sex") or None,
-            citizenship=ocr_result.get("citizenship") or None,
-            birth_place=ocr_result.get("birth_place") or None,
         )
 
         document = ApplicantDocument.objects.create(
@@ -239,16 +203,15 @@ class ApplicantRegisterStartView(APIView):
 
             if not full_name:
                 raise ValidationError({"full_name": "Ism va familiya majburiy."})
-            if not email:
-                raise ValidationError({"email": "Email majburiy."})
             if not phone:
                 raise ValidationError({"phone": "Telefon raqami majburiy."})
+            if not direction_id:
+                raise ValidationError({"direction_choice": "Yo'nalishni tanlang."})
 
-            if direction_id:
-                try:
-                    Direction.objects.get(id=direction_id)
-                except Direction.DoesNotExist:
-                    raise ValidationError({"direction_choice": "Direction topilmadi."})
+            try:
+                Direction.objects.get(id=direction_id)
+            except Direction.DoesNotExist:
+                raise ValidationError({"direction_choice": "Direction topilmadi."})
 
             username = _build_username(full_name)
             password = re.sub(r"\s+", "", phone) or "123456"
@@ -373,7 +336,7 @@ class ApplicantRegisterFinalizeView(APIView):
                 applicant.status = "pending"
                 applicant.save(update_fields=["status"])
 
-            # AI verification: OCR + face_match + face_embedding saqlash
+            # AI verification: face_match + face_embedding saqlash
             ai_warning = None
             try:
                 ai_warning = _run_ai_verification(document)
@@ -403,24 +366,6 @@ class ApplicantRegisterFinalizeView(APIView):
             )
 
 
-def _read_upload_bytes(uploaded_file):
-    if not uploaded_file:
-        return None
-    try:
-        pos = uploaded_file.tell()
-    except Exception:
-        pos = None
-    data = uploaded_file.read()
-    try:
-        if pos is not None:
-            uploaded_file.seek(pos)
-        else:
-            uploaded_file.seek(0)
-    except Exception:
-        pass
-    return data
-
-
 def _read_field_bytes(field_file):
     if not field_file:
         return None
@@ -434,130 +379,6 @@ def _read_field_bytes(field_file):
                 field_file.close()
         except Exception:
             pass
-
-
-def _parse_date(value):
-    if not value:
-        return None
-    for fmt in ("%d.%m.%Y", "%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(value, fmt).date()
-        except ValueError:
-            continue
-    return None
-
-
-def _normalize(value):
-    return "".join(ch for ch in value.lower() if ch.isalnum())
-
-
-def _has_digits(value: str | None) -> bool:
-    if not value:
-        return False
-    return any(ch.isdigit() for ch in value)
-
-
-def _is_valid_card_number(value: str | None) -> bool:
-    if not value:
-        return False
-    compact = "".join(ch for ch in value if ch.isalnum()).upper()
-    return bool(re.match(r"^[A-Z]{2}\d{7,8}$", compact))
-
-
-def _is_valid_personal_number(value: str | None) -> bool:
-    if not value:
-        return False
-    digits = "".join(ch for ch in value if ch.isdigit())
-    return len(digits) == 14
-
-
-def _is_plausible_birthdate(value) -> bool:
-    if not value:
-        return False
-    try:
-        date_val = value if hasattr(value, "year") else _parse_date(value)
-    except Exception:
-        return False
-    if not date_val:
-        return False
-    today = timezone.now().date()
-    age_days = (today - date_val).days
-    return 365 * 10 <= age_days <= 365 * 120
-
-
-def _looks_like_label(value: str | None) -> bool:
-    if not value:
-        return True
-    upper = value.upper()
-    if any(word in upper for word in ["IDENTITY", "CARD", "PASSPORT", "GUVOHNOMASI", "SHAXS", "DATE", "ISSUE"]):
-        return True
-    return False
-
-
-def _is_invalid_citizenship(value: str | None) -> bool:
-    if not value:
-        return True
-    upper = value.upper()
-    if _looks_like_label(upper):
-        return True
-    if re.fullmatch(r"\d{2}[./-]\d{2}[./-]\d{4}", upper):
-        return True
-    if upper.isdigit():
-        return True
-    return False
-
-
-def _should_update_name(current: str | None, new: str | None) -> bool:
-    if not new:
-        return False
-    if not current:
-        return True
-    if _looks_like_label(current) or _has_digits(current):
-        return True
-    if len(new) > len(current) and _name_similarity(_normalize_name_token(new), _normalize_name_token(current)) < 0.5:
-        return True
-    return False
-
-
-def _normalize_name_token(token: str) -> str:
-    return "".join(ch for ch in token.lower() if ch.isalnum())
-
-
-def _name_similarity(left: str, right: str) -> float:
-    if not left or not right:
-        return 0.0
-    return SequenceMatcher(None, left, right).ratio()
-
-
-def _name_match(ocr_name, full_name):
-    if not (ocr_name and full_name):
-        return False
-    ignore = {"ogli", "ugli", "qizi", "kizi", "oglu"}
-    raw_tokens = [t for t in ocr_name.replace(".", " ").replace(",", " ").split() if t]
-    tokens = []
-    for token in raw_tokens:
-        normalized = _normalize_name_token(token)
-        if not normalized or normalized in ignore or len(normalized) < 3:
-            continue
-        tokens.append(normalized)
-    if not tokens:
-        return False
-    haystack_tokens = [
-        _normalize_name_token(part)
-        for part in full_name.replace(".", " ").replace(",", " ").split()
-        if part
-    ]
-    matched = 0
-    for token in tokens:
-        for candidate in haystack_tokens:
-            if token in candidate or candidate in token:
-                matched += 1
-                break
-            if _name_similarity(token, candidate) >= 0.78:
-                matched += 1
-                break
-    required = 2 if len(tokens) >= 2 else 1
-    return matched >= required
 
 
 def _build_username(full_name: str):
@@ -642,8 +463,8 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
     settings_ai = AISettings.get_active()
 
     events = []
-    verified = False
     confidence = 0.0
+    verified = False
 
     ai_enabled = settings_ai.ai_enabled
     ai_base_url = settings_ai.api_base_url or getattr(settings, "AI_BASE_URL", None)
@@ -655,7 +476,7 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
             confidence=0.0,
             events_json=events,
         )
-        return
+        return None
 
     gateway_health = health_check() or {}
     if not gateway_health.get("ok"):
@@ -673,117 +494,16 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         configured_timeout = int(settings_ai.timeout_seconds or 60)
         timeout_override = max(8, min(20, configured_timeout))
         retries_override = 0
-    try:
-        ocr_front = (
-            ocr_passport(
-                passport_front_bytes,
-                timeout_override=timeout_override,
-                retries_override=retries_override,
-            )
-            if passport_front_bytes
-            else None
-        )
-        ocr_result = _merge_ocr_results(ocr_front, None)
-    except AIConnectionError as exc:
-        logger.warning("AI OCR unavailable for applicant %s: %s", applicant.id, exc)
-        return _mark_ai_unavailable(applicant, events, reason=_infer_ai_error_reason(exc))
-    if not ocr_result:
-        events.append({"type": "ocr", "status": "failed"})
-    else:
-        ocr_card_number = ocr_result.get("card_number") or ocr_result.get("passport_id")
-        ocr_birthdate = _parse_date(ocr_result.get("birthdate"))
-        ocr_name = ocr_result.get("fio")
-        ocr_surname = ocr_result.get("surname")
-        ocr_given_name = ocr_result.get("name")
-        ocr_patronymic = ocr_result.get("patronymic")
-        ocr_sex = ocr_result.get("sex")
-        ocr_citizenship = ocr_result.get("citizenship")
-        ocr_birth_place = ocr_result.get("birth_place")
-        updates = []
 
-        applicant_passport_id = applicant.card_number if _is_valid_card_number(applicant.card_number) else None
-        if not applicant_passport_id and _is_valid_card_number(applicant.passport_id):
-            applicant_passport_id = applicant.passport_id
-        passport_match = None
-        if applicant_passport_id:
-            passport_match = bool(ocr_card_number) and _normalize(ocr_card_number) == _normalize(applicant_passport_id)
-        elif ocr_card_number:
-            if not applicant.card_number:
-                applicant.card_number = ocr_card_number
-                updates.append("card_number")
-            if not applicant.passport_id:
-                applicant.passport_id = ocr_card_number
-                updates.append("passport_id")
-            passport_match = True
-
-        birthdate_match = None
-        if applicant.birth_date:
-            birthdate_match = bool(ocr_birthdate) and ocr_birthdate == applicant.birth_date
-        elif ocr_birthdate and _is_plausible_birthdate(ocr_birthdate):
-            applicant.birth_date = ocr_birthdate
-            birthdate_match = True
-            updates.append("birth_date")
-
-        name_match = _name_match(ocr_name, applicant.full_name) if (ocr_name and applicant.full_name) else False
-
-        if applicant.passport_id or applicant.birth_date:
-            required_matches = [m for m in [passport_match, birthdate_match] if m is not None]
-            ocr_passed = bool(required_matches) and all(required_matches) and name_match
-        else:
-            ocr_passed = name_match and bool(ocr_card_number or ocr_birthdate)
-
+    if not (passport_front_bytes and selfie_bytes):
         events.append(
             {
-                "type": "ocr",
-                "status": "ok",
-                "result": ocr_result,
-                "matches": {
-                    "passport_id": passport_match,
-                    "birth_date": birthdate_match,
-                    "full_name": name_match,
-                },
-                "passed": ocr_passed,
+                "type": "face_match",
+                "status": "failed",
+                "detail": "passport_or_selfie_missing",
             }
         )
-
-        if ocr_card_number and (not _is_valid_card_number(applicant.card_number)):
-            applicant.card_number = ocr_card_number
-            updates.append("card_number")
-        if ocr_card_number and (not _is_valid_card_number(applicant.passport_id)):
-            applicant.passport_id = ocr_card_number
-            updates.append("passport_id")
-
-        if ocr_surname and _should_update_name(applicant.surname, ocr_surname):
-            applicant.surname = ocr_surname
-            updates.append("surname")
-        if ocr_given_name and _should_update_name(applicant.name, ocr_given_name):
-            applicant.name = ocr_given_name
-            updates.append("name")
-        if ocr_patronymic and _should_update_name(applicant.patronymic, ocr_patronymic):
-            applicant.patronymic = ocr_patronymic
-            updates.append("patronymic")
-        if ocr_birthdate and _is_plausible_birthdate(ocr_birthdate) and not _is_plausible_birthdate(applicant.birth_date):
-            applicant.birth_date = ocr_birthdate
-            updates.append("birth_date")
-        if ocr_sex and (_looks_like_label(applicant.sex) or not applicant.sex):
-            applicant.sex = ocr_sex
-            updates.append("sex")
-        if (
-            ocr_citizenship
-            and _is_invalid_citizenship(applicant.citizenship)
-            and not _is_invalid_citizenship(ocr_citizenship)
-        ):
-            applicant.citizenship = ocr_citizenship
-            updates.append("citizenship")
-        if ocr_birth_place and (_looks_like_label(applicant.birth_place) or not applicant.birth_place):
-            applicant.birth_place = ocr_birth_place
-            updates.append("birth_place")
-        if updates:
-            applicant.save(update_fields=updates)
-
-    face_result = None
-    face_passed = True
-    if settings_ai.enable_face_match:
+    elif settings_ai.enable_face_match:
         try:
             face_result = face_match(
                 passport_front_bytes,
@@ -794,33 +514,30 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         except AIConnectionError as exc:
             logger.warning("AI face match unavailable for applicant %s: %s", applicant.id, exc)
             return _mark_ai_unavailable(applicant, events, reason=_infer_ai_error_reason(exc))
+
         if not face_result:
-            face_passed = False
             events.append({"type": "face_match", "status": "failed"})
         else:
             confidence = float(face_result.get("confidence") or 0.0)
-            face_passed = confidence >= settings_ai.face_match_threshold
+            verified = confidence >= settings_ai.face_match_threshold
             events.append(
                 {
                     "type": "face_match",
                     "status": "ok",
                     "result": face_result,
                     "threshold": settings_ai.face_match_threshold,
-                    "passed": face_passed,
+                    "passed": verified,
                 }
             )
     else:
-        events.append({"type": "face_match", "status": "skipped"})
+        events.append(
+            {
+                "type": "face_match",
+                "status": "skipped",
+                "detail": "face_match_disabled",
+            }
+        )
 
-    ocr_ok = any(event.get("type") == "ocr" and event.get("passed") for event in events)
-    if settings_ai.enable_face_match:
-        verified = ocr_ok and face_passed
-    else:
-        verified = ocr_ok
-        if not confidence and ocr_result:
-            confidence = float(ocr_result.get("confidence") or 0.0)
-
-    # ── Face embedding extraction ──────────────────────────────────────────────
     # Selfie rasmidan yuz embedding olib, User modeliga saqlaymiz.
     # Bu keyinchalik live dars va test proctoring uchun zarur.
     face_embedding = None
@@ -841,12 +558,13 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         except Exception as exc:
             logger.warning("Could not save face_embedding for user %s: %s", applicant.user_id, exc)
 
-    events.append({
-        "type": "face_embedding",
-        "status": "ok" if face_embedding else "failed",
-        "embedding_length": len(face_embedding) if face_embedding else 0,
-    })
-    # ──────────────────────────────────────────────────────────────────────────
+    events.append(
+        {
+            "type": "face_embedding",
+            "status": "ok" if face_embedding else "failed",
+            "embedding_length": len(face_embedding) if face_embedding else 0,
+        }
+    )
 
     VerificationResult.objects.create(
         applicant=applicant,
@@ -859,8 +577,6 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         applicant.status = "verified" if verified else "pending"
         applicant.save(update_fields=["status"])
     return None
-
-
 def _mark_ai_unavailable(applicant, events, reason: str | None = None):
     resolved_reason = reason or "connection_error"
     event = {
@@ -910,57 +626,6 @@ def _ai_unavailable_message(reason: str) -> str:
         "gateway_error": "AI gateway ichki xatolik qaytardi.",
     }
     return messages.get(reason, "AI gateway bilan aloqa o'rnatilmadi.")
-
-
-def _merge_ocr_results(front, back):
-    if not front and not back:
-        return None
-    def _pick(field, prefer_back=False, validator=None):
-        primary = back if prefer_back else front
-        secondary = front if prefer_back else back
-        for item in (primary, secondary):
-            value = (item or {}).get(field)
-            if validator and value and validator(value):
-                return value
-        for item in (primary, secondary):
-            value = (item or {}).get(field)
-            if value:
-                return value
-        return None
-
-    def _pick_card_number():
-        return _pick("card_number", validator=_is_valid_card_number) or _pick(
-            "passport_id", validator=_is_valid_card_number
-        )
-
-    def _pick_birthdate():
-        return _pick("birthdate", validator=_is_plausible_birthdate)
-
-    def _pick_name(field):
-        return _pick(field) or None
-    confidence = 0.0
-    for item in (front, back):
-        try:
-            confidence = max(confidence, float((item or {}).get("confidence") or 0.0))
-        except (TypeError, ValueError):
-            continue
-    surname = _pick_name("surname")
-    given_name = _pick_name("name")
-    patronymic = _pick_name("patronymic")
-    fio = _pick("fio") or (f"{surname} {given_name}".strip() if surname and given_name else None)
-    return {
-        "passport_id": _pick_card_number(),
-        "birthdate": _pick_birthdate(),
-        "fio": fio,
-        "surname": surname,
-        "name": given_name,
-        "patronymic": patronymic,
-        "sex": _pick("sex"),
-        "citizenship": _pick("citizenship"),
-        "birth_place": _pick("birth_place", prefer_back=True),
-        "card_number": _pick_card_number(),
-        "confidence": round(confidence, 2),
-    }
 
 
 class ApproveApplicantView(APIView):
@@ -1302,77 +967,4 @@ def _verification_has_ai_unavailable(verification: VerificationResult) -> bool:
         for event in events
     )
 
-
-class PassportOCRPreviewView(APIView):
-    """
-    Ro'yxatdan o'tishning 2-bosqichi: passport yuklanganida OCR natijasini qaytaradi.
-    Hech narsa saqlanmaydi — faqat preview uchun.
-    Auth: JWT kerak (1-bosqichdan keyin token bor).
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        passport_front = request.FILES.get("passport_front") or request.FILES.get("passport_image")
-        if not passport_front:
-            raise ValidationError({"passport_front": "Passport fayli majburiy."})
-
-        settings_ai = AISettings.get_active()
-        ai_base_url = settings_ai.api_base_url or getattr(settings, "AI_BASE_URL", None)
-        if not (settings_ai.ai_enabled and ai_base_url):
-            return Response(
-                {"success": False, "warning": "AI xizmati o'chirilgan.", "data": {}},
-                status=200,
-            )
-
-        try:
-            front_bytes = _read_upload_bytes(passport_front)
-            ocr_result = ocr_passport(front_bytes) if front_bytes else None
-        except AIConnectionError:
-            return Response(
-                {
-                    "success": False,
-                    "warning": "AI xizmati hozircha mavjud emas. Keyingi bosqichda davom eting.",
-                    "data": {},
-                    "fields_found": {},
-                },
-                status=200,
-            )
-        except Exception as exc:
-            logger.warning("PassportOCRPreview xato: %s", exc)
-            return Response(
-                {"success": False, "warning": "OCR muvaffaqiyatsiz. Davom eting.", "data": {}},
-                status=200,
-            )
-
-        if not ocr_result:
-            return Response(
-                {"success": False, "warning": "Passport maʼlumotlari aniqlanmadi. Rasmni tekshiring.", "data": {}},
-                status=200,
-            )
-
-        # Foydalanuvchiga ko'rsatish uchun xavfsiz maydonlar
-        safe = {
-            "fio": ocr_result.get("fio") or "",
-            "surname": ocr_result.get("surname") or "",
-            "name": ocr_result.get("name") or "",
-            "patronymic": ocr_result.get("patronymic") or "",
-            "card_number": ocr_result.get("card_number") or ocr_result.get("passport_id") or "",
-            "birthdate": ocr_result.get("birthdate") or "",
-            "sex": ocr_result.get("sex") or "",
-            "citizenship": ocr_result.get("citizenship") or "",
-        }
-        fields_found = {
-            "name": bool(safe["fio"] or safe["surname"] or safe["name"]),
-            "card_number": bool(safe["card_number"]),
-            "birthdate": bool(safe["birthdate"]),
-        }
-        success = fields_found["name"] or fields_found["card_number"]
-        return Response(
-            {
-                "success": success,
-                "data": safe,
-                "fields_found": fields_found,
-            },
-            status=200,
-        )
 

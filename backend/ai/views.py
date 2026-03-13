@@ -90,27 +90,6 @@ class AIHealthView(APIView):
         return Response(payload, status=status.HTTP_200_OK)
 
 
-class PassportOCRView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        passport_file = request.FILES.get("passport_image")
-        if not passport_file:
-            raise ValidationError({"passport_image": "Fayl talab qilinadi"})
-
-        try:
-            # .read() ishlatmaymiz, fayl obyektini o'zini beramiz (Memory Optimization)
-            result = clients.ocr_passport(passport_file)
-            if not result:
-                return Response({"error": "AI xato qaytardi yoki ma'lumotni o'qiy olmadi"}, status=status.HTTP_400_BAD_REQUEST)
-            return Response(result, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            # Fayl formati yoki hajmi noto'g'ri bo'lsa
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except clients.AIConnectionError:
-            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-
 class FaceMatchView(APIView):
     permission_classes = [IsAuthenticated]
 

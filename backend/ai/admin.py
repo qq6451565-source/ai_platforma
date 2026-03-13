@@ -38,9 +38,8 @@ class AISettingsAdmin(admin.ModelAdmin):
                 "API key gateway .env dagi AI_API_KEY bilan bir xil bo'lishi shart!"
             ),
         }),
-        ("📄 OCR Sozlamalari", {
+        ("Rasm Sozlamalari", {
             "fields": (
-                "ocr_confidence_threshold",
                 "max_image_size_mb",
             )
         }),

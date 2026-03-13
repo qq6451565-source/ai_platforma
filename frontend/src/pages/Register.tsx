@@ -1,13 +1,10 @@
 import {
   CheckOutlined,
   IdcardOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  LoadingOutlined,
   PhoneOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Form, Spin, message } from "antd";
+import { Form, message } from "antd";
 import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -22,8 +19,13 @@ import "./Register.css";
 
 type ProfileFormValues = {
   full_name: string;
-  email: string;
   phone: string;
+  direction_choice: number | string;
+};
+
+type DirectionOption = {
+  id: number;
+  name: string;
 };
 
 type LivenessStage = "idle" | "align" | "left" | "right" | "blink" | "capturing" | "done";
@@ -179,13 +181,8 @@ const RegisterPage = () => {
 
   const [passportFile, setPassportFile] = useState<File | null>(null);
   const [passportPreview, setPassportPreview] = useState<string | null>(null);
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrResult, setOcrResult] = useState<{
-    success: boolean;
-    warning?: string;
-    data: Record<string, string>;
-    fields_found?: Record<string, boolean>;
-  } | null>(null);
+  const [directions, setDirections] = useState<DirectionOption[]>([]);
+  const [directionsLoading, setDirectionsLoading] = useState(false);
 
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
@@ -250,11 +247,34 @@ const RegisterPage = () => {
   }, [livenessStage]);
 
   useEffect(() => {
-    if (!passportFile) { setPassportPreview(null); setOcrResult(null); return; }
+    if (!passportFile) { setPassportPreview(null); return; }
     const url = URL.createObjectURL(passportFile);
     setPassportPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [passportFile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadDirections = async () => {
+      setDirectionsLoading(true);
+      try {
+        const res = await api.get<DirectionOption[]>("/api/directions/");
+        if (!cancelled) {
+          setDirections(Array.isArray(res.data) ? res.data : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setDirections([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setDirectionsLoading(false);
+        }
+      }
+    };
+    void loadDirections();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!selfieFile) { setSelfiePreview(null); return; }
@@ -373,10 +393,15 @@ const RegisterPage = () => {
   };
 
   const handleProfileSubmit = async (values: ProfileFormValues) => {
+    const directionChoice = Number(values.direction_choice);
+    if (!Number.isFinite(directionChoice)) {
+      message.error(t("register.directionRequired"));
+      return;
+    }
     const preparedProfile = {
       full_name: (values.full_name || "").trim(),
-      email: (values.email || "").trim(),
       phone: (values.phone || "").trim(),
+      direction_choice: directionChoice,
     };
 
     try {
@@ -403,29 +428,8 @@ const RegisterPage = () => {
     }
   };
 
-  const handlePassportFileChange = async (file: File) => {
+  const handlePassportFileChange = (file: File) => {
     setPassportFile(file);
-    setOcrResult(null);
-    setOcrLoading(true);
-    try {
-      const form = new FormData();
-      form.append("passport_front", file);
-      const res = await api.post("/api/enrollment/register/ocr/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 60000,
-      });
-      setOcrResult(res.data);
-      if (res.data.success) {
-        message.success("Passport ma'lumotlari aniqlandi ✓");
-      } else if (res.data.warning) {
-        message.warning(res.data.warning);
-      }
-    } catch {
-      // OCR xato bo'lsa ham davom etish mumkin
-      setOcrResult({ success: false, warning: "OCR bajarilmadi. Keyingi bosqichda davom eting.", data: {} });
-    } finally {
-      setOcrLoading(false);
-    }
   };
 
   const handlePassportNext = () => {
@@ -778,14 +782,20 @@ const RegisterPage = () => {
                 </Form.Item>
 
                 <Form.Item
-                  label={t("register.email")}
-                  name="email"
-                  rules={[
-                    { required: true, message: t("register.emailRequired") },
-                    { type: "email", message: t("register.emailInvalid") },
-                  ]}
+                  label={t("register.direction")}
+                  name="direction_choice"
+                  rules={[{ required: true, message: t("register.directionRequired") }]}
                 >
-                  <Input icon={<UserOutlined />} placeholder={t("register.emailPlaceholder")} type="email" />
+                  <select className="direction-select" defaultValue="">
+                    <option value="" disabled>
+                      {directionsLoading ? t("common.loading") : t("register.directionPlaceholder")}
+                    </option>
+                    {directions.map((direction) => (
+                      <option key={direction.id} value={direction.id}>
+                        {direction.name}
+                      </option>
+                    ))}
+                  </select>
                 </Form.Item>
 
                 <Form.Item
@@ -813,7 +823,7 @@ const RegisterPage = () => {
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) void handlePassportFileChange(file);
+                  if (file) handlePassportFileChange(file);
                 }}
                 className="hidden-file-input"
                 id="passport-upload-input"
@@ -823,15 +833,12 @@ const RegisterPage = () => {
                 htmlFor="passport-upload-input"
                 className={`passport-upload-zone ${passportFile ? "has-file" : ""}`}
               >
-                {ocrLoading
-                  ? <Spin indicator={<LoadingOutlined style={{ fontSize: 28 }} spin />} />
-                  : <IdcardOutlined className="upload-zone-icon" />
-                }
+                <IdcardOutlined className="upload-zone-icon" />
                 <span className="upload-zone-title">
                   {passportFile ? passportFile.name : t("register.passportUpload")}
                 </span>
                 <span className="upload-zone-hint">
-                  {ocrLoading ? "Passport skanerlanmoqda..." : t("register.passportUploadHint")}
+                  {t("register.passportUploadHint")}
                 </span>
               </label>
 
@@ -841,47 +848,11 @@ const RegisterPage = () => {
                 </div>
               )}
 
-              {/* OCR Natijasi */}
-              {ocrResult && (
-                <div className={`ocr-result-card ${ocrResult.success ? "ocr-success" : "ocr-warn"}`}>
-                  <div className="ocr-result-header">
-                    {ocrResult.success
-                      ? <><CheckCircleOutlined style={{ color: "#22c55e" }} /> <span>Passport ma'lumotlari aniqlandi</span></>
-                      : <><ExclamationCircleOutlined style={{ color: "#f59e0b" }} /> <span>{ocrResult.warning || "Qisman aniqlandi"}</span></>
-                    }
-                  </div>
-                  {ocrResult.success && ocrResult.data && (
-                    <div className="ocr-fields">
-                      {(ocrResult.data.fio || (ocrResult.data.surname && ocrResult.data.name)) && (
-                        <div className="ocr-field">
-                          <span className="ocr-label">Ism-Familiya</span>
-                          <span className="ocr-value">
-                            {ocrResult.data.fio || [ocrResult.data.surname, ocrResult.data.name].filter(Boolean).join(" ")}
-                          </span>
-                        </div>
-                      )}
-                      {ocrResult.data.card_number && (
-                        <div className="ocr-field">
-                          <span className="ocr-label">Seriya raqam</span>
-                          <span className="ocr-value">{ocrResult.data.card_number}</span>
-                        </div>
-                      )}
-                      {ocrResult.data.birthdate && (
-                        <div className="ocr-field">
-                          <span className="ocr-label">Tug'ilgan sana</span>
-                          <span className="ocr-value">{ocrResult.data.birthdate}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
               <div className="wizard-actions">
                 <Button variant="ghost" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handlePassportNext} isLoading={loading || ocrLoading}>
+                <Button onClick={handlePassportNext} isLoading={loading}>
                   {t("common.next")}
                 </Button>
               </div>

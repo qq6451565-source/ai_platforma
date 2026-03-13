@@ -126,13 +126,8 @@ const AdminAISettingsPage = () => {
           </Col>
         </Row>
 
-        <Divider orientation="left">{t("aiSettings.sections.ocr")}</Divider>
+        <Divider orientation="left">Image settings</Divider>
         <Row gutter={16}>
-          <Col xs={24} md={8}>
-            <Form.Item name="ocr_confidence_threshold" label={t("aiSettings.fields.ocrThreshold")}>
-              <InputNumber min={0} max={1} step={0.01} style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
           <Col xs={24} md={8}>
             <Form.Item name="max_image_size_mb" label={t("aiSettings.fields.maxImageSizeMb")}>
               <InputNumber min={1} max={25} step={0.5} style={{ width: "100%" }} />

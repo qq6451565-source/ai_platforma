@@ -89,7 +89,7 @@ class ApplicantAdmin(admin.ModelAdmin):
         ("Asosiy", {
             "fields": ("full_name", "email", "phone", "status", "direction_choice", "user")
         }),
-        ("Passport ma'lumotlar (OCR dan)", {
+        ("Passport ma'lumotlari (ixtiyoriy)", {
             "fields": (
                 "passport_id", "card_number", "birth_date",
                 "surname", "name", "patronymic",
