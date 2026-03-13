@@ -12,10 +12,9 @@ from .models import RegistrationWindow, Applicant, ApplicantDocument, Verificati
 # ── Registration Window ───────────────────────────────────────────────────────
 @admin.register(RegistrationWindow)
 class RegistrationWindowAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "start_date", "end_date", "is_active")
+    list_display = ("id", "is_active")
     list_filter = ("is_active",)
     list_editable = ("is_active",)
-    search_fields = ("title",)
 
 
 # ── Applicant Document ────────────────────────────────────────────────────────
