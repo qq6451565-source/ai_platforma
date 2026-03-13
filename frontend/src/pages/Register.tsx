@@ -724,6 +724,8 @@ const RegisterPage = () => {
     cameraActive ? "active" : "",
     livenessStage === "done" ? "done-state" : "",
   ].filter(Boolean).join(" ");
+  const isSubmittingSelfie = loading && livenessStage === "done";
+  const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview) && !isSubmittingSelfie;
 
   return (
     <div className="registration-page">
@@ -880,15 +882,15 @@ const RegisterPage = () => {
                   <canvas ref={canvasRef} className="scanner-canvas" />
 
                   {/* Placeholder when camera off */}
-                  {!cameraActive && !selfiePreview && !scannerBooting && (
+                  {!cameraActive && !selfiePreview && !scannerBooting && !isSubmittingSelfie && (
                     <div className="scanner-placeholder">
                       {t("register.startSelfieHint")}
                     </div>
                   )}
 
-                  {/* Selfie preview after capture (before submit finishes) */}
-                  {!cameraActive && selfiePreview && (
-                    <img src={selfiePreview} className="scanner-video" alt="selfie preview" style={{ transform: "none" }} />
+                  {/* Selfie preview after capture when not submitting */}
+                  {showInlineSelfiePreview && (
+                    <img src={selfiePreview ?? undefined} className="scanner-video" alt="selfie preview" style={{ transform: "none" }} />
                   )}
 
                   {/* Scan-line overlay + oval guide */}
@@ -903,6 +905,14 @@ const RegisterPage = () => {
                     </div>
                   )}
 
+                  {/* Submitting overlay replaces large selfie preview */}
+                  {isSubmittingSelfie && (
+                    <div className="scanner-submitting-overlay">
+                      <div className="scanner-spinner" />
+                      <span>{t("register.submittingHint")}</span>
+                    </div>
+                  )}
+
                   {/* Done overlay */}
                   {livenessStage === "done" && selfieFile && !loading && (
                     <div className="scanner-done-overlay">
@@ -911,6 +921,16 @@ const RegisterPage = () => {
                     </div>
                   )}
                 </div>
+
+                {isSubmittingSelfie && selfiePreview && (
+                  <div className="scanner-captured-preview">
+                    <img src={selfiePreview} alt="captured selfie" className="scanner-captured-thumb" />
+                    <div className="scanner-captured-meta">
+                      <div className="scanner-captured-title">{t("register.faceVerified")}</div>
+                      <div className="scanner-captured-subtitle">{t("register.submittingHint")}</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Task chips */}
                 {livenessStage !== "idle" && (
@@ -959,10 +979,6 @@ const RegisterPage = () => {
                   </div>
                 )}
 
-                {/* Submitting loading notice */}
-                {loading && livenessStage === "done" && (
-                  <div className="wizard-info">{t("register.submittingHint")}</div>
-                )}
               </div>
 
               <div className="wizard-actions">
