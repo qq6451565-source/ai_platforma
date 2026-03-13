@@ -520,6 +520,7 @@ const RegisterPage = () => {
     setLoading(true);
     const retryDelays = [0, 800, 1600];
     let lastError: any = null;
+    let keepPendingUi = false;
 
     try {
       for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
@@ -532,6 +533,7 @@ const RegisterPage = () => {
           if (res.login_username && res.login_password) {
             savePendingCredentials(res.login_username, res.login_password);
           }
+          keepPendingUi = true;
           window.location.replace("/app/student/profile");
           return;
         } catch (error: any) {
@@ -547,8 +549,10 @@ const RegisterPage = () => {
       setSelfiePreview(null);
       setScanFailed(true);
     } finally {
-      setSubmissionInFlight(false);
-      setLoading(false);
+      if (!keepPendingUi) {
+        setSubmissionInFlight(false);
+        setLoading(false);
+      }
     }
   };
 
@@ -732,7 +736,13 @@ const RegisterPage = () => {
   ].filter(Boolean).join(" ");
   const isSubmittingSelfie = submissionInFlight;
   const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview) && !isSubmittingSelfie;
-  const showScannerGuidance = !scannerBooting && !isSubmittingSelfie && Boolean(livenessInstruction || scannerNotice);
+  const showScannerGuidance = (
+    !scannerBooting &&
+    !isSubmittingSelfie &&
+    ["align", "left", "right", "blink", "capturing"].includes(livenessStage) &&
+    Boolean(livenessInstruction || scannerNotice)
+  );
+  const showScannerStatus = !scannerBooting && !isSubmittingSelfie && ["align", "left", "right", "blink"].includes(livenessStage);
 
   return (
     <div className="registration-page">
@@ -943,7 +953,7 @@ const RegisterPage = () => {
                 </div>
 
                 {/* Task chips */}
-                {livenessStage !== "idle" && (
+                {showScannerStatus && (
                   <div className="scanner-tasks">
                     {livenessTasks.map((task) => {
                       const currentIndex = livenessTasks.findIndex((item) => item.key === livenessStage);
@@ -964,7 +974,7 @@ const RegisterPage = () => {
                 )}
 
                 {/* Progress bar */}
-                {livenessStage !== "idle" && (
+                {showScannerStatus && (
                   <div className="scanner-progress">
                     <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
                   </div>
