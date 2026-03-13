@@ -192,6 +192,7 @@ const RegisterPage = () => {
   const [scannerNotice, setScannerNotice] = useState<string | null>(null);
   const [scannerBooting, setScannerBooting] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
+  const [submissionInFlight, setSubmissionInFlight] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -346,7 +347,7 @@ const RegisterPage = () => {
     }
   };
 
-  const stopCamera = () => {
+  const stopCamera = (options?: { preserveStage?: boolean }) => {
     stopAnalysis();
     resetLivenessState();
     setScannerBooting(false);
@@ -357,8 +358,10 @@ const RegisterPage = () => {
     }
     setCameraActive(false);
     setVideoReady(false);
-    livenessStageRef.current = "idle";
-    setLivenessStage("idle");
+    if (!options?.preserveStage) {
+      livenessStageRef.current = "idle";
+      setLivenessStage("idle");
+    }
   };
 
   useEffect(() => {
@@ -508,6 +511,7 @@ const RegisterPage = () => {
 
   const submitRegistration = async (capturedSelfie: File) => {
     if (!passportFile) {
+      setSubmissionInFlight(false);
       message.warning(t("register.passportRequired"));
       setCurrentStep(1);
       return;
@@ -545,6 +549,7 @@ const RegisterPage = () => {
       setSelfiePreview(null);
       setScanFailed(true);
     } finally {
+      setSubmissionInFlight(false);
       setLoading(false);
     }
   };
@@ -552,6 +557,7 @@ const RegisterPage = () => {
   const finishSelfieFlow = async () => {
     const selfie = captureSelfie();
     if (!selfie) {
+      setSubmissionInFlight(false);
       setScannerNoticeSafe(t("register.scanError"));
       setStage("idle");
       stopCamera();
@@ -559,9 +565,10 @@ const RegisterPage = () => {
       return;
     }
     setSelfieFile(selfie);
+    setSubmissionInFlight(true);
     setStage("done");
     setScannerNoticeSafe(t("register.submittingHint"));
-    stopCamera();
+    stopCamera({ preserveStage: true });
     await submitRegistration(selfie);
   };
 
@@ -679,6 +686,7 @@ const RegisterPage = () => {
 
   const startSelfieFlow = async () => {
     setScanFailed(false);
+    setSubmissionInFlight(false);
     setScannerNoticeSafe(t("register.initializingScanner"));
     setScannerBooting(true);
     setSelfieFile(null);
@@ -724,7 +732,7 @@ const RegisterPage = () => {
     cameraActive ? "active" : "",
     livenessStage === "done" ? "done-state" : "",
   ].filter(Boolean).join(" ");
-  const isSubmittingSelfie = loading && livenessStage === "done";
+  const isSubmittingSelfie = submissionInFlight;
   const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview) && !isSubmittingSelfie;
 
   return (
