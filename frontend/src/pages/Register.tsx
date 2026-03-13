@@ -529,8 +529,6 @@ const RegisterPage = () => {
         }
         try {
           const res = await registerFinalize({ passport_front: passportFile, selfie_image: capturedSelfie });
-          message.success(res.detail || t("register.completed"));
-          if (res.warning) message.warning(res.warning);
           if (res.login_username && res.login_password) {
             savePendingCredentials(res.login_username, res.login_password);
           }
@@ -734,6 +732,7 @@ const RegisterPage = () => {
   ].filter(Boolean).join(" ");
   const isSubmittingSelfie = submissionInFlight;
   const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview) && !isSubmittingSelfie;
+  const showScannerGuidance = !scannerBooting && !isSubmittingSelfie && Boolean(livenessInstruction || scannerNotice);
 
   return (
     <div className="registration-page">
@@ -905,6 +904,19 @@ const RegisterPage = () => {
                   <div className="scanner-overlay" />
                   {(cameraActive || scannerBooting) && <div className="scanner-oval" />}
 
+                  {showScannerGuidance && (
+                    <div className="scanner-guidance-overlay">
+                      <div className="scanner-guidance-card">
+                        {livenessInstruction && (
+                          <div className="scanner-guidance-title">{livenessInstruction}</div>
+                        )}
+                        {scannerNotice && scannerNotice !== livenessInstruction && (
+                          <div className="scanner-guidance-subtitle">{scannerNotice}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Booting spinner */}
                   {scannerBooting && (
                     <div className="scanner-booting-overlay">
@@ -929,16 +941,6 @@ const RegisterPage = () => {
                     </div>
                   )}
                 </div>
-
-                {isSubmittingSelfie && selfiePreview && (
-                  <div className="scanner-captured-preview">
-                    <img src={selfiePreview} alt="captured selfie" className="scanner-captured-thumb" />
-                    <div className="scanner-captured-meta">
-                      <div className="scanner-captured-title">{t("register.faceVerified")}</div>
-                      <div className="scanner-captured-subtitle">{t("register.submittingHint")}</div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Task chips */}
                 {livenessStage !== "idle" && (
@@ -967,16 +969,6 @@ const RegisterPage = () => {
                     <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
                   </div>
                 )}
-
-                {/* Instruction + notice */}
-                <div className="scanner-instruction">
-                  {livenessInstruction && (
-                    <div className="scanner-instruction-main">{livenessInstruction}</div>
-                  )}
-                  {scannerNotice && scannerNotice !== livenessInstruction && (
-                    <div className="scanner-instruction-sub">{scannerNotice}</div>
-                  )}
-                </div>
 
                 {/* Retry button */}
                 {scanFailed && !loading && livenessStage === "idle" && !cameraActive && (

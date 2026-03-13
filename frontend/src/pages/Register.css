@@ -309,6 +309,43 @@
   opacity: 1;
 }
 
+.scanner-guidance-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.scanner-guidance-card {
+  max-width: min(82%, 420px);
+  padding: 0.95rem 1.15rem;
+  border-radius: 18px;
+  background: rgba(8, 8, 15, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+}
+
+.scanner-guidance-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.45;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.scanner-guidance-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.45;
+}
+
 @keyframes scanLine {
   0%   { top: 10%; }
   50%  { top: 90%; }
@@ -411,43 +448,6 @@
   font-weight: 600;
 }
 
-.scanner-captured-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  background: var(--bg-elevated-2);
-}
-
-.scanner-captured-thumb {
-  width: 84px;
-  height: 84px;
-  border-radius: 16px;
-  object-fit: cover;
-  flex: none;
-}
-
-.scanner-captured-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
-}
-
-.scanner-captured-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.scanner-captured-subtitle {
-  font-size: 0.8rem;
-  color: var(--accent);
-  line-height: 1.5;
-}
-
 /* Task chips */
 .scanner-tasks {
   display: flex;
@@ -499,28 +499,6 @@
   transition: width 0.4s ease;
 }
 
-/* Instruction box */
-.scanner-instruction {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.scanner-instruction-main {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  text-align: center;
-}
-
-.scanner-instruction-sub {
-  font-size: 0.8rem;
-  color: var(--accent);
-  text-align: center;
-  min-height: 1.2rem;
-  opacity: 0.80;
-}
-
 /* Retry row */
 .scanner-retry {
   display: flex;
@@ -534,8 +512,9 @@
   .step-connector { margin-top: 14px; min-width: 12px; }
   .wizard-actions { flex-direction: column; }
   .passport-upload-zone { padding: 1.5rem 1rem; }
-  .scanner-captured-preview { padding: 0.75rem; }
-  .scanner-captured-thumb { width: 68px; height: 68px; }
+  .scanner-guidance-card { max-width: 88%; padding: 0.85rem 1rem; }
+  .scanner-guidance-title { font-size: 0.92rem; }
+  .scanner-guidance-subtitle { font-size: 0.78rem; }
 }
 /* Preview kart */
 .preview-card {
