@@ -188,6 +188,7 @@
     "lookLeftHint": "Now turn your face to the left.",
     "lookRightHint": "Now turn your face to the right.",
     "blinkEyesHint": "Blink your eyes once.",
+    "finalAlignHint": "Now keep your head straight, centered, and still.",
     "capturingHint": "Capturing selfie...",
     "submittingHint": "Submitting application...",
     "faceNotDetected": "Face not detected. Move closer to camera.",

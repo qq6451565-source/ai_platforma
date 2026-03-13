@@ -28,11 +28,12 @@ type DirectionOption = {
   name: string;
 };
 
-type LivenessStage = "idle" | "align" | "left" | "right" | "blink" | "capturing" | "done";
+type LivenessStage = "idle" | "align" | "left" | "right" | "blink" | "final" | "capturing" | "done";
 const ANALYZE_INTERVAL_MS = 170;
 const ALIGN_REQUIRED_FRAMES = 8;
 const TURN_REQUIRED_FRAMES = 6;
 const BLINK_CLOSED_REQUIRED_FRAMES = 2;
+const FINAL_ALIGN_REQUIRED_FRAMES = 10;
 
 const LANDMARK_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task";
@@ -217,35 +218,16 @@ const RegisterPage = () => {
     [t]
   );
 
-  const livenessTasks = useMemo(
-    () => [
-      { key: "align", label: t("register.alignFace") },
-      { key: "left", label: t("register.lookLeft") },
-      { key: "right", label: t("register.lookRight") },
-      { key: "blink", label: t("register.blinkEyes") },
-    ],
-    [t]
-  );
-
   const livenessInstruction = useMemo(() => {
     if (livenessStage === "align") return t("register.alignFaceHint");
     if (livenessStage === "left") return t("register.lookLeftHint");
     if (livenessStage === "right") return t("register.lookRightHint");
     if (livenessStage === "blink") return t("register.blinkEyesHint");
+    if (livenessStage === "final") return t("register.finalAlignHint");
     if (livenessStage === "capturing") return t("register.capturingHint");
     if (livenessStage === "done") return t("register.submittingHint");
     return null;
   }, [livenessStage, t]);
-
-  const livenessProgress = useMemo(() => {
-    if (livenessStage === "idle") return 0;
-    if (livenessStage === "align") return 25;
-    if (livenessStage === "left") return 50;
-    if (livenessStage === "right") return 75;
-    if (livenessStage === "blink") return 90;
-    if (livenessStage === "capturing") return 95;
-    return 100;
-  }, [livenessStage]);
 
   useEffect(() => {
     if (!passportFile) { setPassportPreview(null); return; }
@@ -614,10 +596,10 @@ const RegisterPage = () => {
       const centeredStrict = Math.abs(metrics.cx - 0.5) <= ALIGN_CENTER_X_MAX && Math.abs(metrics.cy - 0.5) <= ALIGN_CENTER_Y_MAX;
       const centeredLoose = Math.abs(metrics.cx - 0.5) <= 0.2 && Math.abs(metrics.cy - 0.5) <= 0.22;
       const yaw = metrics.yaw * yawDirectionRef.current;
+      const alignedForCapture = centeredStrict && Math.abs(yaw) <= ALIGN_YAW_MAX;
 
       if (stage === "align") {
-        const aligned = centeredStrict && Math.abs(yaw) <= ALIGN_YAW_MAX;
-        if (!aligned) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.holdStill")); return; }
+        if (!alignedForCapture) { stableFrameRef.current = 0; setScannerNoticeSafe(t("register.holdStill")); return; }
         baselineEarRef.current =
           baselineEarRef.current === null ? metrics.ear : baselineEarRef.current * 0.88 + metrics.ear * 0.12;
         stableFrameRef.current += 1;
@@ -669,10 +651,33 @@ const RegisterPage = () => {
 
         if (!eyesOpened) { setScannerNoticeSafe(t("register.blinkPrompt")); return; }
 
-        setStage("capturing");
-        setScannerNoticeSafe(t("register.capturingHint"));
-        stopAnalysis();
-        await finishSelfieFlow();
+        setStage("final");
+        setScannerNoticeSafe(t("register.finalAlignHint"));
+        return;
+      }
+
+      if (stage === "final") {
+        const baselineEar = baselineEarRef.current ?? metrics.ear;
+        const openedByEar = metrics.ear >= baselineEar * BLINK_OPEN_RATIO;
+        const leftBlink = metrics.blinkLeft;
+        const rightBlink = metrics.blinkRight;
+        const openedByBlend = leftBlink !== null && rightBlink !== null && leftBlink < 0.2 && rightBlink < 0.2;
+        const eyesOpened = openedByBlend || openedByEar;
+
+        if (!alignedForCapture || !eyesOpened) {
+          stableFrameRef.current = 0;
+          setScannerNoticeSafe(t("register.finalAlignHint"));
+          return;
+        }
+
+        stableFrameRef.current += 1;
+        setScannerNoticeSafe(t("register.holdStill"));
+        if (stableFrameRef.current >= FINAL_ALIGN_REQUIRED_FRAMES) {
+          setStage("capturing");
+          setScannerNoticeSafe(t("register.capturingHint"));
+          stopAnalysis();
+          await finishSelfieFlow();
+        }
         return;
       }
     } catch {
@@ -735,14 +740,13 @@ const RegisterPage = () => {
     livenessStage === "done" ? "done-state" : "",
   ].filter(Boolean).join(" ");
   const isSubmittingSelfie = submissionInFlight;
-  const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview) && !isSubmittingSelfie;
+  const showInlineSelfiePreview = !cameraActive && Boolean(selfiePreview);
   const showScannerGuidance = (
     !scannerBooting &&
     !isSubmittingSelfie &&
-    ["align", "left", "right", "blink", "capturing"].includes(livenessStage) &&
+    ["align", "left", "right", "blink", "final", "capturing"].includes(livenessStage) &&
     Boolean(livenessInstruction || scannerNotice)
   );
-  const showScannerStatus = !scannerBooting && !isSubmittingSelfie && ["align", "left", "right", "blink"].includes(livenessStage);
 
   return (
     <div className="registration-page">
@@ -887,15 +891,27 @@ const RegisterPage = () => {
               <div className="scanner-section">
                 {/* Video frame */}
                 <div className={scannerFrameClass}>
-                  <video
-                    ref={videoRef}
-                    className="scanner-video"
-                    autoPlay
-                    muted
-                    playsInline
-                    style={{ transform: "scaleX(-1)" }}
-                    onLoadedMetadata={() => setVideoReady(true)}
-                  />
+                  <div className="scanner-viewport-shell">
+                    <div className="scanner-viewport">
+                      <video
+                        ref={videoRef}
+                        className="scanner-video"
+                        autoPlay
+                        muted
+                        playsInline
+                        style={{ transform: "scaleX(-1)" }}
+                        onLoadedMetadata={() => setVideoReady(true)}
+                      />
+                      {showInlineSelfiePreview && (
+                        <img
+                          src={selfiePreview ?? undefined}
+                          className="scanner-video scanner-preview"
+                          alt="selfie preview"
+                          style={{ transform: "none" }}
+                        />
+                      )}
+                    </div>
+                  </div>
                   <canvas ref={canvasRef} className="scanner-canvas" />
 
                   {/* Placeholder when camera off */}
@@ -905,14 +921,9 @@ const RegisterPage = () => {
                     </div>
                   )}
 
-                  {/* Selfie preview after capture when not submitting */}
-                  {showInlineSelfiePreview && (
-                    <img src={selfiePreview ?? undefined} className="scanner-video" alt="selfie preview" style={{ transform: "none" }} />
-                  )}
-
                   {/* Scan-line overlay + oval guide */}
                   <div className="scanner-overlay" />
-                  {(cameraActive || scannerBooting) && <div className="scanner-oval" />}
+                  {(cameraActive || scannerBooting || showInlineSelfiePreview) && <div className="scanner-oval" />}
 
                   {showScannerGuidance && (
                     <div className="scanner-guidance-overlay">
@@ -951,34 +962,6 @@ const RegisterPage = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Task chips */}
-                {showScannerStatus && (
-                  <div className="scanner-tasks">
-                    {livenessTasks.map((task) => {
-                      const currentIndex = livenessTasks.findIndex((item) => item.key === livenessStage);
-                      const itemIndex = livenessTasks.findIndex((item) => item.key === task.key);
-                      const done = currentIndex > itemIndex || livenessStage === "done";
-                      const active = livenessStage === task.key;
-                      return (
-                        <div
-                          key={task.key}
-                          className={["status-chip", done ? "success" : "", active ? "active" : ""].filter(Boolean).join(" ")}
-                        >
-                          {done && <CheckOutlined style={{ fontSize: "0.7rem" }} />}
-                          {task.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Progress bar */}
-                {showScannerStatus && (
-                  <div className="scanner-progress">
-                    <div className="scanner-progress-bar" style={{ width: `${livenessProgress}%` }} />
-                  </div>
-                )}
 
                 {/* Retry button */}
                 {scanFailed && !loading && livenessStage === "idle" && !cameraActive && (

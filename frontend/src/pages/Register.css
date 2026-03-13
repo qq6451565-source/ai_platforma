@@ -268,11 +268,39 @@
   border-color: rgba(99, 102, 241, 0.40);
 }
 
+.scanner-viewport-shell {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.scanner-viewport {
+  position: relative;
+  height: min(88%, 380px);
+  max-width: 72%;
+  aspect-ratio: 3 / 4;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(4, 7, 18, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12),
+    0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
 .scanner-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
   background: rgba(0, 0, 0, 0.75);
+}
+
+.scanner-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 .scanner-placeholder {
@@ -291,17 +319,31 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  display: grid;
+  place-items: center;
 }
 
 .scanner-overlay::before {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  box-shadow: 0 0 10px var(--accent-glow);
-  animation: scanLine 2.2s linear infinite;
+  height: min(88%, 380px);
+  max-width: 72%;
+  aspect-ratio: 3 / 4;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent 46%,
+      rgba(99, 102, 241, 0.14) 48%,
+      rgba(99, 102, 241, 0.62) 50%,
+      rgba(99, 102, 241, 0.14) 52%,
+      transparent 54%,
+      transparent 100%
+    );
+  background-size: 100% 220%;
+  background-position: 0 -120%;
+  animation: scanSweep 2.2s linear infinite;
   opacity: 0;
 }
 
@@ -313,49 +355,49 @@
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 1.25rem;
-  z-index: 6;
+  padding: 1rem 1.25rem 0;
+  z-index: 7;
   pointer-events: none;
 }
 
 .scanner-guidance-card {
-  max-width: min(72%, 360px);
-  padding: 0.85rem 1rem;
+  max-width: min(64%, 320px);
+  padding: 0.75rem 0.95rem;
   border-radius: 18px;
-  background: rgba(12, 18, 28, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
+  background: rgba(8, 12, 20, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
   text-align: center;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.22);
 }
 
 .scanner-guidance-title {
-  font-size: 0.96rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #f8fafc;
-  line-height: 1.45;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  line-height: 1.4;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.36);
 }
 
 .scanner-guidance-subtitle {
-  margin-top: 0.35rem;
+  margin-top: 0.28rem;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.4;
 }
 
-@keyframes scanLine {
-  0%   { top: 10%; }
-  50%  { top: 90%; }
-  100% { top: 10%; }
+@keyframes scanSweep {
+  0% { background-position: 0 -120%; }
+  100% { background-position: 0 120%; }
 }
 
 /* Oval guide */
 .scanner-oval {
   position: absolute;
-  width: min(68%, 320px);
+  height: min(88%, 380px);
+  max-width: 72%;
   aspect-ratio: 3 / 4;
   border: 2px solid rgba(99, 102, 241, 0.65);
   border-radius: 999px;
@@ -393,7 +435,8 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: rgba(8, 8, 15, 0.88);
+  background: rgba(8, 8, 15, 0.48);
+  backdrop-filter: blur(6px);
   z-index: 11;
   border-radius: var(--radius-xl);
 }
@@ -446,57 +489,6 @@
   font-size: 0.9rem;
   color: #22c55e;
   font-weight: 600;
-}
-
-/* Task chips */
-.scanner-tasks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  background: var(--accent-10);
-  border: 1px solid rgba(99, 102, 241, 0.28);
-  color: rgba(99, 102, 241, 0.70);
-  transition: all 0.25s ease;
-}
-
-.status-chip.active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-15);
-  box-shadow: 0 0 12px var(--accent-glow);
-}
-
-.status-chip.success {
-  border-color: rgba(34, 197, 94, 0.65);
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.08);
-}
-
-/* Progress bar */
-.scanner-progress {
-  width: 100%;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--bg-elevated-3);
-  overflow: hidden;
-}
-
-.scanner-progress-bar {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--gradient-primary);
-  box-shadow: 0 0 10px var(--accent-glow);
-  transition: width 0.4s ease;
 }
 
 /* Retry row */
