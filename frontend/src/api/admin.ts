@@ -99,6 +99,13 @@ export type AttendanceRecord = {
   student: number;
   status: string;
   timestamp?: string;
+  face_check_count?: number;
+  face_success_count?: number;
+  face_verified_ratio?: number;
+  joined_seconds?: number;
+  joined_ratio?: number;
+  finalized?: boolean;
+  finalized_at?: string | null;
 };
 export const fetchLessonAttendance = async (lessonId: number) =>
   (await api.get<AttendanceRecord[]>(`/api/attendance/lesson/${lessonId}/`)).data;

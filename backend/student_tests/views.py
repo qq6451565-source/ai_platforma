@@ -11,7 +11,6 @@ from tests_app.models import Test, Question, Option
 from tests_app.permissions import IsTeacherOrAdmin
 from tests_app.serializers import QuestionStudentSerializer
 from ai.models import AISettings
-from attendance.models import Attendance
 from attendance.services import get_lesson_attendance_eligibility
 from .models import StudentTest, StudentAnswer
 from .serializers import StudentTestSerializer, StudentAnswerSerializer
@@ -96,18 +95,9 @@ class StartStudentTestView(APIView):
 
         if test.group_id and getattr(request.user, "group_id", None) != test.group_id:
             raise PermissionDenied("Bu test sizning guruhingizga tegishli emas.")
-        if test.lesson_id:
-            allowed, reason = get_lesson_attendance_eligibility(request.user, test.lesson_id)
-            if not allowed:
-                raise ValidationError({"detail": reason})
-        elif test.subject_id:
-            attended_subject = Attendance.objects.filter(
-                student=request.user,
-                lesson__teacher_subject__subject_id=test.subject_id,
-                status="present",
-            ).exists()
-            if not attended_subject:
-                raise ValidationError({"detail": "Bu fan bo'yicha qatnashuv yo'q."})
+        allowed, reason = get_lesson_attendance_eligibility(request.user, test.lesson_id)
+        if not allowed:
+            raise ValidationError({"detail": reason})
 
         student_test, created = StudentTest.objects.get_or_create(
             student=request.user,

@@ -19,6 +19,9 @@ type AbsentLesson = {
   group: string;
   startTime?: string;
   status: "present" | "absent";
+  joinedRatio?: number;
+  faceVerifiedRatio?: number;
+  finalized?: boolean;
 };
 
 type StudentRow = {
@@ -29,6 +32,8 @@ type StudentRow = {
   absentCount: number;
   absentLessons: AbsentLesson[];
 };
+
+const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
 const AdminAttendancePage = () => {
   const qc = useQueryClient();
@@ -174,6 +179,9 @@ const AdminAttendancePage = () => {
             group: lesson?.group_name || group?.name || "-",
             startTime: lesson?.start_time,
             status: record.status,
+            joinedRatio: record.joined_ratio,
+            faceVerifiedRatio: record.face_verified_ratio,
+            finalized: record.finalized,
           };
         });
 
@@ -370,6 +378,23 @@ const AdminAttendancePage = () => {
                     ]}
                   />
                 ),
+              },
+              {
+                title: "Final",
+                key: "finalized",
+                render: (_: unknown, row: AbsentLesson) => (
+                  <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? "Yakunlangan" : "Jarayonda"}</Tag>
+                ),
+              },
+              {
+                title: "Qatnashuv",
+                key: "joinedRatio",
+                render: (_: unknown, row: AbsentLesson) => formatRatio(row.joinedRatio),
+              },
+              {
+                title: "Face ratio",
+                key: "faceVerifiedRatio",
+                render: (_: unknown, row: AbsentLesson) => formatRatio(row.faceVerifiedRatio),
               },
             ]}
           />

@@ -3,6 +3,7 @@ from decimal import Decimal, ROUND_DOWN
 import random
 
 from teacher_subject.models import TeacherSubject
+from attendance.services import get_lesson_access_snapshot
 
 from .models import Test, Question, Option
 
@@ -47,6 +48,7 @@ class TestStudentSerializer(serializers.ModelSerializer):
     lesson_topic = serializers.CharField(source="lesson.topic", read_only=True)
     subject_name = serializers.SerializerMethodField()
     group_name = serializers.SerializerMethodField()
+    access = serializers.SerializerMethodField()
 
     class Meta:
         model = Test
@@ -56,6 +58,7 @@ class TestStudentSerializer(serializers.ModelSerializer):
             "subject", "subject_name", "group", "group_name",
             "time_limit_minutes", "total_score",
             "is_active", "created_at",
+            "access",
         ]
 
     def get_subject_name(self, obj):
@@ -73,6 +76,27 @@ class TestStudentSerializer(serializers.ModelSerializer):
         lesson = getattr(obj, "lesson", None)
         group = getattr(lesson, "group", None) if lesson else None
         return group.name if group else None
+
+    def get_access(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if getattr(user, "role", None) != "student":
+            return None
+
+        access_map = self.context.get("lesson_access_snapshots") or {}
+        if obj.lesson_id:
+            snapshot = dict(access_map.get(obj.lesson_id) or get_lesson_access_snapshot(user, obj.lesson_id))
+        else:
+            snapshot = get_lesson_access_snapshot(user, None)
+
+        if not obj.is_active:
+            snapshot = dict(snapshot)
+            snapshot.update(
+                allowed=False,
+                status="inactive",
+                reason="Test faol emas.",
+            )
+        return snapshot
 
 
 # ===== Teacher/Admin uchun =====

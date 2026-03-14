@@ -23,7 +23,12 @@ type StudentRow = {
   groupName: string;
   status: "present" | "absent";
   timestamp?: string;
+  joinedRatio?: number;
+  faceVerifiedRatio?: number;
+  finalized?: boolean;
 };
+
+const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
 const TeacherAttendancePage = () => {
   const qc = useQueryClient();
@@ -82,9 +87,24 @@ const TeacherAttendancePage = () => {
   });
 
   const attendanceMap = useMemo(() => {
-    const map = new Map<number, { status: "present" | "absent"; timestamp?: string }>();
+    const map = new Map<
+      number,
+      {
+        status: "present" | "absent";
+        timestamp?: string;
+        joinedRatio?: number;
+        faceVerifiedRatio?: number;
+        finalized?: boolean;
+      }
+    >();
     (attendanceRecords || []).forEach((rec) => {
-      map.set(rec.student, { status: rec.status, timestamp: rec.timestamp });
+      map.set(rec.student, {
+        status: rec.status,
+        timestamp: rec.timestamp,
+        joinedRatio: rec.joined_ratio,
+        faceVerifiedRatio: rec.face_verified_ratio,
+        finalized: rec.finalized,
+      });
     });
     return map;
   }, [attendanceRecords]);
@@ -111,6 +131,9 @@ const TeacherAttendancePage = () => {
           groupName: selectedLesson?.group_name || "-",
           status: rec?.status || "absent",
           timestamp: rec?.timestamp,
+          joinedRatio: rec?.joinedRatio,
+          faceVerifiedRatio: rec?.faceVerifiedRatio,
+          finalized: rec?.finalized,
         };
       });
   }, [studentsForLesson, attendanceMap, search, selectedLesson]);
@@ -161,6 +184,23 @@ const TeacherAttendancePage = () => {
       key: "timestamp",
       render: (_: unknown, row: StudentRow) =>
         row.timestamp ? dayjs(row.timestamp).format("DD.MM.YYYY HH:mm") : "-",
+    },
+    {
+      title: "Final",
+      key: "finalized",
+      render: (_: unknown, row: StudentRow) => (
+        <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? "Yakunlangan" : "Jarayonda"}</Tag>
+      ),
+    },
+    {
+      title: "Qatnashuv",
+      key: "joinedRatio",
+      render: (_: unknown, row: StudentRow) => formatRatio(row.joinedRatio),
+    },
+    {
+      title: "Face ratio",
+      key: "faceVerifiedRatio",
+      render: (_: unknown, row: StudentRow) => formatRatio(row.faceVerifiedRatio),
     },
   ];
 
@@ -228,7 +268,7 @@ const TeacherAttendancePage = () => {
             <Empty description="Davomat yuklanmoqda..." />
           ) : rows.length ? (
             <div className="table-scroll">
-              <Table rowKey="id" columns={columns} dataSource={rows} pagination={{ pageSize: 10 }} scroll={{ x: 720 }} size="small" />
+              <Table rowKey="id" columns={columns} dataSource={rows} pagination={{ pageSize: 10 }} scroll={{ x: 1080 }} size="small" />
             </div>
           ) : (
             <Empty description="Talabalar topilmadi" />

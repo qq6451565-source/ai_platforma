@@ -1,15 +1,73 @@
-import { Button, Card, Empty, List, Typography, Skeleton, Modal, Radio, message } from "antd";
+import { Button, Card, Empty, List, Typography, Skeleton, Modal, Radio, Tag, message } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchTests } from "../../api/tests";
 import { fetchLessons } from "../../api/lessons";
-import { fetchAttendance } from "../../api/attendance";
-import { useMe } from "../../hooks/useMe";
 import { startTest, answerTest, finishTest, StartTestResponse } from "../../api/studentTests";
 import { startTestProctoring, verifyProctoring, presenceProctoring, finishProctoring } from "../../api/proctoring";
+import type { LessonAccessSnapshot, TestItem } from "../../types/test";
+
+const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
+
+const getAttendanceLabel = (access?: LessonAccessSnapshot | null) => {
+  if (!access) return "-";
+  if (!access.attendance_finalized) return "Yakunlanmagan";
+  if (access.attendance_status === "present") return "Bor";
+  if (access.attendance_status === "absent") return "Yoq";
+  return "-";
+};
+
+const getStartState = (test: TestItem) => {
+  const access = test.access;
+  if (test.is_active === false) {
+    return {
+      canStart: false,
+      label: "Inactive",
+      reason: "Test faol emas.",
+      statusLabel: "Inactive",
+      color: "default" as const,
+    };
+  }
+  if (!access) {
+    return {
+      canStart: false,
+      label: "Tekshirilmoqda",
+      reason: "Ruxsat holati yuklanmoqda.",
+      statusLabel: "Tekshirilmoqda",
+      color: "default" as const,
+    };
+  }
+
+  if (access.allowed) {
+    return {
+      canStart: true,
+      label: "Boshlash",
+      reason: "Testni boshlashingiz mumkin.",
+      statusLabel: "Ochiq",
+      color: "green" as const,
+    };
+  }
+
+  if (access.status === "pending_attendance") {
+    return {
+      canStart: false,
+      label: "Kutilmoqda",
+      reason: access.reason || "Live dars davomi hali yakunlanmagan.",
+      statusLabel: "Kutilmoqda",
+      color: "gold" as const,
+    };
+  }
+
+  return {
+    canStart: false,
+    label: "Bloklangan",
+    reason: access.reason || "Bu test hozircha yopiq.",
+    statusLabel: "Bloklangan",
+    color: "red" as const,
+  };
+};
 
 const StudentTests = () => {
-  const { data: me } = useMe();
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
     queryFn: fetchTests,
@@ -17,11 +75,6 @@ const StudentTests = () => {
   const { data: lessons } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
-  });
-  const { data: attendance, isLoading: loadingAttendance } = useQuery({
-    queryKey: ["attendance", me?.id],
-    queryFn: () => fetchAttendance(me!.id),
-    enabled: !!me?.id,
   });
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<StartTestResponse | null>(null);
@@ -45,26 +98,6 @@ const StudentTests = () => {
 
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
 
-  const attendedLessonIds = useMemo(() => {
-    const set = new Set<number>();
-    (attendance || []).forEach((record) => {
-      if (record.status === "present") {
-        set.add(record.lesson);
-      }
-    });
-    return set;
-  }, [attendance]);
-
-  const attendedSubjects = useMemo(() => {
-    const set = new Set<string>();
-    (lessons || []).forEach((lesson) => {
-      if (attendedLessonIds.has(lesson.id) && lesson.subject_name) {
-        set.add(lesson.subject_name);
-      }
-    });
-    return set;
-  }, [attendedLessonIds, lessons]);
-
   const subjectCards = useMemo(() => {
     const counts = new Map<string, number>();
     (lessons || []).forEach((lesson) => {
@@ -83,21 +116,6 @@ const StudentTests = () => {
     if (!selectedSubject) return [];
     return (tests || []).filter((test) => test.subject_name === selectedSubject);
   }, [selectedSubject, tests]);
-
-  const getStartState = (test: any) => {
-    if (!test.is_active) return { canStart: false, label: "Inactive", reason: "Test faol emas" };
-    if (loadingAttendance) return { canStart: false, label: "Tekshirilmoqda", reason: "" };
-    if (test.lesson) {
-      if (!attendedLessonIds.has(test.lesson)) {
-        return { canStart: false, label: "Bloklangan", reason: "Darsda qatnashmagansiz" };
-      }
-    } else if (test.subject_name) {
-      if (!attendedSubjects.has(test.subject_name)) {
-        return { canStart: false, label: "Bloklangan", reason: "Fan bo'yicha qatnashuv yo'q" };
-      }
-    }
-    return { canStart: true, label: "Boshlash", reason: "" };
-  };
 
   const stopPresenceLoop = () => {
     if (presenceTimerRef.current) {
@@ -398,7 +416,19 @@ const StudentTests = () => {
                         <span style={{ color: "#94a3b8" }}>Umumiy ball</span>
                         <span>{item.total_score ?? "-"}</span>
                         <span style={{ color: "#94a3b8" }}>Holat</span>
-                        <span>{startState.reason || (item.is_active ? "Active" : "Inactive")}</span>
+                        <span>
+                          <Tag color={startState.color}>{startState.statusLabel}</Tag>
+                        </span>
+                        <span style={{ color: "#94a3b8" }}>Sabab</span>
+                        <span>{startState.reason}</span>
+                        <span style={{ color: "#94a3b8" }}>Davomat</span>
+                        <span>{getAttendanceLabel(item.access)}</span>
+                        <span style={{ color: "#94a3b8" }}>Qatnashuv</span>
+                        <span>{formatRatio(item.access?.attendance_joined_ratio)}</span>
+                        <span style={{ color: "#94a3b8" }}>Face ratio</span>
+                        <span>{formatRatio(item.access?.attendance_face_verified_ratio)}</span>
+                        <span style={{ color: "#94a3b8" }}>Final</span>
+                        <span>{item.access?.attendance_finalized ? "Ha" : "Yo'q"}</span>
                       </div>
                     </div>
                   </List.Item>

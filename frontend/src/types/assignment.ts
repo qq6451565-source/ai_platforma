@@ -1,3 +1,5 @@
+import type { LessonAccessSnapshot } from "./test";
+
 export type Assignment = {
   id: number;
   lesson?: number | null;
@@ -10,4 +12,5 @@ export type Assignment = {
   created_at?: string;
   subject?: string;
   group_names?: string[];
+  access?: LessonAccessSnapshot | null;
 };

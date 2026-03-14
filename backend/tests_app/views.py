@@ -19,6 +19,7 @@ from .serializers import (
 from .permissions import IsTeacherOrAdmin, IsAdmin
 from lessons.models import Lesson
 from .word_import import extract_lines, parse_questions
+from attendance.services import get_lesson_access_snapshots
 
 
 class TestViewSet(viewsets.ModelViewSet):
@@ -46,6 +47,14 @@ class TestViewSet(viewsets.ModelViewSet):
             if getattr(user, "role", None) in ["teacher", "admin"]:
                 return TestTeacherSerializer
         return TestStudentSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        user = self.request.user
+        if self.action == "list" and getattr(user, "role", None) == "student":
+            lesson_ids = self.filter_queryset(self.get_queryset()).values_list("lesson_id", flat=True)
+            context["lesson_access_snapshots"] = get_lesson_access_snapshots(user, lesson_ids)
+        return context
 
     def get_queryset(self):
         qs = super().get_queryset()

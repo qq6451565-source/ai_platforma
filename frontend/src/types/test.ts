@@ -1,3 +1,25 @@
+export type LessonAccessStatus =
+  | "open"
+  | "pending_attendance"
+  | "blocked_absent"
+  | "blocked_no_attendance"
+  | "blocked_missing_lesson"
+  | "inactive";
+
+export type LessonAccessSnapshot = {
+  allowed: boolean;
+  status: LessonAccessStatus;
+  reason?: string | null;
+  attendance_status?: "present" | "absent" | null;
+  attendance_finalized: boolean;
+  attendance_finalized_at?: string | null;
+  attendance_joined_ratio?: number | null;
+  attendance_face_verified_ratio?: number | null;
+  attendance_joined_seconds?: number | null;
+  attendance_face_check_count?: number;
+  attendance_face_success_count?: number;
+};
+
 export type TestItem = {
   id: number;
   title: string;
@@ -13,6 +35,7 @@ export type TestItem = {
   total_score?: number;
   is_active?: boolean;
   created_at?: string;
+  access?: LessonAccessSnapshot | null;
 };
 
 export type OptionInput = {

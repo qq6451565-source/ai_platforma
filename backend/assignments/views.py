@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from django.db.models import Q
 
 from tests_app.permissions import IsAdmin, IsTeacher, IsTeacherOrAdmin
-from attendance.services import get_lesson_attendance_eligibility
+from attendance.services import get_lesson_access_snapshots, get_lesson_attendance_eligibility
 
 from lessons.models import Lesson
 from .models import Assignment, Submission
@@ -22,6 +22,14 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsTeacherOrAdmin()]
         return [IsAuthenticated()]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        user = self.request.user
+        if self.action == "list" and getattr(user, "role", None) == "student":
+            lesson_ids = self.filter_queryset(self.get_queryset()).values_list("lesson_id", flat=True)
+            context["lesson_access_snapshots"] = get_lesson_access_snapshots(user, lesson_ids)
+        return context
 
     def get_queryset(self):
         qs = super().get_queryset()

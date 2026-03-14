@@ -1,4 +1,4 @@
-import { Button, Card, List, Typography, Skeleton, Upload, Modal, message, Empty } from "antd";
+import { Button, Card, List, Typography, Skeleton, Upload, Modal, Tag, message, Empty } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchLessons } from "../../api/lessons";
 import { fetchMySubmissions, submitAssignment } from "../../api/submissions";
+import type { Assignment } from "../../types/assignment";
+import type { LessonAccessSnapshot } from "../../types/test";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -24,6 +26,55 @@ const extractFile = (list: UploadFile[]) => {
   const item = list[0];
   if (!item) return undefined;
   return (item.originFileObj ?? (item as unknown as File)) as File | undefined;
+};
+
+const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
+
+const getAttendanceLabel = (access?: LessonAccessSnapshot | null) => {
+  if (!access) return "-";
+  if (!access.attendance_finalized) return "Yakunlanmagan";
+  if (access.attendance_status === "present") return "Bor";
+  if (access.attendance_status === "absent") return "Yoq";
+  return "-";
+};
+
+const getUploadState = (assignment: Assignment, hasSubmission: boolean) => {
+  const access = assignment.access;
+  const defaultLabel = hasSubmission ? "Qayta yuborish" : "Yuborish";
+  if (!access) {
+    return {
+      canSubmit: false,
+      actionLabel: "Tekshirilmoqda",
+      statusLabel: "Tekshirilmoqda",
+      color: "default" as const,
+      reason: "Ruxsat holati yuklanmoqda.",
+    };
+  }
+  if (access.allowed) {
+    return {
+      canSubmit: true,
+      actionLabel: defaultLabel,
+      statusLabel: "Ochiq",
+      color: "green" as const,
+      reason: "Topshiriqni yuborishingiz mumkin.",
+    };
+  }
+  if (access.status === "pending_attendance") {
+    return {
+      canSubmit: false,
+      actionLabel: "Kutilmoqda",
+      statusLabel: "Kutilmoqda",
+      color: "gold" as const,
+      reason: access.reason || "Live dars davomi hali yakunlanmagan.",
+    };
+  }
+  return {
+    canSubmit: false,
+    actionLabel: "Bloklangan",
+    statusLabel: "Bloklangan",
+    color: "red" as const,
+    reason: access.reason || "Topshiriq hozircha yopiq.",
+  };
 };
 
 const StudentAssignments = () => {
@@ -123,19 +174,22 @@ const StudentAssignments = () => {
               dataSource={filteredAssignments}
               renderItem={(item) => {
                 const sub = getSubmission(item.id);
+                const uploadState = getUploadState(item, !!sub);
                 return (
                   <List.Item
                     actions={[
                       <Button
-                        type="link"
+                        type={uploadState.canSubmit ? "link" : "default"}
                         key="submit"
+                        disabled={!uploadState.canSubmit}
                         onClick={() => {
+                          if (!uploadState.canSubmit) return;
                           setSelectedId(item.id);
                           setFileList([]);
                           setOpen(true);
                         }}
                       >
-                        {sub ? "Qayta yuborish" : "Yuborish"}
+                        {uploadState.actionLabel}
                       </Button>,
                     ]}
                   >
@@ -146,6 +200,14 @@ const StudentAssignments = () => {
                       )}`}
                     />
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <span>
+                        <Tag color={uploadState.color}>{uploadState.statusLabel}</Tag>
+                      </span>
+                      <span>{uploadState.reason}</span>
+                      <span>Davomat: {getAttendanceLabel(item.access)}</span>
+                      <span>Qatnashuv: {formatRatio(item.access?.attendance_joined_ratio)}</span>
+                      <span>Face ratio: {formatRatio(item.access?.attendance_face_verified_ratio)}</span>
+                      <span>Final: {item.access?.attendance_finalized ? "Ha" : "Yo'q"}</span>
                       {item.file ? (
                         <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
                           Topshiriq fayli

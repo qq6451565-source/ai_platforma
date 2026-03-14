@@ -6,6 +6,13 @@ export type AttendanceRecord = {
   student: number;
   status: "present" | "absent";
   timestamp?: string;
+  face_check_count?: number;
+  face_success_count?: number;
+  face_verified_ratio?: number;
+  joined_seconds?: number;
+  joined_ratio?: number;
+  finalized?: boolean;
+  finalized_at?: string | null;
 };
 
 export const fetchAttendance = async (studentId: number): Promise<AttendanceRecord[]> => {

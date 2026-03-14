@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from datetime import timedelta
 
+from attendance.services import get_lesson_access_snapshot
+
 from .models import Assignment, Submission
 
 
@@ -8,6 +10,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     lesson_topic = serializers.CharField(source="lesson.topic", read_only=True)
     subject = serializers.CharField(source="teacher_subject.subject.name", read_only=True)
     group_names = serializers.SerializerMethodField()
+    access = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
@@ -23,6 +26,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "file",
             "deadline",
             "created_at",
+            "access",
         ]
         extra_kwargs = {
             "file": {"required": False, "allow_null": True},
@@ -56,6 +60,17 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     def get_group_names(self, obj):
         return list(obj.teacher_subject.groups.values_list("name", flat=True))
+
+    def get_access(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if getattr(user, "role", None) != "student":
+            return None
+
+        access_map = self.context.get("lesson_access_snapshots") or {}
+        if obj.lesson_id:
+            return dict(access_map.get(obj.lesson_id) or get_lesson_access_snapshot(user, obj.lesson_id))
+        return get_lesson_access_snapshot(user, None)
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
