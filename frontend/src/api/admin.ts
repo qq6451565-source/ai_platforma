@@ -145,6 +145,15 @@ export type EnrollmentAiSummary = {
   event_summary: string[];
 };
 
+export type EnrollmentAllowedActions = {
+  can_edit: boolean;
+  can_delete: boolean;
+  can_approve: boolean;
+  can_reject: boolean;
+  can_reopen: boolean;
+  can_reverify: boolean;
+};
+
 export type EnrollmentItem = {
   id: number;
   full_name?: string;
@@ -156,6 +165,7 @@ export type EnrollmentItem = {
   status?: string;
   latest_verification?: EnrollmentVerification | null;
   ai_summary: EnrollmentAiSummary;
+  allowed_actions: EnrollmentAllowedActions;
 };
 
 export type EnrollmentDetailItem = EnrollmentItem & {

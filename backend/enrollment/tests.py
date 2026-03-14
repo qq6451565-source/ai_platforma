@@ -217,8 +217,12 @@ class AdminEnrollmentApiTests(APITestCase):
         self.assertEqual(item["direction_name"], self.direction.name)
         self.assertIn("ai_summary", item)
         self.assertIn("latest_verification", item)
+        self.assertIn("allowed_actions", item)
         self.assertEqual(item["ai_summary"]["status"], "not_verified")
         self.assertTrue(item["ai_summary"]["face_embedding_ready"])
+        self.assertTrue(item["allowed_actions"]["can_approve"])
+        self.assertTrue(item["allowed_actions"]["can_reverify"])
+        self.assertFalse(item["allowed_actions"]["can_reopen"])
         self.assertNotIn("documents", item)
 
     def test_admin_enrollment_detail_returns_face_only_documents(self):
@@ -226,6 +230,7 @@ class AdminEnrollmentApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("documents", response.data)
         self.assertIn("verification_history", response.data)
+        self.assertIn("allowed_actions", response.data)
         self.assertIn("passport_front", response.data["documents"])
         self.assertIn("face_image", response.data["documents"])
         self.assertNotIn("passport_back", response.data["documents"])

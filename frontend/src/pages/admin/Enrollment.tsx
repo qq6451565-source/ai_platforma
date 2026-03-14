@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   Descriptions,
-  Divider,
   Drawer,
   Empty,
   Form,
@@ -68,7 +67,17 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
 
 const formatDateTime = (value?: string | null) => (value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-");
 const formatConfidence = (value?: number | null) => (typeof value === "number" ? value.toFixed(3) : "-");
-const isFinalApplicantStatus = (status?: string) => status === "approved" || status === "rejected";
+const fallbackAllowedActions = (status?: string) => ({
+  can_edit: status !== "approved" && status !== "rejected",
+  can_delete: status !== "approved" && status !== "rejected",
+  can_approve: status === "pending" || status === "verified",
+  can_reject: status === "pending" || status === "verified",
+  can_reopen: status === "rejected",
+  can_reverify: status === "pending" || status === "verified",
+});
+
+const getAllowedActions = (item?: EnrollmentItem | EnrollmentDetailItem | null) =>
+  item?.allowed_actions || fallbackAllowedActions(item?.status);
 
 const statusTag = (status?: string) => {
   if (status === "approved") return <Tag color="green">Tasdiqlangan</Tag>;
@@ -237,8 +246,8 @@ const EnrollmentPage = () => {
   };
 
   const openApprove = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (isFinalApplicantStatus(item.status)) {
-      message.warning("Final holatdagi arizani qayta tasdiqlab bo'lmaydi.");
+    if (!getAllowedActions(item).can_approve) {
+      message.warning("Bu ariza uchun tasdiqlash yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -254,8 +263,8 @@ const EnrollmentPage = () => {
   };
 
   const openReject = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (isFinalApplicantStatus(item.status)) {
-      message.warning("Final holatdagi arizani rad etish yopilgan.");
+    if (!getAllowedActions(item).can_reject) {
+      message.warning("Bu ariza uchun rad etish yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -266,8 +275,8 @@ const EnrollmentPage = () => {
   };
 
   const openEdit = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (isFinalApplicantStatus(item.status)) {
-      message.warning("Final holatdagi arizani tahrirlash yopilgan.");
+    if (!getAllowedActions(item).can_edit) {
+      message.warning("Bu ariza uchun tahrirlash yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -281,8 +290,8 @@ const EnrollmentPage = () => {
   };
 
   const openReopen = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (item.status !== "rejected") {
-      message.warning("Faqat rad etilgan arizani qayta ochish mumkin.");
+    if (!getAllowedActions(item).can_reopen) {
+      message.warning("Bu ariza uchun qayta ochish yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -411,8 +420,8 @@ const EnrollmentPage = () => {
   };
 
   const handleDelete = async (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (isFinalApplicantStatus(item.status)) {
-      message.warning("Final holatdagi ariza o'chirilmaydi.");
+    if (!getAllowedActions(item).can_delete) {
+      message.warning("Bu ariza uchun o'chirish yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -420,8 +429,8 @@ const EnrollmentPage = () => {
   };
 
   const handleReverify = async (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (isFinalApplicantStatus(item.status)) {
-      message.warning("Final holatdagi ariza qayta tekshirilmaydi.");
+    if (!getAllowedActions(item).can_reverify) {
+      message.warning("Bu ariza uchun AI qayta tekshiruvi yopilgan.");
       return;
     }
     setSelectedApplicant(item);
@@ -511,19 +520,19 @@ const EnrollmentPage = () => {
     {
       title: "Amallar",
       render: (_: unknown, row: EnrollmentItem) => {
-        const locked = isFinalApplicantStatus(row.status);
+        const actions = getAllowedActions(row);
         return (
           <Space wrap>
             <Button size="small" onClick={() => openDetails(row)}>
               Ko'rish
             </Button>
-            <Button size="small" disabled={locked} onClick={() => openEdit(row)}>
+            <Button size="small" disabled={!actions.can_edit} onClick={() => openEdit(row)}>
               Tahrirlash
             </Button>
             <Button
               size="small"
               type="primary"
-              disabled={locked}
+              disabled={!actions.can_approve}
               loading={approving && selectedApplicant?.id === row.id}
               onClick={() => openApprove(row)}
             >
@@ -532,13 +541,13 @@ const EnrollmentPage = () => {
             <Button
               size="small"
               danger
-              disabled={locked}
+              disabled={!actions.can_reject}
               loading={rejecting && selectedApplicant?.id === row.id}
               onClick={() => openReject(row)}
             >
               Rad etish
             </Button>
-            {row.status === "rejected" ? (
+            {actions.can_reopen ? (
               <Button
                 size="small"
                 type="dashed"
@@ -555,7 +564,7 @@ const EnrollmentPage = () => {
               okButtonProps={{ loading: deleting && deleteId === row.id }}
               onConfirm={() => handleDelete(row)}
             >
-              <Button size="small" danger disabled={locked || (deleting && deleteId === row.id)}>
+              <Button size="small" danger disabled={!actions.can_delete || (deleting && deleteId === row.id)}>
                 O'chirish
               </Button>
             </Popconfirm>
@@ -568,6 +577,7 @@ const EnrollmentPage = () => {
   const detailSummary = currentApplicant?.ai_summary;
   const detailHistory = (currentApplicant as EnrollmentDetailItem | null)?.verification_history || [];
   const decisionHistory = applicantAuditHistory || [];
+  const currentActions = getAllowedActions(currentApplicant);
 
   return (
     <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
@@ -589,27 +599,27 @@ const EnrollmentPage = () => {
           currentApplicant ? (
             <Space wrap>
               <Button
-                disabled={isFinalApplicantStatus(currentApplicant.status)}
+                disabled={!currentActions.can_edit}
                 onClick={() => openEdit(currentApplicant)}
               >
                 Tahrirlash
               </Button>
               <Button
                 type="primary"
-                disabled={isFinalApplicantStatus(currentApplicant.status)}
+                disabled={!currentActions.can_approve}
                 onClick={() => openApprove(currentApplicant)}
               >
                 Tasdiqlash
               </Button>
               <Button
                 danger
-                disabled={isFinalApplicantStatus(currentApplicant.status)}
+                disabled={!currentActions.can_reject}
                 onClick={() => openReject(currentApplicant)}
                 loading={rejecting && selectedApplicant?.id === currentApplicant.id}
               >
                 Rad etish
               </Button>
-              {currentApplicant.status === "rejected" ? (
+              {currentActions.can_reopen ? (
                 <Button
                   type="dashed"
                   loading={reopening && selectedApplicant?.id === currentApplicant.id}
@@ -718,14 +728,14 @@ const EnrollmentPage = () => {
                         </div>
                       ) : null}
                       <Button
-                        disabled={isFinalApplicantStatus(currentApplicant.status)}
+                        disabled={!currentActions.can_reverify}
                         loading={reverifying && selectedApplicant?.id === currentApplicant.id}
                         onClick={() => void handleReverify(currentApplicant)}
                       >
                         AI qayta tekshir
                       </Button>
-                      {isFinalApplicantStatus(currentApplicant.status) ? (
-                        <Text type="secondary">Final holatdagi ariza uchun AI qayta tekshiruvi yopilgan.</Text>
+                      {!currentActions.can_reverify ? (
+                        <Text type="secondary">Bu ariza uchun AI qayta tekshiruvi yopilgan.</Text>
                       ) : null}
                     </Space>
                   ) : (

@@ -141,6 +141,19 @@ def _build_verification_summary(verification: VerificationResult | None) -> dict
     }
 
 
+def _build_allowed_actions(applicant: Applicant) -> dict[str, bool]:
+    is_final = applicant.status in {"approved", "rejected"}
+    has_documents = bool(getattr(applicant, "documents", None))
+    return {
+        "can_edit": not is_final,
+        "can_delete": not is_final,
+        "can_approve": applicant.status in {"pending", "verified"},
+        "can_reject": applicant.status in {"pending", "verified"},
+        "can_reopen": applicant.status == "rejected",
+        "can_reverify": applicant.status in {"pending", "verified"} and has_documents,
+    }
+
+
 class RegistrationWindowSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationWindow
@@ -240,6 +253,7 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
     direction_name = serializers.CharField(source="direction_choice.name", read_only=True)
     latest_verification = serializers.SerializerMethodField()
     ai_summary = serializers.SerializerMethodField()
+    allowed_actions = serializers.SerializerMethodField()
 
     class Meta:
         model = Applicant
@@ -254,6 +268,7 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
             "created_at",
             "latest_verification",
             "ai_summary",
+            "allowed_actions",
         )
 
     def _sorted_verifications(self, obj: Applicant) -> list[VerificationResult]:
@@ -268,6 +283,9 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
     def get_ai_summary(self, obj: Applicant) -> dict:
         latest = next(iter(self._sorted_verifications(obj)), None)
         return _build_verification_summary(latest)
+
+    def get_allowed_actions(self, obj: Applicant) -> dict[str, bool]:
+        return _build_allowed_actions(obj)
 
 
 class ApplicantAdminDetailSerializer(ApplicantAdminListSerializer):
