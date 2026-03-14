@@ -172,8 +172,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                     }}
                     title={
                       status?.audioEnabled
-                        ? t("live.panel.disableMic")
-                        : t("live.panel.enableMic")
+                        ? "Hozir markazda gapiryapti"
+                        : "Gapirish uchun markazga chiqarish"
                     }
                   >
                     {status?.audioEnabled ? (

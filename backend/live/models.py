@@ -1,5 +1,6 @@
-
 from django.db import models
+from django.utils import timezone
+
 from lessons.models import Lesson
 from accounts.models import User
 
@@ -29,6 +30,7 @@ class LiveParticipant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
+    accumulated_seconds = models.PositiveIntegerField(default=0)
     is_teacher = models.BooleanField(default=False)
     hand_raised = models.BooleanField(default=False)
 
@@ -39,6 +41,46 @@ class LiveParticipant(models.Model):
 
     def __str__(self):
         return f"{self.user.username} in {self.room.room_name}"
+
+    def active_seconds(self, until=None) -> int:
+        total = int(self.accumulated_seconds or 0)
+        if self.left_at is None and self.joined_at:
+            finished_at = until or timezone.now()
+            if finished_at > self.joined_at:
+                total += int((finished_at - self.joined_at).total_seconds())
+        return max(total, 0)
+
+    def mark_joined(self, *, joined_at=None, is_teacher=None) -> None:
+        joined_at = joined_at or timezone.now()
+        update_fields = []
+
+        if self.left_at is not None:
+            self.joined_at = joined_at
+            self.left_at = None
+            update_fields.extend(["joined_at", "left_at"])
+
+        if is_teacher is not None and self.is_teacher != is_teacher:
+            self.is_teacher = is_teacher
+            update_fields.append("is_teacher")
+
+        if update_fields:
+            self.save(update_fields=update_fields)
+
+    def mark_left(self, *, left_at=None) -> None:
+        left_at = left_at or timezone.now()
+        update_fields = []
+
+        if self.left_at is None:
+            self.accumulated_seconds = self.active_seconds(until=left_at)
+            self.left_at = left_at
+            update_fields.extend(["accumulated_seconds", "left_at"])
+
+        if self.hand_raised:
+            self.hand_raised = False
+            update_fields.append("hand_raised")
+
+        if update_fields:
+            self.save(update_fields=update_fields)
 
 
 class FaceVerificationSettings(models.Model):

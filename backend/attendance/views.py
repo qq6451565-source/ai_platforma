@@ -49,12 +49,16 @@ class MarkAttendanceView(APIView):
                 if qs.count() > 1:
                     qs.exclude(id=obj.id).delete()
                 obj.status = status_value
-                obj.save(update_fields=["status"])
+                obj.finalized = True
+                obj.finalized_at = timezone.now()
+                obj.save(update_fields=["status", "finalized", "finalized_at"])
             else:
                 obj = Attendance.objects.create(
                     lesson=lesson,
                     student=student,
                     status=status_value,
+                    finalized=True,
+                    finalized_at=timezone.now(),
                 )
 
             return Response({
@@ -151,5 +155,6 @@ class PresenceCheckView(APIView):
                 "present": present,
                 "confidence": confidence,
                 "status": attendance.status,
+                "finalized": attendance.finalized,
             }
         )

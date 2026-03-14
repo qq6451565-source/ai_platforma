@@ -7,7 +7,20 @@ from .models import Attendance
 class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
-        fields = ['id', 'lesson', 'student', 'status', 'timestamp']
+        fields = [
+            'id',
+            'lesson',
+            'student',
+            'status',
+            'timestamp',
+            'face_check_count',
+            'face_success_count',
+            'face_verified_ratio',
+            'joined_seconds',
+            'joined_ratio',
+            'finalized',
+            'finalized_at',
+        ]
 
 
 class MarkAttendanceSerializer(serializers.Serializer):

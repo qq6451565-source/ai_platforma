@@ -193,15 +193,7 @@ def _get_or_create_participant(room: LiveRoom, user: User, is_teacher: bool):
         duplicates = participants.exclude(id=participant.id)
         if duplicates.exists():
             duplicates.delete()
-        changed = False
-        if participant.left_at:
-            participant.left_at = None
-            changed = True
-        if participant.is_teacher != is_teacher:
-            participant.is_teacher = is_teacher
-            changed = True
-        if changed:
-            participant.save(update_fields=["left_at", "is_teacher"])
+        participant.mark_joined(is_teacher=is_teacher)
         return participant, False
     return LiveParticipant.objects.create(room=room, user=user, is_teacher=is_teacher), True
 
@@ -573,7 +565,9 @@ class LeaveLiveRoomView(APIView):
         participants = LiveParticipant.objects.filter(room=room, user=request.user)
         if not participants.exists():
             return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
-        participants.update(left_at=timezone.now(), hand_raised=False)
+        left_at = timezone.now()
+        for participant in participants:
+            participant.mark_left(left_at=left_at)
         if room.stage_user_id == request.user.id:
             next_teacher = (
                 LiveParticipant.objects.filter(room=room, is_teacher=True, left_at__isnull=True)

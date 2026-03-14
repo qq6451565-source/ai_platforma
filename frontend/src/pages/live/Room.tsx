@@ -862,6 +862,7 @@ export default function Room() {
     teacherStageOwnerUid &&
     stageUserId !== teacherStageOwnerUid
   );
+  const canShareScreen = Boolean(state.connected && isStageUser);
 
   useEffect(() => {
     if (!state.connected) return;
@@ -1009,7 +1010,7 @@ export default function Room() {
   );
 
   const handleScreenShareToggle = useCallback(async () => {
-    if (!isTeacher || !state.connected) return;
+    if (!state.connected || !isStageUser) return;
     const client = clientRef.current;
     if (!client) return;
 
@@ -1047,7 +1048,13 @@ export default function Room() {
     } catch (error) {
       pushDebug("screen share start error", toErrorText(error));
     }
-  }, [isTeacher, pushDebug, state.connected, stopScreenShare]);
+  }, [isStageUser, pushDebug, state.connected, stopScreenShare]);
+
+  useEffect(() => {
+    if (!screenVideoRef.current) return;
+    if (state.connected && isStageUser) return;
+    void stopScreenShare("stage-access-revoked", true);
+  }, [isStageUser, state.connected, stopScreenShare]);
 
   const handleCameraToggle = useCallback(async () => {
     const videoTrack = localVideoRef.current;
@@ -1489,6 +1496,7 @@ export default function Room() {
             videoTracks={videoTracksMap.current}
             isTeacher={isTeacher}
             onClose={() => setState((prev) => ({ ...prev, showStudentsGrid: false }))}
+            onAudioToggle={isTeacher ? handleSetStage : undefined}
             onStudentSelect={isTeacher ? handleSetStage : undefined}
             stageUserId={stageUserId}
           />
@@ -1502,6 +1510,7 @@ export default function Room() {
           videoTracks={videoTracksMap.current}
           activeVideoUids={activeVideoUids}
           isTeacher={isTeacher}
+          onStudentAudioToggle={isTeacher ? handleSetStage : undefined}
           onStudentSelect={isTeacher ? handleSetStage : undefined}
           stageUserId={stageUserId}
         />
@@ -1543,13 +1552,13 @@ export default function Room() {
           {state.cameraOn ? "Cam On" : "Cam Off"}
         </Button>
 
-        {isTeacher && (
+        {(isStageUser || state.screenSharing) && (
           <Button
             variant="ghost"
             className={`control-btn ${state.screenSharing ? "is-active" : ""}`}
             onClick={handleScreenShareToggle}
             icon={<DesktopOutlined />}
-            disabled={!state.connected}
+            disabled={!canShareScreen}
           >
             {state.screenSharing ? "Stop Share" : "Screen Share"}
           </Button>

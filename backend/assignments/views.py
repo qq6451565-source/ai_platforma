@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from django.db.models import Q
 
 from tests_app.permissions import IsAdmin, IsTeacher, IsTeacherOrAdmin
-from attendance.models import Attendance
+from attendance.services import get_lesson_attendance_eligibility
 
 from lessons.models import Lesson
 from .models import Assignment, Submission
@@ -84,13 +84,9 @@ class SubmitAssignmentView(APIView):
             raise ValidationError({"assignment": "Topshiriq darsga biriktirilmagan."})
         if request.user.group_id != assignment.lesson.group_id:
             raise PermissionDenied("Bu topshiriq sizning guruhingizga tegishli emas.")
-        attended = Attendance.objects.filter(
-            student=request.user,
-            lesson_id=assignment.lesson_id,
-            status="present",
-        ).exists()
-        if not attended:
-            raise PermissionDenied("Darsda qatnashmagansiz.")
+        allowed, reason = get_lesson_attendance_eligibility(request.user, assignment.lesson_id)
+        if not allowed:
+            raise PermissionDenied(reason)
 
         serializer = SubmissionSerializer(data=request.data)
         if serializer.is_valid():
