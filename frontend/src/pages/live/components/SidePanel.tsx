@@ -1,6 +1,8 @@
 import React from "react";
 import {
   getFaceStatusDisplay,
+  getStudentAttendanceNote,
+  getStudentMetricsSummary,
   resolveStudentGroup,
 } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
@@ -115,6 +117,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 : faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE"
                 ? "status-unverified"
                 : "status-checking";
+            const metricsSummary = getStudentMetricsSummary(status);
+            const attendanceNote = getStudentAttendanceNote(status);
 
             return (
               <div
@@ -141,6 +145,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   <span className="meta">
                     {resolveStudentGroup(student)}
                   </span>
+                  {metricsSummary && <span className="meta meta-metrics">{metricsSummary}</span>}
+                  {attendanceNote && <span className="meta meta-attendance">{attendanceNote}</span>}
                 </div>
 
                 <div

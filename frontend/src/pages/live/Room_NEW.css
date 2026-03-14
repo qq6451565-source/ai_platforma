@@ -186,6 +186,31 @@
   opacity: 0.84;
 }
 
+.stage-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.stage-metric-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.26rem 0.56rem;
+  border-radius: 999px;
+  border: 0.0625rem solid rgba(116, 154, 217, 0.38);
+  background: rgba(4, 15, 38, 0.72);
+  color: #d8e8ff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.stage-metric-note {
+  border-color: rgba(17, 214, 128, 0.34);
+  color: #bdf6d7;
+}
+
 .stage-title {
   font-size: 0.92rem;
   font-weight: 500;

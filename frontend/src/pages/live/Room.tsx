@@ -39,7 +39,13 @@ import { Button } from "../../components/ui";
 import SidePanel from "./components/SidePanel";
 import StudentGridSection from "./components/StudentGridSection";
 import { useFaceVerification, useStudentMonitoring } from "./hooks/useFaceVerification";
-import { resolveStudentGroup, resolveVisualStatus, sortStudents } from "./utils/studentSorting";
+import {
+  getStudentAttendanceNote,
+  getStudentMetricChips,
+  resolveStudentGroup,
+  resolveVisualStatus,
+  sortStudents,
+} from "./utils/studentSorting";
 import i18next from "../../i18n";
 
 import "./Room_NEW.css";
@@ -276,6 +282,14 @@ export default function Room() {
       handRaised: existing?.handRaised ?? false,
       audioEnabled: existing?.audioEnabled ?? false,
       timestamp: Date.now(),
+      statusReason: existing?.statusReason,
+      lastVerifiedAt: existing?.lastVerifiedAt ?? null,
+      successRate: existing?.successRate ?? null,
+      attendanceStatus: existing?.attendanceStatus ?? null,
+      attendanceRatio: existing?.attendanceRatio ?? null,
+      attendanceSamples: existing?.attendanceSamples ?? null,
+      joinedSeconds: existing?.joinedSeconds ?? null,
+      joinedRatio: existing?.joinedRatio ?? null,
     });
     return merged;
   }, [monitoringStatuses, localFaceStatus, me?.id]);
@@ -1408,6 +1422,18 @@ export default function Room() {
     const meName = `${me?.first_name || ""} ${me?.last_name || ""}`.trim();
     return meName || me?.username || t("live.room.lecturer");
   }, [me?.first_name, me?.last_name, me?.username, stageParticipant?.user_name, t]);
+  const stageStatus = useMemo(() => {
+    if (!stageParticipant) return undefined;
+    return studentStatuses.get(stageParticipant.user_id);
+  }, [stageParticipant, studentStatuses]);
+  const stageMetricChips = useMemo(
+    () => (stageParticipant?.is_teacher ? [] : getStudentMetricChips(stageStatus)),
+    [stageParticipant?.is_teacher, stageStatus]
+  );
+  const stageAttendanceNote = useMemo(
+    () => (stageParticipant?.is_teacher ? "" : getStudentAttendanceNote(stageStatus)),
+    [stageParticipant?.is_teacher, stageStatus]
+  );
 
   const showCameraUnavailable =
     isTeacher &&
@@ -1478,6 +1504,20 @@ export default function Room() {
               <div className="stage-subtitle">
                 {stageParticipant?.is_teacher ? "O'qituvchi markazda" : "Talaba markazda"}
               </div>
+              {stageMetricChips.length > 0 && (
+                <div className="stage-metrics">
+                  {stageMetricChips.map((chip) => (
+                    <span key={chip.key} className="stage-metric-pill">
+                      {chip.label} {chip.value}
+                    </span>
+                  ))}
+                  {stageAttendanceNote && (
+                    <span className="stage-metric-pill stage-metric-note">
+                      {stageAttendanceNote}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="stage-bottom-info">
               <div className="stage-user-label">

@@ -301,6 +301,7 @@ class FaceVerificationService:
             "event_id": event.id,
             "message": message,
             "alert": alert,
+            "success_rate": round(session.success_rate, 2),
             "attendance_status": attendance_state.get("status") if attendance_state else None,
             "attendance_ratio": attendance_state.get("ratio") if attendance_state else None,
             "attendance_samples": attendance_state.get("samples") if attendance_state else None,

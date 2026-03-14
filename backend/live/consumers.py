@@ -55,6 +55,26 @@ def _active_room_participants(room):
     )
 
 
+def _lesson_duration_seconds(room) -> int:
+    lesson = getattr(room, "lesson", None)
+    if not lesson or not lesson.start_time or not lesson.end_time:
+        return 0
+    if lesson.end_time <= lesson.start_time:
+        return 0
+    return int((lesson.end_time - lesson.start_time).total_seconds())
+
+
+def _participant_join_metrics(participant, room) -> tuple[int, float]:
+    if not participant:
+        return 0, 0.0
+
+    stale_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
+    joined_seconds = participant.active_seconds(stale_after_seconds=stale_seconds)
+    lesson_duration = _lesson_duration_seconds(room)
+    joined_ratio = (joined_seconds / lesson_duration) if lesson_duration > 0 else 0.0
+    return joined_seconds, round(joined_ratio, 4)
+
+
 class LiveLessonConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.room_name = self.scope["url_route"]["kwargs"]["room"]
@@ -280,6 +300,7 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                 .order_by("-id")
                 .first()
             )
+            joined_seconds, joined_ratio = _participant_join_metrics(participant, room)
 
             total_students = _active_room_participants(room).filter(
                 is_teacher=False
@@ -300,9 +321,12 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                         "audio_enabled": room.stage_user_id == self.user.id,
                         "event_type": result.get("event_type"),
                         "status_reason": result.get("status_reason") or result.get("event_type"),
+                        "success_rate": result.get("success_rate"),
                         "attendance_status": result.get("attendance_status"),
                         "attendance_ratio": result.get("attendance_ratio"),
                         "attendance_samples": result.get("attendance_samples"),
+                        "joined_seconds": joined_seconds,
+                        "joined_ratio": joined_ratio,
                         "last_verified_at": timezone.now().isoformat(),
                     }
                 ],
@@ -415,6 +439,7 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                     if latest_event and isinstance(latest_event.metadata, dict)
                     else {}
                 )
+                joined_seconds, joined_ratio = _participant_join_metrics(session.participant, room)
                 updates.append(
                     {
                         "student_id": session.user_id,
@@ -430,6 +455,8 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                         "attendance_status": attendance_meta.get("status"),
                         "attendance_ratio": attendance_meta.get("ratio"),
                         "attendance_samples": attendance_meta.get("samples"),
+                        "joined_seconds": joined_seconds,
+                        "joined_ratio": joined_ratio,
                     }
                 )
 

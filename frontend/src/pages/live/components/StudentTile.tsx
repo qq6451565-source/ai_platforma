@@ -1,7 +1,12 @@
 ﻿import React, { useEffect, useRef } from "react";
 import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import { getFaceStatusDisplay, resolveStudentGroup } from "../utils/studentSorting";
+import {
+  getFaceStatusDisplay,
+  getStudentAttendanceNote,
+  getStudentMetricChips,
+  resolveStudentGroup,
+} from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
 import "../styles/StudentTile.css";
 
@@ -57,6 +62,8 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   const isHandRaised = status?.handRaised || student.hand_raised;
   const isAudioEnabled = status?.audioEnabled || false;
   const statusDisplay = getFaceStatusDisplay(faceStatus);
+  const metricChips = getStudentMetricChips(status);
+  const attendanceNote = getStudentAttendanceNote(status);
 
   return (
     <div
@@ -87,6 +94,18 @@ export const StudentTile: React.FC<StudentTileProps> = ({
       <div className="student-info">
         <div className="student-name">{student.user_name}</div>
         <div className="student-group">{resolveStudentGroup(student)}</div>
+
+        {metricChips.length > 0 && (
+          <div className="student-metrics">
+            {metricChips.map((chip) => (
+              <span key={chip.key} className={`metric-chip metric-chip-${chip.key}`}>
+                {chip.label} {chip.value}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {attendanceNote && <div className="student-attendance-note">{attendanceNote}</div>}
 
         <div className="student-badges">
           {isStage && (

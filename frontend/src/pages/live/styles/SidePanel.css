@@ -59,7 +59,7 @@
   align-items: center;
   gap: 0.62rem;
   padding: 0.5rem 0.54rem;
-  min-height: 6.6rem;
+  min-height: 7.2rem;
   border-radius: 0.72rem;
   border: 0.0625rem solid rgba(86, 126, 197, 0.35);
   background: rgba(7, 20, 47, 0.82);
@@ -143,6 +143,16 @@
 .participant-info .meta {
   font-size: 0.84rem;
   color: #8eb1e8;
+}
+
+.participant-info .meta.meta-metrics {
+  font-size: 0.72rem;
+  color: #c9dcff;
+}
+
+.participant-info .meta.meta-attendance {
+  font-size: 0.68rem;
+  color: #92b8ee;
 }
 
 .status-dot {

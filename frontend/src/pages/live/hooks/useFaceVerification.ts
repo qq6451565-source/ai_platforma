@@ -31,6 +31,8 @@ interface StudentStatusUpdate {
   attendance_status?: "present" | "absent";
   attendance_ratio?: number;
   attendance_samples?: number;
+  joined_seconds?: number;
+  joined_ratio?: number;
 }
 
 interface MonitoringUpdateMessage {
@@ -51,6 +53,13 @@ interface SingleStudentUpdateMessage {
   audio_enabled?: boolean;
   event_type?: string;
   status_reason?: string;
+  last_verified_at?: string;
+  success_rate?: number;
+  attendance_status?: "present" | "absent";
+  attendance_ratio?: number;
+  attendance_samples?: number;
+  joined_seconds?: number;
+  joined_ratio?: number;
 }
 
 export interface MonitoringRoomParticipant {
@@ -119,6 +128,32 @@ function applyUpdatesToMap(
           ? Boolean(update.audio_enabled)
           : existing?.audioEnabled ?? false,
       timestamp: Date.now(),
+      statusReason: update.status_reason ?? existing?.statusReason,
+      lastVerifiedAt: update.last_verified_at ?? existing?.lastVerifiedAt ?? null,
+      successRate:
+        update.success_rate !== undefined
+          ? Number(update.success_rate)
+          : existing?.successRate ?? null,
+      attendanceStatus:
+        update.attendance_status !== undefined
+          ? update.attendance_status
+          : existing?.attendanceStatus ?? null,
+      attendanceRatio:
+        update.attendance_ratio !== undefined
+          ? Number(update.attendance_ratio)
+          : existing?.attendanceRatio ?? null,
+      attendanceSamples:
+        update.attendance_samples !== undefined
+          ? Number(update.attendance_samples)
+          : existing?.attendanceSamples ?? null,
+      joinedSeconds:
+        update.joined_seconds !== undefined
+          ? Number(update.joined_seconds)
+          : existing?.joinedSeconds ?? null,
+      joinedRatio:
+        update.joined_ratio !== undefined
+          ? Number(update.joined_ratio)
+          : existing?.joinedRatio ?? null,
     });
   });
   return next;
@@ -279,6 +314,13 @@ export const useStudentMonitoring = (roomName: string, enabled: boolean = false)
             audio_enabled: msg.audio_enabled ?? false,
             event_type: msg.event_type,
             status_reason: msg.status_reason,
+            last_verified_at: msg.last_verified_at,
+            success_rate: msg.success_rate,
+            attendance_status: msg.attendance_status,
+            attendance_ratio: msg.attendance_ratio,
+            attendance_samples: msg.attendance_samples,
+            joined_seconds: msg.joined_seconds,
+            joined_ratio: msg.joined_ratio,
           }]);
         }
       } catch {

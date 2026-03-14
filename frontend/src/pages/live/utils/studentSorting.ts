@@ -13,6 +13,14 @@ export interface StudentStatus {
   handRaised: boolean;
   audioEnabled: boolean;
   timestamp: number;
+  statusReason?: string;
+  lastVerifiedAt?: string | null;
+  successRate?: number | null;
+  attendanceStatus?: "present" | "absent" | null;
+  attendanceRatio?: number | null;
+  attendanceSamples?: number | null;
+  joinedSeconds?: number | null;
+  joinedRatio?: number | null;
 }
 
 export interface Student {
@@ -32,6 +40,12 @@ export interface StudentGroup {
   group: string;
   icon: string;
   students: Student[];
+}
+
+export interface StudentMetricChip {
+  key: "joined" | "face" | "checks";
+  label: string;
+  value: string;
 }
 
 const tierPriority: Record<StudentTier, number> = {
@@ -82,6 +96,56 @@ export const resolveStudentTier = (
   if (visualStatus === "verified") return "verified";
   if (visualStatus === "unverified") return "failed";
   return "pending";
+};
+
+const formatRatioPercent = (value?: number | null) => {
+  if (value == null) return null;
+  return `${Math.round(value * 100)}%`;
+};
+
+const formatWholePercent = (value?: number | null) => {
+  if (value == null) return null;
+  return `${Math.round(value)}%`;
+};
+
+export const getStudentMetricChips = (status?: StudentStatus): StudentMetricChip[] => {
+  if (!status) return [];
+
+  const chips: StudentMetricChip[] = [];
+  const joinedRatio = formatRatioPercent(status.joinedRatio);
+  const successRate = formatWholePercent(status.successRate);
+  const hasJoinedProgress = (status.joinedSeconds ?? 0) > 0 || (status.joinedRatio ?? 0) > 0;
+  const hasFaceChecks = (status.attendanceSamples ?? 0) > 0 || (status.successRate ?? 0) > 0;
+  const samples =
+    status.attendanceSamples != null && status.attendanceSamples > 0
+      ? String(status.attendanceSamples)
+      : null;
+
+  if (joinedRatio && hasJoinedProgress) {
+    chips.push({ key: "joined", label: "Qat", value: joinedRatio });
+  }
+  if (successRate && hasFaceChecks) {
+    chips.push({ key: "face", label: "Face", value: successRate });
+  }
+  if (samples) {
+    chips.push({ key: "checks", label: "Tek", value: samples });
+  }
+
+  return chips;
+};
+
+export const getStudentMetricsSummary = (status?: StudentStatus): string => {
+  return getStudentMetricChips(status)
+    .map((chip) => `${chip.label} ${chip.value}`)
+    .join(" • ");
+};
+
+export const getStudentAttendanceNote = (status?: StudentStatus): string => {
+  if (!status) return "";
+  if (status.attendanceStatus === "present") return "Live: bor";
+  if (status.attendanceStatus === "absent") return "Live: yo'q";
+  if ((status.attendanceSamples ?? 0) > 0) return "Live: kutilmoqda";
+  return "";
 };
 
 export const sortStudents = (

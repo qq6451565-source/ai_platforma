@@ -4,7 +4,7 @@
   grid-template-rows: minmax(0, 1fr) auto;
   width: 10.2rem;
   min-width: 9.8rem;
-  height: 11rem;
+  height: 11.8rem;
   border-radius: 0.82rem;
   border: 2px solid rgba(86, 126, 197, 0.35);
   background: rgba(7, 22, 52, 0.78);
@@ -124,6 +124,49 @@
   min-height: 1rem;
 }
 
+.student-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 0.96rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  border: 0.0625rem solid rgba(118, 152, 213, 0.3);
+  background: rgba(8, 23, 53, 0.88);
+  color: #c8dcff;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.metric-chip-joined {
+  border-color: rgba(46, 141, 255, 0.46);
+  color: #d5e9ff;
+}
+
+.metric-chip-face {
+  border-color: rgba(17, 214, 128, 0.42);
+  color: #bff7d8;
+}
+
+.metric-chip-checks {
+  border-color: rgba(250, 180, 40, 0.42);
+  color: #ffe1a6;
+}
+
+.student-attendance-note {
+  font-size: 0.58rem;
+  color: #8fb5ed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -183,7 +226,7 @@
   .student-tile {
     width: 8.8rem;
     min-width: 8.5rem;
-    height: 9.8rem;
+    height: 10.6rem;
   }
 }
 
@@ -191,6 +234,6 @@
   .student-tile {
     width: 100%;
     min-width: 0;
-    height: 8.8rem;
+    height: 9.4rem;
   }
 }
