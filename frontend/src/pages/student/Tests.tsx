@@ -7,6 +7,8 @@ import { startTest, answerTest, finishTest, StartTestResponse } from "../../api/
 import { startTestProctoring, verifyProctoring, presenceProctoring, finishProctoring } from "../../api/proctoring";
 import type { LessonAccessSnapshot, TestItem } from "../../types/test";
 
+const PENDING_ACCESS_POLL_MS = 10000;
+
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
 const getAttendanceLabel = (access?: LessonAccessSnapshot | null) => {
@@ -67,10 +69,18 @@ const getStartState = (test: TestItem) => {
   };
 };
 
+const hasPendingAccess = (items?: TestItem[]) =>
+  Boolean(items?.some((item) => item.access?.status === "pending_attendance"));
+
 const StudentTests = () => {
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
     queryFn: fetchTests,
+    refetchInterval: (query) => {
+      const items = query.state.data as TestItem[] | undefined;
+      return hasPendingAccess(items) ? PENDING_ACCESS_POLL_MS : false;
+    },
+    refetchIntervalInBackground: true,
   });
   const { data: lessons } = useQuery({
     queryKey: ["lessons"],
@@ -116,6 +126,7 @@ const StudentTests = () => {
     if (!selectedSubject) return [];
     return (tests || []).filter((test) => test.subject_name === selectedSubject);
   }, [selectedSubject, tests]);
+  const hasPendingTests = useMemo(() => hasPendingAccess(tests), [tests]);
 
   const stopPresenceLoop = () => {
     if (presenceTimerRef.current) {
@@ -354,6 +365,11 @@ const StudentTests = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Test / Imtihonlar</Typography.Title>
+      {hasPendingTests && (
+        <Typography.Text type="secondary">
+          Live davomat yakunlangach testlar ro'yxati avtomatik yangilanadi.
+        </Typography.Text>
+      )}
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />

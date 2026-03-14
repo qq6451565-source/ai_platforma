@@ -9,6 +9,8 @@ import { fetchMySubmissions, submitAssignment } from "../../api/submissions";
 import type { Assignment } from "../../types/assignment";
 import type { LessonAccessSnapshot } from "../../types/test";
 
+const PENDING_ACCESS_POLL_MS = 10000;
+
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
   import.meta.env.VITE_API_BASE_URL ||
@@ -77,11 +79,19 @@ const getUploadState = (assignment: Assignment, hasSubmission: boolean) => {
   };
 };
 
+const hasPendingAccess = (items?: Assignment[]) =>
+  Boolean(items?.some((item) => item.access?.status === "pending_attendance"));
+
 const StudentAssignments = () => {
   const qc = useQueryClient();
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["assignments"],
     queryFn: fetchAssignments,
+    refetchInterval: (query) => {
+      const items = query.state.data as Assignment[] | undefined;
+      return hasPendingAccess(items) ? PENDING_ACCESS_POLL_MS : false;
+    },
+    refetchIntervalInBackground: true,
   });
   const { data: lessons } = useQuery({
     queryKey: ["lessons"],
@@ -114,6 +124,7 @@ const StudentAssignments = () => {
     if (!selectedSubject) return [];
     return (assignments || []).filter((a) => a.subject === selectedSubject);
   }, [assignments, selectedSubject]);
+  const hasPendingAssignments = useMemo(() => hasPendingAccess(assignments), [assignments]);
 
   const getSubmission = (assignmentId: number) =>
     (submissions || []).find((s) => s.assignment === assignmentId);
@@ -142,6 +153,11 @@ const StudentAssignments = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Topshiriqlar</Typography.Title>
+      {hasPendingAssignments && (
+        <Typography.Text type="secondary">
+          Live davomat yakunlangach topshiriqlar ro'yxati avtomatik yangilanadi.
+        </Typography.Text>
+      )}
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
