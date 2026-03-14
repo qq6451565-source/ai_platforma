@@ -9,6 +9,7 @@ backend/venv/
 
 # Django collectstatic output
 backend/staticfiles/
+backend/media/
 
 # Node
 frontend/node_modules/
