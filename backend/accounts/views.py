@@ -497,6 +497,7 @@ class AuditLogViewSet(
         action = (self.request.query_params.get("action") or "").strip()
         domain = (self.request.query_params.get("domain") or "").strip()
         search = (self.request.query_params.get("search") or "").strip()
+        applicant_id = (self.request.query_params.get("applicant_id") or "").strip()
 
         if domain == "enrollment":
             queryset = queryset.filter(action__startswith="enrollment_")
@@ -505,6 +506,9 @@ class AuditLogViewSet(
 
         if action and action != "all":
             queryset = queryset.filter(action=action)
+
+        if applicant_id.isdigit():
+            queryset = queryset.filter(extra__applicant_id=int(applicant_id))
 
         if search:
             queryset = queryset.filter(

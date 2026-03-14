@@ -46,6 +46,18 @@ def _approval_requires_manual_override(applicant: Applicant) -> bool:
     return not bool(latest and latest.verified)
 
 
+def _is_final_applicant_status(status_value: str | None) -> bool:
+    return status_value in {"approved", "rejected"}
+
+
+def _ensure_applicant_not_final(applicant: Applicant, action_label: str) -> None:
+    if not _is_final_applicant_status(applicant.status):
+        return
+
+    status_label = "tasdiqlangan" if applicant.status == "approved" else "rad etilgan"
+    raise ValidationError({"detail": f"{status_label.capitalize()} arizani {action_label} mumkin emas."})
+
+
 class RegistrationWindowViewSet(viewsets.ModelViewSet):
     queryset = RegistrationWindow.objects.all()
     serializer_class = RegistrationWindowSerializer
@@ -87,6 +99,14 @@ class ApplicantViewSet(viewsets.ModelViewSet):
         if self.action in ["update", "partial_update"]:
             return ApplicantAdminWriteSerializer
         return ApplicantSerializer
+
+    def perform_update(self, serializer):
+        _ensure_applicant_not_final(serializer.instance, "tahrirlash")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        _ensure_applicant_not_final(instance, "o'chirish")
+        instance.delete()
 
 
 class ApplicantDocumentViewSet(viewsets.ModelViewSet):
@@ -669,6 +689,8 @@ class ApproveApplicantView(APIView):
 
         if applicant.status == "approved":
             return Response({"detail": "Applicant allaqachon tasdiqlangan."}, status=status.HTTP_200_OK)
+        if applicant.status == "rejected":
+            raise ValidationError({"detail": "Rad etilgan arizani qayta ochmasdan tasdiqlab bo'lmaydi."})
 
         manual_override_required = _approval_requires_manual_override(applicant)
         manual_override_reason = (request.data.get("manual_override_reason") or "").strip()
@@ -747,7 +769,7 @@ class ApproveApplicantView(APIView):
                 if not user.face_image:
                     user.face_image = documents.face_image
                     user_fields_to_save.append("face_image")
-                # face_embedding yo'q bo'lsa → face_analyze orqali olib saqlaymiz
+                # face_embedding yo'q bo'lsa -> face_analyze orqali olib saqlaymiz
                 if not user.face_embedding:
                     try:
                         _face_bytes = _read_field_bytes(documents.face_image)
@@ -919,8 +941,24 @@ class RejectApplicantView(APIView):
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
+        if applicant.status == "approved":
+            raise ValidationError({"detail": "Tasdiqlangan arizani rad etib bo'lmaydi."})
+
         if applicant.status == "rejected":
             return Response({"detail": "Applicant allaqachon rad etilgan."}, status=status.HTTP_200_OK)
+
+        reject_reason = (request.data.get("reject_reason") or "").strip()
+        if not reject_reason:
+            raise ValidationError({"reject_reason": "Rad etish sababi majburiy."})
+
+        had_user = bool(applicant.user_id)
+        if applicant.user:
+            applicant.user.delete()
+            applicant.user = None
+
+        previous_status = applicant.status
+        applicant.status = "rejected"
+        applicant.save(update_fields=["status"])
 
         log_audit(
             request,
@@ -930,14 +968,60 @@ class RejectApplicantView(APIView):
             extra={
                 "applicant_id": applicant.id,
                 "applicant_name": applicant.full_name,
-                "applicant_status": applicant.status,
-                "had_user": bool(applicant.user_id),
+                "applicant_status": previous_status,
+                "new_status": applicant.status,
+                "had_user": had_user,
+                "reject_reason": reject_reason,
             },
         )
-        if applicant.user:
-            applicant.user.delete()
-        applicant.delete()
-        return Response({"detail": "Applicant rad etildi."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Applicant rad etildi.", "status": applicant.status}, status=status.HTTP_200_OK)
+
+
+class ReopenApplicantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, applicant_id):
+        if not (request.user.is_superuser or getattr(request.user, "role", None) == "admin"):
+            raise PermissionDenied("Faqat admin arizani qayta ochishi mumkin.")
+
+        try:
+            applicant = Applicant.objects.select_related("user").get(id=applicant_id)
+        except Applicant.DoesNotExist:
+            raise NotFound("Applicant topilmadi.")
+
+        if applicant.status == "approved":
+            raise ValidationError({"detail": "Tasdiqlangan arizani qayta ochib bo'lmaydi."})
+        if applicant.status != "rejected":
+            raise ValidationError({"detail": "Faqat rad etilgan arizani qayta ochish mumkin."})
+
+        reopen_reason = (request.data.get("reopen_reason") or "").strip()
+        if not reopen_reason:
+            raise ValidationError({"reopen_reason": "Qayta ochish sababi majburiy."})
+
+        previous_status = applicant.status
+        applicant.status = "pending"
+        applicant.approved_by = None
+        applicant.approved_at = None
+        applicant.save(update_fields=["status", "approved_by", "approved_at"])
+
+        log_audit(
+            request,
+            "enrollment_reopened",
+            user=request.user,
+            role=getattr(request.user, "role", None),
+            extra={
+                "applicant_id": applicant.id,
+                "applicant_name": applicant.full_name,
+                "applicant_status": previous_status,
+                "new_status": applicant.status,
+                "reopen_reason": reopen_reason,
+                "has_user": bool(applicant.user_id),
+            },
+        )
+        return Response(
+            {"detail": "Applicant qayta review uchun ochildi.", "status": applicant.status},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ReverifyApplicantView(APIView):
@@ -951,6 +1035,8 @@ class ReverifyApplicantView(APIView):
             applicant = Applicant.objects.get(id=applicant_id)
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
+
+        _ensure_applicant_not_final(applicant, "qayta tekshirish")
 
         documents = getattr(applicant, "documents", None)
         if not documents:

@@ -258,3 +258,108 @@ class AdminEnrollmentApiTests(APITestCase):
             audit.extra["manual_override_reason"],
             "Passport va selfie preview qo'lda tekshirildi.",
         )
+
+    def test_admin_reject_requires_reason(self):
+        response = self.client.post(
+            f"/api/enrollment/reject/{self.applicant.id}/",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reject_reason", response.data)
+
+    def test_admin_reject_keeps_applicant_and_logs_reason(self):
+        response = self.client.post(
+            f"/api/enrollment/reject/{self.applicant.id}/",
+            {"reject_reason": "Selfie bilan passport yuz mos kelmadi."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.applicant.refresh_from_db()
+        self.assertEqual(self.applicant.status, "rejected")
+        audit = AuditLog.objects.filter(action="enrollment_rejected").order_by("-created_at").first()
+        self.assertIsNotNone(audit)
+        self.assertEqual(audit.extra["applicant_id"], self.applicant.id)
+        self.assertEqual(audit.extra["reject_reason"], "Selfie bilan passport yuz mos kelmadi.")
+
+    def test_admin_reopen_requires_rejected_status(self):
+        response = self.client.post(
+            f"/api/enrollment/reopen/{self.applicant.id}/",
+            {"reopen_reason": "Review qayta boshlanadi."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_admin_reopen_requires_reason(self):
+        self.applicant.status = "rejected"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.post(
+            f"/api/enrollment/reopen/{self.applicant.id}/",
+            {},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reopen_reason", response.data)
+
+    def test_admin_reopen_rejected_applicant_sets_pending_and_logs_reason(self):
+        self.applicant.status = "rejected"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.post(
+            f"/api/enrollment/reopen/{self.applicant.id}/",
+            {"reopen_reason": "Yangi review uchun qayta ochildi."},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.applicant.refresh_from_db()
+        self.assertEqual(self.applicant.status, "pending")
+        audit = AuditLog.objects.filter(action="enrollment_reopened").order_by("-created_at").first()
+        self.assertIsNotNone(audit)
+        self.assertEqual(audit.extra["applicant_id"], self.applicant.id)
+        self.assertEqual(audit.extra["reopen_reason"], "Yangi review uchun qayta ochildi.")
+
+    def test_admin_cannot_edit_final_applicant(self):
+        self.applicant.status = "approved"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.patch(
+            f"/api/enrollment/applicants/{self.applicant.id}/",
+            {"full_name": "Yangilangan ism"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.applicant.refresh_from_db()
+        self.assertEqual(self.applicant.full_name, "Sardor Qodirov")
+
+    def test_admin_cannot_delete_final_applicant(self):
+        self.applicant.status = "rejected"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.delete(f"/api/enrollment/applicants/{self.applicant.id}/")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Applicant.objects.filter(id=self.applicant.id).exists())
+
+    def test_admin_cannot_approve_rejected_applicant(self):
+        self.applicant.status = "rejected"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.post(
+            f"/api/enrollment/approve/{self.applicant.id}/",
+            {
+                "role": "student",
+                "group_id": self.group.id,
+                "manual_override_reason": "Qo'lda tekshirildi.",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_admin_cannot_reverify_final_applicant(self):
+        self.applicant.status = "approved"
+        self.applicant.save(update_fields=["status"])
+
+        response = self.client.post(f"/api/enrollment/reverify/{self.applicant.id}/")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -192,8 +192,11 @@ export type ApproveEnrollmentPayload = {
 };
 export const approveEnrollment = async (id: number, payload: ApproveEnrollmentPayload) =>
   (await api.post(`/api/enrollment/approve/${id}/`, payload)).data;
-export const rejectEnrollment = async (id: number) =>
-  (await api.post(`/api/enrollment/reject/${id}/`)).data;
+export type ReopenEnrollmentPayload = {
+  reopen_reason: string;
+};
+export const reopenEnrollment = async (id: number, payload: ReopenEnrollmentPayload) =>
+  (await api.post(`/api/enrollment/reopen/${id}/`, payload)).data;
 export const reverifyEnrollment = async (id: number) =>
   (await api.post(`/api/enrollment/reverify/${id}/`)).data;
 
@@ -468,9 +471,12 @@ export type AuditLogExtra = {
   applicant_id?: number;
   applicant_name?: string;
   applicant_status?: string;
+  new_status?: string;
   approved_role?: string;
   manual_override_required?: boolean;
   manual_override_reason?: string | null;
+  reject_reason?: string | null;
+  reopen_reason?: string | null;
   ai_verified?: boolean;
   ai_confidence?: number | null;
   verified?: boolean;
@@ -493,6 +499,7 @@ export type FetchAuditLogsParams = {
   action?: string;
   domain?: "all" | "auth" | "enrollment";
   search?: string;
+  applicant_id?: number;
 };
 export const fetchAuditLogs = async (params?: FetchAuditLogsParams) =>
   (
@@ -502,6 +509,12 @@ export const fetchAuditLogs = async (params?: FetchAuditLogsParams) =>
   ).data;
 export const deleteAuditLog = async (id: number) =>
   (await api.delete(`/api/accounts/admin/audit-logs/${id}/`)).data;
+
+export type RejectEnrollmentPayload = {
+  reject_reason: string;
+};
+export const rejectEnrollment = async (id: number, payload?: RejectEnrollmentPayload) =>
+  (await api.post(`/api/enrollment/reject/${id}/`, payload)).data;
 
 // ==== Passport data ====
 export type PassportData = {

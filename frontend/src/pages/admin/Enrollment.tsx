@@ -27,6 +27,7 @@ import {
 import dayjs from "dayjs";
 import {
   approveEnrollment,
+  AuditLog,
   deleteEnrollmentApplicant,
   EnrollmentAiSummary,
   EnrollmentDetailItem,
@@ -35,8 +36,10 @@ import {
   fetchDirections,
   fetchEnrollment,
   fetchEnrollmentApplicant,
+  fetchAuditLogs,
   fetchGroupsAdmin,
   fetchSubjectsAdmin,
+  reopenEnrollment,
   rejectEnrollment,
   reverifyEnrollment,
   updateEnrollmentApplicant,
@@ -55,8 +58,17 @@ const AI_REASON_LABELS: Record<string, string> = {
   gateway_error: "Gateway ichki xatosi",
 };
 
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  enrollment_approved: "Ariza tasdiqlandi",
+  enrollment_override_approved: "Qo'lda tasdiqlab approve qilindi",
+  enrollment_rejected: "Ariza rad etildi",
+  enrollment_reopened: "Ariza qayta ochildi",
+  enrollment_reverified: "AI qayta tekshirildi",
+};
+
 const formatDateTime = (value?: string | null) => (value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-");
 const formatConfidence = (value?: number | null) => (typeof value === "number" ? value.toFixed(3) : "-");
+const isFinalApplicantStatus = (status?: string) => status === "approved" || status === "rejected";
 
 const statusTag = (status?: string) => {
   if (status === "approved") return <Tag color="green">Tasdiqlangan</Tag>;
@@ -118,15 +130,52 @@ const renderVerificationCard = (verification: EnrollmentVerification, index: num
   </Card>
 );
 
+const renderAuditCard = (entry: AuditLog, index: number) => (
+  <Card key={`${entry.id}-${index}`} size="small">
+    <Space direction="vertical" size={8} style={{ width: "100%" }}>
+      <Space wrap>
+        <Tag
+          color={
+            entry.action === "enrollment_override_approved"
+              ? "gold"
+              : entry.action === "enrollment_rejected"
+                ? "red"
+                : entry.action === "enrollment_reopened"
+                  ? "blue"
+                  : "cyan"
+          }
+        >
+          {AUDIT_ACTION_LABELS[entry.action] || entry.action}
+        </Tag>
+        <Text>{entry.user_username || "-"}</Text>
+        <Text type="secondary">{formatDateTime(entry.created_at)}</Text>
+      </Space>
+      {entry.extra?.manual_override_reason ? <Text>Override sababi: {entry.extra.manual_override_reason}</Text> : null}
+      {entry.extra?.reject_reason ? <Text>Rad etish sababi: {entry.extra.reject_reason}</Text> : null}
+      {entry.extra?.reopen_reason ? <Text>Qayta ochish sababi: {entry.extra.reopen_reason}</Text> : null}
+      {typeof entry.extra?.ai_confidence === "number" ? (
+        <Text type="secondary">AI ishonchi: {entry.extra.ai_confidence.toFixed(3)}</Text>
+      ) : null}
+      {typeof entry.extra?.confidence === "number" ? (
+        <Text type="secondary">Qayta tekshiruv ishonchi: {entry.extra.confidence.toFixed(3)}</Text>
+      ) : null}
+    </Space>
+  </Card>
+);
+
 const EnrollmentPage = () => {
   const qc = useQueryClient();
   const [detailOpen, setDetailOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState<EnrollmentItem | EnrollmentDetailItem | null>(null);
   const [detailApplicantId, setDetailApplicantId] = useState<number | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [approveForm] = Form.useForm();
+  const [rejectForm] = Form.useForm();
+  const [reopenForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
   const { data, isLoading } = useQuery({
@@ -150,6 +199,15 @@ const EnrollmentPage = () => {
     queryFn: () => fetchEnrollmentApplicant(detailApplicantId as number),
     enabled: detailOpen && detailApplicantId !== null,
   });
+  const { data: applicantAuditHistory, isFetching: applicantAuditLoading } = useQuery({
+    queryKey: ["admin-enrollment-audit", detailApplicantId],
+    queryFn: () =>
+      fetchAuditLogs({
+        domain: "enrollment",
+        applicant_id: detailApplicantId as number,
+      }),
+    enabled: detailOpen && detailApplicantId !== null,
+  });
 
   const currentApplicant = (detailApplicant ?? selectedApplicant) as EnrollmentDetailItem | EnrollmentItem | null;
 
@@ -163,6 +221,7 @@ const EnrollmentPage = () => {
     await qc.invalidateQueries({ queryKey: ["admin-enrollment-list"] });
     if (id) {
       await qc.invalidateQueries({ queryKey: ["admin-enrollment-detail", id] });
+      await qc.invalidateQueries({ queryKey: ["admin-enrollment-audit", id] });
     }
   };
 
@@ -178,6 +237,10 @@ const EnrollmentPage = () => {
   };
 
   const openApprove = (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (isFinalApplicantStatus(item.status)) {
+      message.warning("Final holatdagi arizani qayta tasdiqlab bo'lmaydi.");
+      return;
+    }
     setSelectedApplicant(item);
     approveForm.setFieldsValue({
       role: "student",
@@ -190,7 +253,23 @@ const EnrollmentPage = () => {
     setApproveOpen(true);
   };
 
+  const openReject = (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (isFinalApplicantStatus(item.status)) {
+      message.warning("Final holatdagi arizani rad etish yopilgan.");
+      return;
+    }
+    setSelectedApplicant(item);
+    rejectForm.setFieldsValue({
+      reject_reason: undefined,
+    });
+    setRejectOpen(true);
+  };
+
   const openEdit = (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (isFinalApplicantStatus(item.status)) {
+      message.warning("Final holatdagi arizani tahrirlash yopilgan.");
+      return;
+    }
     setSelectedApplicant(item);
     editForm.setFieldsValue({
       full_name: item.full_name || "",
@@ -199,6 +278,18 @@ const EnrollmentPage = () => {
       direction_choice: item.direction_choice ?? undefined,
     });
     setEditOpen(true);
+  };
+
+  const openReopen = (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (item.status !== "rejected") {
+      message.warning("Faqat rad etilgan arizani qayta ochish mumkin.");
+      return;
+    }
+    setSelectedApplicant(item);
+    reopenForm.setFieldsValue({
+      reopen_reason: undefined,
+    });
+    setReopenOpen(true);
   };
 
   const { mutateAsync: approve, isPending: approving } = useMutation({
@@ -221,12 +312,41 @@ const EnrollmentPage = () => {
   });
 
   const { mutateAsync: reject, isPending: rejecting } = useMutation({
-    mutationFn: (id: number) => rejectEnrollment(id),
-    onSuccess: async (_data, id) => {
+    mutationFn: (payload: { id: number; reject_reason: string }) =>
+      rejectEnrollment(payload.id, { reject_reason: payload.reject_reason }),
+    onSuccess: async (_data, payload) => {
       message.success("Ariza rad etildi");
-      await invalidateEnrollment(id);
+      await invalidateEnrollment(payload.id);
+      setRejectOpen(false);
+      rejectForm.resetFields();
     },
-    onError: () => message.error("Rad etishda xato"),
+    onError: (error: any) => {
+      const detail =
+        error?.response?.data?.reject_reason?.[0] ||
+        error?.response?.data?.detail ||
+        error?.message ||
+        "Rad etishda xato";
+      message.error(detail);
+    },
+  });
+
+  const { mutateAsync: reopen, isPending: reopening } = useMutation({
+    mutationFn: (payload: { id: number; reopen_reason: string }) =>
+      reopenEnrollment(payload.id, { reopen_reason: payload.reopen_reason }),
+    onSuccess: async (_data, payload) => {
+      message.success("Ariza qayta ochildi");
+      await invalidateEnrollment(payload.id);
+      setReopenOpen(false);
+      reopenForm.resetFields();
+    },
+    onError: (error: any) => {
+      const detail =
+        error?.response?.data?.reopen_reason?.[0] ||
+        error?.response?.data?.detail ||
+        error?.message ||
+        "Qayta ochishda xato";
+      message.error(detail);
+    },
   });
 
   const { mutateAsync: updateApplicant, isPending: updating } = useMutation({
@@ -274,17 +394,36 @@ const EnrollmentPage = () => {
     },
   });
 
-  const handleReject = async (item: EnrollmentItem | EnrollmentDetailItem) => {
-    setSelectedApplicant(item);
-    await reject(item.id);
+  const onRejectSubmit = async (values: any) => {
+    if (!selectedApplicant) return;
+    await reject({
+      id: selectedApplicant.id,
+      reject_reason: values.reject_reason?.trim() || "",
+    });
+  };
+
+  const onReopenSubmit = async (values: any) => {
+    if (!selectedApplicant) return;
+    await reopen({
+      id: selectedApplicant.id,
+      reopen_reason: values.reopen_reason?.trim() || "",
+    });
   };
 
   const handleDelete = async (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (isFinalApplicantStatus(item.status)) {
+      message.warning("Final holatdagi ariza o'chirilmaydi.");
+      return;
+    }
     setSelectedApplicant(item);
     await removeApplicant(item.id);
   };
 
   const handleReverify = async (item: EnrollmentItem | EnrollmentDetailItem) => {
+    if (isFinalApplicantStatus(item.status)) {
+      message.warning("Final holatdagi ariza qayta tekshirilmaydi.");
+      return;
+    }
     setSelectedApplicant(item);
     await reverify(item.id);
   };
@@ -372,13 +511,13 @@ const EnrollmentPage = () => {
     {
       title: "Amallar",
       render: (_: unknown, row: EnrollmentItem) => {
-        const locked = row.status === "approved" || row.status === "rejected";
+        const locked = isFinalApplicantStatus(row.status);
         return (
           <Space wrap>
             <Button size="small" onClick={() => openDetails(row)}>
               Ko'rish
             </Button>
-            <Button size="small" onClick={() => openEdit(row)}>
+            <Button size="small" disabled={locked} onClick={() => openEdit(row)}>
               Tahrirlash
             </Button>
             <Button
@@ -395,10 +534,20 @@ const EnrollmentPage = () => {
               danger
               disabled={locked}
               loading={rejecting && selectedApplicant?.id === row.id}
-              onClick={() => void handleReject(row)}
+              onClick={() => openReject(row)}
             >
               Rad etish
             </Button>
+            {row.status === "rejected" ? (
+              <Button
+                size="small"
+                type="dashed"
+                loading={reopening && selectedApplicant?.id === row.id}
+                onClick={() => openReopen(row)}
+              >
+                Qayta ochish
+              </Button>
+            ) : null}
             <Popconfirm
               title="Arizani o'chirishni xohlaysizmi?"
               okText="Ha"
@@ -406,7 +555,7 @@ const EnrollmentPage = () => {
               okButtonProps={{ loading: deleting && deleteId === row.id }}
               onConfirm={() => handleDelete(row)}
             >
-              <Button size="small" danger disabled={deleting && deleteId === row.id}>
+              <Button size="small" danger disabled={locked || (deleting && deleteId === row.id)}>
                 O'chirish
               </Button>
             </Popconfirm>
@@ -418,6 +567,7 @@ const EnrollmentPage = () => {
 
   const detailSummary = currentApplicant?.ai_summary;
   const detailHistory = (currentApplicant as EnrollmentDetailItem | null)?.verification_history || [];
+  const decisionHistory = applicantAuditHistory || [];
 
   return (
     <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
@@ -438,22 +588,36 @@ const EnrollmentPage = () => {
         extra={
           currentApplicant ? (
             <Space wrap>
-              <Button onClick={() => openEdit(currentApplicant)}>Tahrirlash</Button>
+              <Button
+                disabled={isFinalApplicantStatus(currentApplicant.status)}
+                onClick={() => openEdit(currentApplicant)}
+              >
+                Tahrirlash
+              </Button>
               <Button
                 type="primary"
-                disabled={currentApplicant.status === "approved" || currentApplicant.status === "rejected"}
+                disabled={isFinalApplicantStatus(currentApplicant.status)}
                 onClick={() => openApprove(currentApplicant)}
               >
                 Tasdiqlash
               </Button>
               <Button
                 danger
-                disabled={currentApplicant.status === "approved" || currentApplicant.status === "rejected"}
-                onClick={() => void handleReject(currentApplicant)}
+                disabled={isFinalApplicantStatus(currentApplicant.status)}
+                onClick={() => openReject(currentApplicant)}
                 loading={rejecting && selectedApplicant?.id === currentApplicant.id}
               >
                 Rad etish
               </Button>
+              {currentApplicant.status === "rejected" ? (
+                <Button
+                  type="dashed"
+                  loading={reopening && selectedApplicant?.id === currentApplicant.id}
+                  onClick={() => openReopen(currentApplicant)}
+                >
+                  Qayta ochish
+                </Button>
+              ) : null}
             </Space>
           ) : null
         }
@@ -554,11 +718,15 @@ const EnrollmentPage = () => {
                         </div>
                       ) : null}
                       <Button
+                        disabled={isFinalApplicantStatus(currentApplicant.status)}
                         loading={reverifying && selectedApplicant?.id === currentApplicant.id}
                         onClick={() => void handleReverify(currentApplicant)}
                       >
                         AI qayta tekshir
                       </Button>
+                      {isFinalApplicantStatus(currentApplicant.status) ? (
+                        <Text type="secondary">Final holatdagi ariza uchun AI qayta tekshiruvi yopilgan.</Text>
+                      ) : null}
                     </Space>
                   ) : (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="AI summary topilmadi" />
@@ -574,6 +742,18 @@ const EnrollmentPage = () => {
                 </Space>
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tekshiruv tarixi yo'q" />
+              )}
+            </Card>
+
+            <Card size="small" title="Qarorlar tarixi">
+              {applicantAuditLoading && !decisionHistory.length ? (
+                <Skeleton active paragraph={{ rows: 4 }} />
+              ) : decisionHistory.length ? (
+                <Space direction="vertical" size={12} style={{ width: "100%" }}>
+                  {decisionHistory.map(renderAuditCard)}
+                </Space>
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Qarorlar tarixi yo'q" />
               )}
             </Card>
           </Space>
@@ -604,6 +784,68 @@ const EnrollmentPage = () => {
                 allowClear
                 options={(directions || []).map((direction) => ({ value: direction.id, label: direction.name }))}
                 placeholder="Yo'nalish tanlang"
+              />
+            </Form.Item>
+          </Form>
+        ) : null}
+      </Modal>
+
+      <Modal
+        title="Arizani rad etish"
+        open={rejectOpen}
+        onCancel={() => setRejectOpen(false)}
+        onOk={() => rejectForm.submit()}
+        confirmLoading={rejecting}
+        destroyOnClose
+      >
+        {selectedApplicant ? (
+          <Form layout="vertical" form={rejectForm} onFinish={onRejectSubmit}>
+            <Alert
+              type="warning"
+              showIcon
+              message="Rad etilgan ariza history'da saqlanadi"
+              description="Applicant record va audit izi qoladi, lekin agar vaqtinchalik user bo'lsa, account o'chiriladi."
+              style={{ marginBottom: 12 }}
+            />
+            <Form.Item
+              name="reject_reason"
+              label="Rad etish sababi"
+              rules={[{ required: true, message: "Rad etish sababini yozing" }]}
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder="Masalan: passport rasmi sifatsiz yoki shaxs tasdiqlanmadi."
+              />
+            </Form.Item>
+          </Form>
+        ) : null}
+      </Modal>
+
+      <Modal
+        title="Arizani qayta ochish"
+        open={reopenOpen}
+        onCancel={() => setReopenOpen(false)}
+        onOk={() => reopenForm.submit()}
+        confirmLoading={reopening}
+        destroyOnClose
+      >
+        {selectedApplicant ? (
+          <Form layout="vertical" form={reopenForm} onFinish={onReopenSubmit}>
+            <Alert
+              type="info"
+              showIcon
+              message="Ariza qayta review bosqichiga o'tadi"
+              description="Holat pending bo'ladi. Shundan keyin admin arizani tahrirlashi, AI qayta tekshirishi yoki qayta tasdiqlashi mumkin."
+              style={{ marginBottom: 12 }}
+            />
+            <Form.Item
+              name="reopen_reason"
+              label="Qayta ochish sababi"
+              rules={[{ required: true, message: "Qayta ochish sababini yozing" }]}
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder="Masalan: foydalanuvchi yangi selfie yuklashi kerak yoki review qayta o'tkaziladi."
               />
             </Form.Item>
           </Form>

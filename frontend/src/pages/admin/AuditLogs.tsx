@@ -14,6 +14,7 @@ const actionLabels: Record<string, string> = {
   enrollment_approved: "Ariza tasdiqlandi",
   enrollment_override_approved: "Qo'lda tasdiqlab approve qilindi",
   enrollment_rejected: "Ariza rad etildi",
+  enrollment_reopened: "Ariza qayta ochildi",
   enrollment_reverified: "AI qayta tekshirildi",
 };
 
@@ -25,6 +26,7 @@ const actionColors: Record<string, string> = {
   enrollment_approved: "green",
   enrollment_override_approved: "gold",
   enrollment_rejected: "red",
+  enrollment_reopened: "blue",
   enrollment_reverified: "cyan",
 };
 
@@ -62,6 +64,7 @@ const AuditLogsPage = () => {
     { value: "enrollment_approved", label: actionLabels.enrollment_approved },
     { value: "enrollment_override_approved", label: actionLabels.enrollment_override_approved },
     { value: "enrollment_rejected", label: actionLabels.enrollment_rejected },
+    { value: "enrollment_reopened", label: actionLabels.enrollment_reopened },
     { value: "enrollment_reverified", label: actionLabels.enrollment_reverified },
   ];
 
@@ -135,10 +138,10 @@ const AuditLogsPage = () => {
             ),
           },
           {
-            title: "Override sababi",
+            title: "Sabab",
             render: (_: unknown, row: AuditLog) =>
-              row.extra?.manual_override_reason ? (
-                <Text>{row.extra.manual_override_reason}</Text>
+              row.extra?.manual_override_reason || row.extra?.reject_reason || row.extra?.reopen_reason ? (
+                <Text>{row.extra?.manual_override_reason || row.extra?.reject_reason || row.extra?.reopen_reason}</Text>
               ) : (
                 <Text type="secondary">-</Text>
               ),

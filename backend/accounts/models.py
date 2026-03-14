@@ -92,6 +92,7 @@ class AuditLog(models.Model):
         ("enrollment_approved", "Enrollment approved"),
         ("enrollment_override_approved", "Enrollment override approved"),
         ("enrollment_rejected", "Enrollment rejected"),
+        ("enrollment_reopened", "Enrollment reopened"),
         ("enrollment_reverified", "Enrollment reverified"),
     )
 
