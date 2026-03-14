@@ -44,6 +44,7 @@ def finalize_attendance_on_room_close(sender, instance, created, **kwargs):
     ratio_threshold = float(getattr(settings, "FACE_ATTENDANCE_PRESENT_RATIO", 0.50))
     duration_ratio_threshold = float(getattr(settings, "LIVE_ATTENDANCE_MIN_DURATION_RATIO", 0.70))
     minimum_face_checks = int(getattr(settings, "FACE_ATTENDANCE_MIN_SAMPLES", 3) or 3)
+    stale_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
     lesson = instance.lesson
     room_ended_at = instance.ended_at or timezone.now()
 
@@ -85,7 +86,10 @@ def finalize_attendance_on_room_close(sender, instance, created, **kwargs):
         total = int(face_session.verification_count or 0) if face_session else 0
         ok = int(face_session.success_count or 0) if face_session else 0
         participant = participant_map.get(student_id)
-        joined_seconds = participant.active_seconds(until=room_ended_at) if participant else 0
+        joined_seconds = (
+            participant.active_seconds(until=room_ended_at, stale_after_seconds=stale_seconds)
+            if participant else 0
+        )
 
         attendance, _ = Attendance.objects.get_or_create(
             lesson=lesson,

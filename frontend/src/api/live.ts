@@ -1,4 +1,5 @@
 import api from "./client";
+import { getAccessToken } from "../utils/token";
 
 export type JoinLiveResponse = {
   room_id?: number;
@@ -54,6 +55,11 @@ export async function leaveLiveRoom(roomId: number) {
   return res.data;
 }
 
+export async function sendLiveHeartbeat(roomId: number) {
+  const res = await api.post("/api/live/room/heartbeat/", { room_id: roomId });
+  return res.data;
+}
+
 export async function endLiveRoom(roomId: number) {
   const res = await api.post("/api/live/room/end/", { room_id: roomId });
   return res.data;
@@ -94,6 +100,37 @@ export async function setStageUser(roomId: number, userId?: number | null) {
 export async function togglePushToTalk(roomId: number, enabled: boolean) {
   const res = await api.post("/api/live/ptt/", { room_id: roomId, enabled });
   return res.data;
+}
+
+function buildApiUrl(path: string): string {
+  const apiBase =
+    import.meta.env.VITE_API_BASE ||
+    import.meta.env.VITE_API_BASE_URL ||
+    window.location.origin;
+
+  const normalizedBase = String(apiBase).replace(/\/+$/, "");
+  const baseUrl = new URL(normalizedBase);
+  return new URL(path, `${baseUrl.origin}/`).toString();
+}
+
+export function sendLiveLeaveKeepalive(roomId: number): boolean {
+  const token = getAccessToken();
+  if (!token) return false;
+
+  try {
+    void fetch(buildApiUrl("/api/live/room/leave/"), {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ room_id: roomId }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Face verification types

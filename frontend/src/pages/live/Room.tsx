@@ -28,6 +28,8 @@ import {
   joinLiveLesson,
   leaveLiveRoom,
   raiseHand,
+  sendLiveHeartbeat,
+  sendLiveLeaveKeepalive,
   setStageUser,
 } from "../../api/live";
 import type { LiveParticipantState } from "../../api/live";
@@ -44,6 +46,7 @@ import "./Room_NEW.css";
 
 const fallbackAgoraAppId = import.meta.env.VITE_AGORA_APP_ID as string | undefined;
 const FACE_VERIFY_INTERVAL_MS = 5000;
+const PARTICIPANT_HEARTBEAT_MS = 15000;
 const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
 const SIDEBAR_ACTIVE_VIDEO_CAP = 10;
@@ -792,6 +795,47 @@ export default function Room() {
       clientRef.current = null;
     };
   }, [createOptimizedCameraTrack, isTeacher, lessonId, localUserUid, me?.id, pushDebug, t]);
+
+  useEffect(() => {
+    if (!state.connected || !roomMeta?.roomId) return;
+
+    let cancelled = false;
+    const sendHeartbeat = async () => {
+      try {
+        await sendLiveHeartbeat(roomMeta.roomId);
+      } catch (error) {
+        if (!cancelled) {
+          pushDebug("participant heartbeat failed", toErrorText(error));
+        }
+      }
+    };
+
+    void sendHeartbeat();
+    const interval = window.setInterval(() => {
+      void sendHeartbeat();
+    }, PARTICIPANT_HEARTBEAT_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [pushDebug, roomMeta?.roomId, state.connected]);
+
+  useEffect(() => {
+    if (!state.connected || !roomMeta?.roomId) return;
+
+    const sendBestEffortLeave = () => {
+      sendLiveLeaveKeepalive(roomMeta.roomId);
+    };
+
+    window.addEventListener("pagehide", sendBestEffortLeave);
+    window.addEventListener("beforeunload", sendBestEffortLeave);
+
+    return () => {
+      window.removeEventListener("pagehide", sendBestEffortLeave);
+      window.removeEventListener("beforeunload", sendBestEffortLeave);
+    };
+  }, [roomMeta?.roomId, state.connected]);
 
   useEffect(() => {
     if (!liveState) return;

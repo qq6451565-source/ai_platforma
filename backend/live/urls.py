@@ -15,6 +15,7 @@ from .views import (
     RaiseHandView,
     SetStageUserView,
     PushToTalkView,
+    LiveRoomHeartbeatView,
     FaceVerificationSettingsView,
     StartFaceVerificationView,
     AnalyzeFrameView,
@@ -40,6 +41,7 @@ urlpatterns = [
     path('hand/', RaiseHandView.as_view(), name='live-hand'),
     path('stage/', SetStageUserView.as_view(), name='live-stage'),
     path('ptt/', PushToTalkView.as_view(), name='live-ptt'),
+    path('room/heartbeat/', LiveRoomHeartbeatView.as_view(), name='live-room-heartbeat'),
     path('sync/', SyncLiveRoomsView.as_view(), name='live-sync'),
     
     # Face verification endpoints

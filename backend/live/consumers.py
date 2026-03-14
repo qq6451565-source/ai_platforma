@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict
 
+from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
@@ -35,6 +36,23 @@ def _user_can_access_room(user, room) -> bool:
         group_id = _student_group_id(user)
         return bool(group_id and group_id == room.lesson.group_id)
     return False
+
+
+def _participant_stale_cutoff():
+    stale_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
+    return timezone.now() - timezone.timedelta(seconds=max(5, stale_seconds))
+
+
+def _active_room_participants(room):
+    return (
+        LiveParticipant.objects.filter(
+            room=room,
+            left_at__isnull=True,
+            last_seen_at__gte=_participant_stale_cutoff(),
+        )
+        .select_related("user")
+        .order_by("-joined_at")
+    )
 
 
 class LiveLessonConsumer(AsyncWebsocketConsumer):
@@ -226,6 +244,7 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                     "status": "active",
                 },
             )
+            participant.touch_presence()
 
             if not created and session.status == "ended":
                 session.status = "active"
@@ -257,13 +276,13 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
         try:
             room = LiveRoom.objects.get(room_name=self.room_name)
             participant = (
-                LiveParticipant.objects.filter(room=room, user=self.user, left_at__isnull=True)
+                _active_room_participants(room).filter(user=self.user)
                 .order_by("-id")
                 .first()
             )
 
-            total_students = LiveParticipant.objects.filter(
-                room=room, left_at__isnull=True, is_teacher=False
+            total_students = _active_room_participants(room).filter(
+                is_teacher=False
             ).count()
 
             return {
@@ -434,9 +453,7 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
         try:
             room = LiveRoom.objects.get(room_name=self.room_name)
             participants = (
-                LiveParticipant.objects.filter(room=room, left_at__isnull=True)
-                .select_related("user")
-                .order_by("-joined_at")
+                _active_room_participants(room)
             )
             student_ids = [
                 participant.user_id

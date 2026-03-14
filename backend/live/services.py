@@ -94,6 +94,7 @@ class FaceVerificationService:
                 user=user,
                 defaults={"is_teacher": getattr(user, "role", None) in ("teacher", "admin")},
             )
+            participant.touch_presence()
             session, _ = LiveFaceSession.objects.get_or_create(
                 participant=participant,
                 room=room,

@@ -30,6 +30,7 @@ class LiveParticipant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
+    last_seen_at = models.DateTimeField(default=timezone.now)
     accumulated_seconds = models.PositiveIntegerField(default=0)
     is_teacher = models.BooleanField(default=False)
     hand_raised = models.BooleanField(default=False)
@@ -42,10 +43,14 @@ class LiveParticipant(models.Model):
     def __str__(self):
         return f"{self.user.username} in {self.room.room_name}"
 
-    def active_seconds(self, until=None) -> int:
+    def active_seconds(self, until=None, stale_after_seconds: int | None = None) -> int:
         total = int(self.accumulated_seconds or 0)
         if self.left_at is None and self.joined_at:
             finished_at = until or timezone.now()
+            if stale_after_seconds and self.last_seen_at:
+                stale_cutoff = self.last_seen_at + timezone.timedelta(seconds=max(0, stale_after_seconds))
+                if stale_cutoff < finished_at:
+                    finished_at = stale_cutoff
             if finished_at > self.joined_at:
                 total += int((finished_at - self.joined_at).total_seconds())
         return max(total, 0)
@@ -58,6 +63,10 @@ class LiveParticipant(models.Model):
             self.joined_at = joined_at
             self.left_at = None
             update_fields.extend(["joined_at", "left_at"])
+
+        if self.last_seen_at != joined_at:
+            self.last_seen_at = joined_at
+            update_fields.append("last_seen_at")
 
         if is_teacher is not None and self.is_teacher != is_teacher:
             self.is_teacher = is_teacher
@@ -73,11 +82,30 @@ class LiveParticipant(models.Model):
         if self.left_at is None:
             self.accumulated_seconds = self.active_seconds(until=left_at)
             self.left_at = left_at
+            if self.last_seen_at != left_at:
+                self.last_seen_at = left_at
+                update_fields.append("last_seen_at")
             update_fields.extend(["accumulated_seconds", "left_at"])
 
         if self.hand_raised:
             self.hand_raised = False
             update_fields.append("hand_raised")
+
+        if update_fields:
+            self.save(update_fields=update_fields)
+
+    def touch_presence(self, *, seen_at=None) -> None:
+        seen_at = seen_at or timezone.now()
+        update_fields = []
+
+        if self.left_at is not None:
+            self.joined_at = seen_at
+            self.left_at = None
+            update_fields.extend(["joined_at", "left_at"])
+
+        if self.last_seen_at != seen_at:
+            self.last_seen_at = seen_at
+            update_fields.append("last_seen_at")
 
         if update_fields:
             self.save(update_fields=update_fields)

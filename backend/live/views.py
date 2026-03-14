@@ -80,6 +80,23 @@ def _build_ws_url() -> str:
     return settings.LIVEKIT_URL
 
 
+def _participant_stale_cutoff():
+    stale_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
+    return timezone.now() - timezone.timedelta(seconds=max(5, stale_seconds))
+
+
+def _active_participants_qs(room: LiveRoom):
+    return (
+        LiveParticipant.objects.filter(
+            room=room,
+            left_at__isnull=True,
+            last_seen_at__gte=_participant_stale_cutoff(),
+        )
+        .select_related("user")
+        .order_by("-joined_at")
+    )
+
+
 def _build_livekit_token(user: User, room_name: str) -> str:
     now = int(time.time())
     role = getattr(user, "role", None)
@@ -199,11 +216,7 @@ def _get_or_create_participant(room: LiveRoom, user: User, is_teacher: bool):
 
 
 def _serialize_room_participants(room: LiveRoom):
-    participants = (
-        LiveParticipant.objects.filter(room=room, left_at__isnull=True)
-        .select_related("user")
-        .order_by("-joined_at")
-    )
+    participants = _active_participants_qs(room)
     student_ids = [participant.user_id for participant in participants if getattr(participant.user, "role", None) == "student"]
     profiles = (
         StudentProfile.objects.select_related("group")
@@ -472,7 +485,7 @@ class RaiseHandView(APIView):
         room = get_object_or_404(LiveRoom, id=room_id)
         _ensure_user_can_join(request, room.lesson)
 
-        participant = LiveParticipant.objects.filter(room=room, user=request.user, left_at__isnull=True).first()
+        participant = _active_participants_qs(room).filter(user=request.user).first()
         if not participant:
             return Response({"error": "Ishtirokchi topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -544,6 +557,29 @@ class PushToTalkView(APIView):
         room.save(update_fields=["allow_ptt"])
         _broadcast_room_state(room)
         return Response({"allow_ptt": room.allow_ptt})
+
+
+class LiveRoomHeartbeatView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        room_id = request.data.get("room_id")
+        if not room_id:
+            return Response({"error": "room_id majburiy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        room = get_object_or_404(LiveRoom, id=room_id, is_active=True)
+        _ensure_user_can_join(request, room.lesson)
+
+        participant = LiveParticipant.objects.filter(room=room, user=request.user).order_by("-joined_at", "-id").first()
+        if not participant:
+            participant, _ = _get_or_create_participant(
+                room,
+                request.user,
+                getattr(request.user, "role", None) == "teacher",
+            )
+
+        participant.touch_presence()
+        return Response({"ok": True, "participant_id": participant.id, "last_seen_at": participant.last_seen_at})
 
 
 class SyncLiveRoomsView(APIView):
