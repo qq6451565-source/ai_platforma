@@ -4,7 +4,12 @@ import { Button, Card, Empty, Input, Modal, Select, Table, Tag, Typography, mess
 import dayjs from "dayjs";
 import { fetchLessons } from "../../api/lessons";
 import { fetchTeacherStudents } from "../../api/user";
-import { fetchLessonAttendance, markAttendance } from "../../api/attendance";
+import {
+  fetchAttendanceOverrideHistory,
+  fetchLessonAttendance,
+  markAttendance,
+  type AttendanceOverrideLog,
+} from "../../api/attendance";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
 
@@ -39,6 +44,12 @@ type OverrideDraft = {
   studentName: string;
 };
 
+type HistoryTarget = {
+  lesson: number;
+  student: number;
+  studentName: string;
+};
+
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
 const TeacherAttendancePage = () => {
@@ -62,6 +73,7 @@ const TeacherAttendancePage = () => {
   const [search, setSearch] = useState("");
   const [overrideDraft, setOverrideDraft] = useState<OverrideDraft | null>(null);
   const [overrideReason, setOverrideReason] = useState("");
+  const [historyTarget, setHistoryTarget] = useState<HistoryTarget | null>(null);
 
   const subjectCards = useMemo(() => {
     const subjectNameById = new Map((subjects || []).map((s) => [s.id, s.name]));
@@ -97,6 +109,11 @@ const TeacherAttendancePage = () => {
     queryKey: ["teacher-attendance", selectedLessonId],
     queryFn: () => fetchLessonAttendance(selectedLessonId as number),
     enabled: !!selectedLessonId,
+  });
+  const { data: overrideHistory, isLoading: loadingOverrideHistory } = useQuery({
+    queryKey: ["attendance-override-history", historyTarget?.lesson, historyTarget?.student],
+    queryFn: () => fetchAttendanceOverrideHistory(historyTarget!.lesson, historyTarget!.student),
+    enabled: !!historyTarget,
   });
 
   const attendanceMap = useMemo(() => {
@@ -171,6 +188,7 @@ const TeacherAttendancePage = () => {
       setOverrideDraft(null);
       setOverrideReason("");
       await qc.invalidateQueries({ queryKey: ["teacher-attendance", selectedLessonId] });
+      await qc.invalidateQueries({ queryKey: ["attendance-override-history"] });
     },
     onError: (error: any) => {
       message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || "Override saqlanmadi.");
@@ -239,9 +257,18 @@ const TeacherAttendancePage = () => {
         row.manualOverride ? (
           <Tag
             color="blue"
-            title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
+          title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
               row.overriddenAt ? ` | ${dayjs(row.overriddenAt).format("DD.MM.YYYY HH:mm")}` : ""
             }`}
+            style={{ cursor: "pointer" }}
+            onClick={() =>
+              selectedLessonId &&
+              setHistoryTarget({
+                lesson: selectedLessonId,
+                student: row.id,
+                studentName: row.name,
+              })
+            }
           >
             Manual
           </Tag>
@@ -363,6 +390,52 @@ const TeacherAttendancePage = () => {
           placeholder="Override sababi"
           maxLength={500}
         />
+      </Modal>
+
+      <Modal
+        title={`Override tarixi${historyTarget ? `: ${historyTarget.studentName}` : ""}`}
+        open={!!historyTarget}
+        onCancel={() => setHistoryTarget(null)}
+        footer={null}
+        width={760}
+      >
+        {loadingOverrideHistory ? (
+          <Empty description="Yuklanmoqda..." />
+        ) : !overrideHistory?.length ? (
+          <Empty description="Override tarixi yo'q" />
+        ) : (
+          <Table<AttendanceOverrideLog>
+            rowKey="id"
+            pagination={false}
+            dataSource={overrideHistory}
+            columns={[
+              {
+                title: "Vaqt",
+                dataIndex: "created_at",
+                key: "created_at",
+                render: (value: string | undefined) =>
+                  value ? dayjs(value).format("DD.MM.YYYY HH:mm") : "-",
+              },
+              {
+                title: "Kim",
+                dataIndex: "changed_by_name",
+                key: "changed_by_name",
+                render: (value: string | null | undefined) => value || "-",
+              },
+              {
+                title: "Holat",
+                key: "status_change",
+                render: (_: unknown, row: AttendanceOverrideLog) =>
+                  `${row.previous_status || "-"} -> ${row.new_status}`,
+              },
+              {
+                title: "Sabab",
+                dataIndex: "reason",
+                key: "reason",
+              },
+            ]}
+          />
+        )}
       </Modal>
     </div>
   );

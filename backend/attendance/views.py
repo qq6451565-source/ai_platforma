@@ -14,9 +14,25 @@ from ai.clients import presence_check
 from ai.models import AISettings
 from lessons.models import Lesson
 from .models import Attendance, AttendanceOverrideLog
-from .serializers import AttendanceSerializer, MarkAttendanceSerializer
+from .serializers import AttendanceOverrideLogSerializer, AttendanceSerializer, MarkAttendanceSerializer
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_staff_can_access_lesson(request, lesson_id: int) -> Lesson:
+    role = getattr(request.user, "role", None)
+    try:
+        lesson = Lesson.objects.select_related("teacher_subject__teacher").get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        raise NotFound("Lesson topilmadi.")
+
+    if request.user.is_superuser or role == "admin":
+        return lesson
+
+    if role == "teacher" and lesson.teacher_subject_id and lesson.teacher_subject.teacher_id == request.user.id:
+        return lesson
+
+    raise PermissionDenied("Bu dars sizga tegishli emas.")
 
 
 class MarkAttendanceView(APIView):
@@ -117,19 +133,24 @@ class LessonAttendanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, lesson_id):
-        role = getattr(request.user, "role", None)
-        if not (request.user.is_superuser or role == "admin"):
-            if role != "teacher":
-                raise PermissionDenied("Faqat admin yoki teacher ko'ra oladi.")
-            try:
-                lesson = Lesson.objects.select_related("teacher_subject__teacher").get(id=lesson_id)
-            except Lesson.DoesNotExist:
-                raise NotFound("Lesson topilmadi.")
-            if not lesson.teacher_subject_id or lesson.teacher_subject.teacher_id != request.user.id:
-                raise PermissionDenied("Bu dars sizga tegishli emas.")
+        _ensure_staff_can_access_lesson(request, lesson_id)
 
         records = Attendance.objects.select_related("overridden_by").filter(lesson_id=lesson_id)
         serializer = AttendanceSerializer(records, many=True)
+        return Response(serializer.data)
+
+
+class AttendanceOverrideHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, lesson_id, student_id):
+        _ensure_staff_can_access_lesson(request, lesson_id)
+
+        logs = (
+            AttendanceOverrideLog.objects.select_related("changed_by")
+            .filter(lesson_id=lesson_id, student_id=student_id)
+        )
+        serializer = AttendanceOverrideLogSerializer(logs, many=True)
         return Response(serializer.data)
 
 

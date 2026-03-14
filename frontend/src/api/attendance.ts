@@ -20,6 +20,21 @@ export type AttendanceRecord = {
   overridden_at?: string | null;
 };
 
+export type AttendanceOverrideLog = {
+  id: number;
+  attendance: number;
+  lesson: number;
+  student: number;
+  previous_status?: "present" | "absent" | null;
+  new_status: "present" | "absent";
+  previous_finalized: boolean;
+  new_finalized: boolean;
+  reason: string;
+  changed_by?: number | null;
+  changed_by_name?: string | null;
+  created_at?: string;
+};
+
 export const fetchAttendance = async (studentId: number): Promise<AttendanceRecord[]> => {
   const res = await api.get<AttendanceRecord[]>(`/api/attendance/student/${studentId}/`);
   return res.data;
@@ -39,6 +54,16 @@ export const markAttendance = async (payload: MarkAttendancePayload) => {
 
 export const fetchLessonAttendance = async (lessonId: number): Promise<AttendanceRecord[]> => {
   const res = await api.get<AttendanceRecord[]>(`/api/attendance/lesson/${lessonId}/`);
+  return res.data;
+};
+
+export const fetchAttendanceOverrideHistory = async (
+  lessonId: number,
+  studentId: number
+): Promise<AttendanceOverrideLog[]> => {
+  const res = await api.get<AttendanceOverrideLog[]>(
+    `/api/attendance/lesson/${lessonId}/student/${studentId}/overrides/`
+  );
   return res.data;
 };
 

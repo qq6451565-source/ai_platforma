@@ -10,7 +10,11 @@ import {
   fetchTeacherSubjects,
   fetchLessonAttendance,
 } from "../../api/admin";
-import { markAttendance } from "../../api/attendance";
+import {
+  fetchAttendanceOverrideHistory,
+  markAttendance,
+  type AttendanceOverrideLog,
+} from "../../api/attendance";
 
 type AbsentLesson = {
   lessonId: number;
@@ -41,6 +45,12 @@ type OverrideDraft = {
   lesson: number;
   student: number;
   status: "present" | "absent";
+  studentName: string;
+};
+
+type HistoryTarget = {
+  lesson: number;
+  student: number;
   studentName: string;
 };
 
@@ -80,6 +90,7 @@ const AdminAttendancePage = () => {
   const [selectedStudent, setSelectedStudent] = useState<StudentRow | null>(null);
   const [overrideDraft, setOverrideDraft] = useState<OverrideDraft | null>(null);
   const [overrideReason, setOverrideReason] = useState("");
+  const [historyTarget, setHistoryTarget] = useState<HistoryTarget | null>(null);
 
   const groupMap = useMemo(() => new Map((groups || []).map((g) => [g.id, g])), [groups]);
   const lessonMap = useMemo(() => new Map((lessons || []).map((l) => [l.id, l])), [lessons]);
@@ -126,6 +137,11 @@ const AdminAttendancePage = () => {
       return results.flat();
     },
     enabled: lessonIds.length > 0,
+  });
+  const { data: overrideHistory, isLoading: loadingOverrideHistory } = useQuery({
+    queryKey: ["attendance-override-history", historyTarget?.lesson, historyTarget?.student],
+    queryFn: () => fetchAttendanceOverrideHistory(historyTarget!.lesson, historyTarget!.student),
+    enabled: !!historyTarget,
   });
 
   const lessonGroupIds = useMemo(() => new Set(lessonsForSubject.map((l) => l.group).filter(Boolean)), [
@@ -233,6 +249,7 @@ const AdminAttendancePage = () => {
       setOverrideDraft(null);
       setOverrideReason("");
       await qc.invalidateQueries({ queryKey: ["admin-attendance", lessonIds.join(",")] });
+      await qc.invalidateQueries({ queryKey: ["attendance-override-history"] });
     },
     onError: (error: any) => {
       message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || "Override saqlanmadi.");
@@ -435,6 +452,14 @@ const AdminAttendancePage = () => {
                       title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
                         row.overriddenAt ? ` | ${new Date(row.overriddenAt).toLocaleString()}` : ""
                       }`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        setHistoryTarget({
+                          lesson: row.lessonId,
+                          student: selectedStudent!.studentId,
+                          studentName: selectedStudent!.studentName,
+                        })
+                      }
                     >
                       Manual
                     </Tag>
@@ -480,6 +505,52 @@ const AdminAttendancePage = () => {
           placeholder="Override sababi"
           maxLength={500}
         />
+      </Modal>
+
+      <Modal
+        title={`Override tarixi${historyTarget ? `: ${historyTarget.studentName}` : ""}`}
+        open={!!historyTarget}
+        onCancel={() => setHistoryTarget(null)}
+        footer={null}
+        width={760}
+      >
+        {loadingOverrideHistory ? (
+          <Empty description="Yuklanmoqda..." />
+        ) : !overrideHistory?.length ? (
+          <Empty description="Override tarixi yo'q" />
+        ) : (
+          <Table<AttendanceOverrideLog>
+            rowKey="id"
+            pagination={false}
+            dataSource={overrideHistory}
+            columns={[
+              {
+                title: "Vaqt",
+                dataIndex: "created_at",
+                key: "created_at",
+                render: (value: string | undefined) =>
+                  value ? new Date(value).toLocaleString() : "-",
+              },
+              {
+                title: "Kim",
+                dataIndex: "changed_by_name",
+                key: "changed_by_name",
+                render: (value: string | null | undefined) => value || "-",
+              },
+              {
+                title: "Holat",
+                key: "status_change",
+                render: (_: unknown, row: AttendanceOverrideLog) =>
+                  `${row.previous_status || "-"} -> ${row.new_status}`,
+              },
+              {
+                title: "Sabab",
+                dataIndex: "reason",
+                key: "reason",
+              },
+            ]}
+          />
+        )}
       </Modal>
     </Card>
   );
