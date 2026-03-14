@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   getFaceStatusDisplay,
   getStudentAttendanceNote,
+  getStudentEligibilityBadge,
   getStudentMetricChips,
   resolveStudentGroup,
 } from "../utils/studentSorting";
@@ -64,6 +65,7 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   const statusDisplay = getFaceStatusDisplay(faceStatus);
   const metricChips = getStudentMetricChips(status);
   const attendanceNote = getStudentAttendanceNote(status);
+  const eligibilityBadge = getStudentEligibilityBadge(status);
 
   return (
     <div
@@ -106,6 +108,15 @@ export const StudentTile: React.FC<StudentTileProps> = ({
         )}
 
         {attendanceNote && <div className="student-attendance-note">{attendanceNote}</div>}
+
+        {eligibilityBadge && (
+          <div
+            className={`student-eligibility-badge ${eligibilityBadge.className}`}
+            title={eligibilityBadge.reason}
+          >
+            {eligibilityBadge.label}
+          </div>
+        )}
 
         <div className="student-badges">
           {isStage && (

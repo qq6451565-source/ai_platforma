@@ -15,7 +15,7 @@
   --sidebar-width: 19.5rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   gap: 0.7rem;
   height: 100vh;
   padding: 0.68rem;
@@ -111,9 +111,63 @@
   color: #ffe0b8;
 }
 
+.room-summary-bar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.summary-card {
+  display: grid;
+  gap: 0.14rem;
+  min-height: 4rem;
+  padding: 0.72rem 0.9rem;
+  border-radius: var(--radius-lg);
+  border: 0.0625rem solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(8, 19, 45, 0.95), rgba(5, 13, 31, 0.95));
+}
+
+.summary-card-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-card-value {
+  font-size: 1.46rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summary-card-eligible {
+  border-color: rgba(17, 214, 128, 0.36);
+}
+
+.summary-card-eligible .summary-card-value {
+  color: #bdf6d7;
+}
+
+.summary-card-risk {
+  border-color: rgba(243, 164, 72, 0.36);
+}
+
+.summary-card-risk .summary-card-value {
+  color: #ffdba9;
+}
+
+.summary-card-blocked {
+  border-color: rgba(255, 79, 99, 0.36);
+}
+
+.summary-card-blocked .summary-card-value {
+  color: #ffd1d8;
+}
+
 .main-content {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 4;
   min-height: 0;
   display: block;
   border-radius: var(--radius-lg);
@@ -211,6 +265,21 @@
   color: #bdf6d7;
 }
 
+.stage-eligibility-pill.eligibility-eligible {
+  border-color: rgba(17, 214, 128, 0.5);
+  color: #bff6d7;
+}
+
+.stage-eligibility-pill.eligibility-risk {
+  border-color: rgba(243, 164, 72, 0.5);
+  color: #ffdba9;
+}
+
+.stage-eligibility-pill.eligibility-blocked {
+  border-color: rgba(255, 79, 99, 0.5);
+  color: #ffd1d8;
+}
+
 .stage-title {
   font-size: 0.92rem;
   font-weight: 500;
@@ -247,7 +316,7 @@
 
 .side-panel {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 4;
   min-height: 0;
   border-radius: var(--radius-lg);
   border: 0.0625rem solid var(--line);
@@ -256,7 +325,7 @@
 
 .live-controls {
   grid-column: 1 / -1;
-  grid-row: 4;
+  grid-row: 5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -432,6 +501,11 @@
     padding: 0.72rem 0.82rem;
   }
 
+  .room-summary-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
   .live-controls {
     justify-content: flex-start;
     overflow-x: auto;
@@ -453,6 +527,10 @@
   .room-alert {
     font-size: 0.84rem;
     padding: 0.62rem 0.75rem;
+  }
+
+  .room-summary-bar {
+    grid-template-columns: 1fr;
   }
 
   .stage-overlay {

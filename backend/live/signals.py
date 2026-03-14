@@ -10,6 +10,7 @@ from profiles.models import StudentProfile
 
 from .models import LiveRoom
 from .tasks import send_live_reminder
+from attendance.services import get_live_attendance_thresholds
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +42,10 @@ def finalize_attendance_on_room_close(sender, instance, created, **kwargs):
     from attendance.models import Attendance
     from .models import LiveFaceSession, LiveParticipant
 
-    ratio_threshold = float(getattr(settings, "FACE_ATTENDANCE_PRESENT_RATIO", 0.50))
-    duration_ratio_threshold = float(getattr(settings, "LIVE_ATTENDANCE_MIN_DURATION_RATIO", 0.70))
-    minimum_face_checks = int(getattr(settings, "FACE_ATTENDANCE_MIN_SAMPLES", 3) or 3)
+    thresholds = get_live_attendance_thresholds()
+    ratio_threshold = float(thresholds["face_ratio_threshold"])
+    duration_ratio_threshold = float(thresholds["duration_ratio_threshold"])
+    minimum_face_checks = int(thresholds["minimum_face_checks"])
     stale_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
     lesson = instance.lesson
     room_ended_at = instance.ended_at or timezone.now()

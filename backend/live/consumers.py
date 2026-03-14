@@ -7,6 +7,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
 
 from profiles.models import StudentProfile
+from attendance.services import build_live_attendance_preview
 
 from .models import LiveFaceSession, LiveParticipant, LiveRoom
 
@@ -301,6 +302,13 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                 .first()
             )
             joined_seconds, joined_ratio = _participant_join_metrics(participant, room)
+            eligibility = build_live_attendance_preview(
+                joined_ratio=joined_ratio,
+                face_ratio=result.get("attendance_ratio"),
+                face_checks=result.get("attendance_samples"),
+                attendance_status=result.get("attendance_status"),
+                finalized=False,
+            )
 
             total_students = _active_room_participants(room).filter(
                 is_teacher=False
@@ -327,6 +335,8 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                         "attendance_samples": result.get("attendance_samples"),
                         "joined_seconds": joined_seconds,
                         "joined_ratio": joined_ratio,
+                        "eligibility_status": eligibility.get("status"),
+                        "eligibility_reason": eligibility.get("reason"),
                         "last_verified_at": timezone.now().isoformat(),
                     }
                 ],
@@ -440,6 +450,13 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                     else {}
                 )
                 joined_seconds, joined_ratio = _participant_join_metrics(session.participant, room)
+                eligibility = build_live_attendance_preview(
+                    joined_ratio=joined_ratio,
+                    face_ratio=attendance_meta.get("ratio"),
+                    face_checks=attendance_meta.get("samples"),
+                    attendance_status=attendance_meta.get("status"),
+                    finalized=False,
+                )
                 updates.append(
                     {
                         "student_id": session.user_id,
@@ -457,6 +474,8 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
                         "attendance_samples": attendance_meta.get("samples"),
                         "joined_seconds": joined_seconds,
                         "joined_ratio": joined_ratio,
+                        "eligibility_status": eligibility.get("status"),
+                        "eligibility_reason": eligibility.get("reason"),
                     }
                 )
 

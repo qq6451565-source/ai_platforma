@@ -21,6 +21,8 @@ export interface StudentStatus {
   attendanceSamples?: number | null;
   joinedSeconds?: number | null;
   joinedRatio?: number | null;
+  eligibilityStatus?: "eligible" | "risk" | "blocked" | null;
+  eligibilityReason?: string | null;
 }
 
 export interface Student {
@@ -46,6 +48,19 @@ export interface StudentMetricChip {
   key: "joined" | "face" | "checks";
   label: string;
   value: string;
+}
+
+export interface StudentEligibilityBadge {
+  label: string;
+  className: string;
+  tone: "eligible" | "risk" | "blocked";
+  reason: string;
+}
+
+export interface StudentEligibilitySummary {
+  eligible: number;
+  risk: number;
+  blocked: number;
 }
 
 const tierPriority: Record<StudentTier, number> = {
@@ -137,7 +152,7 @@ export const getStudentMetricChips = (status?: StudentStatus): StudentMetricChip
 export const getStudentMetricsSummary = (status?: StudentStatus): string => {
   return getStudentMetricChips(status)
     .map((chip) => `${chip.label} ${chip.value}`)
-    .join(" • ");
+    .join(" | ");
 };
 
 export const getStudentAttendanceNote = (status?: StudentStatus): string => {
@@ -146,6 +161,53 @@ export const getStudentAttendanceNote = (status?: StudentStatus): string => {
   if (status.attendanceStatus === "absent") return "Live: yo'q";
   if ((status.attendanceSamples ?? 0) > 0) return "Live: kutilmoqda";
   return "";
+};
+
+export const getStudentEligibilityBadge = (
+  status?: StudentStatus
+): StudentEligibilityBadge | null => {
+  const tone = status?.eligibilityStatus ?? "blocked";
+  const reason = status?.eligibilityReason || "Davomat hali yig'ilmagan.";
+
+  if (tone === "eligible") {
+    return {
+      label: "Eligible",
+      className: "eligibility-eligible",
+      tone,
+      reason,
+    };
+  }
+  if (tone === "risk") {
+    return {
+      label: "Risk",
+      className: "eligibility-risk",
+      tone,
+      reason,
+    };
+  }
+  return {
+    label: "Blocked",
+    className: "eligibility-blocked",
+    tone: "blocked",
+    reason,
+  };
+};
+
+export const summarizeEligibility = (
+  students: Student[],
+  statuses: Map<number, StudentStatus>
+): StudentEligibilitySummary => {
+  return students
+    .filter((student) => !student.is_teacher)
+    .reduce<StudentEligibilitySummary>(
+      (summary, student) => {
+        const badge = getStudentEligibilityBadge(statuses.get(student.user_id));
+        if (!badge) return summary;
+        summary[badge.tone] += 1;
+        return summary;
+      },
+      { eligible: 0, risk: 0, blocked: 0 }
+    );
 };
 
 export const sortStudents = (
@@ -189,10 +251,10 @@ export const getGroupedStudents = (
   });
 
   const groupMeta: Array<Pick<StudentGroup, "key" | "group" | "icon">> = [
-    { key: "hand_raised", group: "Qol ko'targanlar", icon: "🔵" },
-    { key: "verified", group: "Tasdiqlangan", icon: "✅" },
-    { key: "failed", group: "Tasdiqlanmagan", icon: "❌" },
-    { key: "pending", group: "Kutilmoqda", icon: "⏳" },
+    { key: "hand_raised", group: "Qol ko'targanlar", icon: "HR" },
+    { key: "verified", group: "Tasdiqlangan", icon: "OK" },
+    { key: "failed", group: "Tasdiqlanmagan", icon: "NO" },
+    { key: "pending", group: "Kutilmoqda", icon: "..." },
   ];
 
   return groupMeta
@@ -209,7 +271,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
       return {
         color: "#10b981",
         animation: "pulse-green",
-        icon: "✅",
+        icon: "OK",
         label: "Tasdiqlandi",
         bgColor: "rgba(16, 185, 129, 0.1)",
       };
@@ -217,7 +279,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
       return {
         color: "#ef4444",
         animation: "shake-red",
-        icon: "❌",
+        icon: "NO",
         label: "Tasdiqlandi emas",
         bgColor: "rgba(239, 68, 68, 0.1)",
       };
@@ -225,7 +287,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
       return {
         color: "#f59e0b",
         animation: "pulse-yellow",
-        icon: "⚠️",
+        icon: "WARN",
         label: "Ko'p yuzlar",
         bgColor: "rgba(245, 158, 11, 0.1)",
       };
@@ -234,7 +296,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
       return {
         color: "#94a3b8",
         animation: "spin",
-        icon: "⏳",
+        icon: "...",
         label: "Tekshirilmoqda",
         bgColor: "rgba(148, 163, 184, 0.12)",
       };
@@ -287,7 +349,7 @@ export const calculateStats = (
     handRaised: handRaisedCount,
     verificationRate:
       studentCount > 0
-        ? ((detectedCount / studentCount) * 100).toFixed(0) + "%"
+        ? `${((detectedCount / studentCount) * 100).toFixed(0)}%`
         : "0%",
   };
 };

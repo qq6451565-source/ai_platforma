@@ -21,6 +21,7 @@ from .models import (
 )
 from accounts.models import User
 from attendance.models import Attendance
+from attendance.services import get_live_attendance_thresholds
 
 logger = logging.getLogger(__name__)
 
@@ -322,10 +323,9 @@ class FaceVerificationService:
             return None
 
         window_sec = max(15, int(getattr(settings, "FACE_ATTENDANCE_WINDOW_SECONDS", 60) or 60))
-        min_samples = max(1, int(getattr(settings, "FACE_ATTENDANCE_MIN_SAMPLES", 6) or 6))
-        ratio_thr = float(max(0.1, min(1.0,
-            float(getattr(settings, "FACE_ATTENDANCE_PRESENT_RATIO", 0.70) or 0.70)
-        )))
+        thresholds = get_live_attendance_thresholds()
+        min_samples = int(thresholds["minimum_face_checks"])
+        ratio_thr = float(thresholds["face_ratio_threshold"])
 
         window_start = timezone.now() - timedelta(seconds=window_sec)
         window_qs = LiveFaceEvent.objects.filter(

@@ -33,6 +33,8 @@ interface StudentStatusUpdate {
   attendance_samples?: number;
   joined_seconds?: number;
   joined_ratio?: number;
+  eligibility_status?: "eligible" | "risk" | "blocked";
+  eligibility_reason?: string;
 }
 
 interface MonitoringUpdateMessage {
@@ -60,6 +62,8 @@ interface SingleStudentUpdateMessage {
   attendance_samples?: number;
   joined_seconds?: number;
   joined_ratio?: number;
+  eligibility_status?: "eligible" | "risk" | "blocked";
+  eligibility_reason?: string;
 }
 
 export interface MonitoringRoomParticipant {
@@ -154,6 +158,14 @@ function applyUpdatesToMap(
         update.joined_ratio !== undefined
           ? Number(update.joined_ratio)
           : existing?.joinedRatio ?? null,
+      eligibilityStatus:
+        update.eligibility_status !== undefined
+          ? update.eligibility_status
+          : existing?.eligibilityStatus ?? null,
+      eligibilityReason:
+        update.eligibility_reason !== undefined
+          ? update.eligibility_reason
+          : existing?.eligibilityReason ?? null,
     });
   });
   return next;
@@ -321,6 +333,8 @@ export const useStudentMonitoring = (roomName: string, enabled: boolean = false)
             attendance_samples: msg.attendance_samples,
             joined_seconds: msg.joined_seconds,
             joined_ratio: msg.joined_ratio,
+            eligibility_status: msg.eligibility_status,
+            eligibility_reason: msg.eligibility_reason,
           }]);
         }
       } catch {

@@ -2,6 +2,7 @@ import React from "react";
 import {
   getFaceStatusDisplay,
   getStudentAttendanceNote,
+  getStudentEligibilityBadge,
   getStudentMetricsSummary,
   resolveStudentGroup,
 } from "../utils/studentSorting";
@@ -119,6 +120,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 : "status-checking";
             const metricsSummary = getStudentMetricsSummary(status);
             const attendanceNote = getStudentAttendanceNote(status);
+            const eligibilityBadge = getStudentEligibilityBadge(status);
 
             return (
               <div
@@ -147,6 +149,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   </span>
                   {metricsSummary && <span className="meta meta-metrics">{metricsSummary}</span>}
                   {attendanceNote && <span className="meta meta-attendance">{attendanceNote}</span>}
+                  {eligibilityBadge && (
+                    <span
+                      className={`participant-eligibility-badge ${eligibilityBadge.className}`}
+                      title={eligibilityBadge.reason}
+                    >
+                      {eligibilityBadge.label}
+                    </span>
+                  )}
                 </div>
 
                 <div

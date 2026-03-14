@@ -41,10 +41,12 @@ import StudentGridSection from "./components/StudentGridSection";
 import { useFaceVerification, useStudentMonitoring } from "./hooks/useFaceVerification";
 import {
   getStudentAttendanceNote,
+  getStudentEligibilityBadge,
   getStudentMetricChips,
   resolveStudentGroup,
   resolveVisualStatus,
   sortStudents,
+  summarizeEligibility,
 } from "./utils/studentSorting";
 import i18next from "../../i18n";
 
@@ -290,6 +292,8 @@ export default function Room() {
       attendanceSamples: existing?.attendanceSamples ?? null,
       joinedSeconds: existing?.joinedSeconds ?? null,
       joinedRatio: existing?.joinedRatio ?? null,
+      eligibilityStatus: existing?.eligibilityStatus ?? null,
+      eligibilityReason: existing?.eligibilityReason ?? null,
     });
     return merged;
   }, [monitoringStatuses, localFaceStatus, me?.id]);
@@ -1434,6 +1438,14 @@ export default function Room() {
     () => (stageParticipant?.is_teacher ? "" : getStudentAttendanceNote(stageStatus)),
     [stageParticipant?.is_teacher, stageStatus]
   );
+  const stageEligibilityBadge = useMemo(
+    () => (stageParticipant?.is_teacher ? null : getStudentEligibilityBadge(stageStatus)),
+    [stageParticipant?.is_teacher, stageStatus]
+  );
+  const eligibilitySummary = useMemo(
+    () => summarizeEligibility(state.participants, studentStatuses),
+    [state.participants, studentStatuses]
+  );
 
   const showCameraUnavailable =
     isTeacher &&
@@ -1443,6 +1455,7 @@ export default function Room() {
     (cameraStreamUnavailable || !localVideoRef.current || !videoPublished);
   const participantsPanelOpen = state.showStudentsGrid;
   const participantsCount = state.participants.length;
+  const studentCount = sortedParticipants.length;
   const roomDisplayName = roomMeta?.roomName || t("live.room.defaultRoomTitle");
   const isDemoMode = useMemo(() => {
     const errorText = (state.error || "").toLowerCase();
@@ -1469,6 +1482,23 @@ export default function Room() {
         </div>
         {isDemoMode && <div className="room-mode-pill">Demo rejim</div>}
       </header>
+
+      {isTeacher && studentCount > 0 && (
+        <section className="room-summary-bar">
+          <div className="summary-card summary-card-eligible">
+            <span className="summary-card-label">Eligible</span>
+            <strong className="summary-card-value">{eligibilitySummary.eligible}</strong>
+          </div>
+          <div className="summary-card summary-card-risk">
+            <span className="summary-card-label">Risk</span>
+            <strong className="summary-card-value">{eligibilitySummary.risk}</strong>
+          </div>
+          <div className="summary-card summary-card-blocked">
+            <span className="summary-card-label">Blocked</span>
+            <strong className="summary-card-value">{eligibilitySummary.blocked}</strong>
+          </div>
+        </section>
+      )}
 
       {state.error && (
         <div className="room-alert room-alert-error">{state.error}</div>
@@ -1504,7 +1534,7 @@ export default function Room() {
               <div className="stage-subtitle">
                 {stageParticipant?.is_teacher ? "O'qituvchi markazda" : "Talaba markazda"}
               </div>
-              {stageMetricChips.length > 0 && (
+              {(stageMetricChips.length > 0 || Boolean(stageAttendanceNote) || Boolean(stageEligibilityBadge)) && (
                 <div className="stage-metrics">
                   {stageMetricChips.map((chip) => (
                     <span key={chip.key} className="stage-metric-pill">
@@ -1514,6 +1544,14 @@ export default function Room() {
                   {stageAttendanceNote && (
                     <span className="stage-metric-pill stage-metric-note">
                       {stageAttendanceNote}
+                    </span>
+                  )}
+                  {stageEligibilityBadge && (
+                    <span
+                      className={`stage-metric-pill stage-eligibility-pill ${stageEligibilityBadge.className}`}
+                      title={stageEligibilityBadge.reason}
+                    >
+                      {stageEligibilityBadge.label}
                     </span>
                   )}
                 </div>
