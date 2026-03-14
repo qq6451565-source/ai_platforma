@@ -106,6 +106,11 @@ export type AttendanceRecord = {
   joined_ratio?: number;
   finalized?: boolean;
   finalized_at?: string | null;
+  manual_override?: boolean;
+  override_reason?: string;
+  overridden_by?: number | null;
+  overridden_by_name?: string | null;
+  overridden_at?: string | null;
 };
 export const fetchLessonAttendance = async (lessonId: number) =>
   (await api.get<AttendanceRecord[]>(`/api/attendance/lesson/${lessonId}/`)).data;

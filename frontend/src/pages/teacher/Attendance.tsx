@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Card, Empty, Input, Select, Table, Tag, Typography } from "antd";
+import { Button, Card, Empty, Input, Modal, Select, Table, Tag, Typography, message } from "antd";
 import dayjs from "dayjs";
 import { fetchLessons } from "../../api/lessons";
 import { fetchTeacherStudents } from "../../api/user";
@@ -26,6 +26,17 @@ type StudentRow = {
   joinedRatio?: number;
   faceVerifiedRatio?: number;
   finalized?: boolean;
+  manualOverride?: boolean;
+  overrideReason?: string;
+  overriddenByName?: string | null;
+  overriddenAt?: string | null;
+};
+
+type OverrideDraft = {
+  lesson: number;
+  student: number;
+  status: "present" | "absent";
+  studentName: string;
 };
 
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
@@ -49,6 +60,8 @@ const TeacherAttendancePage = () => {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [overrideDraft, setOverrideDraft] = useState<OverrideDraft | null>(null);
+  const [overrideReason, setOverrideReason] = useState("");
 
   const subjectCards = useMemo(() => {
     const subjectNameById = new Map((subjects || []).map((s) => [s.id, s.name]));
@@ -95,6 +108,10 @@ const TeacherAttendancePage = () => {
         joinedRatio?: number;
         faceVerifiedRatio?: number;
         finalized?: boolean;
+        manualOverride?: boolean;
+        overrideReason?: string;
+        overriddenByName?: string | null;
+        overriddenAt?: string | null;
       }
     >();
     (attendanceRecords || []).forEach((rec) => {
@@ -104,6 +121,10 @@ const TeacherAttendancePage = () => {
         joinedRatio: rec.joined_ratio,
         faceVerifiedRatio: rec.face_verified_ratio,
         finalized: rec.finalized,
+        manualOverride: rec.manual_override,
+        overrideReason: rec.override_reason,
+        overriddenByName: rec.overridden_by_name,
+        overriddenAt: rec.overridden_at,
       });
     });
     return map;
@@ -134,17 +155,42 @@ const TeacherAttendancePage = () => {
           joinedRatio: rec?.joinedRatio,
           faceVerifiedRatio: rec?.faceVerifiedRatio,
           finalized: rec?.finalized,
+          manualOverride: rec?.manualOverride,
+          overrideReason: rec?.overrideReason,
+          overriddenByName: rec?.overriddenByName,
+          overriddenAt: rec?.overriddenAt,
         };
       });
   }, [studentsForLesson, attendanceMap, search, selectedLesson]);
 
   const markMut = useMutation({
-    mutationFn: (payload: { student: number; lesson: number; status: "present" | "absent" }) =>
+    mutationFn: (payload: { student: number; lesson: number; status: "present" | "absent"; reason: string }) =>
       markAttendance(payload),
     onSuccess: async () => {
+      message.success("Davomat override qilindi.");
+      setOverrideDraft(null);
+      setOverrideReason("");
       await qc.invalidateQueries({ queryKey: ["teacher-attendance", selectedLessonId] });
     },
+    onError: (error: any) => {
+      message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || "Override saqlanmadi.");
+    },
   });
+
+  const openOverrideModal = (draft: OverrideDraft) => {
+    setOverrideDraft(draft);
+    setOverrideReason("");
+  };
+
+  const submitOverride = () => {
+    if (!overrideDraft) return;
+    const reason = overrideReason.trim();
+    if (reason.length < 5) {
+      message.warning("Override uchun kamida 5 ta belgi sabab yozing.");
+      return;
+    }
+    markMut.mutate({ ...overrideDraft, reason });
+  };
 
   const columns = [
     {
@@ -166,10 +212,11 @@ const TeacherAttendancePage = () => {
           style={{ width: 120 }}
           onChange={(value) => {
             if (!selectedLessonId) return;
-            markMut.mutate({
+            openOverrideModal({
               lesson: selectedLessonId,
               student: row.id,
               status: value,
+              studentName: row.name,
             });
           }}
           options={[
@@ -184,6 +231,23 @@ const TeacherAttendancePage = () => {
       key: "timestamp",
       render: (_: unknown, row: StudentRow) =>
         row.timestamp ? dayjs(row.timestamp).format("DD.MM.YYYY HH:mm") : "-",
+    },
+    {
+      title: "Override",
+      key: "override",
+      render: (_: unknown, row: StudentRow) =>
+        row.manualOverride ? (
+          <Tag
+            color="blue"
+            title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
+              row.overriddenAt ? ` | ${dayjs(row.overriddenAt).format("DD.MM.YYYY HH:mm")}` : ""
+            }`}
+          >
+            Manual
+          </Tag>
+        ) : (
+          "-"
+        ),
     },
     {
       title: "Final",
@@ -275,6 +339,31 @@ const TeacherAttendancePage = () => {
           )}
         </>
       )}
+
+      <Modal
+        title="Davomat override"
+        open={!!overrideDraft}
+        onCancel={() => {
+          if (markMut.isPending) return;
+          setOverrideDraft(null);
+          setOverrideReason("");
+        }}
+        onOk={submitOverride}
+        okText="Saqlash"
+        confirmLoading={markMut.isPending}
+      >
+        <Typography.Paragraph style={{ marginBottom: 12 }}>
+          {overrideDraft?.studentName} uchun davomatni{" "}
+          <strong>{overrideDraft?.status === "present" ? "Bor" : "Yoq"}</strong> deb belgilaysiz.
+        </Typography.Paragraph>
+        <Input.TextArea
+          rows={4}
+          value={overrideReason}
+          onChange={(event) => setOverrideReason(event.target.value)}
+          placeholder="Override sababi"
+          maxLength={500}
+        />
+      </Modal>
     </div>
   );
 };

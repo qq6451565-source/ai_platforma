@@ -25,6 +25,16 @@ class Attendance(models.Model):
     # Yakunlanish holati
     finalized = models.BooleanField(default=False)
     finalized_at = models.DateTimeField(null=True, blank=True)
+    manual_override = models.BooleanField(default=False)
+    override_reason = models.TextField(blank=True)
+    overridden_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attendance_overrides",
+    )
+    overridden_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("lesson", "student")
@@ -70,3 +80,42 @@ class Attendance(models.Model):
             "face_verified_ratio", "joined_seconds", "joined_ratio",
             "status", "finalized", "finalized_at",
         ])
+
+
+class AttendanceOverrideLog(models.Model):
+    attendance = models.ForeignKey(
+        Attendance,
+        on_delete=models.CASCADE,
+        related_name="override_logs",
+    )
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        limit_choices_to={"role": "student"},
+        related_name="attendance_override_logs",
+    )
+    previous_status = models.CharField(
+        max_length=10,
+        choices=Attendance.ATTEND_CHOICES,
+        null=True,
+        blank=True,
+    )
+    new_status = models.CharField(max_length=10, choices=Attendance.ATTEND_CHOICES)
+    previous_finalized = models.BooleanField(default=False)
+    new_finalized = models.BooleanField(default=True)
+    reason = models.TextField()
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attendance_override_entries",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"AttendanceOverrideLog(attendance={self.attendance_id}, new_status={self.new_status})"
