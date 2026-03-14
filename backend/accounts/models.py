@@ -89,6 +89,10 @@ class AuditLog(models.Model):
         ("login_failed", "Login failed"),
         ("logout", "Logout"),
         ("role_changed", "Role changed"),
+        ("enrollment_approved", "Enrollment approved"),
+        ("enrollment_override_approved", "Enrollment override approved"),
+        ("enrollment_rejected", "Enrollment rejected"),
+        ("enrollment_reverified", "Enrollment reverified"),
     )
 
     user = models.ForeignKey(

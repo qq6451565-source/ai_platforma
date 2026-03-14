@@ -5,8 +5,10 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from accounts.models import User
+from accounts.models import AuditLog, User
+from directions.models import Direction
 from enrollment.models import Applicant, ApplicantDocument, RegistrationWindow, VerificationResult
+from groups.models import Group
 
 
 def _image_file(name: str) -> SimpleUploadedFile:
@@ -16,12 +18,19 @@ def _image_file(name: str) -> SimpleUploadedFile:
 class EnrollmentRegistrationFlowTests(APITestCase):
     def setUp(self):
         RegistrationWindow.objects.create(is_active=True)
+        self.direction = Direction.objects.create(name="Axborot xavfsizligi")
 
-    def _start_registration(self, full_name="Ali Valiyev", email="ali@example.com", phone="+998901112233"):
+    def _start_registration(
+        self,
+        full_name: str = "Ali Valiyev",
+        email: str = "ali@example.com",
+        phone: str = "+998901112233",
+    ):
         payload = {
             "full_name": full_name,
             "email": email,
             "phone": phone,
+            "direction_choice": self.direction.id,
         }
         return self.client.post("/api/enrollment/register/start/", payload, format="json")
 
@@ -153,3 +162,99 @@ class EnrollmentRegistrationFlowTests(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(response.data.get("action"), "cooldown")
             mocked_run_ai.assert_not_called()
+
+
+class AdminEnrollmentApiTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin_enrollment",
+            password="secret123",
+            role="admin",
+            email="admin@example.com",
+        )
+        self.direction = Direction.objects.create(name="Axborot xavfsizligi")
+        self.applicant = Applicant.objects.create(
+            full_name="Sardor Qodirov",
+            phone="+998901234567",
+            email="sardor@example.com",
+            direction_choice=self.direction,
+            card_number="AA1234567",
+            status="pending",
+        )
+        self.group = Group.objects.create(direction=self.direction, language="uz", level=1)
+        ApplicantDocument.objects.create(
+            applicant=self.applicant,
+            passport_front=_image_file("passport_front.jpg"),
+            passport_back=_image_file("passport_back.jpg"),
+            face_image=_image_file("selfie.jpg"),
+        )
+        VerificationResult.objects.create(
+            applicant=self.applicant,
+            verified=False,
+            confidence=0.61,
+            events_json=[
+                {
+                    "type": "face_match",
+                    "status": "ok",
+                    "threshold": 0.7,
+                    "passed": False,
+                },
+                {
+                    "type": "face_embedding",
+                    "status": "ok",
+                    "embedding_length": 512,
+                },
+            ],
+        )
+        self.client.force_authenticate(user=self.admin)
+
+    def test_admin_enrollment_list_returns_ai_summary_contract(self):
+        response = self.client.get("/api/enrollment/applicants/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        item = response.data[0]
+        self.assertEqual(item["direction_name"], self.direction.name)
+        self.assertIn("ai_summary", item)
+        self.assertIn("latest_verification", item)
+        self.assertEqual(item["ai_summary"]["status"], "not_verified")
+        self.assertTrue(item["ai_summary"]["face_embedding_ready"])
+        self.assertNotIn("documents", item)
+
+    def test_admin_enrollment_detail_returns_face_only_documents(self):
+        response = self.client.get(f"/api/enrollment/applicants/{self.applicant.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("documents", response.data)
+        self.assertIn("verification_history", response.data)
+        self.assertIn("passport_front", response.data["documents"])
+        self.assertIn("face_image", response.data["documents"])
+        self.assertNotIn("passport_back", response.data["documents"])
+
+    def test_admin_approval_requires_manual_override_reason_when_ai_not_verified(self):
+        response = self.client.post(
+            f"/api/enrollment/approve/{self.applicant.id}/",
+            {"role": "student", "group_id": self.group.id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("manual_override_reason", response.data)
+
+    def test_admin_approval_logs_override_reason(self):
+        response = self.client.post(
+            f"/api/enrollment/approve/{self.applicant.id}/",
+            {
+                "role": "student",
+                "group_id": self.group.id,
+                "manual_override_reason": "Passport va selfie preview qo'lda tekshirildi.",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        audit = AuditLog.objects.filter(action="enrollment_override_approved").order_by("-created_at").first()
+        self.assertIsNotNone(audit)
+        self.assertEqual(audit.extra["applicant_id"], self.applicant.id)
+        self.assertEqual(
+            audit.extra["manual_override_reason"],
+            "Passport va selfie preview qo'lda tekshirildi.",
+        )

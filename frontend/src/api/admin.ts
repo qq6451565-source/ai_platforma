@@ -112,39 +112,73 @@ export const deleteAnnouncementAdmin = async (id: number) =>
   (await api.delete(`/api/announcements/${id}/`)).data;
 
 // ==== Enrollment (pending registrations) ====
+export type EnrollmentVerificationStatus = "verified" | "not_verified" | "unavailable" | "not_run";
+
+export type EnrollmentVerification = {
+  verified: boolean;
+  confidence: number | null;
+  created_at?: string;
+  checked_at?: string | null;
+  status: EnrollmentVerificationStatus;
+  label: string;
+  color: string;
+  message: string;
+  threshold?: number | null;
+  reason?: string | null;
+  manual_review_required: boolean;
+  face_embedding_ready: boolean;
+  event_summary: string[];
+  events_json?: any[];
+};
+
+export type EnrollmentAiSummary = {
+  status: EnrollmentVerificationStatus;
+  label: string;
+  color: string;
+  message: string;
+  confidence?: number | null;
+  threshold?: number | null;
+  checked_at?: string | null;
+  reason?: string | null;
+  manual_review_required: boolean;
+  face_embedding_ready: boolean;
+  event_summary: string[];
+};
+
 export type EnrollmentItem = {
   id: number;
   full_name?: string;
   phone?: string;
   email?: string;
-  passport_id?: string | null;
-  card_number?: string | null;
-  personal_number?: string | null;
-  surname?: string | null;
-  name?: string | null;
-  patronymic?: string | null;
-  sex?: string | null;
-  citizenship?: string | null;
-  birth_place?: string | null;
-  birth_date?: string | null;
   direction_choice?: number | null;
+  direction_name?: string | null;
   created_at?: string;
+  status?: string;
+  latest_verification?: EnrollmentVerification | null;
+  ai_summary: EnrollmentAiSummary;
+};
+
+export type EnrollmentDetailItem = EnrollmentItem & {
+  approved_at?: string | null;
+  approved_by_name?: string | null;
+  has_user?: boolean;
   documents?: {
     passport_front?: string;
-    passport_back?: string;
     face_image?: string;
   };
-  verifications?: {
-    verified: boolean;
-    confidence: number;
-    created_at?: string;
-    events_json?: any[];
-  }[];
-  status?: string;
+  verification_history?: EnrollmentVerification[];
 };
 
 export const fetchEnrollment = async () => (await api.get<EnrollmentItem[]>("/api/enrollment/applicants/")).data;
-export const updateEnrollmentApplicant = async (id: number, payload: Partial<EnrollmentItem>) =>
+export const fetchEnrollmentApplicant = async (id: number) =>
+  (await api.get<EnrollmentDetailItem>(`/api/enrollment/applicants/${id}/`)).data;
+export type EnrollmentApplicantUpdatePayload = {
+  full_name?: string;
+  phone?: string;
+  email?: string;
+  direction_choice?: number | null;
+};
+export const updateEnrollmentApplicant = async (id: number, payload: EnrollmentApplicantUpdatePayload) =>
   (await api.patch(`/api/enrollment/applicants/${id}/`, payload)).data;
 export const deleteEnrollmentApplicant = async (id: number) =>
   (await api.delete(`/api/enrollment/applicants/${id}/`)).data;
@@ -154,6 +188,7 @@ export type ApproveEnrollmentPayload = {
   subject_id?: number;
   group_ids?: number[];
   admission_year?: number;
+  manual_override_reason?: string;
 };
 export const approveEnrollment = async (id: number, payload: ApproveEnrollmentPayload) =>
   (await api.post(`/api/enrollment/approve/${id}/`, payload)).data;
@@ -429,6 +464,20 @@ export const deleteLiveRoom = async (id: number) =>
   (await api.delete(`/api/live/rooms/${id}/`)).data;
 
 // ==== Audit logs ====
+export type AuditLogExtra = {
+  applicant_id?: number;
+  applicant_name?: string;
+  applicant_status?: string;
+  approved_role?: string;
+  manual_override_required?: boolean;
+  manual_override_reason?: string | null;
+  ai_verified?: boolean;
+  ai_confidence?: number | null;
+  verified?: boolean;
+  confidence?: number | null;
+  had_user?: boolean;
+};
+
 export type AuditLog = {
   id: number;
   user?: number | null;
@@ -437,11 +486,20 @@ export type AuditLog = {
   role?: string;
   ip_address?: string | null;
   user_agent?: string;
-  extra?: any;
+  extra?: AuditLogExtra;
   created_at?: string;
 };
-export const fetchAuditLogs = async () =>
-  (await api.get<AuditLog[]>("/api/accounts/admin/audit-logs/")).data;
+export type FetchAuditLogsParams = {
+  action?: string;
+  domain?: "all" | "auth" | "enrollment";
+  search?: string;
+};
+export const fetchAuditLogs = async (params?: FetchAuditLogsParams) =>
+  (
+    await api.get<AuditLog[]>("/api/accounts/admin/audit-logs/", {
+      params: params?.domain === "all" ? { ...params, domain: undefined } : params,
+    })
+  ).data;
 export const deleteAuditLog = async (id: number) =>
   (await api.delete(`/api/accounts/admin/audit-logs/${id}/`)).data;
 

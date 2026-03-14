@@ -2,6 +2,7 @@ import logging
 import re
 from time import perf_counter
 from django.conf import settings
+from django.db.models import Prefetch
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
@@ -12,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from ai.clients import AIConnectionError, face_analyze, face_match, health_check
 from ai.models import AISettings
+from accounts.audit import log_audit
 from accounts.models import User, PassportData
 from groups.models import Group
 from directions.models import Direction
@@ -24,12 +26,24 @@ from .models import RegistrationWindow, Applicant, ApplicantDocument, Verificati
 from .serializers import (
     RegistrationWindowSerializer,
     ApplicantSerializer,
+    ApplicantAdminDetailSerializer,
+    ApplicantAdminListSerializer,
+    ApplicantAdminWriteSerializer,
     ApplicantDocumentSerializer,
     VerificationResultSerializer,
 )
 
 logger = logging.getLogger(__name__)
 AI_REVERIFY_COOLDOWN_SECONDS = 90
+
+
+def _latest_verification(applicant: Applicant) -> VerificationResult | None:
+    return applicant.verifications.order_by("-created_at").first()
+
+
+def _approval_requires_manual_override(applicant: Applicant) -> bool:
+    latest = _latest_verification(applicant)
+    return not bool(latest and latest.verified)
 
 
 class RegistrationWindowViewSet(viewsets.ModelViewSet):
@@ -53,13 +67,26 @@ class RegistrationWindowViewSet(viewsets.ModelViewSet):
 
 
 class ApplicantViewSet(viewsets.ModelViewSet):
-    queryset = Applicant.objects.all()
+    queryset = (
+        Applicant.objects.select_related("direction_choice", "approved_by", "user", "documents")
+        .prefetch_related(Prefetch("verifications", queryset=VerificationResult.objects.order_by("-created_at")))
+        .order_by("-created_at")
+    )
     serializer_class = ApplicantSerializer
 
     def get_permissions(self):
         if self.action == "create":
             return [AllowAny()]
         return [IsAuthenticated(), IsAdmin()]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ApplicantAdminListSerializer
+        if self.action == "retrieve":
+            return ApplicantAdminDetailSerializer
+        if self.action in ["update", "partial_update"]:
+            return ApplicantAdminWriteSerializer
+        return ApplicantSerializer
 
 
 class ApplicantDocumentViewSet(viewsets.ModelViewSet):
@@ -643,7 +670,12 @@ class ApproveApplicantView(APIView):
         if applicant.status == "approved":
             return Response({"detail": "Applicant allaqachon tasdiqlangan."}, status=status.HTTP_200_OK)
 
-        # Admin qo'lda tekshirgan holatda AI verified bo'lmasa ham tasdiqlashga ruxsat beriladi.
+        manual_override_required = _approval_requires_manual_override(applicant)
+        manual_override_reason = (request.data.get("manual_override_reason") or "").strip()
+        if manual_override_required and not manual_override_reason:
+            raise ValidationError(
+                {"manual_override_reason": "AI tasdiqlamagan ariza uchun qo'lda tasdiqlash sababi majburiy."}
+            )
 
         role = request.data.get("role") or "student"
         if role not in ["student", "teacher"]:
@@ -834,6 +866,23 @@ class ApproveApplicantView(APIView):
         applicant.approved_at = timezone.now()
         applicant.save(update_fields=["status", "approved_by", "approved_at", "user"])
 
+        latest_verification = _latest_verification(applicant)
+        log_audit(
+            request,
+            "enrollment_override_approved" if manual_override_required else "enrollment_approved",
+            user=request.user,
+            role=getattr(request.user, "role", None),
+            extra={
+                "applicant_id": applicant.id,
+                "applicant_name": applicant.full_name,
+                "approved_role": role,
+                "manual_override_required": manual_override_required,
+                "manual_override_reason": manual_override_reason or None,
+                "ai_verified": bool(latest_verification and latest_verification.verified),
+                "ai_confidence": float(latest_verification.confidence or 0.0) if latest_verification else None,
+            },
+        )
+
         payload = {
             "user_id": user.id,
             "username": user.username,
@@ -853,6 +902,8 @@ class ApproveApplicantView(APIView):
                     "direction_id": direction_id,
                 }
             )
+        if manual_override_reason:
+            payload["manual_override_reason"] = manual_override_reason
         return Response(payload, status=status.HTTP_201_CREATED)
 
 
@@ -871,6 +922,18 @@ class RejectApplicantView(APIView):
         if applicant.status == "rejected":
             return Response({"detail": "Applicant allaqachon rad etilgan."}, status=status.HTTP_200_OK)
 
+        log_audit(
+            request,
+            "enrollment_rejected",
+            user=request.user,
+            role=getattr(request.user, "role", None),
+            extra={
+                "applicant_id": applicant.id,
+                "applicant_name": applicant.full_name,
+                "applicant_status": applicant.status,
+                "had_user": bool(applicant.user_id),
+            },
+        )
         if applicant.user:
             applicant.user.delete()
         applicant.delete()
@@ -897,6 +960,18 @@ class ReverifyApplicantView(APIView):
         latest = applicant.verifications.order_by("-created_at").first()
         if not latest:
             return Response({"detail": "Tekshiruv natijasi topilmadi."}, status=status.HTTP_200_OK)
+        log_audit(
+            request,
+            "enrollment_reverified",
+            user=request.user,
+            role=getattr(request.user, "role", None),
+            extra={
+                "applicant_id": applicant.id,
+                "applicant_name": applicant.full_name,
+                "verified": latest.verified,
+                "confidence": float(latest.confidence or 0.0),
+            },
+        )
         return Response(VerificationResultSerializer(latest).data, status=status.HTTP_200_OK)
 
 

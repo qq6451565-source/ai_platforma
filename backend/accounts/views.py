@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status, viewsets, mixins
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.models import Group, Permission
+from django.db.models import Q
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
@@ -490,6 +491,30 @@ class AuditLogViewSet(
     queryset = AuditLog.objects.select_related("user").order_by("-created_at")
     serializer_class = AuditLogSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        action = (self.request.query_params.get("action") or "").strip()
+        domain = (self.request.query_params.get("domain") or "").strip()
+        search = (self.request.query_params.get("search") or "").strip()
+
+        if domain == "enrollment":
+            queryset = queryset.filter(action__startswith="enrollment_")
+        elif domain == "auth":
+            queryset = queryset.exclude(action__startswith="enrollment_")
+
+        if action and action != "all":
+            queryset = queryset.filter(action=action)
+
+        if search:
+            queryset = queryset.filter(
+                Q(user__username__icontains=search)
+                | Q(action__icontains=search)
+                | Q(role__icontains=search)
+                | Q(ip_address__icontains=search)
+            )
+
+        return queryset
 
 
 class PassportDataViewSet(viewsets.ModelViewSet):
