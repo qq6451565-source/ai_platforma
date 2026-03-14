@@ -218,11 +218,13 @@ class AdminEnrollmentApiTests(APITestCase):
         self.assertIn("ai_summary", item)
         self.assertIn("latest_verification", item)
         self.assertIn("allowed_actions", item)
+        self.assertIn("action_reasons", item)
         self.assertEqual(item["ai_summary"]["status"], "not_verified")
         self.assertTrue(item["ai_summary"]["face_embedding_ready"])
         self.assertTrue(item["allowed_actions"]["can_approve"])
         self.assertTrue(item["allowed_actions"]["can_reverify"])
         self.assertFalse(item["allowed_actions"]["can_reopen"])
+        self.assertEqual(item["action_reasons"]["can_reopen"], "Faqat rad etilgan ariza qayta ochiladi.")
         self.assertNotIn("documents", item)
 
     def test_admin_enrollment_detail_returns_face_only_documents(self):
@@ -231,6 +233,7 @@ class AdminEnrollmentApiTests(APITestCase):
         self.assertIn("documents", response.data)
         self.assertIn("verification_history", response.data)
         self.assertIn("allowed_actions", response.data)
+        self.assertIn("action_reasons", response.data)
         self.assertIn("passport_front", response.data["documents"])
         self.assertIn("face_image", response.data["documents"])
         self.assertNotIn("passport_back", response.data["documents"])

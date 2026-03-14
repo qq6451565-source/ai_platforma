@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -20,6 +20,7 @@ import {
   Space,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from "antd";
@@ -76,8 +77,35 @@ const fallbackAllowedActions = (status?: string) => ({
   can_reverify: status === "pending" || status === "verified",
 });
 
+const fallbackActionReasons = (status?: string) => ({
+  can_edit: status === "approved" ? "Tasdiqlangan ariza final holatda va tahrirlanmaydi." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
+  can_delete: status === "approved" || status === "rejected" ? "Final arizalar audit uchun saqlanadi." : null,
+  can_approve: status === "approved" ? "Ariza allaqachon tasdiqlangan." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
+  can_reject: status === "approved" ? "Tasdiqlangan arizani rad etib bo'lmaydi." : status === "rejected" ? "Ariza allaqachon rad etilgan." : null,
+  can_reopen: status === "rejected" ? null : "Faqat rad etilgan ariza qayta ochiladi.",
+  can_reverify: status === "approved" ? "Tasdiqlangan ariza qayta tekshirilmaydi." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
+});
+
 const getAllowedActions = (item?: EnrollmentItem | EnrollmentDetailItem | null) =>
   item?.allowed_actions || fallbackAllowedActions(item?.status);
+
+const getActionReasons = (item?: EnrollmentItem | EnrollmentDetailItem | null) =>
+  item?.action_reasons || fallbackActionReasons(item?.status);
+
+const getActionReason = (
+  item: EnrollmentItem | EnrollmentDetailItem,
+  key: keyof ReturnType<typeof fallbackAllowedActions>,
+  fallback: string,
+) => getActionReasons(item)?.[key] || fallback;
+
+const withTooltip = (reason: string | null | undefined, node: ReactNode) =>
+  reason ? (
+    <Tooltip title={reason}>
+      <span>{node}</span>
+    </Tooltip>
+  ) : (
+    node
+  );
 
 const statusTag = (status?: string) => {
   if (status === "approved") return <Tag color="green">Tasdiqlangan</Tag>;
@@ -247,7 +275,7 @@ const EnrollmentPage = () => {
 
   const openApprove = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_approve) {
-      message.warning("Bu ariza uchun tasdiqlash yopilgan.");
+      message.warning(getActionReason(item, "can_approve", "Bu ariza uchun tasdiqlash yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -264,7 +292,7 @@ const EnrollmentPage = () => {
 
   const openReject = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_reject) {
-      message.warning("Bu ariza uchun rad etish yopilgan.");
+      message.warning(getActionReason(item, "can_reject", "Bu ariza uchun rad etish yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -276,7 +304,7 @@ const EnrollmentPage = () => {
 
   const openEdit = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_edit) {
-      message.warning("Bu ariza uchun tahrirlash yopilgan.");
+      message.warning(getActionReason(item, "can_edit", "Bu ariza uchun tahrirlash yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -291,7 +319,7 @@ const EnrollmentPage = () => {
 
   const openReopen = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_reopen) {
-      message.warning("Bu ariza uchun qayta ochish yopilgan.");
+      message.warning(getActionReason(item, "can_reopen", "Bu ariza uchun qayta ochish yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -421,7 +449,7 @@ const EnrollmentPage = () => {
 
   const handleDelete = async (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_delete) {
-      message.warning("Bu ariza uchun o'chirish yopilgan.");
+      message.warning(getActionReason(item, "can_delete", "Bu ariza uchun o'chirish yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -430,7 +458,7 @@ const EnrollmentPage = () => {
 
   const handleReverify = async (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getAllowedActions(item).can_reverify) {
-      message.warning("Bu ariza uchun AI qayta tekshiruvi yopilgan.");
+      message.warning(getActionReason(item, "can_reverify", "Bu ariza uchun AI qayta tekshiruvi yopilgan."));
       return;
     }
     setSelectedApplicant(item);
@@ -521,32 +549,42 @@ const EnrollmentPage = () => {
       title: "Amallar",
       render: (_: unknown, row: EnrollmentItem) => {
         const actions = getAllowedActions(row);
+        const reasons = getActionReasons(row);
         return (
           <Space wrap>
             <Button size="small" onClick={() => openDetails(row)}>
               Ko'rish
             </Button>
-            <Button size="small" disabled={!actions.can_edit} onClick={() => openEdit(row)}>
-              Tahrirlash
-            </Button>
-            <Button
-              size="small"
-              type="primary"
-              disabled={!actions.can_approve}
-              loading={approving && selectedApplicant?.id === row.id}
-              onClick={() => openApprove(row)}
-            >
-              Tasdiqlash
-            </Button>
-            <Button
-              size="small"
-              danger
-              disabled={!actions.can_reject}
-              loading={rejecting && selectedApplicant?.id === row.id}
-              onClick={() => openReject(row)}
-            >
-              Rad etish
-            </Button>
+            {withTooltip(
+              !actions.can_edit ? reasons.can_edit : null,
+              <Button size="small" disabled={!actions.can_edit} onClick={() => openEdit(row)}>
+                Tahrirlash
+              </Button>,
+            )}
+            {withTooltip(
+              !actions.can_approve ? reasons.can_approve : null,
+              <Button
+                size="small"
+                type="primary"
+                disabled={!actions.can_approve}
+                loading={approving && selectedApplicant?.id === row.id}
+                onClick={() => openApprove(row)}
+              >
+                Tasdiqlash
+              </Button>,
+            )}
+            {withTooltip(
+              !actions.can_reject ? reasons.can_reject : null,
+              <Button
+                size="small"
+                danger
+                disabled={!actions.can_reject}
+                loading={rejecting && selectedApplicant?.id === row.id}
+                onClick={() => openReject(row)}
+              >
+                Rad etish
+              </Button>,
+            )}
             {actions.can_reopen ? (
               <Button
                 size="small"
@@ -557,17 +595,26 @@ const EnrollmentPage = () => {
                 Qayta ochish
               </Button>
             ) : null}
-            <Popconfirm
-              title="Arizani o'chirishni xohlaysizmi?"
-              okText="Ha"
-              cancelText="Yo'q"
-              okButtonProps={{ loading: deleting && deleteId === row.id }}
-              onConfirm={() => handleDelete(row)}
-            >
-              <Button size="small" danger disabled={!actions.can_delete || (deleting && deleteId === row.id)}>
-                O'chirish
-              </Button>
-            </Popconfirm>
+            {actions.can_delete ? (
+              <Popconfirm
+                title="Arizani o'chirishni xohlaysizmi?"
+                okText="Ha"
+                cancelText="Yo'q"
+                okButtonProps={{ loading: deleting && deleteId === row.id }}
+                onConfirm={() => handleDelete(row)}
+              >
+                <Button size="small" danger disabled={deleting && deleteId === row.id}>
+                  O'chirish
+                </Button>
+              </Popconfirm>
+            ) : (
+              withTooltip(
+                reasons.can_delete,
+                <Button size="small" danger disabled>
+                  O'chirish
+                </Button>,
+              )
+            )}
           </Space>
         );
       },
@@ -578,6 +625,7 @@ const EnrollmentPage = () => {
   const detailHistory = (currentApplicant as EnrollmentDetailItem | null)?.verification_history || [];
   const decisionHistory = applicantAuditHistory || [];
   const currentActions = getAllowedActions(currentApplicant);
+  const currentReasons = getActionReasons(currentApplicant);
 
   return (
     <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
@@ -598,27 +646,36 @@ const EnrollmentPage = () => {
         extra={
           currentApplicant ? (
             <Space wrap>
-              <Button
-                disabled={!currentActions.can_edit}
-                onClick={() => openEdit(currentApplicant)}
-              >
-                Tahrirlash
-              </Button>
-              <Button
-                type="primary"
-                disabled={!currentActions.can_approve}
-                onClick={() => openApprove(currentApplicant)}
-              >
-                Tasdiqlash
-              </Button>
-              <Button
-                danger
-                disabled={!currentActions.can_reject}
-                onClick={() => openReject(currentApplicant)}
-                loading={rejecting && selectedApplicant?.id === currentApplicant.id}
-              >
-                Rad etish
-              </Button>
+              {withTooltip(
+                !currentActions.can_edit ? currentReasons.can_edit : null,
+                <Button
+                  disabled={!currentActions.can_edit}
+                  onClick={() => openEdit(currentApplicant)}
+                >
+                  Tahrirlash
+                </Button>,
+              )}
+              {withTooltip(
+                !currentActions.can_approve ? currentReasons.can_approve : null,
+                <Button
+                  type="primary"
+                  disabled={!currentActions.can_approve}
+                  onClick={() => openApprove(currentApplicant)}
+                >
+                  Tasdiqlash
+                </Button>,
+              )}
+              {withTooltip(
+                !currentActions.can_reject ? currentReasons.can_reject : null,
+                <Button
+                  danger
+                  disabled={!currentActions.can_reject}
+                  onClick={() => openReject(currentApplicant)}
+                  loading={rejecting && selectedApplicant?.id === currentApplicant.id}
+                >
+                  Rad etish
+                </Button>,
+              )}
               {currentActions.can_reopen ? (
                 <Button
                   type="dashed"
@@ -735,7 +792,9 @@ const EnrollmentPage = () => {
                         AI qayta tekshir
                       </Button>
                       {!currentActions.can_reverify ? (
-                        <Text type="secondary">Bu ariza uchun AI qayta tekshiruvi yopilgan.</Text>
+                        <Text type="secondary">
+                          {currentReasons.can_reverify || "Bu ariza uchun AI qayta tekshiruvi yopilgan."}
+                        </Text>
                       ) : null}
                     </Space>
                   ) : (

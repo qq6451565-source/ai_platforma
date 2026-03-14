@@ -154,6 +154,49 @@ def _build_allowed_actions(applicant: Applicant) -> dict[str, bool]:
     }
 
 
+def _build_action_reasons(applicant: Applicant) -> dict[str, str | None]:
+    status_value = applicant.status
+    has_documents = bool(getattr(applicant, "documents", None))
+    reasons: dict[str, str | None] = {
+        "can_edit": None,
+        "can_delete": None,
+        "can_approve": None,
+        "can_reject": None,
+        "can_reopen": None,
+        "can_reverify": None,
+    }
+
+    if status_value == "approved":
+        reasons.update(
+            {
+                "can_edit": "Tasdiqlangan ariza final holatda va tahrirlanmaydi.",
+                "can_delete": "Tasdiqlangan ariza audit uchun saqlanadi.",
+                "can_approve": "Ariza allaqachon tasdiqlangan.",
+                "can_reject": "Tasdiqlangan arizani rad etib bo'lmaydi.",
+                "can_reopen": "Faqat rad etilgan ariza qayta ochiladi.",
+                "can_reverify": "Tasdiqlangan ariza qayta tekshirilmaydi.",
+            }
+        )
+        return reasons
+
+    if status_value == "rejected":
+        reasons.update(
+            {
+                "can_edit": "Rad etilgan ariza avval qayta ochilishi kerak.",
+                "can_delete": "Rad etilgan ariza audit uchun saqlanadi.",
+                "can_approve": "Rad etilgan ariza avval qayta ochilishi kerak.",
+                "can_reject": "Ariza allaqachon rad etilgan.",
+                "can_reverify": "Rad etilgan ariza avval qayta ochilishi kerak.",
+            }
+        )
+        return reasons
+
+    reasons["can_reopen"] = "Faqat rad etilgan ariza qayta ochiladi."
+    if not has_documents:
+        reasons["can_reverify"] = "AI qayta tekshiruvi uchun passport va selfie kerak."
+    return reasons
+
+
 class RegistrationWindowSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationWindow
@@ -254,6 +297,7 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
     latest_verification = serializers.SerializerMethodField()
     ai_summary = serializers.SerializerMethodField()
     allowed_actions = serializers.SerializerMethodField()
+    action_reasons = serializers.SerializerMethodField()
 
     class Meta:
         model = Applicant
@@ -269,6 +313,7 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
             "latest_verification",
             "ai_summary",
             "allowed_actions",
+            "action_reasons",
         )
 
     def _sorted_verifications(self, obj: Applicant) -> list[VerificationResult]:
@@ -286,6 +331,9 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
 
     def get_allowed_actions(self, obj: Applicant) -> dict[str, bool]:
         return _build_allowed_actions(obj)
+
+    def get_action_reasons(self, obj: Applicant) -> dict[str, str | None]:
+        return _build_action_reasons(obj)
 
 
 class ApplicantAdminDetailSerializer(ApplicantAdminListSerializer):
