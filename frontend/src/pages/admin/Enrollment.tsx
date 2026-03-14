@@ -65,6 +65,13 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   enrollment_reopened: "Ariza qayta ochildi",
   enrollment_reverified: "AI qayta tekshirildi",
 };
+const ACTION_LABELS = {
+  can_edit: "Tahrirlash",
+  can_delete: "O'chirish",
+  can_approve: "Tasdiqlash",
+  can_reject: "Rad etish",
+  can_reverify: "AI qayta tekshir",
+} as const;
 
 const formatDateTime = (value?: string | null) => (value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-");
 const formatConfidence = (value?: number | null) => (typeof value === "number" ? value.toFixed(3) : "-");
@@ -97,6 +104,19 @@ const getActionReason = (
   key: keyof ReturnType<typeof fallbackAllowedActions>,
   fallback: string,
 ) => getActionReasons(item)?.[key] || fallback;
+
+const getBlockedActionItems = (item?: EnrollmentItem | EnrollmentDetailItem | null) => {
+  if (!item) return [];
+  const actions = getAllowedActions(item);
+  const reasons = getActionReasons(item);
+  return (Object.keys(ACTION_LABELS) as Array<keyof typeof ACTION_LABELS>)
+    .filter((key) => !actions[key] && Boolean(reasons[key]))
+    .map((key) => ({
+      key,
+      label: ACTION_LABELS[key],
+      reason: reasons[key] as string,
+    }));
+};
 
 const withTooltip = (reason: string | null | undefined, node: ReactNode) =>
   reason ? (
@@ -626,6 +646,7 @@ const EnrollmentPage = () => {
   const decisionHistory = applicantAuditHistory || [];
   const currentActions = getAllowedActions(currentApplicant);
   const currentReasons = getActionReasons(currentApplicant);
+  const blockedActionItems = getBlockedActionItems(currentApplicant);
 
   return (
     <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
@@ -726,6 +747,31 @@ const EnrollmentPage = () => {
               </Space>
             </Card>
 
+            {blockedActionItems.length ? (
+              <Card size="small" title="Amal cheklovlari">
+                <div style={{ display: "grid", gap: 10 }}>
+                  {blockedActionItems.map((item) => (
+                    <div
+                      key={item.key}
+                      style={{
+                        display: "grid",
+                        gap: 4,
+                        padding: 12,
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 12,
+                        background: "#fafafa",
+                      }}
+                    >
+                      <Space wrap>
+                        <Tag>{item.label}</Tag>
+                      </Space>
+                      <Text type="secondary">{item.reason}</Text>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Space direction="vertical" size={16} style={{ width: "100%" }}>
@@ -784,18 +830,16 @@ const EnrollmentPage = () => {
                           ))}
                         </div>
                       ) : null}
-                      <Button
-                        disabled={!currentActions.can_reverify}
-                        loading={reverifying && selectedApplicant?.id === currentApplicant.id}
-                        onClick={() => void handleReverify(currentApplicant)}
-                      >
-                        AI qayta tekshir
-                      </Button>
-                      {!currentActions.can_reverify ? (
-                        <Text type="secondary">
-                          {currentReasons.can_reverify || "Bu ariza uchun AI qayta tekshiruvi yopilgan."}
-                        </Text>
-                      ) : null}
+                      {withTooltip(
+                        !currentActions.can_reverify ? currentReasons.can_reverify : null,
+                        <Button
+                          disabled={!currentActions.can_reverify}
+                          loading={reverifying && selectedApplicant?.id === currentApplicant.id}
+                          onClick={() => void handleReverify(currentApplicant)}
+                        >
+                          AI qayta tekshir
+                        </Button>,
+                      )}
                     </Space>
                   ) : (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="AI summary topilmadi" />
