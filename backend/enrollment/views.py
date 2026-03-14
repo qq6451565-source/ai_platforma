@@ -23,6 +23,7 @@ from teacher_subject.models import TeacherSubject
 from tests_app.permissions import IsAdmin
 
 from .models import RegistrationWindow, Applicant, ApplicantDocument, VerificationResult
+from .policy import applicant_action_block_reason, is_final_applicant_status
 from .serializers import (
     RegistrationWindowSerializer,
     ApplicantSerializer,
@@ -46,16 +47,10 @@ def _approval_requires_manual_override(applicant: Applicant) -> bool:
     return not bool(latest and latest.verified)
 
 
-def _is_final_applicant_status(status_value: str | None) -> bool:
-    return status_value in {"approved", "rejected"}
-
-
-def _ensure_applicant_not_final(applicant: Applicant, action_label: str) -> None:
-    if not _is_final_applicant_status(applicant.status):
-        return
-
-    status_label = "tasdiqlangan" if applicant.status == "approved" else "rad etilgan"
-    raise ValidationError({"detail": f"{status_label.capitalize()} arizani {action_label} mumkin emas."})
+def _ensure_applicant_action_allowed(applicant: Applicant, action_key: str) -> None:
+    block_reason = applicant_action_block_reason(applicant, action_key)
+    if block_reason:
+        raise ValidationError({"detail": block_reason})
 
 
 class RegistrationWindowViewSet(viewsets.ModelViewSet):
@@ -101,11 +96,11 @@ class ApplicantViewSet(viewsets.ModelViewSet):
         return ApplicantSerializer
 
     def perform_update(self, serializer):
-        _ensure_applicant_not_final(serializer.instance, "tahrirlash")
+        _ensure_applicant_action_allowed(serializer.instance, "can_edit")
         serializer.save()
 
     def perform_destroy(self, instance):
-        _ensure_applicant_not_final(instance, "o'chirish")
+        _ensure_applicant_action_allowed(instance, "can_delete")
         instance.delete()
 
 
@@ -620,7 +615,7 @@ def _run_ai_verification(document, *, fast_mode: bool = False):
         events_json=events,
     )
 
-    if applicant.status not in ["approved", "rejected"]:
+    if not is_final_applicant_status(applicant.status):
         applicant.status = "verified" if verified else "pending"
         applicant.save(update_fields=["status"])
     return None
@@ -639,7 +634,7 @@ def _mark_ai_unavailable(applicant, events, reason: str | None = None):
         confidence=0.0,
         events_json=events,
     )
-    if applicant.status not in ["approved", "rejected"]:
+    if not is_final_applicant_status(applicant.status):
         applicant.status = "pending"
         applicant.save(update_fields=["status"])
     return "AI xizmati vaqtincha mavjud emas. Ariza admin tekshiruviga yuborildi."
@@ -689,8 +684,7 @@ class ApproveApplicantView(APIView):
 
         if applicant.status == "approved":
             return Response({"detail": "Applicant allaqachon tasdiqlangan."}, status=status.HTTP_200_OK)
-        if applicant.status == "rejected":
-            raise ValidationError({"detail": "Rad etilgan arizani qayta ochmasdan tasdiqlab bo'lmaydi."})
+        _ensure_applicant_action_allowed(applicant, "can_approve")
 
         manual_override_required = _approval_requires_manual_override(applicant)
         manual_override_reason = (request.data.get("manual_override_reason") or "").strip()
@@ -941,11 +935,9 @@ class RejectApplicantView(APIView):
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
-        if applicant.status == "approved":
-            raise ValidationError({"detail": "Tasdiqlangan arizani rad etib bo'lmaydi."})
-
         if applicant.status == "rejected":
             return Response({"detail": "Applicant allaqachon rad etilgan."}, status=status.HTTP_200_OK)
+        _ensure_applicant_action_allowed(applicant, "can_reject")
 
         reject_reason = (request.data.get("reject_reason") or "").strip()
         if not reject_reason:
@@ -989,10 +981,7 @@ class ReopenApplicantView(APIView):
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
-        if applicant.status == "approved":
-            raise ValidationError({"detail": "Tasdiqlangan arizani qayta ochib bo'lmaydi."})
-        if applicant.status != "rejected":
-            raise ValidationError({"detail": "Faqat rad etilgan arizani qayta ochish mumkin."})
+        _ensure_applicant_action_allowed(applicant, "can_reopen")
 
         reopen_reason = (request.data.get("reopen_reason") or "").strip()
         if not reopen_reason:
@@ -1036,7 +1025,7 @@ class ReverifyApplicantView(APIView):
         except Applicant.DoesNotExist:
             raise NotFound("Applicant topilmadi.")
 
-        _ensure_applicant_not_final(applicant, "qayta tekshirish")
+        _ensure_applicant_action_allowed(applicant, "can_reverify")
 
         documents = getattr(applicant, "documents", None)
         if not documents:

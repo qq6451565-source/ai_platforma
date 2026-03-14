@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.test import SimpleTestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework import status
@@ -8,6 +9,7 @@ from rest_framework.test import APITestCase
 from accounts.models import AuditLog, User
 from directions.models import Direction
 from enrollment.models import Applicant, ApplicantDocument, RegistrationWindow, VerificationResult
+from enrollment.policy import build_action_reasons, build_allowed_actions
 from groups.models import Group
 
 
@@ -162,6 +164,27 @@ class EnrollmentRegistrationFlowTests(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertEqual(response.data.get("action"), "cooldown")
             mocked_run_ai.assert_not_called()
+
+
+class EnrollmentPolicyTests(SimpleTestCase):
+    def test_rejected_status_requires_reopen_before_other_actions(self):
+        actions = build_allowed_actions("rejected", has_documents=True)
+        reasons = build_action_reasons("rejected", has_documents=True)
+
+        self.assertFalse(actions["can_approve"])
+        self.assertFalse(actions["can_reverify"])
+        self.assertTrue(actions["can_reopen"])
+        self.assertEqual(reasons["can_approve"], "Rad etilgan ariza avval qayta ochilishi kerak.")
+        self.assertEqual(reasons["can_reverify"], "Rad etilgan ariza avval qayta ochilishi kerak.")
+
+    def test_pending_without_documents_blocks_reverify_with_reason(self):
+        actions = build_allowed_actions("pending", has_documents=False)
+        reasons = build_action_reasons("pending", has_documents=False)
+
+        self.assertFalse(actions["can_reverify"])
+        self.assertEqual(reasons["can_reverify"], "AI qayta tekshiruvi uchun passport va selfie kerak.")
+        self.assertTrue(actions["can_edit"])
+        self.assertEqual(reasons["can_reopen"], "Faqat rad etilgan ariza qayta ochiladi.")
 
 
 class AdminEnrollmentApiTests(APITestCase):

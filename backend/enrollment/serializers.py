@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import RegistrationWindow, Applicant, ApplicantDocument, VerificationResult
+from .policy import applicant_action_reasons, applicant_allowed_actions
 
 
 AI_REASON_MESSAGES = {
@@ -141,62 +142,6 @@ def _build_verification_summary(verification: VerificationResult | None) -> dict
     }
 
 
-def _build_allowed_actions(applicant: Applicant) -> dict[str, bool]:
-    is_final = applicant.status in {"approved", "rejected"}
-    has_documents = bool(getattr(applicant, "documents", None))
-    return {
-        "can_edit": not is_final,
-        "can_delete": not is_final,
-        "can_approve": applicant.status in {"pending", "verified"},
-        "can_reject": applicant.status in {"pending", "verified"},
-        "can_reopen": applicant.status == "rejected",
-        "can_reverify": applicant.status in {"pending", "verified"} and has_documents,
-    }
-
-
-def _build_action_reasons(applicant: Applicant) -> dict[str, str | None]:
-    status_value = applicant.status
-    has_documents = bool(getattr(applicant, "documents", None))
-    reasons: dict[str, str | None] = {
-        "can_edit": None,
-        "can_delete": None,
-        "can_approve": None,
-        "can_reject": None,
-        "can_reopen": None,
-        "can_reverify": None,
-    }
-
-    if status_value == "approved":
-        reasons.update(
-            {
-                "can_edit": "Tasdiqlangan ariza final holatda va tahrirlanmaydi.",
-                "can_delete": "Tasdiqlangan ariza audit uchun saqlanadi.",
-                "can_approve": "Ariza allaqachon tasdiqlangan.",
-                "can_reject": "Tasdiqlangan arizani rad etib bo'lmaydi.",
-                "can_reopen": "Faqat rad etilgan ariza qayta ochiladi.",
-                "can_reverify": "Tasdiqlangan ariza qayta tekshirilmaydi.",
-            }
-        )
-        return reasons
-
-    if status_value == "rejected":
-        reasons.update(
-            {
-                "can_edit": "Rad etilgan ariza avval qayta ochilishi kerak.",
-                "can_delete": "Rad etilgan ariza audit uchun saqlanadi.",
-                "can_approve": "Rad etilgan ariza avval qayta ochilishi kerak.",
-                "can_reject": "Ariza allaqachon rad etilgan.",
-                "can_reverify": "Rad etilgan ariza avval qayta ochilishi kerak.",
-            }
-        )
-        return reasons
-
-    reasons["can_reopen"] = "Faqat rad etilgan ariza qayta ochiladi."
-    if not has_documents:
-        reasons["can_reverify"] = "AI qayta tekshiruvi uchun passport va selfie kerak."
-    return reasons
-
-
 class RegistrationWindowSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationWindow
@@ -330,10 +275,10 @@ class ApplicantAdminListSerializer(serializers.ModelSerializer):
         return _build_verification_summary(latest)
 
     def get_allowed_actions(self, obj: Applicant) -> dict[str, bool]:
-        return _build_allowed_actions(obj)
+        return applicant_allowed_actions(obj)
 
     def get_action_reasons(self, obj: Applicant) -> dict[str, str | None]:
-        return _build_action_reasons(obj)
+        return applicant_action_reasons(obj)
 
 
 class ApplicantAdminDetailSerializer(ApplicantAdminListSerializer):
