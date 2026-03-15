@@ -2,22 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAccessToken } from "../../../utils/token";
 import type { StudentStatus } from "../utils/studentSorting";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type FaceDetectionStatus = "DETECTED" | "NOT_DETECTED" | "MULTIPLE" | "CHECKING";
 
-interface VerificationResult {
-  type: "verification_result";
-  verified: boolean;
-  confidence?: number;
-  faces_detected?: number;
-  face_detection_status?: FaceDetectionStatus;
-  event_type?: string;
-  message?: string;
-  alert?: boolean;
-}
-
-interface StudentStatusUpdate {
+export interface StudentStatusUpdate {
   student_id: number;
   student_name?: string;
   face_detection_status?: FaceDetectionStatus;
@@ -35,6 +22,19 @@ interface StudentStatusUpdate {
   joined_ratio?: number;
   eligibility_status?: "eligible" | "risk" | "blocked";
   eligibility_reason?: string;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface VerificationResult {
+  type: "verification_result";
+  verified: boolean;
+  confidence?: number;
+  faces_detected?: number;
+  face_detection_status?: FaceDetectionStatus;
+  event_type?: string;
+  message?: string;
+  alert?: boolean;
 }
 
 interface MonitoringUpdateMessage {
@@ -112,7 +112,7 @@ function buildWebSocketUrl(path: string): string {
   return wsUrl.toString();
 }
 
-function applyUpdatesToMap(
+export function applyUpdatesToMap(
   previous: Map<number, StudentStatus>,
   updates: StudentStatusUpdate[]
 ): Map<number, StudentStatus> {
