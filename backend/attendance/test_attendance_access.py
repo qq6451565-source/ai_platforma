@@ -5,13 +5,14 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIRequestFactory, force_authenticate
 
-from attendance.models import Attendance
+from attendance.models import Attendance, AttendanceOverrideLog
 from attendance.services import (
     DEFAULT_ABSENT_REASON,
     DEFAULT_MISSING_ATTENDANCE_REASON,
     DEFAULT_PENDING_REASON,
     build_lesson_access_snapshot,
 )
+from attendance.views import AttendanceOverrideHistoryView, MarkAttendanceView
 from assignments.views import SubmitAssignmentView
 from core.test_support import AcademicFixtureMixin
 from student_tests.views import StartStudentTestView
@@ -234,3 +235,112 @@ class AttendanceAccessApiTests(AcademicFixtureMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["message"], "Topshiriq topshirildi!")
         self.assertEqual(response.data["data"]["assignment"], self.assignment.id)
+
+
+class AttendanceOverrideApiTests(AcademicFixtureMixin, TestCase):
+    def setUp(self) -> None:
+        self.create_academic_context()
+        self.factory = APIRequestFactory()
+        self.mark_view = MarkAttendanceView.as_view()
+        self.history_view = AttendanceOverrideHistoryView.as_view()
+        self.other_teacher = self.teacher.__class__.objects.create_user(
+            username="other_teacher",
+            password="secret",
+            role="teacher",
+            first_name="Other",
+            last_name="Teacher",
+        )
+
+    def test_mark_attendance_creates_manual_override_and_audit_log(self) -> None:
+        attendance = Attendance.objects.create(
+            lesson=self.lesson,
+            student=self.student,
+            status="absent",
+            finalized=False,
+            face_check_count=2,
+            face_success_count=1,
+            joined_seconds=10 * 60,
+            joined_ratio=0.1,
+        )
+
+        request = self.factory.post(
+            "/api/attendance/mark/",
+            {
+                "lesson_id": self.lesson.id,
+                "student_id": self.student.id,
+                "status": "present",
+                "reason": "Camera nosozligi sabab manual tasdiq",
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.teacher)
+        response = self.mark_view(request)
+
+        self.assertEqual(response.status_code, 200)
+        attendance.refresh_from_db()
+        self.assertEqual(attendance.status, "present")
+        self.assertTrue(attendance.finalized)
+        self.assertTrue(attendance.manual_override)
+        self.assertEqual(attendance.override_reason, "Camera nosozligi sabab manual tasdiq")
+        self.assertEqual(attendance.overridden_by_id, self.teacher.id)
+        self.assertIsNotNone(attendance.overridden_at)
+
+        log = AttendanceOverrideLog.objects.get(attendance=attendance)
+        self.assertEqual(log.previous_status, "absent")
+        self.assertEqual(log.new_status, "present")
+        self.assertFalse(log.previous_finalized)
+        self.assertTrue(log.new_finalized)
+        self.assertEqual(log.reason, "Camera nosozligi sabab manual tasdiq")
+        self.assertEqual(log.changed_by_id, self.teacher.id)
+
+    def test_override_history_is_visible_for_lesson_teacher(self) -> None:
+        attendance = Attendance.objects.create(
+            lesson=self.lesson,
+            student=self.student,
+            status="present",
+            finalized=True,
+            finalized_at=timezone.now(),
+            manual_override=True,
+            override_reason="Manual correction",
+            overridden_by=self.teacher,
+            overridden_at=timezone.now(),
+        )
+        AttendanceOverrideLog.objects.create(
+            attendance=attendance,
+            lesson=self.lesson,
+            student=self.student,
+            previous_status="absent",
+            new_status="present",
+            previous_finalized=False,
+            new_finalized=True,
+            reason="Manual correction",
+            changed_by=self.teacher,
+        )
+
+        request = self.factory.get(
+            f"/api/attendance/lesson/{self.lesson.id}/student/{self.student.id}/overrides/"
+        )
+        force_authenticate(request, user=self.teacher)
+        response = self.history_view(request, lesson_id=self.lesson.id, student_id=self.student.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["new_status"], "present")
+        self.assertEqual(response.data[0]["reason"], "Manual correction")
+
+    def test_mark_attendance_blocks_unrelated_teacher(self) -> None:
+        request = self.factory.post(
+            "/api/attendance/mark/",
+            {
+                "lesson_id": self.lesson.id,
+                "student_id": self.student.id,
+                "status": "absent",
+                "reason": "Ruxsatsiz urinish",
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.other_teacher)
+        response = self.mark_view(request)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(AttendanceOverrideLog.objects.count(), 0)

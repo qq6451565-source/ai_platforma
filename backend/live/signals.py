@@ -66,7 +66,10 @@ def finalize_attendance_on_room_close(sender, instance, created, **kwargs):
 
     for participant in participants:
         if participant.left_at is None:
-            participant.mark_left(left_at=room_ended_at)
+            participant.mark_left(
+                left_at=room_ended_at,
+                stale_after_seconds=stale_seconds,
+            )
 
     group_student_ids = set(
         User.objects.filter(role="student", group_id=lesson.group_id)

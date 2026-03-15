@@ -75,12 +75,15 @@ class LiveParticipant(models.Model):
         if update_fields:
             self.save(update_fields=update_fields)
 
-    def mark_left(self, *, left_at=None) -> None:
+    def mark_left(self, *, left_at=None, stale_after_seconds: int | None = None) -> None:
         left_at = left_at or timezone.now()
         update_fields = []
 
         if self.left_at is None:
-            self.accumulated_seconds = self.active_seconds(until=left_at)
+            self.accumulated_seconds = self.active_seconds(
+                until=left_at,
+                stale_after_seconds=stale_after_seconds,
+            )
             self.left_at = left_at
             if self.last_seen_at != left_at:
                 self.last_seen_at = left_at
