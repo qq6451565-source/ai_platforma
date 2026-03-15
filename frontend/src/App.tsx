@@ -14,44 +14,14 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { Navigate, Route, Routes, useLocation, useNavigate, Outlet } from "react-router-dom";
-import { useEffect, useMemo } from "react";
+import { Suspense, lazy, useEffect, useMemo, type ComponentType, type LazyExoticComponent } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import Landing from "./pages/Landing";
-import LoginPage from "./pages/Login";
-import RegisterPage from "./pages/Register";
-import AdminLoginPage from "./pages/AdminLogin";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentRoute from "./components/StudentRoute";
 import { clearTokens } from "./utils/token";
 import { logout } from "./api/auth";
 import { syncLiveRooms } from "./api/live";
-import StudentDashboard from "./pages/student/Dashboard";
-import StudentSchedule from "./pages/student/Schedule";
-import StudentAssignments from "./pages/student/Assignments";
-import StudentMaterials from "./pages/student/Materials";
-import StudentTests from "./pages/student/Tests";
-import StudentGrades from "./pages/student/Grades";
-import StudentProfile from "./pages/student/Profile";
-import StudentAttendance from "./pages/student/Attendance";
-import TeacherDashboard from "./pages/teacher/Dashboard";
-import TeacherLessons from "./pages/teacher/Lessons";
-import TeacherLive from "./pages/teacher/Live";
-import TeacherAssignments from "./pages/teacher/Assignments";
-import TeacherTests from "./pages/teacher/Tests";
-import TeacherGrades from "./pages/teacher/Grades";
-import TeacherAttendance from "./pages/teacher/Attendance";
-import TeacherMaterials from "./pages/teacher/Materials";
-import TeacherSubmissions from "./pages/teacher/Submissions";
-import TeacherProfile from "./pages/teacher/Profile";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminUsersHub from "./pages/admin/UsersHub";
-import AdminEnrollmentHub from "./pages/admin/EnrollmentHub";
-import AdminAISettings from "./pages/admin/AISettings";
-import AdminUniversityHub from "./pages/admin/UniversityHub";
-import AdminLearningHub from "./pages/admin/LearningHub";
-import AdminProfile from "./pages/admin/Profile";
-import LiveRoomPage from "./pages/live/Room";
 import TeacherRoute from "./components/TeacherRoute";
 import AdminRoute from "./components/AdminRoute";
 import { getAccessToken } from "./utils/token";
@@ -60,6 +30,54 @@ import { useMe } from "./hooks/useMe";
 import { ResponsiveLayout } from "./components/Layout";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import "./App.css";
+
+type LazyPageComponent = LazyExoticComponent<ComponentType<object>>;
+
+const LandingPage = lazy(() => import("./pages/Landing"));
+const LoginPage = lazy(() => import("./pages/Login"));
+const RegisterPage = lazy(() => import("./pages/Register"));
+const AdminLoginPage = lazy(() => import("./pages/AdminLogin"));
+const LiveRoomPage = lazy(() => import("./pages/live/Room"));
+const StudentDashboard = lazy(() => import("./pages/student/Dashboard"));
+const StudentSchedule = lazy(() => import("./pages/student/Schedule"));
+const StudentAssignments = lazy(() => import("./pages/student/Assignments"));
+const StudentMaterials = lazy(() => import("./pages/student/Materials"));
+const StudentTests = lazy(() => import("./pages/student/Tests"));
+const StudentGrades = lazy(() => import("./pages/student/Grades"));
+const StudentProfile = lazy(() => import("./pages/student/Profile"));
+const StudentAttendance = lazy(() => import("./pages/student/Attendance"));
+const TeacherDashboard = lazy(() => import("./pages/teacher/Dashboard"));
+const TeacherLessons = lazy(() => import("./pages/teacher/Lessons"));
+const TeacherLive = lazy(() => import("./pages/teacher/Live"));
+const TeacherAssignments = lazy(() => import("./pages/teacher/Assignments"));
+const TeacherTests = lazy(() => import("./pages/teacher/Tests"));
+const TeacherGrades = lazy(() => import("./pages/teacher/Grades"));
+const TeacherAttendance = lazy(() => import("./pages/teacher/Attendance"));
+const TeacherMaterials = lazy(() => import("./pages/teacher/Materials"));
+const TeacherSubmissions = lazy(() => import("./pages/teacher/Submissions"));
+const TeacherProfile = lazy(() => import("./pages/teacher/Profile"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminUsersHub = lazy(() => import("./pages/admin/UsersHub"));
+const AdminEnrollmentHub = lazy(() => import("./pages/admin/EnrollmentHub"));
+const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
+const AdminUniversityHub = lazy(() => import("./pages/admin/UniversityHub"));
+const AdminLearningHub = lazy(() => import("./pages/admin/LearningHub"));
+const AdminProfile = lazy(() => import("./pages/admin/Profile"));
+
+const PageFallback = ({ fullscreen = false }: { fullscreen?: boolean }) => (
+  <div
+    className={fullscreen ? "flex-center h-screen" : "flex-center"}
+    style={fullscreen ? undefined : { minHeight: "40vh" }}
+  >
+    <Spin size="large" />
+  </div>
+);
+
+const LazyPageRoute = ({ component: Component, fullscreen = false }: { component: LazyPageComponent; fullscreen?: boolean }) => (
+  <Suspense fallback={<PageFallback fullscreen={fullscreen} />}>
+    <Component />
+  </Suspense>
+);
 
 const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const { t } = useTranslation();
@@ -171,14 +189,22 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     return t('roles.student');
   }, [isAdmin, isTeacher, t]);
 
-  if (isLiveRoute) return <Outlet />;
+  if (isLiveRoute) {
+    return (
+      <Suspense fallback={<PageFallback fullscreen />}>
+        <Outlet />
+      </Suspense>
+    );
+  }
 
   return (
     <ResponsiveLayout user={user} items={items} onLogout={handleLogout} title={title}>
       <div style={{ position: 'absolute', top: '20px', right: '150px', zIndex: 100 }}>
         <LanguageSwitcher />
       </div>
-      <Outlet />
+      <Suspense fallback={<PageFallback />}>
+        <Outlet />
+      </Suspense>
     </ResponsiveLayout>
   );
 };
@@ -219,10 +245,10 @@ const App = () => {
   return (
     <ToastProvider>
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<LazyPageRoute component={LandingPage} fullscreen />} />
+        <Route path="/login" element={<LazyPageRoute component={LoginPage} fullscreen />} />
+        <Route path="/admin-login" element={<LazyPageRoute component={AdminLoginPage} fullscreen />} />
+        <Route path="/register" element={<LazyPageRoute component={RegisterPage} fullscreen />} />
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
           <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
             <Route path="live/:lessonId" element={<LiveRoomPage />} />
