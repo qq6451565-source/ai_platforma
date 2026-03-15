@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -97,14 +98,37 @@ class LiveParticipant(models.Model):
         if update_fields:
             self.save(update_fields=update_fields)
 
-    def touch_presence(self, *, seen_at=None) -> None:
+    def touch_presence(self, *, seen_at=None, stale_after_seconds: int | None = None) -> None:
         seen_at = seen_at or timezone.now()
+        resolved_stale_after_seconds = stale_after_seconds
+        if resolved_stale_after_seconds is None:
+            resolved_stale_after_seconds = int(getattr(settings, "LIVE_PARTICIPANT_STALE_SECONDS", 30) or 30)
+        resolved_stale_after_seconds = max(0, int(resolved_stale_after_seconds))
         update_fields = []
+        should_restart_window = self.left_at is not None
 
-        if self.left_at is not None:
+        if (
+            not should_restart_window
+            and resolved_stale_after_seconds
+            and self.last_seen_at
+            and self.last_seen_at + timezone.timedelta(seconds=resolved_stale_after_seconds) < seen_at
+        ):
+            next_accumulated_seconds = self.active_seconds(
+                until=seen_at,
+                stale_after_seconds=resolved_stale_after_seconds,
+            )
+            if self.accumulated_seconds != next_accumulated_seconds:
+                self.accumulated_seconds = next_accumulated_seconds
+                update_fields.append("accumulated_seconds")
+            should_restart_window = True
+
+        if should_restart_window:
             self.joined_at = seen_at
-            self.left_at = None
-            update_fields.extend(["joined_at", "left_at"])
+            if self.left_at is not None:
+                self.left_at = None
+                update_fields.extend(["joined_at", "left_at"])
+            else:
+                update_fields.append("joined_at")
 
         if self.last_seen_at != seen_at:
             self.last_seen_at = seen_at
