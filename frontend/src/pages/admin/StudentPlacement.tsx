@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -15,6 +15,7 @@ import {
   Tag,
   message,
 } from "antd";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   AdminUser,
@@ -27,6 +28,8 @@ import {
 
 const StudentPlacementPage = () => {
   const qc = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -49,6 +52,12 @@ const StudentPlacementPage = () => {
     queryFn: fetchGroupsAdmin,
   });
 
+  const requestedUserId = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get("userId");
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [location.search]);
+
   const saveMutation = useMutation({
     mutationFn: ({
       userId,
@@ -69,6 +78,9 @@ const StudentPlacementPage = () => {
         qc.invalidateQueries({ queryKey: ["admin-users", "student-placement"] }),
         qc.invalidateQueries({ queryKey: ["admin-student-profiles"] }),
       ]);
+      const params = new URLSearchParams(location.search);
+      params.delete("userId");
+      navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
       setModalOpen(false);
       setSelectedUser(null);
       form.resetFields();
@@ -149,6 +161,18 @@ const StudentPlacementPage = () => {
     });
     setModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!requestedUserId || !users?.length || modalOpen) return;
+    const matchedUser = users.find((user) => user.id === requestedUserId);
+    if (matchedUser) {
+      openPlacement(matchedUser);
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    params.delete("userId");
+    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+  }, [location.pathname, location.search, modalOpen, navigate, requestedUserId, users]);
 
   const columns = [
     {
@@ -235,6 +259,9 @@ const StudentPlacementPage = () => {
         title="Student Placement"
         open={modalOpen}
         onCancel={() => {
+          const params = new URLSearchParams(location.search);
+          params.delete("userId");
+          navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
           setModalOpen(false);
           setSelectedUser(null);
           form.resetFields();

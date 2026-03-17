@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -18,6 +18,7 @@ import {
   Tag,
   message,
 } from "antd";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   AdminUser,
@@ -33,6 +34,8 @@ import {
 
 const TeacherWorkloadPage = () => {
   const qc = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,6 +59,12 @@ const TeacherWorkloadPage = () => {
     queryKey: ["admin-groups"],
     queryFn: fetchGroupsAdmin,
   });
+
+  const requestedUserId = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get("userId");
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [location.search]);
 
   const saveMutation = useMutation({
     mutationFn: ({
@@ -171,6 +180,18 @@ const TeacherWorkloadPage = () => {
     setDrawerOpen(true);
   };
 
+  useEffect(() => {
+    if (!requestedUserId || !teachers?.length || drawerOpen) return;
+    const matchedTeacher = teachers.find((teacher) => teacher.id === requestedUserId);
+    if (matchedTeacher) {
+      openDrawer(matchedTeacher);
+      return;
+    }
+    const params = new URLSearchParams(location.search);
+    params.delete("userId");
+    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+  }, [drawerOpen, location.pathname, location.search, navigate, requestedUserId, teachers]);
+
   const openCreateModal = (teacher: AdminUser) => {
     setSelectedTeacher(teacher);
     setEditingAssignment(null);
@@ -281,6 +302,9 @@ const TeacherWorkloadPage = () => {
         open={drawerOpen}
         width={520}
         onClose={() => {
+          const params = new URLSearchParams(location.search);
+          params.delete("userId");
+          navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
           setDrawerOpen(false);
           setSelectedTeacher(null);
         }}
