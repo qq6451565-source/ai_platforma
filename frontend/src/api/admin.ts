@@ -27,6 +27,24 @@ export const setUserRole = async (user_id: number, role: "student" | "teacher" |
   return res.data;
 };
 
+export type AdminStudentPlacementPayload = {
+  direction_id?: number | null;
+  group_id?: number | null;
+  admission_year?: number;
+  status?: "active" | "academic_leave" | "expelled" | "graduated";
+};
+
+export const assignStudentPlacement = async (userId: number, payload: AdminStudentPlacementPayload) =>
+  (await api.post(`/api/accounts/admin/students/${userId}/placement/`, payload)).data;
+
+export type AdminTeacherWorkloadPayload = {
+  subject_id: number;
+  group_ids?: number[];
+};
+
+export const assignTeacherWorkload = async (userId: number, payload: AdminTeacherWorkloadPayload) =>
+  (await api.post(`/api/accounts/admin/teachers/${userId}/workload/`, payload)).data;
+
 // ==== Groups ====
 export type AdminGroup = {
   id: number;
