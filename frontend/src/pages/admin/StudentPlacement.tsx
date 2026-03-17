@@ -25,6 +25,13 @@ import {
   fetchStudentProfiles,
   fetchUsers,
 } from "../../api/admin";
+import {
+  buildDirectionNameMap,
+  buildGroupEntityMap,
+  buildProfileByUser,
+  filterStudentPlacementUsers,
+  getStudentPlacementStats,
+} from "./utils/adminRegistry";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const StudentPlacementPage = () => {
@@ -93,36 +100,21 @@ const StudentPlacementPage = () => {
     },
   });
 
-  const directionMap = useMemo(
-    () => new Map((directions || []).map((direction) => [direction.id, direction.name])),
-    [directions],
-  );
-  const groupMap = useMemo(
-    () => new Map((groups || []).map((group) => [group.id, group])),
-    [groups],
-  );
-  const profileByUser = useMemo(
-    () => new Map((studentProfiles || []).map((profile) => [profile.user, profile])),
-    [studentProfiles],
-  );
+  const directionMap = useMemo(() => buildDirectionNameMap(directions || []), [directions]);
+  const groupMap = useMemo(() => buildGroupEntityMap(groups || []), [groups]);
+  const profileByUser = useMemo(() => buildProfileByUser(studentProfiles || []), [studentProfiles]);
 
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (users || []).filter((user) => {
-      const profile = profileByUser.get(user.id);
-      const groupName = profile?.group ? groupMap.get(profile.group)?.name || "" : "";
-      const directionName = profile?.direction ? directionMap.get(profile.direction) || "" : "";
-      if (!q) return true;
-      return (
-        user.username.toLowerCase().includes(q) ||
-        `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase().includes(q) ||
-        (user.email || "").toLowerCase().includes(q) ||
-        (user.phone || "").toLowerCase().includes(q) ||
-        groupName.toLowerCase().includes(q) ||
-        directionName.toLowerCase().includes(q)
-      );
-    });
-  }, [directionMap, groupMap, profileByUser, search, users]);
+  const filteredUsers = useMemo(
+    () =>
+      filterStudentPlacementUsers({
+        directionMap,
+        groupMap,
+        profileByUser,
+        search,
+        users: users || [],
+      }),
+    [directionMap, groupMap, profileByUser, search, users],
+  );
 
   const selectedDirectionId = Form.useWatch("direction_id", form);
   const availableGroups = useMemo(() => {
@@ -130,22 +122,10 @@ const StudentPlacementPage = () => {
     return (groups || []).filter((group) => group.direction === selectedDirectionId);
   }, [groups, selectedDirectionId]);
 
-  const stats = useMemo(() => {
-    const allUsers = users || [];
-    const placed = allUsers.filter((user) => {
-      const profile = profileByUser.get(user.id);
-      return Boolean(profile?.group);
-    }).length;
-    const missingGroup = allUsers.filter((user) => {
-      const profile = profileByUser.get(user.id);
-      return !profile?.group;
-    }).length;
-    return {
-      total: allUsers.length,
-      placed,
-      missingGroup,
-    };
-  }, [profileByUser, users]);
+  const stats = useMemo(
+    () => getStudentPlacementStats(users || [], profileByUser),
+    [profileByUser, users],
+  );
 
   const openPlacement = (user: AdminUser) => {
     const profile = profileByUser.get(user.id);

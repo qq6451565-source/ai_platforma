@@ -36,6 +36,15 @@ import {
 import AdminPassportModal from "./components/AdminPassportModal";
 import AdminUserFormModal from "./components/AdminUserFormModal";
 import AdminUserProfileDrawer from "./components/AdminUserProfileDrawer";
+import {
+  buildAssignmentsByTeacher,
+  buildDirectionNameMap,
+  buildGroupNameMap,
+  buildProfileByUser,
+  buildSubjectNameMap,
+  filterAdminUsers,
+  getAdminUserRoleCounts,
+} from "./utils/adminRegistry";
 import { updateAdminHubSearch } from "./utils/workflowRouting";
 
 const UsersPage = () => {
@@ -85,35 +94,18 @@ const UsersPage = () => {
   const [form] = Form.useForm();
   const [passportForm] = Form.useForm();
 
-  const profileByUser = useMemo(
-    () => new Map((studentProfiles || []).map((profile) => [profile.user, profile])),
-    [studentProfiles],
-  );
+  const profileByUser = useMemo(() => buildProfileByUser(studentProfiles || []), [studentProfiles]);
   const passportByUser = useMemo(
     () => new Map((passports || []).map((passport) => [passport.user, passport])),
     [passports],
   );
-  const assignmentsByTeacher = useMemo(() => {
-    const grouped = new Map<number, TeacherSubject[]>();
-    (teacherSubjects || []).forEach((item) => {
-      const existing = grouped.get(item.teacher) || [];
-      existing.push(item);
-      grouped.set(item.teacher, existing);
-    });
-    return grouped;
-  }, [teacherSubjects]);
-  const directionMap = useMemo(
-    () => new Map((directions || []).map((direction) => [direction.id, direction.name])),
-    [directions],
+  const assignmentsByTeacher = useMemo(
+    () => buildAssignmentsByTeacher(teacherSubjects || []),
+    [teacherSubjects],
   );
-  const groupMap = useMemo(
-    () => new Map((groups || []).map((group) => [group.id, group.name])),
-    [groups],
-  );
-  const subjectMap = useMemo(
-    () => new Map((subjects || []).map((subject) => [subject.id, subject.name])),
-    [subjects],
-  );
+  const directionMap = useMemo(() => buildDirectionNameMap(directions || []), [directions]);
+  const groupMap = useMemo(() => buildGroupNameMap(groups || []), [groups]);
+  const subjectMap = useMemo(() => buildSubjectNameMap(subjects || []), [subjects]);
 
   const selectedStudentProfile = useMemo(() => {
     if (!selectedUser) return null;
@@ -209,42 +201,22 @@ const UsersPage = () => {
     onError: () => message.error("O'chirishda xato"),
   });
 
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (users || []).filter((user) => {
-      if (roleFilter && user.role !== roleFilter) return false;
-      if (!q) return true;
+  const filteredUsers = useMemo(
+    () =>
+      filterAdminUsers({
+        assignmentsByTeacher,
+        directionMap,
+        groupNameMap: groupMap,
+        profileByUser,
+        roleFilter,
+        search,
+        subjectNameMap: subjectMap,
+        users: users || [],
+      }),
+    [assignmentsByTeacher, directionMap, groupMap, profileByUser, roleFilter, search, subjectMap, users],
+  );
 
-      const profile = profileByUser.get(user.id);
-      const workload = assignmentsByTeacher.get(user.id) || [];
-      const directionName = profile?.direction ? directionMap.get(profile.direction) || "" : "";
-      const groupName =
-        user.group ? groupMap.get(user.group) || "" : profile?.group ? groupMap.get(profile.group) || "" : "";
-      const subjectNames = workload
-        .map((assignment) => subjectMap.get(assignment.subject) || "")
-        .join(" ");
-
-      return (
-        user.username.toLowerCase().includes(q) ||
-        `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase().includes(q) ||
-        (user.email || "").toLowerCase().includes(q) ||
-        (user.phone || "").toLowerCase().includes(q) ||
-        directionName.toLowerCase().includes(q) ||
-        groupName.toLowerCase().includes(q) ||
-        subjectNames.toLowerCase().includes(q)
-      );
-    });
-  }, [assignmentsByTeacher, directionMap, groupMap, profileByUser, roleFilter, search, subjectMap, users]);
-
-  const roleCounts = useMemo(() => {
-    const data = users || [];
-    return {
-      all: data.length,
-      admin: data.filter((user) => user.role === "admin").length,
-      teacher: data.filter((user) => user.role === "teacher").length,
-      student: data.filter((user) => user.role === "student").length,
-    };
-  }, [users]);
+  const roleCounts = useMemo(() => getAdminUserRoleCounts(users || []), [users]);
 
   const setRoleFromTab = (key: string) => {
     const nextRole = key === "all" ? null : key;

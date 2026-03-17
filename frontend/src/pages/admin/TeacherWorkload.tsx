@@ -31,6 +31,13 @@ import {
   fetchUsers,
   updateTeacherSubject,
 } from "../../api/admin";
+import {
+  buildAssignmentsByTeacher,
+  buildGroupEntityMap,
+  buildSubjectEntityMap,
+  filterTeachersByWorkload,
+  getTeacherWorkloadStats,
+} from "./utils/adminRegistry";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const TeacherWorkloadPage = () => {
@@ -120,57 +127,29 @@ const TeacherWorkloadPage = () => {
     onError: () => message.error("Biriktirishni o'chirishda xato"),
   });
 
-  const subjectMap = useMemo(
-    () => new Map((subjects || []).map((subject) => [subject.id, subject])),
-    [subjects],
+  const subjectMap = useMemo(() => buildSubjectEntityMap(subjects || []), [subjects]);
+  const groupMap = useMemo(() => buildGroupEntityMap(groups || []), [groups]);
+  const assignmentsByTeacher = useMemo(
+    () => buildAssignmentsByTeacher(teacherSubjects || []),
+    [teacherSubjects],
   );
-  const groupMap = useMemo(
-    () => new Map((groups || []).map((group) => [group.id, group])),
-    [groups],
+
+  const filteredTeachers = useMemo(
+    () =>
+      filterTeachersByWorkload({
+        assignmentsByTeacher,
+        groupMap,
+        search,
+        subjectMap,
+        teachers: teachers || [],
+      }),
+    [assignmentsByTeacher, groupMap, search, subjectMap, teachers],
   );
-  const assignmentsByTeacher = useMemo(() => {
-    const grouped = new Map<number, TeacherSubject[]>();
-    (teacherSubjects || []).forEach((item) => {
-      const list = grouped.get(item.teacher) || [];
-      list.push(item);
-      grouped.set(item.teacher, list);
-    });
-    return grouped;
-  }, [teacherSubjects]);
 
-  const filteredTeachers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (teachers || []).filter((teacher) => {
-      const assignments = assignmentsByTeacher.get(teacher.id) || [];
-      const workloadText = assignments
-        .map((assignment) => {
-          const subjectName = subjectMap.get(assignment.subject)?.name || "";
-          const groupNames = (assignment.groups || []).map((groupId) => groupMap.get(groupId)?.name || "");
-          return [subjectName, ...groupNames].join(" ");
-        })
-        .join(" ")
-        .toLowerCase();
-      if (!q) return true;
-      return (
-        teacher.username.toLowerCase().includes(q) ||
-        `${teacher.first_name || ""} ${teacher.last_name || ""}`.toLowerCase().includes(q) ||
-        (teacher.email || "").toLowerCase().includes(q) ||
-        (teacher.phone || "").toLowerCase().includes(q) ||
-        workloadText.includes(q)
-      );
-    });
-  }, [assignmentsByTeacher, groupMap, search, subjectMap, teachers]);
-
-  const stats = useMemo(() => {
-    const allTeachers = teachers || [];
-    const activeWorkloadTeachers = allTeachers.filter((teacher) => (assignmentsByTeacher.get(teacher.id) || []).length > 0).length;
-    return {
-      total: allTeachers.length,
-      withWorkload: activeWorkloadTeachers,
-      withoutWorkload: allTeachers.length - activeWorkloadTeachers,
-      mappings: (teacherSubjects || []).length,
-    };
-  }, [assignmentsByTeacher, teacherSubjects, teachers]);
+  const stats = useMemo(
+    () => getTeacherWorkloadStats(teachers || [], assignmentsByTeacher, teacherSubjects || []),
+    [assignmentsByTeacher, teacherSubjects, teachers],
+  );
 
   const openDrawer = (teacher: AdminUser) => {
     setSelectedTeacher(teacher);
