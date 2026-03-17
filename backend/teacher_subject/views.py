@@ -8,7 +8,7 @@ from .serializers import TeacherSubjectSerializer
 
 
 class TeacherSubjectViewSet(viewsets.ModelViewSet):
-    queryset = TeacherSubject.objects.all()
+    queryset = TeacherSubject.objects.select_related("teacher", "subject").prefetch_related("groups")
     serializer_class = TeacherSubjectSerializer
     permission_classes = [IsAuthenticated]
 

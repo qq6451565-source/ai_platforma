@@ -23,6 +23,8 @@ from .serializers import (
     ChangePasswordSerializer,
     AdminUserSerializer,
     AdminUserWriteSerializer,
+    AdminStudentPlacementSerializer,
+    AdminTeacherWorkloadSerializer,
     PassportDataSerializer,
     AuditLogSerializer,
     AuthGroupSerializer,
@@ -31,6 +33,7 @@ from .serializers import (
     OutstandingTokenSerializer,
     BlacklistedTokenSerializer,
 )
+from .admin_registry import set_user_role, upsert_student_placement, upsert_teacher_workload
 from .models import User, PassportData, AuditLog, EmailVerificationCode
 from .audit import log_audit
 from teacher_subject.models import TeacherSubject
@@ -336,13 +339,7 @@ class AdminSetRoleView(APIView):
             return Response({"detail": "User topilmadi"}, status=status.HTTP_404_NOT_FOUND)
 
         old_role = target.role
-        target.role = role
-        # Admin bo'lsa is_staff yoqamiz, admin emas bo'lsa (superuser emas) is_staff o'chadi
-        if role == "admin":
-            target.is_staff = True
-        elif not target.is_superuser:
-            target.is_staff = False
-        target.save(update_fields=["role", "is_staff"])
+        set_user_role(target, role)
         log_audit(
             request,
             "role_changed",
@@ -351,6 +348,68 @@ class AdminSetRoleView(APIView):
             extra={"target_user_id": target.id, "old_role": old_role, "new_role": target.role},
         )
         return Response({"detail": "Role yangilandi", "user_id": target.id, "role": target.role})
+
+
+class AdminStudentPlacementView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "User topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminStudentPlacementSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        profile = upsert_student_placement(
+            user,
+            group=payload.get("group"),
+            direction=payload.get("direction"),
+            admission_year=payload.get("admission_year"),
+            status=payload.get("status"),
+        )
+        return Response(
+            {
+                "user_id": user.id,
+                "role": user.role,
+                "profile_id": profile.id,
+                "direction_id": profile.direction_id,
+                "group_id": profile.group_id,
+                "admission_year": profile.admission_year,
+                "status": profile.status,
+            }
+        )
+
+
+class AdminTeacherWorkloadView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def post(self, request, user_id):
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "User topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminTeacherWorkloadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = serializer.validated_data
+        mapping, created = upsert_teacher_workload(
+            user,
+            subject=payload["subject"],
+            groups=payload.get("groups") or [],
+        )
+        return Response(
+            {
+                "user_id": user.id,
+                "role": user.role,
+                "teacher_subject_id": mapping.id,
+                "subject_id": mapping.subject_id,
+                "group_ids": list(mapping.groups.values_list("id", flat=True)),
+                "created": created,
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 class AdminReanalyzeFaceView(APIView):

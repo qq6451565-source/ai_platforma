@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from ai.clients import AIConnectionError, face_analyze, face_match, health_check
 from ai.models import AISettings
+from accounts.admin_registry import upsert_student_placement, upsert_teacher_workload
 from accounts.audit import log_audit
 from accounts.models import User, PassportData
 from groups.models import Group
@@ -747,15 +748,7 @@ class ApproveApplicantView(APIView):
                 user.last_name = last_name or user.last_name
                 user.email = applicant.email or user.email
                 user.phone = applicant.phone or user.phone
-                user.role = "student"
-                if not user.is_superuser:
-                    user.is_staff = False
-                user.group = group
                 user.save()
-
-            if user.group_id != group.id:
-                user.group = group
-                user.save(update_fields=["group"])
 
             documents = getattr(applicant, "documents", None)
             if documents and documents.face_image:
@@ -781,21 +774,13 @@ class ApproveApplicantView(APIView):
                 if user_fields_to_save:
                     user.save(update_fields=user_fields_to_save)
 
-            try:
-                profile = user.student_profile
-                profile.direction = direction
-                profile.group = group
-                profile.admission_year = admission_year
-                profile.status = "active"
-                profile.save()
-            except StudentProfile.DoesNotExist:
-                StudentProfile.objects.create(
-                    user=user,
-                    direction=direction,
-                    group=group,
-                    admission_year=admission_year,
-                    status="active",
-                )
+            upsert_student_placement(
+                user,
+                group=group,
+                direction=direction,
+                admission_year=admission_year,
+                status="active",
+            )
             _ensure_passport_data(user, applicant, documents)
 
         else:
@@ -829,13 +814,7 @@ class ApproveApplicantView(APIView):
                 user.last_name = last_name or user.last_name
                 user.email = applicant.email or user.email
                 user.phone = applicant.phone or user.phone
-                user.role = "teacher"
                 user.save()
-
-            try:
-                user.teacher_profile
-            except TeacherProfile.DoesNotExist:
-                TeacherProfile.objects.create(user=user)
 
             documents = getattr(applicant, "documents", None)
             if documents and documents.face_image:
@@ -859,15 +838,15 @@ class ApproveApplicantView(APIView):
                 if _teacher_fields:
                     user.save(update_fields=_teacher_fields)
 
-            teacher_subject = TeacherSubject.objects.create(
-                teacher=user,
-                subject=subject,
-            )
             group_ids = request.data.get("group_ids") or []
             if isinstance(group_ids, str):
                 group_ids = [g for g in group_ids.split(",") if g]
-            if group_ids:
-                teacher_subject.groups.set(Group.objects.filter(id__in=group_ids))
+            workload_groups = list(Group.objects.filter(id__in=group_ids))
+            upsert_teacher_workload(
+                user,
+                subject=subject,
+                groups=workload_groups,
+            )
             _ensure_passport_data(user, applicant, documents)
 
         approval_password = (applicant.passport_id or applicant.card_number or "").strip()

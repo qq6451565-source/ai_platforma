@@ -117,14 +117,6 @@ class StudentProfileViewSet(AdminOnlyViewSet):
     queryset = StudentProfile.objects.all()
     serializer_class = StudentProfileSerializer
 
-    def perform_create(self, serializer):
-        profile = serializer.save()
-        User.objects.filter(id=profile.user_id).update(group_id=profile.group_id)
-
-    def perform_update(self, serializer):
-        profile = serializer.save()
-        User.objects.filter(id=profile.user_id).update(group_id=profile.group_id)
-
 
 class TeacherProfileViewSet(AdminOnlyViewSet):
     queryset = TeacherProfile.objects.all()

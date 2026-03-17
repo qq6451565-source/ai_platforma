@@ -1,9 +1,16 @@
 from django.contrib.auth.models import Group, Permission
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 
+from directions.models import Direction
+from groups.models import Group as AcademicGroup
+from profiles.models import StudentProfile
+from subjects.models import Subject
+
+from .admin_registry import set_user_role, upsert_student_placement
 from .models import User, PassportData, AuditLog
 
 
@@ -159,12 +166,23 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password", None)
+        requested_role = validated_data.get("role", "student")
+        requested_group = validated_data.get("group")
         user = User.objects.create(**validated_data)
         if password:
             user.set_password(password)
         else:
             user.set_unusable_password()
         user.save()
+        set_user_role(user, requested_role)
+        if requested_role == "student":
+            upsert_student_placement(
+                user,
+                group=requested_group,
+                direction=requested_group.direction if requested_group else None,
+                admission_year=timezone.now().year,
+                status="active",
+            )
         return user
 
     def update(self, instance, validated_data):
@@ -174,7 +192,76 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
         instance.save()
+        set_user_role(instance, instance.role)
+        if instance.role == "student":
+            group = instance.group
+            try:
+                profile = instance.student_profile
+                direction = profile.direction or (group.direction if group else None)
+                admission_year = profile.admission_year
+                status = profile.status
+            except StudentProfile.DoesNotExist:
+                direction = group.direction if group else None
+                admission_year = timezone.now().year
+                status = "active"
+            upsert_student_placement(
+                instance,
+                group=group,
+                direction=direction,
+                admission_year=admission_year,
+                status=status,
+            )
         return instance
+
+
+class AdminStudentPlacementSerializer(serializers.Serializer):
+    direction_id = serializers.PrimaryKeyRelatedField(
+        source="direction",
+        queryset=Direction.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    group_id = serializers.PrimaryKeyRelatedField(
+        source="group",
+        queryset=AcademicGroup.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    admission_year = serializers.IntegerField(required=False, min_value=2000, max_value=2100)
+    status = serializers.ChoiceField(choices=StudentProfile.STATUS_CHOICES, required=False)
+
+    def validate(self, attrs):
+        direction = attrs.get("direction")
+        group = attrs.get("group")
+        if group and direction and group.direction_id != direction.id:
+            raise serializers.ValidationError(
+                {"group_id": "Tanlangan guruh tanlangan yo'nalishga tegishli emas."}
+            )
+        return attrs
+
+
+class AdminTeacherWorkloadSerializer(serializers.Serializer):
+    subject_id = serializers.PrimaryKeyRelatedField(
+        source="subject",
+        queryset=Subject.objects.all(),
+    )
+    group_ids = serializers.PrimaryKeyRelatedField(
+        source="groups",
+        queryset=AcademicGroup.objects.all(),
+        many=True,
+        required=False,
+    )
+
+    def validate(self, attrs):
+        subject = attrs["subject"]
+        groups = attrs.get("groups") or []
+        allowed_direction_ids = set(subject.directions.values_list("id", flat=True))
+        invalid_groups = [group.name for group in groups if group.direction_id not in allowed_direction_ids]
+        if invalid_groups:
+            raise serializers.ValidationError(
+                {"group_ids": f"Tanlangan guruhlar fan yo'nalishiga mos emas: {', '.join(invalid_groups)}."}
+            )
+        return attrs
 
 
 class PassportDataSerializer(serializers.ModelSerializer):

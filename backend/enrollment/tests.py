@@ -11,6 +11,9 @@ from directions.models import Direction
 from enrollment.models import Applicant, ApplicantDocument, RegistrationWindow, VerificationResult
 from enrollment.policy import build_action_reasons, build_allowed_actions
 from groups.models import Group
+from profiles.models import StudentProfile, TeacherProfile
+from subjects.models import Subject
+from teacher_subject.models import TeacherSubject
 
 
 def _image_file(name: str) -> SimpleUploadedFile:
@@ -289,6 +292,49 @@ class AdminEnrollmentApiTests(APITestCase):
             audit.extra["manual_override_reason"],
             "Passport va selfie preview qo'lda tekshirildi.",
         )
+
+    def test_admin_student_approval_creates_synced_student_profile(self):
+        response = self.client.post(
+            f"/api/enrollment/approve/{self.applicant.id}/",
+            {
+                "role": "student",
+                "group_id": self.group.id,
+                "manual_override_reason": "Preview qo'lda tasdiqlandi.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(id=response.data["user_id"])
+        self.assertEqual(user.role, "student")
+        self.assertEqual(user.group_id, self.group.id)
+        self.assertTrue(StudentProfile.objects.filter(user=user).exists())
+        self.assertEqual(user.student_profile.group_id, self.group.id)
+        self.assertEqual(user.student_profile.direction_id, self.direction.id)
+
+    def test_admin_teacher_approval_creates_teacher_workload(self):
+        subject = Subject.objects.create(name="Computer Vision")
+        subject.directions.add(self.direction)
+        second_group = Group.objects.create(direction=self.direction, language="uz", level=2)
+
+        response = self.client.post(
+            f"/api/enrollment/approve/{self.applicant.id}/",
+            {
+                "role": "teacher",
+                "subject_id": subject.id,
+                "group_ids": [self.group.id, second_group.id],
+                "manual_override_reason": "Preview qo'lda tasdiqlandi.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(id=response.data["user_id"])
+        self.assertEqual(user.role, "teacher")
+        self.assertIsNone(user.group_id)
+        self.assertTrue(TeacherProfile.objects.filter(user=user).exists())
+        mapping = TeacherSubject.objects.get(teacher=user, subject=subject)
+        self.assertSetEqual(set(mapping.groups.values_list("id", flat=True)), {self.group.id, second_group.id})
 
     def test_admin_reject_requires_reason(self):
         response = self.client.post(
