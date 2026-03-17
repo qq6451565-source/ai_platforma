@@ -31,6 +31,7 @@ import {
   fetchUsers,
   updateTeacherSubject,
 } from "../../api/admin";
+import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const TeacherWorkloadPage = () => {
   const qc = useQueryClient();
@@ -60,11 +61,7 @@ const TeacherWorkloadPage = () => {
     queryFn: fetchGroupsAdmin,
   });
 
-  const requestedUserId = useMemo(() => {
-    const raw = new URLSearchParams(location.search).get("userId");
-    const parsed = raw ? Number(raw) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }, [location.search]);
+  const requestedUserId = useMemo(() => getRequestedUserId(location.search), [location.search]);
 
   const saveMutation = useMutation({
     mutationFn: ({
@@ -187,9 +184,10 @@ const TeacherWorkloadPage = () => {
       openDrawer(matchedTeacher);
       return;
     }
-    const params = new URLSearchParams(location.search);
-    params.delete("userId");
-    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
+      { replace: true },
+    );
   }, [drawerOpen, location.pathname, location.search, navigate, requestedUserId, teachers]);
 
   const openCreateModal = (teacher: AdminUser) => {
@@ -302,9 +300,10 @@ const TeacherWorkloadPage = () => {
         open={drawerOpen}
         width={520}
         onClose={() => {
-          const params = new URLSearchParams(location.search);
-          params.delete("userId");
-          navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+          navigate(
+            { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
+            { replace: true },
+          );
           setDrawerOpen(false);
           setSelectedTeacher(null);
         }}

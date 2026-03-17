@@ -3,22 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Card,
-  Descriptions,
-  Drawer,
   Form,
   Input,
-  Modal,
   Popconfirm,
   Select,
   Space,
-  Switch,
   Table,
   Tabs,
   Tag,
-  Upload,
   message,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -39,6 +33,10 @@ import {
   updateAdminUser,
   updatePassportData,
 } from "../../api/admin";
+import AdminPassportModal from "./components/AdminPassportModal";
+import AdminUserFormModal from "./components/AdminUserFormModal";
+import AdminUserProfileDrawer from "./components/AdminUserProfileDrawer";
+import { updateAdminHubSearch } from "./utils/workflowRouting";
 
 const UsersPage = () => {
   const qc = useQueryClient();
@@ -249,16 +247,18 @@ const UsersPage = () => {
   }, [users]);
 
   const setRoleFromTab = (key: string) => {
-    const params = new URLSearchParams(location.search);
-    params.set("tab", "users");
-    if (key === "all") {
-      params.delete("role");
-      setRoleFilter(null);
-    } else {
-      params.set("role", key);
-      setRoleFilter(key);
-    }
-    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    const nextRole = key === "all" ? null : key;
+    setRoleFilter(nextRole);
+    navigate(
+      {
+        pathname: location.pathname,
+        search: updateAdminHubSearch(location.search, {
+          tab: "users",
+          role: nextRole,
+        }),
+      },
+      { replace: true },
+    );
   };
 
   const openCreate = () => {
@@ -293,10 +293,13 @@ const UsersPage = () => {
   };
 
   const openWorkflow = (tab: "student-placement" | "teacher-workload", userId: number) => {
-    const params = new URLSearchParams(location.search);
-    params.set("tab", tab);
-    params.set("userId", String(userId));
-    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    navigate(
+      {
+        pathname: location.pathname,
+        search: updateAdminHubSearch(location.search, { tab, userId }),
+      },
+      { replace: true },
+    );
   };
 
   const openPassportEditor = () => {
@@ -508,335 +511,54 @@ const UsersPage = () => {
         })}
       />
 
-      <Modal
-        title={editing ? "Foydalanuvchini tahrirlash" : "Yangi foydalanuvchi"}
+      <AdminUserFormModal
+        editing={editing}
+        form={form}
+        loading={createMutation.isPending || updateMutation.isPending}
         open={modalOpen}
         onCancel={() => {
           setModalOpen(false);
           setEditing(null);
           form.resetFields();
         }}
-        onOk={() => form.submit()}
-        confirmLoading={createMutation.isPending || updateMutation.isPending}
-        destroyOnClose
-      >
-        <Form layout="vertical" form={form} onFinish={onSubmit}>
-          <Form.Item name="username" label="Username" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label="Parol"
-            rules={editing ? [] : [{ required: true, message: "Parol kiriting" }]}
-          >
-            <Input.Password />
-          </Form.Item>
-          <Form.Item name="first_name" label="Ism">
-            <Input />
-          </Form.Item>
-          <Form.Item name="last_name" label="Familiya">
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email">
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone" label="Telefon">
-            <Input />
-          </Form.Item>
-          <Form.Item name="role" label="Rol" rules={[{ required: true }]}>
-            <Select
-              options={[
-                { value: "student", label: "Talaba" },
-                { value: "teacher", label: "O'qituvchi" },
-                { value: "admin", label: "Admin" },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="is_active" label="Faol" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Modal>
+        onSubmit={onSubmit}
+      />
 
-      <Drawer title="Foydalanuvchi profili" open={drawerOpen} onClose={closeProfile} width={460}>
-        {selectedUser ? (
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Space wrap>
-              <Button size="small" onClick={() => openEdit(selectedUser)}>
-                Asosiy ma'lumotlarni tahrirlash
-              </Button>
-              {selectedUser.role === "student" ? (
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => openWorkflow("student-placement", selectedUser.id)}
-                >
-                  Placementni ochish
-                </Button>
-              ) : null}
-              {selectedUser.role === "teacher" ? (
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => openWorkflow("teacher-workload", selectedUser.id)}
-                >
-                  Workloadni ochish
-                </Button>
-              ) : null}
-            </Space>
+      <AdminUserProfileDrawer
+        directionMap={directionMap}
+        groupMap={groupMap}
+        onClose={closeProfile}
+        onDeletePassport={async () => {
+          if (!selectedPassport?.id) return;
+          await deletePassportData(selectedPassport.id);
+          message.success("Passport ma'lumotlari o'chirildi");
+          await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+        }}
+        onEditUser={() => {
+          if (selectedUser) {
+            openEdit(selectedUser);
+          }
+        }}
+        onOpenPassportEditor={openPassportEditor}
+        onOpenWorkflow={openWorkflow}
+        open={drawerOpen}
+        passport={selectedPassport}
+        studentProfile={selectedStudentProfile}
+        subjectMap={subjectMap}
+        teacherAssignments={selectedTeacherAssignments}
+        user={selectedUser}
+      />
 
-            <Descriptions size="small" column={1} bordered>
-              <Descriptions.Item label="Login">{selectedUser.username}</Descriptions.Item>
-              <Descriptions.Item label="Ism">{selectedUser.first_name || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Familiya">{selectedUser.last_name || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Email">{selectedUser.email || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Telefon">{selectedUser.phone || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Guruh">
-                {selectedUser.group ? groupMap.get(selectedUser.group) || "-" : "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Rol">
-                {selectedUser.role === "student"
-                  ? "Talaba"
-                  : selectedUser.role === "teacher"
-                    ? "O'qituvchi"
-                    : "Admin"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                {selectedUser.is_active ? "Faol" : "Bloklangan"}
-              </Descriptions.Item>
-            </Descriptions>
-
-            {selectedUser.role === "student" ? (
-              <Card
-                size="small"
-                title="Student Placement"
-                extra={
-                  <Button
-                    size="small"
-                    type="primary"
-                    onClick={() => openWorkflow("student-placement", selectedUser.id)}
-                  >
-                    Workflowga o'tish
-                  </Button>
-                }
-              >
-                {selectedStudentProfile ? (
-                  <Descriptions size="small" column={1} bordered>
-                    <Descriptions.Item label="Yo'nalish">
-                      {selectedStudentProfile.direction
-                        ? directionMap.get(selectedStudentProfile.direction) || "-"
-                        : "-"}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Guruh">
-                      {selectedStudentProfile.group
-                        ? groupMap.get(selectedStudentProfile.group) || "-"
-                        : "-"}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Qabul yili">
-                      {selectedStudentProfile.admission_year || "-"}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Status">
-                      {selectedStudentProfile.status || "-"}
-                    </Descriptions.Item>
-                  </Descriptions>
-                ) : (
-                  <div>Student profile hali yaratilmagan yoki placement berilmagan.</div>
-                )}
-              </Card>
-            ) : null}
-
-            {selectedUser.role === "teacher" ? (
-              <Card
-                size="small"
-                title="Teacher Workload"
-                extra={
-                  <Button
-                    size="small"
-                    type="primary"
-                    onClick={() => openWorkflow("teacher-workload", selectedUser.id)}
-                  >
-                    Workflowga o'tish
-                  </Button>
-                }
-              >
-                {selectedTeacherAssignments.length ? (
-                  <Space direction="vertical" size="small" style={{ width: "100%" }}>
-                    {selectedTeacherAssignments.map((assignment) => (
-                      <Descriptions key={assignment.id} size="small" column={1} bordered>
-                        <Descriptions.Item label="Fan">
-                          {subjectMap.get(assignment.subject) || `Fan #${assignment.subject}`}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="Guruhlar">
-                          {assignment.groups?.length ? (
-                            <Space wrap>
-                              {assignment.groups.map((groupId) => (
-                                <Tag key={groupId}>{groupMap.get(groupId) || `#${groupId}`}</Tag>
-                              ))}
-                            </Space>
-                          ) : (
-                            "-"
-                          )}
-                        </Descriptions.Item>
-                      </Descriptions>
-                    ))}
-                  </Space>
-                ) : (
-                  <div>Teacher uchun hali workload biriktirilmagan.</div>
-                )}
-              </Card>
-            ) : null}
-
-            <Card
-              size="small"
-              title="Passport ma'lumotlari"
-              extra={
-                <Space>
-                  <Button size="small" onClick={openPassportEditor}>
-                    {selectedPassport ? "Tahrirlash" : "Yaratish"}
-                  </Button>
-                  {selectedPassport ? (
-                    <Popconfirm
-                      title="Passport ma'lumotlarini o'chirishni tasdiqlaysizmi?"
-                      onConfirm={async () => {
-                        if (!selectedPassport.id) return;
-                        await deletePassportData(selectedPassport.id);
-                        message.success("Passport ma'lumotlari o'chirildi");
-                        await qc.invalidateQueries({ queryKey: ["admin-passports"] });
-                      }}
-                    >
-                      <Button size="small" danger>
-                        O'chirish
-                      </Button>
-                    </Popconfirm>
-                  ) : null}
-                </Space>
-              }
-            >
-              {selectedPassport ? (
-                <Descriptions size="small" column={1} bordered>
-                  <Descriptions.Item label="Seriya">{selectedPassport.passport_series}</Descriptions.Item>
-                  <Descriptions.Item label="Raqam">{selectedPassport.passport_number}</Descriptions.Item>
-                  <Descriptions.Item label="Tug'ilgan sana">
-                    {selectedPassport.birth_date || "-"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="OCR ism-familiya">
-                    {selectedPassport.extracted_fullname || "-"}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Old tomoni">
-                    {selectedPassport.front_image ? (
-                      <a href={selectedPassport.front_image} target="_blank" rel="noreferrer">
-                        Ko'rish
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Orqa tomoni">
-                    {selectedPassport.back_image ? (
-                      <a href={selectedPassport.back_image} target="_blank" rel="noreferrer">
-                        Ko'rish
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Selfi">
-                    {selectedPassport.selfie_image ? (
-                      <a href={selectedPassport.selfie_image} target="_blank" rel="noreferrer">
-                        Ko'rish
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </Descriptions.Item>
-                </Descriptions>
-              ) : (
-                <div>Passport ma'lumotlari yo'q.</div>
-              )}
-            </Card>
-          </Space>
-        ) : null}
-      </Drawer>
-
-      <Modal
-        title="Passport ma'lumotlarini tahrirlash"
+      <AdminPassportModal
+        form={passportForm}
         open={passportModalOpen}
+        passport={selectedPassport}
+        onBackFileChange={setPassportBackFile}
         onCancel={() => setPassportModalOpen(false)}
-        onOk={savePassport}
-        destroyOnClose
-      >
-        <Form layout="vertical" form={passportForm}>
-          <Form.Item name="passport_series" label="Seriya" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="passport_number" label="Raqam" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="birth_date" label="Tug'ilgan sana">
-            <Input type="date" />
-          </Form.Item>
-          <Form.Item name="extracted_fullname" label="OCR ism-familiya">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Passport old tomoni">
-            <Upload
-              beforeUpload={() => false}
-              maxCount={1}
-              onChange={(info) => {
-                const file = info.fileList[0]?.originFileObj as File | undefined;
-                setPassportFrontFile(file || null);
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
-            </Upload>
-            {selectedPassport?.front_image ? (
-              <div style={{ marginTop: 8 }}>
-                <a href={selectedPassport.front_image} target="_blank" rel="noreferrer">
-                  Hozirgi rasm
-                </a>
-              </div>
-            ) : null}
-          </Form.Item>
-          <Form.Item label="Passport orqa tomoni">
-            <Upload
-              beforeUpload={() => false}
-              maxCount={1}
-              onChange={(info) => {
-                const file = info.fileList[0]?.originFileObj as File | undefined;
-                setPassportBackFile(file || null);
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
-            </Upload>
-            {selectedPassport?.back_image ? (
-              <div style={{ marginTop: 8 }}>
-                <a href={selectedPassport.back_image} target="_blank" rel="noreferrer">
-                  Hozirgi rasm
-                </a>
-              </div>
-            ) : null}
-          </Form.Item>
-          <Form.Item label="Selfi">
-            <Upload
-              beforeUpload={() => false}
-              maxCount={1}
-              onChange={(info) => {
-                const file = info.fileList[0]?.originFileObj as File | undefined;
-                setPassportSelfieFile(file || null);
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
-            </Upload>
-            {selectedPassport?.selfie_image ? (
-              <div style={{ marginTop: 8 }}>
-                <a href={selectedPassport.selfie_image} target="_blank" rel="noreferrer">
-                  Hozirgi rasm
-                </a>
-              </div>
-            ) : null}
-          </Form.Item>
-        </Form>
-      </Modal>
+        onFrontFileChange={setPassportFrontFile}
+        onSave={savePassport}
+        onSelfieFileChange={setPassportSelfieFile}
+      />
     </Card>
   );
 };

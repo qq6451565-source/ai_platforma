@@ -25,6 +25,7 @@ import {
   fetchStudentProfiles,
   fetchUsers,
 } from "../../api/admin";
+import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const StudentPlacementPage = () => {
   const qc = useQueryClient();
@@ -52,11 +53,7 @@ const StudentPlacementPage = () => {
     queryFn: fetchGroupsAdmin,
   });
 
-  const requestedUserId = useMemo(() => {
-    const raw = new URLSearchParams(location.search).get("userId");
-    const parsed = raw ? Number(raw) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }, [location.search]);
+  const requestedUserId = useMemo(() => getRequestedUserId(location.search), [location.search]);
 
   const saveMutation = useMutation({
     mutationFn: ({
@@ -78,9 +75,10 @@ const StudentPlacementPage = () => {
         qc.invalidateQueries({ queryKey: ["admin-users", "student-placement"] }),
         qc.invalidateQueries({ queryKey: ["admin-student-profiles"] }),
       ]);
-      const params = new URLSearchParams(location.search);
-      params.delete("userId");
-      navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+      navigate(
+        { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
+        { replace: true },
+      );
       setModalOpen(false);
       setSelectedUser(null);
       form.resetFields();
@@ -169,9 +167,10 @@ const StudentPlacementPage = () => {
       openPlacement(matchedUser);
       return;
     }
-    const params = new URLSearchParams(location.search);
-    params.delete("userId");
-    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+    navigate(
+      { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
+      { replace: true },
+    );
   }, [location.pathname, location.search, modalOpen, navigate, requestedUserId, users]);
 
   const columns = [
@@ -259,9 +258,10 @@ const StudentPlacementPage = () => {
         title="Student Placement"
         open={modalOpen}
         onCancel={() => {
-          const params = new URLSearchParams(location.search);
-          params.delete("userId");
-          navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
+          navigate(
+            { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
+            { replace: true },
+          );
           setModalOpen(false);
           setSelectedUser(null);
           form.resetFields();
