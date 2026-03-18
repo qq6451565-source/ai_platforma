@@ -4,21 +4,15 @@ import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Switch, Ta
 import {
   createTestOption,
   deleteTestOption,
-  fetchTestOptions,
-  fetchTestQuestions,
   updateTestOption,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const TestOptionsPage = () => {
   const qc = useQueryClient();
-  const { data: options, isLoading } = useQuery({
-    queryKey: ["admin-test-options"],
-    queryFn: fetchTestOptions,
-  });
-  const { data: questions } = useQuery({
-    queryKey: ["admin-test-questions"],
-    queryFn: fetchTestQuestions,
-  });
+  const { data: options, isLoading } = useQuery(adminQueryOptions.testOptions());
+  const { data: questions } = useQuery(adminQueryOptions.testQuestions());
 
   const questionOptions = useMemo(
     () =>
@@ -37,7 +31,7 @@ const TestOptionsPage = () => {
     mutationFn: (vals: any) => createTestOption(vals),
     onSuccess: async () => {
       message.success("Variant qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-options"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
     onError: () => message.error("Saqlashda xato"),
   });
@@ -46,7 +40,7 @@ const TestOptionsPage = () => {
     mutationFn: ({ id, payload }: { id: number; payload: any }) => updateTestOption(id, payload),
     onSuccess: async () => {
       message.success("Variant yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-options"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
       setEditOpen(false);
       setEditing(null);
     },
@@ -57,7 +51,7 @@ const TestOptionsPage = () => {
     mutationFn: (id: number) => deleteTestOption(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-options"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
     onError: () => message.error("O'chirishda xato"),
   });

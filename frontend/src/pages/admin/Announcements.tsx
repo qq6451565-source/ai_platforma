@@ -1,24 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty } from "antd";
 import {
-  fetchAnnouncementsAdmin,
   createAnnouncementAdmin,
   deleteAnnouncementAdmin,
   AdminAnnouncement,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminAnnouncementsPage = () => {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-announcements"],
-    queryFn: fetchAnnouncementsAdmin,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.announcements());
 
   const createMut = useMutation({
     mutationFn: (vals: { title: string; content: string }) => createAnnouncementAdmin(vals),
     onSuccess: async () => {
       message.success("E'lon qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-announcements"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.announcements });
     },
     onError: () => message.error("E'lon qo'shishda xato"),
   });
@@ -27,7 +25,7 @@ const AdminAnnouncementsPage = () => {
     deleteAnnouncementAdmin(id)
       .then(() => {
         message.success("O'chirildi");
-        qc.invalidateQueries({ queryKey: ["admin-announcements"] });
+        qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.announcements });
       })
       .catch(() => message.error("O'chirishda xato"));
 

@@ -1,12 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, Row, Col, Statistic, Spin } from "antd";
-import { fetchAdminAnalytics } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
 
 const AdminAnalyticsPage = () => {
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-analytics"],
-    queryFn: fetchAdminAnalytics,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.analytics());
 
   if (isLoading) {
     return (

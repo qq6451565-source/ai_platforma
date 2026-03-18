@@ -17,26 +17,22 @@ import {
 } from "antd";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchAISettings, updateAISettings, fetchAIHealth } from "../../api/admin";
+import { updateAISettings } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminAISettingsPage = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-ai-settings"],
-    queryFn: fetchAISettings,
-  });
-  const { data: health, isLoading: healthLoading, refetch } = useQuery({
-    queryKey: ["admin-ai-health"],
-    queryFn: fetchAIHealth,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.aiSettings());
+  const { data: health, isLoading: healthLoading, refetch } = useQuery(adminQueryOptions.aiHealth());
   const [form] = Form.useForm();
 
   const updateMut = useMutation({
     mutationFn: (vals: any) => updateAISettings(vals),
     onSuccess: async () => {
       message.success(t("aiSettings.messages.updated"));
-      await qc.invalidateQueries({ queryKey: ["admin-ai-settings"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.aiSettings });
     },
     onError: () => message.error(t("aiSettings.messages.updateError")),
   });

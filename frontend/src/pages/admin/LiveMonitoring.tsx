@@ -2,7 +2,7 @@
  * Live monitoring dashboard for face verification
  * For admins and teachers to monitor student verification status
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Table,
@@ -23,8 +23,9 @@ import {
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { getLiveMonitoring, MonitoringData, FaceSession, FaceEvent } from '../../api/faceVerification';
+import { FaceSession, FaceEvent } from '../../api/faceVerification';
 import { FaceStatusIndicator } from '../../components/FaceStatusIndicator';
+import { adminQueryOptions } from './utils/adminQueryOptions';
 
 const { Title, Text } = Typography;
 
@@ -32,9 +33,8 @@ export const LiveMonitoring: React.FC = () => {
   const { roomName } = useParams<{ roomName: string }>();
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['live-monitoring', roomName],
-    queryFn: () => getLiveMonitoring(roomName!),
+  const { data, isLoading, error } = useQuery({
+    ...adminQueryOptions.liveMonitoring(roomName),
     enabled: !!roomName,
     refetchInterval: autoRefresh ? 5000 : false,
   });

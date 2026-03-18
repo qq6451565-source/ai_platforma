@@ -1,19 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, message } from "antd";
-import { createTestQuestion, deleteTestQuestion, fetchTestQuestions, updateTestQuestion } from "../../api/admin";
-import { fetchTests } from "../../api/tests";
+import { createTestQuestion, deleteTestQuestion, updateTestQuestion } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const TestQuestionsPage = () => {
   const qc = useQueryClient();
-  const { data: questions, isLoading } = useQuery({
-    queryKey: ["admin-test-questions"],
-    queryFn: fetchTestQuestions,
-  });
-  const { data: tests } = useQuery({
-    queryKey: ["admin-tests"],
-    queryFn: fetchTests,
-  });
+  const { data: questions, isLoading } = useQuery(adminQueryOptions.testQuestions());
+  const { data: tests } = useQuery(adminQueryOptions.tests());
 
   const testOptions = useMemo(
     () => (tests || []).map((t: any) => ({ value: t.id, label: t.title })),
@@ -28,7 +23,7 @@ const TestQuestionsPage = () => {
     mutationFn: (vals: any) => createTestQuestion(vals),
     onSuccess: async () => {
       message.success("Savol qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-questions"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testQuestions });
     },
     onError: () => message.error("Saqlashda xato"),
   });
@@ -37,7 +32,7 @@ const TestQuestionsPage = () => {
     mutationFn: ({ id, payload }: { id: number; payload: any }) => updateTestQuestion(id, payload),
     onSuccess: async () => {
       message.success("Savol yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-questions"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testQuestions });
       setEditOpen(false);
       setEditing(null);
     },
@@ -48,7 +43,7 @@ const TestQuestionsPage = () => {
     mutationFn: (id: number) => deleteTestQuestion(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-test-questions"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testQuestions });
     },
     onError: () => message.error("O'chirishda xato"),
   });

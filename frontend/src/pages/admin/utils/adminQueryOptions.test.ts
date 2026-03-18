@@ -16,6 +16,10 @@ describe("adminQueryOptions", () => {
     expect(adminQueryOptions.enrollmentWindows().queryKey).toEqual(ADMIN_QUERY_KEYS.enrollmentWindows);
     expect(adminQueryOptions.authGroups().queryKey).toEqual(ADMIN_QUERY_KEYS.authGroups);
     expect(adminQueryOptions.liveRooms().queryKey).toEqual(ADMIN_QUERY_KEYS.liveRooms);
+    expect(adminQueryOptions.aiSettings().queryKey).toEqual(ADMIN_QUERY_KEYS.aiSettings);
+    expect(adminQueryOptions.chatMessages().queryKey).toEqual(ADMIN_QUERY_KEYS.chatMessages);
+    expect(adminQueryOptions.announcements().queryKey).toEqual(ADMIN_QUERY_KEYS.announcements);
+    expect(adminQueryOptions.testQuestions().queryKey).toEqual(ADMIN_QUERY_KEYS.testQuestions);
   });
 
   it("builds lesson attendance query keys from lesson ids", () => {
@@ -42,6 +46,12 @@ describe("adminQueryOptions", () => {
   it("builds audit log query keys from active filters", () => {
     expect(adminQueryOptions.auditLogs("enrollment", "all", "ali").queryKey).toEqual(
       ADMIN_QUERY_KEYS.auditLogs("enrollment", "all", "ali"),
+    );
+  });
+
+  it("builds live monitoring query keys from room name", () => {
+    expect(adminQueryOptions.liveMonitoring("room-1").queryKey).toEqual(
+      ADMIN_QUERY_KEYS.liveMonitoring("room-1"),
     );
   });
 });

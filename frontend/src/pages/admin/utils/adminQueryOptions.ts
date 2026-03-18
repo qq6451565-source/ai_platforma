@@ -1,6 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import {
+  fetchAdminAnalytics,
+  fetchAIHealth,
+  fetchAISettings,
+  fetchAnnouncementsAdmin,
   fetchDirections,
   fetchExamAttempts,
   fetchExams,
@@ -9,6 +13,7 @@ import {
   fetchAuthTokens,
   fetchAuditLogs,
   fetchBlacklistedTokens,
+  fetchChatMessages,
   fetchEnrollment,
   fetchEnrollmentApplicant,
   fetchEnrollmentDocuments,
@@ -29,6 +34,8 @@ import {
   fetchStudentAnswers,
   fetchStudentTests,
   fetchSubjectsAdmin,
+  fetchTestOptions,
+  fetchTestQuestions,
   fetchTeacherSubjects,
   fetchTimetablesAdmin,
   fetchUsers,
@@ -37,6 +44,7 @@ import {
 } from "../../../api/admin";
 import { fetchAttendanceOverrideHistory } from "../../../api/attendance";
 import { fetchAssignments } from "../../../api/assignments";
+import { getLiveMonitoring } from "../../../api/faceVerification";
 import { fetchMaterials } from "../../../api/materials";
 import { fetchAllSubmissions } from "../../../api/submissions";
 import { fetchTests } from "../../../api/tests";
@@ -138,6 +146,31 @@ export const adminQueryOptions = {
       queryKey: ADMIN_QUERY_KEYS.permissions,
       queryFn: fetchPermissions,
     }),
+  analytics: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.analytics,
+      queryFn: fetchAdminAnalytics,
+    }),
+  aiSettings: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.aiSettings,
+      queryFn: fetchAISettings,
+    }),
+  aiHealth: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.aiHealth,
+      queryFn: fetchAIHealth,
+    }),
+  chatMessages: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.chatMessages,
+      queryFn: fetchChatMessages,
+    }),
+  announcements: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.announcements,
+      queryFn: fetchAnnouncementsAdmin,
+    }),
   journalRecords: () =>
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.journalRecords,
@@ -222,6 +255,11 @@ export const adminQueryOptions = {
       queryKey: ADMIN_QUERY_KEYS.liveParticipants,
       queryFn: fetchLiveParticipants,
     }),
+  liveMonitoring: (roomName?: string) =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.liveMonitoring(roomName),
+      queryFn: () => getLiveMonitoring(roomName as string),
+    }),
   auditLogs: (domain: "all" | "auth" | "enrollment", action: string, search: string) =>
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.auditLogs(domain, action, search),
@@ -246,6 +284,16 @@ export const adminQueryOptions = {
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.studentAnswers,
       queryFn: fetchStudentAnswers,
+    }),
+  testQuestions: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.testQuestions,
+      queryFn: fetchTestQuestions,
+    }),
+  testOptions: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.testOptions,
+      queryFn: fetchTestOptions,
     }),
   attendance: (lessonIds: number[]) => {
     const lessonKey = lessonIds.join(",");

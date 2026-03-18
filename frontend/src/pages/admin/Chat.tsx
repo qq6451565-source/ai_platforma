@@ -1,13 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, List, Empty, Popconfirm, Button, message } from "antd";
-import { fetchChatMessages, deleteChatMessage } from "../../api/admin";
+import { deleteChatMessage } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminChatPage = () => {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-chat"],
-    queryFn: fetchChatMessages,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.chatMessages());
 
   return (
     <Card title="Guruh chati" style={{ marginBottom: 16 }}>
@@ -24,7 +23,7 @@ const AdminChatPage = () => {
                   deleteChatMessage(m.id)
                     .then(() => {
                       message.success("O'chirildi");
-                      qc.invalidateQueries({ queryKey: ["admin-chat"] });
+                      qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.chatMessages });
                     })
                     .catch(() => message.error("Xatolik"))
                 }
