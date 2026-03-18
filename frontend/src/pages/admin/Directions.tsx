@@ -1,14 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty, Popconfirm, Modal } from "antd";
 import { useState } from "react";
-import { createDirection, deleteDirection, fetchDirections, updateDirection } from "../../api/admin";
+import { createDirection, deleteDirection, updateDirection } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const DirectionsPage = () => {
   const qc = useQueryClient();
-  const { data: directions, isLoading } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
+  const { data: directions, isLoading } = useQuery(adminQueryOptions.directions());
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
@@ -18,7 +17,7 @@ const DirectionsPage = () => {
     mutationFn: (vals: { name: string; language?: string }) => createDirection(vals),
     onSuccess: async () => {
       message.success("Yo'nalish qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-directions"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.directions });
     },
     onError: () => message.error("Yo'nalish qo'shishda xato"),
   });
@@ -60,7 +59,7 @@ const DirectionsPage = () => {
                 title="O'chirish?"
                 onConfirm={() =>
                   deleteDirection(d.id)
-                    .then(() => qc.invalidateQueries({ queryKey: ["admin-directions"] }))
+                    .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.directions }))
                     .catch(() => message.error("O'chirishda xato"))
                 }
               >
@@ -87,7 +86,7 @@ const DirectionsPage = () => {
             await updateDirection(editItem.id, vals);
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-directions"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.directions });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

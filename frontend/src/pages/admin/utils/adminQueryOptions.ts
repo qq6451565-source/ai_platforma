@@ -5,11 +5,13 @@ import {
   fetchGroupsAdmin,
   fetchLessonsAdmin,
   fetchLessonAttendance,
+  fetchLessonSlotsAdmin,
   fetchPassportData,
   fetchStudentProfiles,
   fetchStudentTests,
   fetchSubjectsAdmin,
   fetchTeacherSubjects,
+  fetchTimetablesAdmin,
   fetchUsers,
   fetchGradebookEntries,
 } from "../../../api/admin";
@@ -55,6 +57,16 @@ export const adminQueryOptions = {
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.lessons,
       queryFn: fetchLessonsAdmin,
+    }),
+  timetables: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.timetables,
+      queryFn: fetchTimetablesAdmin,
+    }),
+  lessonSlots: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.lessonSlots,
+      queryFn: fetchLessonSlotsAdmin,
     }),
   studentProfiles: () =>
     queryOptions({

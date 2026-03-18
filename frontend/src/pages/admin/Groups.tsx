@@ -2,24 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty, Popconfirm, Select, Modal } from "antd";
 import { useState } from "react";
 import {
-  fetchGroupsAdmin,
   createGroupAdmin,
   deleteGroupAdmin,
   AdminGroup,
-  fetchDirections,
   updateGroupAdmin,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const GroupsPage = () => {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: directions } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.groups());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
@@ -30,7 +24,7 @@ const GroupsPage = () => {
     mutationFn: (vals: Partial<AdminGroup>) => createGroupAdmin(vals),
     onSuccess: async () => {
       message.success("Guruh qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-groups"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
     },
     onError: () => message.error("Guruh qo'shishda xato"),
   });
@@ -39,7 +33,7 @@ const GroupsPage = () => {
     deleteGroupAdmin(id)
       .then(() => {
         message.success("O'chirildi");
-        qc.invalidateQueries({ queryKey: ["admin-groups"] });
+        qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
       })
       .catch(() => message.error("O'chirishda xato"));
 
@@ -144,7 +138,7 @@ const GroupsPage = () => {
             await updateGroupAdmin(editItem.id, vals);
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-groups"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

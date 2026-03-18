@@ -1,15 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty, Select, Popconfirm, Modal, Tag } from "antd";
 import { useState } from "react";
-import { fetchSubjectsAdmin, createSubject, deleteSubject, fetchDirections, updateSubject } from "../../api/admin";
+import { createSubject, deleteSubject, updateSubject } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const SubjectsPage = () => {
   const qc = useQueryClient();
-  const { data: subjects, isLoading } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: directions } = useQuery({ queryKey: ["admin-directions"], queryFn: fetchDirections });
+  const { data: subjects, isLoading } = useQuery(adminQueryOptions.subjects());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
   const directionMap = new Map((directions || []).map((d) => [d.id, d.name]));
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -20,7 +19,7 @@ const SubjectsPage = () => {
     mutationFn: (vals: any) => createSubject(vals),
     onSuccess: async () => {
       message.success("Fan qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-subjects"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects });
     },
     onError: () => message.error("Fan qo'shishda xato"),
   });
@@ -67,7 +66,7 @@ const SubjectsPage = () => {
                 title="O'chirish?"
                 onConfirm={() =>
                   deleteSubject(s.id)
-                    .then(() => qc.invalidateQueries({ queryKey: ["admin-subjects"] }))
+                    .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects }))
                     .catch(() => message.error("O'chirishda xato"))
                 }
               >
@@ -104,7 +103,7 @@ const SubjectsPage = () => {
             await updateSubject(editItem.id, vals);
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-subjects"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

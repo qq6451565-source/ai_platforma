@@ -9,6 +9,7 @@ describe("adminQueryOptions", () => {
     expect(adminQueryOptions.students().queryKey).toEqual(ADMIN_QUERY_KEYS.students);
     expect(adminQueryOptions.subjects().queryKey).toEqual(ADMIN_QUERY_KEYS.subjects);
     expect(adminQueryOptions.materials().queryKey).toEqual(ADMIN_QUERY_KEYS.materials);
+    expect(adminQueryOptions.timetables().queryKey).toEqual(ADMIN_QUERY_KEYS.timetables);
   });
 
   it("builds lesson attendance query keys from lesson ids", () => {

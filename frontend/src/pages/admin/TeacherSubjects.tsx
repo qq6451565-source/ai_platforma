@@ -2,33 +2,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Button, List, message, Empty, Select, Popconfirm, Modal } from "antd";
 import { useState } from "react";
 import {
-  fetchTeacherSubjects,
   createTeacherSubject,
   deleteTeacherSubject,
   updateTeacherSubject,
-  fetchUsers,
-  fetchSubjectsAdmin,
-  fetchGroupsAdmin,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const TeacherSubjectsPage = () => {
   const qc = useQueryClient();
-  const { data: items, isLoading } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: teachers } = useQuery({
-    queryKey: ["admin-teachers"],
-    queryFn: () => fetchUsers("teacher"),
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
+  const { data: items, isLoading } = useQuery(adminQueryOptions.teacherSubjects());
+  const { data: teachers } = useQuery(adminQueryOptions.teachers());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm] = Form.useForm();
@@ -42,7 +28,7 @@ const TeacherSubjectsPage = () => {
     mutationFn: (vals: any) => createTeacherSubject(vals),
     onSuccess: async () => {
       message.success("Bog'lanish qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
     },
     onError: () => message.error("Xatolik"),
   });
@@ -102,7 +88,7 @@ const TeacherSubjectsPage = () => {
                 title="O'chirish?"
                 onConfirm={() =>
                   deleteTeacherSubject(it.id)
-                    .then(() => qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] }))
+                    .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects }))
                     .catch(() => message.error("O'chirishda xato"))
                 }
               >
@@ -133,7 +119,7 @@ const TeacherSubjectsPage = () => {
             await updateTeacherSubject(editItem.id, vals);
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

@@ -16,41 +16,23 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import {
-  fetchTimetablesAdmin,
   createTimetableAdmin,
   updateTimetableAdmin,
   deleteTimetableAdmin,
-  fetchLessonSlotsAdmin,
   createLessonSlotAdmin,
   updateLessonSlotAdmin,
   deleteLessonSlotAdmin,
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
-  fetchUsers,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminSchedulePage = () => {
   const qc = useQueryClient();
-  const { data: timetables, isLoading: ttLoading } = useQuery({
-    queryKey: ["admin-timetables"],
-    queryFn: fetchTimetablesAdmin,
-  });
-  const { data: slots, isLoading: slotLoading } = useQuery({
-    queryKey: ["admin-lesson-slots"],
-    queryFn: fetchLessonSlotsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: teachers } = useQuery({
-    queryKey: ["admin-teachers"],
-    queryFn: () => fetchUsers("teacher"),
-  });
+  const { data: timetables, isLoading: ttLoading } = useQuery(adminQueryOptions.timetables());
+  const { data: slots, isLoading: slotLoading } = useQuery(adminQueryOptions.lessonSlots());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: teachers } = useQuery(adminQueryOptions.teachers());
 
   const [editTimetable, setEditTimetable] = useState<any>(null);
   const [editSlot, setEditSlot] = useState<any>(null);
@@ -63,7 +45,7 @@ const AdminSchedulePage = () => {
     mutationFn: (vals: any) => createTimetableAdmin(vals),
     onSuccess: async () => {
       message.success("Jadval qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-timetables"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables });
     },
     onError: () => message.error("Jadval qo'shishda xato"),
   });
@@ -81,7 +63,7 @@ const AdminSchedulePage = () => {
       }),
     onSuccess: async () => {
       message.success("Dars oynasi qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-lesson-slots"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots });
     },
     onError: () => message.error("Dars oynasi qo'shishda xato"),
   });
@@ -134,7 +116,7 @@ const AdminSchedulePage = () => {
                         >
                           Tahrirlash
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteTimetableAdmin(t.id).then(() => qc.invalidateQueries({ queryKey: ["admin-timetables"] }))}>
+                        <Popconfirm title="O'chirish?" onConfirm={() => deleteTimetableAdmin(t.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables }))}>
                           <Button danger type="link">O'chirish</Button>
                         </Popconfirm>,
                       ]} 
@@ -225,7 +207,7 @@ const AdminSchedulePage = () => {
                         >
                           Tahrirlash
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteLessonSlotAdmin(s.id).then(() => qc.invalidateQueries({ queryKey: ["admin-lesson-slots"] }))}>
+                        <Popconfirm title="O'chirish?" onConfirm={() => deleteLessonSlotAdmin(s.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots }))}>
                           <Button danger type="link">O'chirish</Button>
                         </Popconfirm>,
                       ]}
@@ -253,7 +235,7 @@ const AdminSchedulePage = () => {
             await updateTimetableAdmin(editTimetable.id, vals);
             message.success("Yangilandi");
             setEditTimetable(null);
-            await qc.invalidateQueries({ queryKey: ["admin-timetables"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {
@@ -292,7 +274,7 @@ const AdminSchedulePage = () => {
             });
             message.success("Yangilandi");
             setEditSlot(null);
-            await qc.invalidateQueries({ queryKey: ["admin-lesson-slots"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

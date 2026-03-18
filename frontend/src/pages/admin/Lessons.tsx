@@ -3,33 +3,19 @@ import { useState } from "react";
 import { Card, Form, Button, message, DatePicker, Modal, Select, List, Space } from "antd";
 import dayjs from "dayjs";
 import {
-  fetchLessonsAdmin,
   createLessonAdmin,
   updateLessonAdmin,
   deleteLessonAdmin,
-  fetchTeacherSubjects,
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminLessonsPage = () => {
   const qc = useQueryClient();
-  const { data: lessons, isLoading } = useQuery({
-    queryKey: ["admin-lessons"],
-    queryFn: fetchLessonsAdmin,
-  });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
+  const { data: lessons, isLoading } = useQuery(adminQueryOptions.lessons());
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
 
   const [createForm] = Form.useForm();
   const [createOpen, setCreateOpen] = useState(false);
@@ -89,7 +75,7 @@ const AdminLessonsPage = () => {
       createForm.resetFields();
       setCreateTeacherSubject(null);
       setCreateOpen(false);
-      await qc.invalidateQueries({ queryKey: ["admin-lessons"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
     },
     onError: () => message.error("Dars qo'shishda xato"),
   });
@@ -164,7 +150,7 @@ const AdminLessonsPage = () => {
             setEditTeacherSubject(null);
             setEditItem(null);
           }
-          await qc.invalidateQueries({ queryKey: ["admin-lessons"] });
+          await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
         } catch {
           message.error("O'chirishda xato");
         }
@@ -190,7 +176,7 @@ const AdminLessonsPage = () => {
       setEditOpen(false);
       setEditTeacherSubject(null);
       setEditItem(null);
-      await qc.invalidateQueries({ queryKey: ["admin-lessons"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
     } catch (err: any) {
       if (!err?.errorFields) message.error("Xatolik");
     } finally {

@@ -10,6 +10,8 @@ export const ADMIN_QUERY_KEYS = {
   groups: ["admin-groups"] as const,
   subjects: ["admin-subjects"] as const,
   lessons: ["admin-lessons"] as const,
+  timetables: ["admin-timetables"] as const,
+  lessonSlots: ["admin-lesson-slots"] as const,
   studentProfiles: ["admin-student-profiles"] as const,
   teacherSubjects: ["admin-teacher-subjects"] as const,
   passports: ["admin-passports"] as const,
