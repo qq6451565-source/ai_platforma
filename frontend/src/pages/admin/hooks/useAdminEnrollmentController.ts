@@ -401,3 +401,5 @@ export const useAdminEnrollmentController = () => {
     updating: updateMutation.isPending,
   };
 };
+
+export type AdminEnrollmentController = ReturnType<typeof useAdminEnrollmentController>;

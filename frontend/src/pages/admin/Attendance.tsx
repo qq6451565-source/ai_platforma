@@ -1,12 +1,10 @@
-import { Button, Card, Empty, Input, Modal, Select, Space, Table, Tag, Typography } from "antd";
+import { Button, Card, Empty, Input, Select, Space, Table, Tag, Typography } from "antd";
 
-import type { AttendanceOverrideLog } from "../../api/attendance";
+import AdminAttendanceDetailsModal from "./components/AdminAttendanceDetailsModal";
+import AdminAttendanceHistoryModal from "./components/AdminAttendanceHistoryModal";
+import AdminAttendanceOverrideModal from "./components/AdminAttendanceOverrideModal";
 import { useAdminAttendanceController } from "./hooks/useAdminAttendanceController";
-import {
-  formatAttendanceRatio,
-  type AbsentLesson,
-  type StudentRow,
-} from "./utils/adminAttendance";
+import { type StudentRow } from "./utils/adminAttendance";
 
 const AdminAttendancePage = () => {
   const controller = useAdminAttendanceController();
@@ -110,172 +108,9 @@ const AdminAttendancePage = () => {
           )}
         </>
       )}
-
-      <Modal
-        title="Davomat tafsilotlari"
-        open={!!controller.selectedStudent}
-        onCancel={controller.closeStudentDetails}
-        footer={null}
-      >
-        {controller.selectedStudent && controller.selectedStudent.absentLessons.length === 0 ? (
-          <Empty description="Qoldirilgan dars yo'q" />
-        ) : (
-          <Table
-            rowKey={(row) => `${row.lessonId}-${row.status}`}
-            pagination={false}
-            dataSource={controller.selectedStudent?.absentLessons || []}
-            columns={[
-              {
-                title: "Dars",
-                dataIndex: "topic",
-                key: "topic",
-              },
-              {
-                title: "Fan/Guruh",
-                key: "subject",
-                render: (_: unknown, row: AbsentLesson) => `${row.subject} / ${row.group}`,
-              },
-              {
-                title: "Vaqt",
-                dataIndex: "startTime",
-                key: "startTime",
-                render: (value: string | undefined) => (value ? new Date(value).toLocaleString() : "-"),
-              },
-              {
-                title: "Holat",
-                key: "status",
-                render: (_: unknown, row: AbsentLesson) => (
-                  <Select
-                    value={row.status}
-                    style={{ width: 110 }}
-                    onChange={(value) => {
-                      if (!controller.selectedStudent) return;
-                      controller.openOverrideModal({
-                        lesson: row.lessonId,
-                        student: controller.selectedStudent.studentId,
-                        status: value,
-                        studentName: controller.selectedStudent.studentName,
-                      });
-                    }}
-                    options={[
-                      { value: "present", label: "Bor" },
-                      { value: "absent", label: "Yoq" },
-                    ]}
-                  />
-                ),
-              },
-              {
-                title: "Final",
-                key: "finalized",
-                render: (_: unknown, row: AbsentLesson) => (
-                  <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? "Yakunlangan" : "Jarayonda"}</Tag>
-                ),
-              },
-              {
-                title: "Override",
-                key: "override",
-                render: (_: unknown, row: AbsentLesson) =>
-                  row.manualOverride ? (
-                    <Tag
-                      color="blue"
-                      title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
-                        row.overriddenAt ? ` | ${new Date(row.overriddenAt).toLocaleString()}` : ""
-                      }`}
-                      style={{ cursor: "pointer" }}
-                      onClick={() => {
-                        if (!controller.selectedStudent) return;
-                        controller.openHistory({
-                          lesson: row.lessonId,
-                          student: controller.selectedStudent.studentId,
-                          studentName: controller.selectedStudent.studentName,
-                        });
-                      }}
-                    >
-                      Manual
-                    </Tag>
-                  ) : (
-                    "-"
-                  ),
-              },
-              {
-                title: "Qatnashuv",
-                key: "joinedRatio",
-                render: (_: unknown, row: AbsentLesson) => formatAttendanceRatio(row.joinedRatio),
-              },
-              {
-                title: "Face ratio",
-                key: "faceVerifiedRatio",
-                render: (_: unknown, row: AbsentLesson) => formatAttendanceRatio(row.faceVerifiedRatio),
-              },
-            ]}
-          />
-        )}
-      </Modal>
-
-      <Modal
-        title="Davomat override"
-        open={!!controller.overrideDraft}
-        onCancel={controller.closeOverrideModal}
-        onOk={controller.submitOverride}
-        okText="Saqlash"
-        confirmLoading={controller.overrideSaving}
-      >
-        <Typography.Paragraph style={{ marginBottom: 12 }}>
-          {controller.overrideDraft?.studentName} uchun davomatni{" "}
-          <strong>{controller.overrideDraft?.status === "present" ? "Bor" : "Yoq"}</strong> deb belgilaysiz.
-        </Typography.Paragraph>
-        <Input.TextArea
-          rows={4}
-          value={controller.overrideReason}
-          onChange={(event) => controller.setOverrideReason(event.target.value)}
-          placeholder="Override sababi"
-          maxLength={500}
-        />
-      </Modal>
-
-      <Modal
-        title={`Override tarixi${controller.historyTarget ? `: ${controller.historyTarget.studentName}` : ""}`}
-        open={!!controller.historyTarget}
-        onCancel={controller.closeHistory}
-        footer={null}
-        width={760}
-      >
-        {controller.loadingOverrideHistory ? (
-          <Empty description="Yuklanmoqda..." />
-        ) : !controller.overrideHistory.length ? (
-          <Empty description="Override tarixi yo'q" />
-        ) : (
-          <Table<AttendanceOverrideLog>
-            rowKey="id"
-            pagination={false}
-            dataSource={controller.overrideHistory}
-            columns={[
-              {
-                title: "Vaqt",
-                dataIndex: "created_at",
-                key: "created_at",
-                render: (value: string | undefined) => (value ? new Date(value).toLocaleString() : "-"),
-              },
-              {
-                title: "Kim",
-                dataIndex: "changed_by_name",
-                key: "changed_by_name",
-                render: (value: string | null | undefined) => value || "-",
-              },
-              {
-                title: "Holat",
-                key: "status_change",
-                render: (_: unknown, row: AttendanceOverrideLog) => `${row.previous_status || "-"} -> ${row.new_status}`,
-              },
-              {
-                title: "Sabab",
-                dataIndex: "reason",
-                key: "reason",
-              },
-            ]}
-          />
-        )}
-      </Modal>
+      <AdminAttendanceDetailsModal controller={controller} />
+      <AdminAttendanceOverrideModal controller={controller} />
+      <AdminAttendanceHistoryModal controller={controller} />
     </Card>
   );
 };

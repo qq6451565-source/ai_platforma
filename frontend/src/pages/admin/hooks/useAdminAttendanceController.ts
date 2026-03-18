@@ -245,3 +245,5 @@ export const useAdminAttendanceController = () => {
     submitOverride,
   };
 };
+
+export type AdminAttendanceController = ReturnType<typeof useAdminAttendanceController>;
