@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Card,
@@ -10,187 +8,15 @@ import {
   Statistic,
   Table,
   Tag,
-  message,
 } from "antd";
-import { useLocation, useNavigate } from "react-router-dom";
 
-import {
-  AdminUser,
-  TeacherSubject,
-  assignTeacherWorkload,
-  deleteTeacherSubject,
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
-  fetchTeacherSubjects,
-  fetchUsers,
-  updateTeacherSubject,
-} from "../../api/admin";
-import {
-  buildAssignmentsByTeacher,
-  buildGroupEntityMap,
-  buildSubjectEntityMap,
-  filterTeachersByWorkload,
-  getTeacherWorkloadStats,
-} from "./utils/adminRegistry";
+import { AdminUser } from "../../api/admin";
 import AdminTeacherWorkloadDrawer from "./components/AdminTeacherWorkloadDrawer";
 import AdminTeacherWorkloadModal from "./components/AdminTeacherWorkloadModal";
-import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
+import { useTeacherWorkloadController } from "./hooks/useTeacherWorkloadController";
 
 const TeacherWorkloadPage = () => {
-  const qc = useQueryClient();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedTeacher, setSelectedTeacher] = useState<AdminUser | null>(null);
-  const [editingAssignment, setEditingAssignment] = useState<TeacherSubject | null>(null);
-  const [form] = Form.useForm();
-
-  const { data: teachers, isLoading } = useQuery({
-    queryKey: ["admin-users", "teacher-workload"],
-    queryFn: () => fetchUsers("teacher"),
-  });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-
-  const requestedUserId = useMemo(() => getRequestedUserId(location.search), [location.search]);
-
-  const saveMutation = useMutation({
-    mutationFn: ({
-      userId,
-      payload,
-      assignmentId,
-    }: {
-      userId: number;
-      payload: {
-        subject_id?: number;
-        group_ids?: number[];
-        subject?: number;
-        groups?: number[];
-      };
-      assignmentId?: number | null;
-    }) => {
-      if (assignmentId) {
-        return updateTeacherSubject(assignmentId, {
-          teacher: userId,
-          subject: payload.subject,
-          groups: payload.groups || [],
-        });
-      }
-      return assignTeacherWorkload(userId, {
-        subject_id: payload.subject_id as number,
-        group_ids: payload.group_ids || [],
-      });
-    },
-    onSuccess: async () => {
-      message.success("Teacher workload saqlandi");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "teacher-workload"] }),
-      ]);
-      setModalOpen(false);
-      setEditingAssignment(null);
-      form.resetFields();
-    },
-    onError: (error: any) => {
-      const detail =
-        error?.response?.data?.groups?.[0] ||
-        error?.response?.data?.group_ids?.[0] ||
-        error?.response?.data?.non_field_errors?.[0] ||
-        error?.response?.data?.detail ||
-        "Teacher workloadni saqlashda xato";
-      message.error(detail);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteTeacherSubject(id),
-    onSuccess: async () => {
-      message.success("Biriktirish o'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] });
-    },
-    onError: () => message.error("Biriktirishni o'chirishda xato"),
-  });
-
-  const subjectMap = useMemo(() => buildSubjectEntityMap(subjects || []), [subjects]);
-  const groupMap = useMemo(() => buildGroupEntityMap(groups || []), [groups]);
-  const assignmentsByTeacher = useMemo(
-    () => buildAssignmentsByTeacher(teacherSubjects || []),
-    [teacherSubjects],
-  );
-
-  const filteredTeachers = useMemo(
-    () =>
-      filterTeachersByWorkload({
-        assignmentsByTeacher,
-        groupMap,
-        search,
-        subjectMap,
-        teachers: teachers || [],
-      }),
-    [assignmentsByTeacher, groupMap, search, subjectMap, teachers],
-  );
-
-  const stats = useMemo(
-    () => getTeacherWorkloadStats(teachers || [], assignmentsByTeacher, teacherSubjects || []),
-    [assignmentsByTeacher, teacherSubjects, teachers],
-  );
-
-  const openDrawer = (teacher: AdminUser) => {
-    setSelectedTeacher(teacher);
-    setDrawerOpen(true);
-  };
-
-  useEffect(() => {
-    if (!requestedUserId || !teachers?.length || drawerOpen) return;
-    const matchedTeacher = teachers.find((teacher) => teacher.id === requestedUserId);
-    if (matchedTeacher) {
-      openDrawer(matchedTeacher);
-      return;
-    }
-    navigate(
-      { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
-      { replace: true },
-    );
-  }, [drawerOpen, location.pathname, location.search, navigate, requestedUserId, teachers]);
-
-  const openCreateModal = (teacher: AdminUser) => {
-    setSelectedTeacher(teacher);
-    setEditingAssignment(null);
-    form.resetFields();
-    setModalOpen(true);
-  };
-
-  const openEditModal = (teacher: AdminUser, assignment: TeacherSubject) => {
-    setSelectedTeacher(teacher);
-    setEditingAssignment(assignment);
-    form.setFieldsValue({
-      subject: assignment.subject,
-      groups: assignment.groups || [],
-      subject_id: assignment.subject,
-      group_ids: assignment.groups || [],
-    });
-    setModalOpen(true);
-  };
-
-  const selectedSubjectId = Form.useWatch(editingAssignment ? "subject" : "subject_id", form);
-  const availableGroups = useMemo(() => {
-    if (!selectedSubjectId) return groups || [];
-    const subject = subjectMap.get(selectedSubjectId);
-    if (!subject) return groups || [];
-    return (groups || []).filter((group) => subject.directions.includes(group.direction || 0));
-  }, [groups, selectedSubjectId, subjectMap]);
+  const controller = useTeacherWorkloadController();
 
   const columns = [
     {
@@ -209,7 +35,7 @@ const TeacherWorkloadPage = () => {
       title: "Workload",
       key: "workload",
       render: (_: unknown, teacher: AdminUser) => {
-        const items = assignmentsByTeacher.get(teacher.id) || [];
+        const items = controller.assignmentsByTeacher.get(teacher.id) || [];
         if (!items.length) {
           return <Tag color="gold">Fan biriktirilmagan</Tag>;
         }
@@ -217,7 +43,7 @@ const TeacherWorkloadPage = () => {
           <Space wrap>
             {items.map((item) => (
               <Tag key={item.id} color="blue">
-                {subjectMap.get(item.subject)?.name || `Fan #${item.subject}`}
+                {controller.subjectMap.get(item.subject)?.name || `Fan #${item.subject}`}
               </Tag>
             ))}
           </Space>
@@ -229,10 +55,10 @@ const TeacherWorkloadPage = () => {
       key: "actions",
       render: (_: unknown, teacher: AdminUser) => (
         <Space>
-          <Button size="small" onClick={() => openDrawer(teacher)}>
+          <Button size="small" onClick={() => controller.openDrawer(teacher)}>
             Ko'rish
           </Button>
-          <Button size="small" type="primary" onClick={() => openCreateModal(teacher)}>
+          <Button size="small" type="primary" onClick={() => controller.openCreateModal(teacher)}>
             Fan biriktirish
           </Button>
         </Space>
@@ -244,25 +70,25 @@ const TeacherWorkloadPage = () => {
     <Card title="Teacher Workload">
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
         <Space size="large" wrap>
-          <Statistic title="O'qituvchilar" value={stats.total} />
-          <Statistic title="Workload bor" value={stats.withWorkload} />
-          <Statistic title="Workload yo'q" value={stats.withoutWorkload} />
-          <Statistic title="Jami mapping" value={stats.mappings} />
+          <Statistic title="O'qituvchilar" value={controller.stats.total} />
+          <Statistic title="Workload bor" value={controller.stats.withWorkload} />
+          <Statistic title="Workload yo'q" value={controller.stats.withoutWorkload} />
+          <Statistic title="Jami mapping" value={controller.stats.mappings} />
         </Space>
 
         <Input
           placeholder="O'qituvchi yoki fan bo'yicha qidirish"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          value={controller.search}
+          onChange={(event) => controller.setSearch(event.target.value)}
           style={{ maxWidth: 320 }}
         />
 
-        {filteredTeachers.length ? (
+        {controller.filteredTeachers.length ? (
           <Table
             rowKey="id"
-            loading={isLoading}
+            loading={controller.isLoading}
             columns={columns}
-            dataSource={filteredTeachers}
+            dataSource={controller.filteredTeachers}
             pagination={{ pageSize: 10 }}
           />
         ) : (
@@ -271,53 +97,32 @@ const TeacherWorkloadPage = () => {
       </Space>
 
       <AdminTeacherWorkloadDrawer
-        assignments={selectedTeacher ? assignmentsByTeacher.get(selectedTeacher.id) || [] : []}
-        deleteLoading={deleteMutation.isPending}
-        groupMap={groupMap}
-        open={drawerOpen}
-        onClose={() => {
-          navigate(
-            { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
-            { replace: true },
-          );
-          setDrawerOpen(false);
-          setSelectedTeacher(null);
-        }}
-        onCreate={openCreateModal}
-        onDelete={(assignmentId) => deleteMutation.mutate(assignmentId)}
-        onEdit={openEditModal}
-        selectedTeacher={selectedTeacher}
-        subjectMap={subjectMap}
+        assignments={
+          controller.selectedTeacher
+            ? controller.assignmentsByTeacher.get(controller.selectedTeacher.id) || []
+            : []
+        }
+        deleteLoading={controller.deletePending}
+        groupMap={controller.groupMap}
+        open={controller.drawerOpen}
+        onClose={controller.closeDrawer}
+        onCreate={controller.openCreateModal}
+        onDelete={controller.deleteAssignment}
+        onEdit={controller.openEditModal}
+        selectedTeacher={controller.selectedTeacher}
+        subjectMap={controller.subjectMap}
       />
 
       <AdminTeacherWorkloadModal
-        availableGroups={availableGroups}
-        editingAssignment={editingAssignment}
-        form={form}
-        loading={saveMutation.isPending}
-        open={modalOpen}
-        onCancel={() => {
-          setModalOpen(false);
-          setEditingAssignment(null);
-          form.resetFields();
-        }}
-        onSubmit={(values) => {
-          if (!selectedTeacher) return;
-          if (editingAssignment) {
-            saveMutation.mutate({
-              userId: selectedTeacher.id,
-              assignmentId: editingAssignment.id,
-              payload: values,
-            });
-            return;
-          }
-          saveMutation.mutate({
-            userId: selectedTeacher.id,
-            payload: values,
-          });
-        }}
-        selectedTeacher={selectedTeacher}
-        subjects={subjects || []}
+        availableGroups={controller.availableGroups}
+        editingAssignment={controller.editingAssignment}
+        form={controller.form}
+        loading={controller.savePending}
+        open={controller.modalOpen}
+        onCancel={controller.closeModal}
+        onSubmit={controller.submitWorkload}
+        selectedTeacher={controller.selectedTeacher}
+        subjects={controller.subjects}
       />
     </Card>
   );
