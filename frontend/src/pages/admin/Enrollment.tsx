@@ -1,9 +1,9 @@
-import { ReactNode, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import {
   Alert,
   Button,
   Card,
+  Col,
   Descriptions,
   Drawer,
   Empty,
@@ -14,7 +14,6 @@ import {
   Modal,
   Popconfirm,
   Row,
-  Col,
   Select,
   Skeleton,
   Space,
@@ -22,100 +21,26 @@ import {
   Tag,
   Tooltip,
   Typography,
-  message,
 } from "antd";
-import dayjs from "dayjs";
-import {
-  approveEnrollment,
+
+import type {
   AuditLog,
-  deleteEnrollmentApplicant,
-  EnrollmentAiSummary,
   EnrollmentDetailItem,
   EnrollmentItem,
   EnrollmentVerification,
-  reopenEnrollment,
-  rejectEnrollment,
-  reverifyEnrollment,
-  updateEnrollmentApplicant,
 } from "../../api/admin";
-import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { useAdminEnrollmentController } from "./hooks/useAdminEnrollmentController";
 import {
-  getEnrollmentInvalidationKeys,
-  invalidateAdminQueries,
-} from "./utils/adminWorkflowMutations";
+  ENROLLMENT_AI_REASON_LABELS,
+  ENROLLMENT_AUDIT_ACTION_LABELS,
+  formatEnrollmentConfidence,
+  formatEnrollmentDateTime,
+  getEnrollmentAiAlertType,
+  getEnrollmentAuditTagColor,
+  getEnrollmentStatusMeta,
+} from "./utils/adminEnrollment";
 
 const { Text, Title } = Typography;
-
-const AI_REASON_LABELS: Record<string, string> = {
-  timeout: "Timeout",
-  gateway_unreachable: "Gateway ulanmayapti",
-  connection_error: "Ulanish xatosi",
-  dns_error: "DNS xatosi",
-  ssl_error: "SSL xatosi",
-  auth_error: "API kalit/ruxsat xatosi",
-  rate_limited: "Rate limit",
-  gateway_error: "Gateway ichki xatosi",
-};
-
-const AUDIT_ACTION_LABELS: Record<string, string> = {
-  enrollment_approved: "Ariza tasdiqlandi",
-  enrollment_override_approved: "Qo'lda tasdiqlab approve qilindi",
-  enrollment_rejected: "Ariza rad etildi",
-  enrollment_reopened: "Ariza qayta ochildi",
-  enrollment_reverified: "AI qayta tekshirildi",
-};
-const ACTION_LABELS = {
-  can_edit: "Tahrirlash",
-  can_delete: "O'chirish",
-  can_approve: "Tasdiqlash",
-  can_reject: "Rad etish",
-  can_reverify: "AI qayta tekshir",
-} as const;
-
-const formatDateTime = (value?: string | null) => (value ? dayjs(value).format("YYYY-MM-DD HH:mm") : "-");
-const formatConfidence = (value?: number | null) => (typeof value === "number" ? value.toFixed(3) : "-");
-const fallbackAllowedActions = (status?: string) => ({
-  can_edit: status !== "approved" && status !== "rejected",
-  can_delete: status !== "approved" && status !== "rejected",
-  can_approve: status === "pending" || status === "verified",
-  can_reject: status === "pending" || status === "verified",
-  can_reopen: status === "rejected",
-  can_reverify: status === "pending" || status === "verified",
-});
-
-const fallbackActionReasons = (status?: string) => ({
-  can_edit: status === "approved" ? "Tasdiqlangan ariza final holatda va tahrirlanmaydi." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
-  can_delete: status === "approved" || status === "rejected" ? "Final arizalar audit uchun saqlanadi." : null,
-  can_approve: status === "approved" ? "Ariza allaqachon tasdiqlangan." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
-  can_reject: status === "approved" ? "Tasdiqlangan arizani rad etib bo'lmaydi." : status === "rejected" ? "Ariza allaqachon rad etilgan." : null,
-  can_reopen: status === "rejected" ? null : "Faqat rad etilgan ariza qayta ochiladi.",
-  can_reverify: status === "approved" ? "Tasdiqlangan ariza qayta tekshirilmaydi." : status === "rejected" ? "Rad etilgan ariza avval qayta ochilishi kerak." : null,
-});
-
-const getAllowedActions = (item?: EnrollmentItem | EnrollmentDetailItem | null) =>
-  item?.allowed_actions || fallbackAllowedActions(item?.status);
-
-const getActionReasons = (item?: EnrollmentItem | EnrollmentDetailItem | null) =>
-  item?.action_reasons || fallbackActionReasons(item?.status);
-
-const getActionReason = (
-  item: EnrollmentItem | EnrollmentDetailItem,
-  key: keyof ReturnType<typeof fallbackAllowedActions>,
-  fallback: string,
-) => getActionReasons(item)?.[key] || fallback;
-
-const getBlockedActionItems = (item?: EnrollmentItem | EnrollmentDetailItem | null) => {
-  if (!item) return [];
-  const actions = getAllowedActions(item);
-  const reasons = getActionReasons(item);
-  return (Object.keys(ACTION_LABELS) as Array<keyof typeof ACTION_LABELS>)
-    .filter((key) => !actions[key] && Boolean(reasons[key]))
-    .map((key) => ({
-      key,
-      label: ACTION_LABELS[key],
-      reason: reasons[key] as string,
-    }));
-};
 
 const withTooltip = (reason: string | null | undefined, node: ReactNode) =>
   reason ? (
@@ -125,20 +50,6 @@ const withTooltip = (reason: string | null | undefined, node: ReactNode) =>
   ) : (
     node
   );
-
-const statusTag = (status?: string) => {
-  if (status === "approved") return <Tag color="green">Tasdiqlangan</Tag>;
-  if (status === "rejected") return <Tag color="red">Rad etilgan</Tag>;
-  if (status === "verified") return <Tag color="blue">AI tekshirilgan</Tag>;
-  return <Tag color="default">Pending</Tag>;
-};
-
-const aiAlertType = (summary: EnrollmentAiSummary): "success" | "info" | "warning" | "error" => {
-  if (summary.status === "verified") return "success";
-  if (summary.status === "unavailable") return "warning";
-  if (summary.status === "not_verified") return "error";
-  return "info";
-};
 
 const renderDocumentPreview = (title: string, src?: string) => (
   <Card
@@ -165,13 +76,17 @@ const renderVerificationCard = (verification: EnrollmentVerification, index: num
     <Space direction="vertical" size={10} style={{ width: "100%" }}>
       <Space wrap>
         <Tag color={verification.color}>{verification.label}</Tag>
-        <Text>Ishonch: {formatConfidence(verification.confidence)}</Text>
-        <Text type="secondary">{formatDateTime(verification.checked_at || verification.created_at)}</Text>
+        <Text>Ishonch: {formatEnrollmentConfidence(verification.confidence)}</Text>
+        <Text type="secondary">
+          {formatEnrollmentDateTime(verification.checked_at || verification.created_at)}
+        </Text>
         {verification.face_embedding_ready ? <Tag color="cyan">Face baza saqlandi</Tag> : null}
       </Space>
       <Text>{verification.message}</Text>
       {verification.reason ? (
-        <Text type="secondary">Sabab: {AI_REASON_LABELS[verification.reason] || verification.reason}</Text>
+        <Text type="secondary">
+          Sabab: {ENROLLMENT_AI_REASON_LABELS[verification.reason] || verification.reason}
+        </Text>
       ) : null}
       {verification.event_summary?.length ? (
         <div style={{ display: "grid", gap: 6 }}>
@@ -190,21 +105,11 @@ const renderAuditCard = (entry: AuditLog, index: number) => (
   <Card key={`${entry.id}-${index}`} size="small">
     <Space direction="vertical" size={8} style={{ width: "100%" }}>
       <Space wrap>
-        <Tag
-          color={
-            entry.action === "enrollment_override_approved"
-              ? "gold"
-              : entry.action === "enrollment_rejected"
-                ? "red"
-                : entry.action === "enrollment_reopened"
-                  ? "blue"
-                  : "cyan"
-          }
-        >
-          {AUDIT_ACTION_LABELS[entry.action] || entry.action}
+        <Tag color={getEnrollmentAuditTagColor(entry.action)}>
+          {ENROLLMENT_AUDIT_ACTION_LABELS[entry.action] || entry.action}
         </Tag>
         <Text>{entry.user_username || "-"}</Text>
-        <Text type="secondary">{formatDateTime(entry.created_at)}</Text>
+        <Text type="secondary">{formatEnrollmentDateTime(entry.created_at)}</Text>
       </Space>
       {entry.extra?.manual_override_reason ? <Text>Override sababi: {entry.extra.manual_override_reason}</Text> : null}
       {entry.extra?.reject_reason ? <Text>Rad etish sababi: {entry.extra.reject_reason}</Text> : null}
@@ -220,291 +125,7 @@ const renderAuditCard = (entry: AuditLog, index: number) => (
 );
 
 const EnrollmentPage = () => {
-  const qc = useQueryClient();
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [approveOpen, setApproveOpen] = useState(false);
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [reopenOpen, setReopenOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [selectedApplicant, setSelectedApplicant] = useState<EnrollmentItem | EnrollmentDetailItem | null>(null);
-  const [detailApplicantId, setDetailApplicantId] = useState<number | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [approveForm] = Form.useForm();
-  const [rejectForm] = Form.useForm();
-  const [reopenForm] = Form.useForm();
-  const [editForm] = Form.useForm();
-
-  const { data, isLoading } = useQuery(adminQueryOptions.enrollmentList());
-  const { data: groups } = useQuery(adminQueryOptions.groups());
-  const { data: subjects } = useQuery(adminQueryOptions.subjects());
-  const { data: directions } = useQuery(adminQueryOptions.directions());
-  const { data: detailApplicant, isFetching: detailLoading } = useQuery({
-    ...adminQueryOptions.enrollmentDetail(detailApplicantId),
-    enabled: detailOpen && detailApplicantId !== null,
-  });
-  const { data: applicantAuditHistory, isFetching: applicantAuditLoading } = useQuery({
-    ...adminQueryOptions.enrollmentAudit(detailApplicantId),
-    enabled: detailOpen && detailApplicantId !== null,
-  });
-
-  const currentApplicant = (detailApplicant ?? selectedApplicant) as EnrollmentDetailItem | EnrollmentItem | null;
-
-  const directionMap = useMemo(() => {
-    const map = new Map<number, string>();
-    (directions || []).forEach((direction) => map.set(direction.id, direction.name));
-    return map;
-  }, [directions]);
-
-  const invalidateEnrollment = async (id?: number | null) => {
-    await invalidateAdminQueries(qc, getEnrollmentInvalidationKeys(id));
-  };
-
-  const closeDetail = () => {
-    setDetailOpen(false);
-    setDetailApplicantId(null);
-  };
-
-  const openDetails = (item: EnrollmentItem) => {
-    setSelectedApplicant(item);
-    setDetailApplicantId(item.id);
-    setDetailOpen(true);
-  };
-
-  const openApprove = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_approve) {
-      message.warning(getActionReason(item, "can_approve", "Bu ariza uchun tasdiqlash yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    approveForm.setFieldsValue({
-      role: "student",
-      group_id: undefined,
-      admission_year: new Date().getFullYear(),
-      subject_id: undefined,
-      group_ids: [],
-      manual_override_reason: undefined,
-    });
-    setApproveOpen(true);
-  };
-
-  const openReject = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_reject) {
-      message.warning(getActionReason(item, "can_reject", "Bu ariza uchun rad etish yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    rejectForm.setFieldsValue({
-      reject_reason: undefined,
-    });
-    setRejectOpen(true);
-  };
-
-  const openEdit = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_edit) {
-      message.warning(getActionReason(item, "can_edit", "Bu ariza uchun tahrirlash yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    editForm.setFieldsValue({
-      full_name: item.full_name || "",
-      phone: item.phone || "",
-      email: item.email || "",
-      direction_choice: item.direction_choice ?? undefined,
-    });
-    setEditOpen(true);
-  };
-
-  const openReopen = (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_reopen) {
-      message.warning(getActionReason(item, "can_reopen", "Bu ariza uchun qayta ochish yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    reopenForm.setFieldsValue({
-      reopen_reason: undefined,
-    });
-    setReopenOpen(true);
-  };
-
-  const { mutateAsync: approve, isPending: approving } = useMutation({
-    mutationFn: (payload: {
-      id: number;
-      role: "student" | "teacher";
-      group_id?: number;
-      subject_id?: number;
-      group_ids?: number[];
-      admission_year?: number;
-      manual_override_reason?: string;
-    }) => approveEnrollment(payload.id, payload),
-    onSuccess: async (_data, payload) => {
-      message.success("Ariza tasdiqlandi");
-      await invalidateEnrollment(payload.id);
-      setApproveOpen(false);
-      approveForm.resetFields();
-    },
-    onError: () => message.error("Tasdiqlashda xato"),
-  });
-
-  const { mutateAsync: reject, isPending: rejecting } = useMutation({
-    mutationFn: (payload: { id: number; reject_reason: string }) =>
-      rejectEnrollment(payload.id, { reject_reason: payload.reject_reason }),
-    onSuccess: async (_data, payload) => {
-      message.success("Ariza rad etildi");
-      await invalidateEnrollment(payload.id);
-      setRejectOpen(false);
-      rejectForm.resetFields();
-    },
-    onError: (error: any) => {
-      const detail =
-        error?.response?.data?.reject_reason?.[0] ||
-        error?.response?.data?.detail ||
-        error?.message ||
-        "Rad etishda xato";
-      message.error(detail);
-    },
-  });
-
-  const { mutateAsync: reopen, isPending: reopening } = useMutation({
-    mutationFn: (payload: { id: number; reopen_reason: string }) =>
-      reopenEnrollment(payload.id, { reopen_reason: payload.reopen_reason }),
-    onSuccess: async (_data, payload) => {
-      message.success("Ariza qayta ochildi");
-      await invalidateEnrollment(payload.id);
-      setReopenOpen(false);
-      reopenForm.resetFields();
-    },
-    onError: (error: any) => {
-      const detail =
-        error?.response?.data?.reopen_reason?.[0] ||
-        error?.response?.data?.detail ||
-        error?.message ||
-        "Qayta ochishda xato";
-      message.error(detail);
-    },
-  });
-
-  const { mutateAsync: updateApplicant, isPending: updating } = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { full_name?: string; phone?: string; email?: string; direction_choice?: number | null } }) =>
-      updateEnrollmentApplicant(id, data),
-    onSuccess: async (_data, payload) => {
-      message.success("Ariza yangilandi");
-      await invalidateEnrollment(payload.id);
-      setEditOpen(false);
-      editForm.resetFields();
-    },
-    onError: () => message.error("Tahrirlashda xato"),
-  });
-
-  const { mutateAsync: removeApplicant, isPending: deleting } = useMutation({
-    mutationFn: (id: number) => deleteEnrollmentApplicant(id),
-    onMutate: (id) => setDeleteId(id),
-    onSuccess: async (_data, id) => {
-      message.success("Ariza o'chirildi");
-      await invalidateEnrollment(id);
-      if (detailApplicantId === id) {
-        closeDetail();
-      }
-      if (selectedApplicant?.id === id) {
-        setSelectedApplicant(null);
-      }
-    },
-    onError: () => message.error("O'chirishda xato"),
-    onSettled: () => setDeleteId(null),
-  });
-
-  const { mutateAsync: reverify, isPending: reverifying } = useMutation({
-    mutationFn: (id: number) => reverifyEnrollment(id),
-    onSuccess: async (_data, id) => {
-      message.success("AI qayta tekshirildi");
-      await invalidateEnrollment(id);
-    },
-    onError: (error: any) => {
-      const detail =
-        error?.response?.data?.detail ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "AI tekshiruvda xato";
-      message.error(detail);
-    },
-  });
-
-  const onRejectSubmit = async (values: any) => {
-    if (!selectedApplicant) return;
-    await reject({
-      id: selectedApplicant.id,
-      reject_reason: values.reject_reason?.trim() || "",
-    });
-  };
-
-  const onReopenSubmit = async (values: any) => {
-    if (!selectedApplicant) return;
-    await reopen({
-      id: selectedApplicant.id,
-      reopen_reason: values.reopen_reason?.trim() || "",
-    });
-  };
-
-  const handleDelete = async (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_delete) {
-      message.warning(getActionReason(item, "can_delete", "Bu ariza uchun o'chirish yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    await removeApplicant(item.id);
-  };
-
-  const handleReverify = async (item: EnrollmentItem | EnrollmentDetailItem) => {
-    if (!getAllowedActions(item).can_reverify) {
-      message.warning(getActionReason(item, "can_reverify", "Bu ariza uchun AI qayta tekshiruvi yopilgan."));
-      return;
-    }
-    setSelectedApplicant(item);
-    await reverify(item.id);
-  };
-
-  const onApprove = async (values: any) => {
-    if (!selectedApplicant) return;
-    const role = values.role as "student" | "teacher";
-    if (role === "student") {
-      if (!values.group_id) {
-        message.warning("Guruh tanlang");
-        return;
-      }
-      await approve({
-        id: selectedApplicant.id,
-        role,
-        group_id: values.group_id,
-        admission_year: values.admission_year ?? new Date().getFullYear(),
-        manual_override_reason: values.manual_override_reason?.trim() || undefined,
-      });
-      return;
-    }
-
-    if (!values.subject_id) {
-      message.warning("Fan tanlang");
-      return;
-    }
-    await approve({
-      id: selectedApplicant.id,
-      role,
-      subject_id: values.subject_id,
-      group_ids: values.group_ids || [],
-      manual_override_reason: values.manual_override_reason?.trim() || undefined,
-    });
-  };
-
-  const onEditSubmit = async (values: any) => {
-    if (!selectedApplicant) return;
-    await updateApplicant({
-      id: selectedApplicant.id,
-      data: {
-        full_name: values.full_name?.trim() || selectedApplicant.full_name || "",
-        phone: values.phone || "",
-        email: values.email || "",
-        direction_choice: values.direction_choice ?? null,
-      },
-    });
-  };
+  const controller = useAdminEnrollmentController();
 
   const columns = [
     {
@@ -521,40 +142,44 @@ const EnrollmentPage = () => {
       title: "Yo'nalish",
       dataIndex: "direction_name",
       render: (_: unknown, row: EnrollmentItem) =>
-        row.direction_name || (row.direction_choice ? directionMap.get(row.direction_choice) || "-" : "-"),
+        row.direction_name ||
+        (row.direction_choice ? controller.directionMap.get(row.direction_choice) || "-" : "-"),
     },
     {
       title: "AI verdict",
       render: (_: unknown, row: EnrollmentItem) => (
         <Space direction="vertical" size={2}>
           <Tag color={row.ai_summary.color}>{row.ai_summary.label}</Tag>
-          <Text type="secondary">Ishonch: {formatConfidence(row.ai_summary.confidence)}</Text>
+          <Text type="secondary">Ishonch: {formatEnrollmentConfidence(row.ai_summary.confidence)}</Text>
         </Space>
       ),
     },
     {
       title: "Holat",
       dataIndex: "status",
-      render: (value: string) => statusTag(value),
+      render: (value: string) => {
+        const meta = getEnrollmentStatusMeta(value);
+        return <Tag color={meta.color}>{meta.label}</Tag>;
+      },
     },
     {
       title: "Yuborilgan",
       dataIndex: "created_at",
-      render: (value: string) => formatDateTime(value),
+      render: (value: string) => formatEnrollmentDateTime(value),
     },
     {
       title: "Amallar",
       render: (_: unknown, row: EnrollmentItem) => {
-        const actions = getAllowedActions(row);
-        const reasons = getActionReasons(row);
+        const actions = row.allowed_actions;
+        const reasons = row.action_reasons || {};
         return (
           <Space wrap>
-            <Button size="small" onClick={() => openDetails(row)}>
+            <Button size="small" onClick={() => controller.openDetails(row)}>
               Ko'rish
             </Button>
             {withTooltip(
               !actions.can_edit ? reasons.can_edit : null,
-              <Button size="small" disabled={!actions.can_edit} onClick={() => openEdit(row)}>
+              <Button size="small" disabled={!actions.can_edit} onClick={() => controller.openEdit(row)}>
                 Tahrirlash
               </Button>,
             )}
@@ -564,8 +189,8 @@ const EnrollmentPage = () => {
                 size="small"
                 type="primary"
                 disabled={!actions.can_approve}
-                loading={approving && selectedApplicant?.id === row.id}
-                onClick={() => openApprove(row)}
+                loading={controller.approving && controller.selectedApplicant?.id === row.id}
+                onClick={() => controller.openApprove(row)}
               >
                 Tasdiqlash
               </Button>,
@@ -576,8 +201,8 @@ const EnrollmentPage = () => {
                 size="small"
                 danger
                 disabled={!actions.can_reject}
-                loading={rejecting && selectedApplicant?.id === row.id}
-                onClick={() => openReject(row)}
+                loading={controller.rejecting && controller.selectedApplicant?.id === row.id}
+                onClick={() => controller.openReject(row)}
               >
                 Rad etish
               </Button>,
@@ -586,8 +211,8 @@ const EnrollmentPage = () => {
               <Button
                 size="small"
                 type="dashed"
-                loading={reopening && selectedApplicant?.id === row.id}
-                onClick={() => openReopen(row)}
+                loading={controller.reopening && controller.selectedApplicant?.id === row.id}
+                onClick={() => controller.openReopen(row)}
               >
                 Qayta ochish
               </Button>
@@ -597,10 +222,10 @@ const EnrollmentPage = () => {
                 title="Arizani o'chirishni xohlaysizmi?"
                 okText="Ha"
                 cancelText="Yo'q"
-                okButtonProps={{ loading: deleting && deleteId === row.id }}
-                onConfirm={() => handleDelete(row)}
+                okButtonProps={{ loading: controller.deletePending && controller.deleteId === row.id }}
+                onConfirm={() => controller.removeApplicant(row)}
               >
-                <Button size="small" danger disabled={deleting && deleteId === row.id}>
+                <Button size="small" danger disabled={controller.deletePending && controller.deleteId === row.id}>
                   O'chirish
                 </Button>
               </Popconfirm>
@@ -618,67 +243,53 @@ const EnrollmentPage = () => {
     },
   ];
 
-  const detailSummary = currentApplicant?.ai_summary;
-  const detailHistory = (currentApplicant as EnrollmentDetailItem | null)?.verification_history || [];
-  const decisionHistory = applicantAuditHistory || [];
-  const currentActions = getAllowedActions(currentApplicant);
-  const currentReasons = getActionReasons(currentApplicant);
-  const blockedActionItems = getBlockedActionItems(currentApplicant);
-
   return (
     <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
       <Table
         rowKey="id"
-        loading={isLoading}
-        dataSource={data || []}
+        loading={controller.isLoading}
+        dataSource={controller.applicants}
         pagination={{ pageSize: 10 }}
         locale={{ emptyText: <Empty description="Arizalar yo'q" /> }}
         columns={columns}
       />
 
       <Drawer
-        open={detailOpen}
+        open={controller.detailOpen}
         width={920}
         title="Ariza review"
-        onClose={closeDetail}
+        onClose={controller.closeDetail}
         extra={
-          currentApplicant ? (
+          controller.currentApplicant ? (
             <Space wrap>
               {withTooltip(
-                !currentActions.can_edit ? currentReasons.can_edit : null,
-                <Button
-                  disabled={!currentActions.can_edit}
-                  onClick={() => openEdit(currentApplicant)}
-                >
+                !controller.currentActions.can_edit ? controller.currentReasons.can_edit : null,
+                <Button disabled={!controller.currentActions.can_edit} onClick={() => controller.openEdit(controller.currentApplicant!)}>
                   Tahrirlash
                 </Button>,
               )}
               {withTooltip(
-                !currentActions.can_approve ? currentReasons.can_approve : null,
-                <Button
-                  type="primary"
-                  disabled={!currentActions.can_approve}
-                  onClick={() => openApprove(currentApplicant)}
-                >
+                !controller.currentActions.can_approve ? controller.currentReasons.can_approve : null,
+                <Button type="primary" disabled={!controller.currentActions.can_approve} onClick={() => controller.openApprove(controller.currentApplicant!)}>
                   Tasdiqlash
                 </Button>,
               )}
               {withTooltip(
-                !currentActions.can_reject ? currentReasons.can_reject : null,
+                !controller.currentActions.can_reject ? controller.currentReasons.can_reject : null,
                 <Button
                   danger
-                  disabled={!currentActions.can_reject}
-                  onClick={() => openReject(currentApplicant)}
-                  loading={rejecting && selectedApplicant?.id === currentApplicant.id}
+                  disabled={!controller.currentActions.can_reject}
+                  onClick={() => controller.openReject(controller.currentApplicant!)}
+                  loading={controller.rejecting && controller.selectedApplicant?.id === controller.currentApplicant.id}
                 >
                   Rad etish
                 </Button>,
               )}
-              {currentActions.can_reopen ? (
+              {controller.currentActions.can_reopen ? (
                 <Button
                   type="dashed"
-                  loading={reopening && selectedApplicant?.id === currentApplicant.id}
-                  onClick={() => openReopen(currentApplicant)}
+                  loading={controller.reopening && controller.selectedApplicant?.id === controller.currentApplicant.id}
+                  onClick={() => controller.openReopen(controller.currentApplicant!)}
                 >
                   Qayta ochish
                 </Button>
@@ -687,47 +298,53 @@ const EnrollmentPage = () => {
           ) : null
         }
       >
-        {detailLoading && !detailApplicant ? (
+        {controller.detailLoading && !controller.detailApplicant ? (
           <Skeleton active paragraph={{ rows: 12 }} />
-        ) : currentApplicant ? (
+        ) : controller.currentApplicant ? (
           <Space direction="vertical" size={16} style={{ width: "100%" }}>
             <Card size="small">
               <Space direction="vertical" size={10} style={{ width: "100%" }}>
                 <Space wrap align="center">
                   <Title level={4} style={{ margin: 0 }}>
-                    {currentApplicant.full_name || `Ariza #${currentApplicant.id}`}
+                    {controller.currentApplicant.full_name || `Ariza #${controller.currentApplicant.id}`}
                   </Title>
-                  {statusTag(currentApplicant.status)}
-                  {detailSummary ? <Tag color={detailSummary.color}>{detailSummary.label}</Tag> : null}
+                  {(() => {
+                    const meta = getEnrollmentStatusMeta(controller.currentApplicant?.status);
+                    return <Tag color={meta.color}>{meta.label}</Tag>;
+                  })()}
+                  {controller.detailSummary ? <Tag color={controller.detailSummary.color}>{controller.detailSummary.label}</Tag> : null}
                 </Space>
                 <Descriptions size="small" column={2}>
-                  <Descriptions.Item label="Telefon">{currentApplicant.phone || "-"}</Descriptions.Item>
-                  <Descriptions.Item label="Email">{currentApplicant.email || "-"}</Descriptions.Item>
+                  <Descriptions.Item label="Telefon">{controller.currentApplicant.phone || "-"}</Descriptions.Item>
+                  <Descriptions.Item label="Email">{controller.currentApplicant.email || "-"}</Descriptions.Item>
                   <Descriptions.Item label="Yo'nalish">
-                    {currentApplicant.direction_name ||
-                      (currentApplicant.direction_choice
-                        ? directionMap.get(currentApplicant.direction_choice) || currentApplicant.direction_choice
+                    {controller.currentApplicant.direction_name ||
+                      (controller.currentApplicant.direction_choice
+                        ? controller.directionMap.get(controller.currentApplicant.direction_choice) ||
+                          controller.currentApplicant.direction_choice
                         : "-")}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Yuborilgan">{formatDateTime(currentApplicant.created_at)}</Descriptions.Item>
-                  {"approved_at" in currentApplicant ? (
+                  <Descriptions.Item label="Yuborilgan">
+                    {formatEnrollmentDateTime(controller.currentApplicant.created_at)}
+                  </Descriptions.Item>
+                  {"approved_at" in controller.currentApplicant ? (
                     <Descriptions.Item label="Tasdiqlangan vaqt">
-                      {formatDateTime(currentApplicant.approved_at)}
+                      {formatEnrollmentDateTime(controller.currentApplicant.approved_at)}
                     </Descriptions.Item>
                   ) : null}
-                  {"approved_by_name" in currentApplicant ? (
+                  {"approved_by_name" in controller.currentApplicant ? (
                     <Descriptions.Item label="Tasdiqlagan admin">
-                      {currentApplicant.approved_by_name || "-"}
+                      {controller.currentApplicant.approved_by_name || "-"}
                     </Descriptions.Item>
                   ) : null}
                 </Descriptions>
               </Space>
             </Card>
 
-            {blockedActionItems.length ? (
+            {controller.blockedActionItems.length ? (
               <Card size="small" title="Amal cheklovlari">
                 <div style={{ display: "grid", gap: 10 }}>
-                  {blockedActionItems.map((item) => (
+                  {controller.blockedActionItems.map((item) => (
                     <div
                       key={item.key}
                       style={{
@@ -754,53 +371,53 @@ const EnrollmentPage = () => {
                 <Space direction="vertical" size={16} style={{ width: "100%" }}>
                   {renderDocumentPreview(
                     "Passport preview",
-                    (currentApplicant as EnrollmentDetailItem).documents?.passport_front,
+                    (controller.currentApplicant as EnrollmentDetailItem).documents?.passport_front,
                   )}
                   {renderDocumentPreview(
                     "Selfie preview",
-                    (currentApplicant as EnrollmentDetailItem).documents?.face_image,
+                    (controller.currentApplicant as EnrollmentDetailItem).documents?.face_image,
                   )}
                 </Space>
               </Col>
               <Col xs={24} md={12}>
                 <Card size="small" title="AI verdict" style={{ height: "100%" }}>
-                  {detailSummary ? (
+                  {controller.detailSummary ? (
                     <Space direction="vertical" size={12} style={{ width: "100%" }}>
                       <Space wrap>
-                        <Tag color={detailSummary.color}>{detailSummary.label}</Tag>
-                        {detailSummary.manual_review_required ? (
+                        <Tag color={controller.detailSummary.color}>{controller.detailSummary.label}</Tag>
+                        {controller.detailSummary.manual_review_required ? (
                           <Tag color="gold">Manual review kerak</Tag>
                         ) : (
                           <Tag color="green">Approve-ready</Tag>
                         )}
-                        {detailSummary.face_embedding_ready ? (
+                        {controller.detailSummary.face_embedding_ready ? (
                           <Tag color="cyan">Face baza tayyor</Tag>
                         ) : null}
                       </Space>
                       <Alert
-                        type={aiAlertType(detailSummary)}
+                        type={getEnrollmentAiAlertType(controller.detailSummary)}
                         showIcon
-                        message={detailSummary.message}
+                        message={controller.detailSummary.message}
                         description={
-                          detailSummary.reason
-                            ? `Sabab: ${AI_REASON_LABELS[detailSummary.reason] || detailSummary.reason}`
+                          controller.detailSummary.reason
+                            ? `Sabab: ${ENROLLMENT_AI_REASON_LABELS[controller.detailSummary.reason] || controller.detailSummary.reason}`
                             : undefined
                         }
                       />
                       <Descriptions size="small" column={1}>
                         <Descriptions.Item label="Ishonch">
-                          {formatConfidence(detailSummary.confidence)}
+                          {formatEnrollmentConfidence(controller.detailSummary.confidence)}
                         </Descriptions.Item>
                         <Descriptions.Item label="Threshold">
-                          {detailSummary.threshold ?? "-"}
+                          {controller.detailSummary.threshold ?? "-"}
                         </Descriptions.Item>
                         <Descriptions.Item label="Oxirgi tekshiruv">
-                          {formatDateTime(detailSummary.checked_at)}
+                          {formatEnrollmentDateTime(controller.detailSummary.checked_at)}
                         </Descriptions.Item>
                       </Descriptions>
-                      {detailSummary.event_summary?.length ? (
+                      {controller.detailSummary.event_summary?.length ? (
                         <div style={{ display: "grid", gap: 6 }}>
-                          {detailSummary.event_summary.map((line) => (
+                          {controller.detailSummary.event_summary.map((line) => (
                             <Text key={line} type="secondary">
                               {line}
                             </Text>
@@ -808,11 +425,11 @@ const EnrollmentPage = () => {
                         </div>
                       ) : null}
                       {withTooltip(
-                        !currentActions.can_reverify ? currentReasons.can_reverify : null,
+                        !controller.currentActions.can_reverify ? controller.currentReasons.can_reverify : null,
                         <Button
-                          disabled={!currentActions.can_reverify}
-                          loading={reverifying && selectedApplicant?.id === currentApplicant.id}
-                          onClick={() => void handleReverify(currentApplicant)}
+                          disabled={!controller.currentActions.can_reverify}
+                          loading={controller.reverifying && controller.selectedApplicant?.id === controller.currentApplicant.id}
+                          onClick={() => void controller.reverifyApplicant(controller.currentApplicant!)}
                         >
                           AI qayta tekshir
                         </Button>,
@@ -826,9 +443,9 @@ const EnrollmentPage = () => {
             </Row>
 
             <Card size="small" title="Tekshiruvlar tarixi">
-              {detailHistory.length ? (
+              {controller.detailHistory.length ? (
                 <Space direction="vertical" size={12} style={{ width: "100%" }}>
-                  {detailHistory.map(renderVerificationCard)}
+                  {controller.detailHistory.map(renderVerificationCard)}
                 </Space>
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tekshiruv tarixi yo'q" />
@@ -836,11 +453,11 @@ const EnrollmentPage = () => {
             </Card>
 
             <Card size="small" title="Qarorlar tarixi">
-              {applicantAuditLoading && !decisionHistory.length ? (
+              {controller.applicantAuditLoading && !controller.decisionHistory.length ? (
                 <Skeleton active paragraph={{ rows: 4 }} />
-              ) : decisionHistory.length ? (
+              ) : controller.decisionHistory.length ? (
                 <Space direction="vertical" size={12} style={{ width: "100%" }}>
-                  {decisionHistory.map(renderAuditCard)}
+                  {controller.decisionHistory.map(renderAuditCard)}
                 </Space>
               ) : (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Qarorlar tarixi yo'q" />
@@ -852,14 +469,14 @@ const EnrollmentPage = () => {
 
       <Modal
         title="Arizani tahrirlash"
-        open={editOpen}
-        onCancel={() => setEditOpen(false)}
-        onOk={() => editForm.submit()}
-        confirmLoading={updating}
+        open={controller.editOpen}
+        onCancel={controller.closeEdit}
+        onOk={() => controller.editForm.submit()}
+        confirmLoading={controller.updating}
         destroyOnClose
       >
-        {selectedApplicant ? (
-          <Form layout="vertical" form={editForm} onFinish={onEditSubmit}>
+        {controller.selectedApplicant ? (
+          <Form layout="vertical" form={controller.editForm} onFinish={controller.submitEdit}>
             <Form.Item name="full_name" label="F.I.Sh" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
@@ -872,7 +489,7 @@ const EnrollmentPage = () => {
             <Form.Item name="direction_choice" label="Yo'nalish">
               <Select
                 allowClear
-                options={(directions || []).map((direction) => ({ value: direction.id, label: direction.name }))}
+                options={controller.directions.map((direction) => ({ value: direction.id, label: direction.name }))}
                 placeholder="Yo'nalish tanlang"
               />
             </Form.Item>
@@ -882,14 +499,14 @@ const EnrollmentPage = () => {
 
       <Modal
         title="Arizani rad etish"
-        open={rejectOpen}
-        onCancel={() => setRejectOpen(false)}
-        onOk={() => rejectForm.submit()}
-        confirmLoading={rejecting}
+        open={controller.rejectOpen}
+        onCancel={controller.closeReject}
+        onOk={() => controller.rejectForm.submit()}
+        confirmLoading={controller.rejecting}
         destroyOnClose
       >
-        {selectedApplicant ? (
-          <Form layout="vertical" form={rejectForm} onFinish={onRejectSubmit}>
+        {controller.selectedApplicant ? (
+          <Form layout="vertical" form={controller.rejectForm} onFinish={controller.submitReject}>
             <Alert
               type="warning"
               showIcon
@@ -913,14 +530,14 @@ const EnrollmentPage = () => {
 
       <Modal
         title="Arizani qayta ochish"
-        open={reopenOpen}
-        onCancel={() => setReopenOpen(false)}
-        onOk={() => reopenForm.submit()}
-        confirmLoading={reopening}
+        open={controller.reopenOpen}
+        onCancel={controller.closeReopen}
+        onOk={() => controller.reopenForm.submit()}
+        confirmLoading={controller.reopening}
         destroyOnClose
       >
-        {selectedApplicant ? (
-          <Form layout="vertical" form={reopenForm} onFinish={onReopenSubmit}>
+        {controller.selectedApplicant ? (
+          <Form layout="vertical" form={controller.reopenForm} onFinish={controller.submitReopen}>
             <Alert
               type="info"
               showIcon
@@ -944,15 +561,15 @@ const EnrollmentPage = () => {
 
       <Modal
         title="Arizani tasdiqlash"
-        open={approveOpen}
-        onCancel={() => setApproveOpen(false)}
-        onOk={() => approveForm.submit()}
-        confirmLoading={approving}
+        open={controller.approveOpen}
+        onCancel={controller.closeApprove}
+        onOk={() => controller.approveForm.submit()}
+        confirmLoading={controller.approving}
         destroyOnClose
       >
-        {selectedApplicant ? (
+        {controller.selectedApplicant ? (
           <>
-            {selectedApplicant.ai_summary.manual_review_required ? (
+            {controller.selectedApplicant.ai_summary.manual_review_required ? (
               <Alert
                 type="warning"
                 showIcon
@@ -970,7 +587,7 @@ const EnrollmentPage = () => {
               />
             )}
 
-            <Form layout="vertical" form={approveForm} onFinish={onApprove}>
+            <Form layout="vertical" form={controller.approveForm} onFinish={controller.submitApprove}>
               <Form.Item name="role" label="Rol" rules={[{ required: true }]}>
                 <Select
                   options={[
@@ -980,7 +597,7 @@ const EnrollmentPage = () => {
                 />
               </Form.Item>
 
-              {selectedApplicant.ai_summary.manual_review_required ? (
+              {controller.selectedApplicant.ai_summary.manual_review_required ? (
                 <Form.Item
                   name="manual_override_reason"
                   label="Qo'lda tasdiqlash sababi"
@@ -1002,7 +619,7 @@ const EnrollmentPage = () => {
                       <>
                         <Form.Item name="group_id" label="Guruh" rules={[{ required: true }]}>
                           <Select
-                            options={(groups || []).map((group) => ({ value: group.id, label: group.name }))}
+                            options={controller.groups.map((group) => ({ value: group.id, label: group.name }))}
                             placeholder="Guruh tanlang"
                           />
                         </Form.Item>
@@ -1017,14 +634,14 @@ const EnrollmentPage = () => {
                     <>
                       <Form.Item name="subject_id" label="Fan" rules={[{ required: true }]}>
                         <Select
-                          options={(subjects || []).map((subject) => ({ value: subject.id, label: subject.name }))}
+                          options={controller.subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
                           placeholder="Fan tanlang"
                         />
                       </Form.Item>
                       <Form.Item name="group_ids" label="Guruhlar (ixtiyoriy)">
                         <Select
                           mode="multiple"
-                          options={(groups || []).map((group) => ({ value: group.id, label: group.name }))}
+                          options={controller.groups.map((group) => ({ value: group.id, label: group.name }))}
                           placeholder="Guruhlarni tanlang"
                         />
                       </Form.Item>
