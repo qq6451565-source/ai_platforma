@@ -18,6 +18,10 @@ import {
   filterStudentPlacementUsers,
   getStudentPlacementStats,
 } from "../utils/adminRegistry";
+import {
+  buildStudentPlacementFormValues,
+  filterGroupsByDirection,
+} from "../utils/adminWorkflowForms";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useStudentPlacementController = () => {
@@ -103,10 +107,10 @@ export const useStudentPlacementController = () => {
   );
 
   const selectedDirectionId = Form.useWatch("direction_id", form);
-  const availableGroups = useMemo(() => {
-    if (!selectedDirectionId) return groups || [];
-    return (groups || []).filter((group) => group.direction === selectedDirectionId);
-  }, [groups, selectedDirectionId]);
+  const availableGroups = useMemo(
+    () => filterGroupsByDirection(groups || [], selectedDirectionId),
+    [groups, selectedDirectionId],
+  );
 
   const stats = useMemo(
     () => getStudentPlacementStats(users || [], profileByUser),
@@ -115,15 +119,8 @@ export const useStudentPlacementController = () => {
 
   const openPlacement = (user: AdminUser) => {
     const profile = profileByUser.get(user.id);
-    const fallbackDirectionId =
-      profile?.direction ?? (profile?.group ? groupMap.get(profile.group)?.direction : undefined);
     setSelectedUser(user);
-    form.setFieldsValue({
-      direction_id: fallbackDirectionId,
-      group_id: profile?.group,
-      admission_year: profile?.admission_year,
-      status: profile?.status || "active",
-    });
+    form.setFieldsValue(buildStudentPlacementFormValues(profile, groupMap));
     setModalOpen(true);
   };
 

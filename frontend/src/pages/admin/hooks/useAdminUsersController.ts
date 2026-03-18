@@ -29,6 +29,13 @@ import {
   filterAdminUsers,
   getAdminUserRoleCounts,
 } from "../utils/adminRegistry";
+import {
+  buildEditableUserFormValues,
+  buildPassportFormData,
+  buildPassportFormValues,
+  buildUserSubmitPayload,
+  getRoleFilterFromSearch,
+} from "../utils/adminWorkflowForms";
 import { updateAdminHubSearch } from "../utils/workflowRouting";
 
 export const useAdminUsersController = () => {
@@ -105,9 +112,8 @@ export const useAdminUsersController = () => {
   }, [passportByUser, selectedUser]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const role = params.get("role");
-    if (role === "admin" || role === "teacher" || role === "student") {
+    const role = getRoleFilterFromSearch(location.search);
+    if (role) {
       setRoleFilter(role);
       return;
     }
@@ -225,15 +231,7 @@ export const useAdminUsersController = () => {
 
   const openEdit = (user: AdminUser) => {
     setEditing(user);
-    form.setFieldsValue({
-      username: user.username,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      is_active: user.is_active ?? true,
-    });
+    form.setFieldsValue(buildEditableUserFormValues(user));
     setModalOpen(true);
   };
 
@@ -267,12 +265,7 @@ export const useAdminUsersController = () => {
   const openPassportEditor = () => {
     if (!selectedUser) return;
     passportForm.resetFields();
-    passportForm.setFieldsValue({
-      passport_series: selectedPassport?.passport_series,
-      passport_number: selectedPassport?.passport_number,
-      birth_date: selectedPassport?.birth_date,
-      extracted_fullname: selectedPassport?.extracted_fullname,
-    });
+    passportForm.setFieldsValue(buildPassportFormValues(selectedPassport));
     setPassportFrontFile(null);
     setPassportBackFile(null);
     setPassportSelfieFile(null);
@@ -292,17 +285,18 @@ export const useAdminUsersController = () => {
         return;
       }
 
-      const payload = new FormData();
-      if (!selectedPassport?.id) {
-        payload.append("user", String(selectedUser.id));
-      }
-      payload.append("passport_series", values.passport_series);
-      payload.append("passport_number", values.passport_number);
-      if (values.birth_date) payload.append("birth_date", values.birth_date);
-      if (values.extracted_fullname) payload.append("extracted_fullname", values.extracted_fullname);
-      if (passportFrontFile) payload.append("front_image", passportFrontFile);
-      if (passportBackFile) payload.append("back_image", passportBackFile);
-      if (passportSelfieFile) payload.append("selfie_image", passportSelfieFile);
+      const payload = buildPassportFormData({
+        birthDate: values.birth_date,
+        extracted_fullname: values.extracted_fullname,
+        files: {
+          front: passportFrontFile,
+          back: passportBackFile,
+          selfie: passportSelfieFile,
+        },
+        passportNumber: values.passport_number,
+        passportSeries: values.passport_series,
+        passportUserId: !selectedPassport?.id ? selectedUser.id : undefined,
+      });
 
       if (selectedPassport?.id) {
         await updatePassportData(selectedPassport.id, payload);
@@ -328,10 +322,7 @@ export const useAdminUsersController = () => {
   };
 
   const submitUserForm = (values: Record<string, unknown>) => {
-    const payload = { ...values };
-    if (!payload.password) {
-      delete payload.password;
-    }
+    const payload = buildUserSubmitPayload(values);
     if (editing) {
       updateMutation.mutate({ id: editing.id, payload });
       return;

@@ -21,6 +21,10 @@ import {
   filterTeachersByWorkload,
   getTeacherWorkloadStats,
 } from "../utils/adminRegistry";
+import {
+  buildTeacherWorkloadFormValues,
+  filterGroupsBySubject,
+} from "../utils/adminWorkflowForms";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useTeacherWorkloadController = () => {
@@ -149,12 +153,7 @@ export const useTeacherWorkloadController = () => {
   const openEditModal = (teacher: AdminUser, assignment: TeacherSubject) => {
     setSelectedTeacher(teacher);
     setEditingAssignment(assignment);
-    form.setFieldsValue({
-      subject: assignment.subject,
-      groups: assignment.groups || [],
-      subject_id: assignment.subject,
-      group_ids: assignment.groups || [],
-    });
+    form.setFieldsValue(buildTeacherWorkloadFormValues(assignment));
     setModalOpen(true);
   };
 
@@ -195,12 +194,10 @@ export const useTeacherWorkloadController = () => {
   };
 
   const selectedSubjectId = Form.useWatch(editingAssignment ? "subject" : "subject_id", form);
-  const availableGroups = useMemo(() => {
-    if (!selectedSubjectId) return groups || [];
-    const subject = subjectMap.get(selectedSubjectId);
-    if (!subject) return groups || [];
-    return (groups || []).filter((group) => subject.directions.includes(group.direction || 0));
-  }, [groups, selectedSubjectId, subjectMap]);
+  const availableGroups = useMemo(
+    () => filterGroupsBySubject(groups || [], subjectMap.get(selectedSubjectId)),
+    [groups, selectedSubjectId, subjectMap],
+  );
 
   useEffect(() => {
     if (!requestedUserId || !teachers?.length || drawerOpen) return;
