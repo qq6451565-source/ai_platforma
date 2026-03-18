@@ -22,6 +22,12 @@ import {
   buildStudentPlacementFormValues,
   filterGroupsByDirection,
 } from "../utils/adminWorkflowForms";
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_INVALIDATION_GROUPS,
+  getAdminApiErrorMessage,
+  invalidateAdminQueries,
+} from "../utils/adminWorkflowMutations";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useStudentPlacementController = () => {
@@ -34,19 +40,19 @@ export const useStudentPlacementController = () => {
   const [form] = Form.useForm();
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ["admin-users", "student-placement"],
+    queryKey: ADMIN_QUERY_KEYS.studentPlacementUsers,
     queryFn: () => fetchUsers("student"),
   });
   const { data: studentProfiles } = useQuery({
-    queryKey: ["admin-student-profiles"],
+    queryKey: ADMIN_QUERY_KEYS.studentProfiles,
     queryFn: fetchStudentProfiles,
   });
   const { data: directions } = useQuery({
-    queryKey: ["admin-directions"],
+    queryKey: ADMIN_QUERY_KEYS.directions,
     queryFn: fetchDirections,
   });
   const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
+    queryKey: ADMIN_QUERY_KEYS.groups,
     queryFn: fetchGroupsAdmin,
   });
 
@@ -67,11 +73,7 @@ export const useStudentPlacementController = () => {
     }) => assignStudentPlacement(userId, payload),
     onSuccess: async () => {
       message.success("Talaba placement saqlandi");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-users"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "student-placement"] }),
-        qc.invalidateQueries({ queryKey: ["admin-student-profiles"] }),
-      ]);
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.studentPlacement);
       navigate(
         { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
         { replace: true },
@@ -81,12 +83,9 @@ export const useStudentPlacementController = () => {
       form.resetFields();
     },
     onError: (error: any) => {
-      const detail =
-        error?.response?.data?.group_id?.[0] ||
-        error?.response?.data?.group?.[0] ||
-        error?.response?.data?.detail ||
-        "Placementni saqlashda xato";
-      message.error(detail);
+      message.error(
+        getAdminApiErrorMessage(error, ["group_id", "group"], "Placementni saqlashda xato"),
+      );
     },
   });
 

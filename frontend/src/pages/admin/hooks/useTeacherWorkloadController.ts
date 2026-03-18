@@ -25,6 +25,12 @@ import {
   buildTeacherWorkloadFormValues,
   filterGroupsBySubject,
 } from "../utils/adminWorkflowForms";
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_INVALIDATION_GROUPS,
+  getAdminApiErrorMessage,
+  invalidateAdminQueries,
+} from "../utils/adminWorkflowMutations";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useTeacherWorkloadController = () => {
@@ -39,19 +45,19 @@ export const useTeacherWorkloadController = () => {
   const [form] = Form.useForm();
 
   const { data: teachers, isLoading } = useQuery({
-    queryKey: ["admin-users", "teacher-workload"],
+    queryKey: ADMIN_QUERY_KEYS.teacherWorkloadUsers,
     queryFn: () => fetchUsers("teacher"),
   });
   const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
+    queryKey: ADMIN_QUERY_KEYS.teacherSubjects,
     queryFn: fetchTeacherSubjects,
   });
   const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
+    queryKey: ADMIN_QUERY_KEYS.subjects,
     queryFn: fetchSubjectsAdmin,
   });
   const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
+    queryKey: ADMIN_QUERY_KEYS.groups,
     queryFn: fetchGroupsAdmin,
   });
 
@@ -86,22 +92,19 @@ export const useTeacherWorkloadController = () => {
     },
     onSuccess: async () => {
       message.success("Teacher workload saqlandi");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "teacher-workload"] }),
-      ]);
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
       setModalOpen(false);
       setEditingAssignment(null);
       form.resetFields();
     },
     onError: (error: any) => {
-      const detail =
-        error?.response?.data?.groups?.[0] ||
-        error?.response?.data?.group_ids?.[0] ||
-        error?.response?.data?.non_field_errors?.[0] ||
-        error?.response?.data?.detail ||
-        "Teacher workloadni saqlashda xato";
-      message.error(detail);
+      message.error(
+        getAdminApiErrorMessage(
+          error,
+          ["groups", "group_ids", "non_field_errors"],
+          "Teacher workloadni saqlashda xato",
+        ),
+      );
     },
   });
 
@@ -109,9 +112,10 @@ export const useTeacherWorkloadController = () => {
     mutationFn: (id: number) => deleteTeacherSubject(id),
     onSuccess: async () => {
       message.success("Biriktirish o'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] });
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherSubjectsOnly);
     },
-    onError: () => message.error("Biriktirishni o'chirishda xato"),
+    onError: (error) =>
+      message.error(getAdminApiErrorMessage(error, ["detail"], "Biriktirishni o'chirishda xato")),
   });
 
   const subjectMap = useMemo(() => buildSubjectEntityMap(subjects || []), [subjects]);

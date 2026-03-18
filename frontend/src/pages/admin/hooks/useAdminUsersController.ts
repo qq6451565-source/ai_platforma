@@ -36,6 +36,12 @@ import {
   buildUserSubmitPayload,
   getRoleFilterFromSearch,
 } from "../utils/adminWorkflowForms";
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_INVALIDATION_GROUPS,
+  getAdminApiErrorMessage,
+  invalidateAdminQueries,
+} from "../utils/adminWorkflowMutations";
 import { updateAdminHubSearch } from "../utils/workflowRouting";
 
 export const useAdminUsersController = () => {
@@ -44,31 +50,31 @@ export const useAdminUsersController = () => {
   const navigate = useNavigate();
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ["admin-users"],
+    queryKey: ADMIN_QUERY_KEYS.users,
     queryFn: () => fetchUsers(),
   });
   const { data: studentProfiles } = useQuery({
-    queryKey: ["admin-student-profiles"],
+    queryKey: ADMIN_QUERY_KEYS.studentProfiles,
     queryFn: fetchStudentProfiles,
   });
   const { data: directions } = useQuery({
-    queryKey: ["admin-directions"],
+    queryKey: ADMIN_QUERY_KEYS.directions,
     queryFn: fetchDirections,
   });
   const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
+    queryKey: ADMIN_QUERY_KEYS.groups,
     queryFn: fetchGroupsAdmin,
   });
   const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
+    queryKey: ADMIN_QUERY_KEYS.subjects,
     queryFn: fetchSubjectsAdmin,
   });
   const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
+    queryKey: ADMIN_QUERY_KEYS.teacherSubjects,
     queryFn: fetchTeacherSubjects,
   });
   const { data: passports } = useQuery({
-    queryKey: ["admin-passports"],
+    queryKey: ADMIN_QUERY_KEYS.passports,
     queryFn: fetchPassportData,
   });
 
@@ -139,26 +145,22 @@ export const useAdminUsersController = () => {
       if (selectedUser?.id === variables.id) {
         setSelectedUser((current) => (current ? { ...current, role: variables.role } : current));
       }
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-users"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "student-placement"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "teacher-workload"] }),
-        qc.invalidateQueries({ queryKey: ["admin-student-profiles"] }),
-        qc.invalidateQueries({ queryKey: ["admin-teacher-subjects"] }),
-      ]);
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.roleChange);
     },
-    onError: () => message.error("Rolni yangilashda xato"),
+    onError: (error) =>
+      message.error(getAdminApiErrorMessage(error, ["detail"], "Rolni yangilashda xato")),
   });
 
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => createAdminUser(payload),
     onSuccess: async () => {
       message.success("Foydalanuvchi qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-users"] });
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.usersOnly);
       setModalOpen(false);
       form.resetFields();
     },
-    onError: () => message.error("Foydalanuvchi qo'shishda xato"),
+    onError: (error) =>
+      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], "Foydalanuvchi qo'shishda xato")),
   });
 
   const updateMutation = useMutation({
@@ -166,29 +168,27 @@ export const useAdminUsersController = () => {
       updateAdminUser(id, payload),
     onSuccess: async () => {
       message.success("Foydalanuvchi yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-users"] });
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.usersOnly);
       setModalOpen(false);
       setEditing(null);
       form.resetFields();
     },
-    onError: () => message.error("Yangilashda xato"),
+    onError: (error) =>
+      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], "Yangilashda xato")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteAdminUser(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["admin-users"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "student-placement"] }),
-        qc.invalidateQueries({ queryKey: ["admin-users", "teacher-workload"] }),
-      ]);
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.userDirectory);
       if (selectedUser) {
         setDrawerOpen(false);
         setSelectedUser(null);
       }
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: (error) =>
+      message.error(getAdminApiErrorMessage(error, ["detail"], "O'chirishda xato")),
   });
 
   const filteredUsers = useMemo(
@@ -305,11 +305,17 @@ export const useAdminUsersController = () => {
       }
 
       message.success("Passport ma'lumotlari saqlandi");
-      await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.passportsOnly);
       setPassportModalOpen(false);
     } catch (error: any) {
       if (!error?.errorFields) {
-        message.error("Passport ma'lumotlarini saqlashda xato");
+        message.error(
+          getAdminApiErrorMessage(
+            error,
+            ["passport_series", "passport_number", "detail"],
+            "Passport ma'lumotlarini saqlashda xato",
+          ),
+        );
       }
     }
   };
@@ -318,7 +324,7 @@ export const useAdminUsersController = () => {
     if (!selectedPassport?.id) return;
     await deletePassportData(selectedPassport.id);
     message.success("Passport ma'lumotlari o'chirildi");
-    await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+    await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.passportsOnly);
   };
 
   const submitUserForm = (values: Record<string, unknown>) => {
