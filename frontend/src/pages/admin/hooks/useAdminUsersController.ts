@@ -9,13 +9,6 @@ import {
   createPassportData,
   deleteAdminUser,
   deletePassportData,
-  fetchDirections,
-  fetchGroupsAdmin,
-  fetchPassportData,
-  fetchStudentProfiles,
-  fetchSubjectsAdmin,
-  fetchTeacherSubjects,
-  fetchUsers,
   setUserRole,
   updateAdminUser,
   updatePassportData,
@@ -36,8 +29,8 @@ import {
   buildUserSubmitPayload,
   getRoleFilterFromSearch,
 } from "../utils/adminWorkflowForms";
+import { adminQueryOptions } from "../utils/adminQueryOptions";
 import {
-  ADMIN_QUERY_KEYS,
   ADMIN_INVALIDATION_GROUPS,
   getAdminApiErrorMessage,
   invalidateAdminQueries,
@@ -49,34 +42,13 @@ export const useAdminUsersController = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { data: users, isLoading } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.users,
-    queryFn: () => fetchUsers(),
-  });
-  const { data: studentProfiles } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.studentProfiles,
-    queryFn: fetchStudentProfiles,
-  });
-  const { data: directions } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.directions,
-    queryFn: fetchDirections,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.groups,
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.subjects,
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.teacherSubjects,
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: passports } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.passports,
-    queryFn: fetchPassportData,
-  });
+  const { data: users, isLoading } = useQuery(adminQueryOptions.users());
+  const { data: studentProfiles } = useQuery(adminQueryOptions.studentProfiles());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
+  const { data: passports } = useQuery(adminQueryOptions.passports());
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string | null>(null);

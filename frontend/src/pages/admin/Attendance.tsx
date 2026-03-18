@@ -2,19 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Empty, Input, Modal, Select, Space, Table, Tag, Typography, message } from "antd";
 import {
-  fetchDirections,
-  fetchSubjectsAdmin,
-  fetchGroupsAdmin,
-  fetchUsers,
-  fetchLessonsAdmin,
-  fetchTeacherSubjects,
-  fetchLessonAttendance,
-} from "../../api/admin";
-import {
-  fetchAttendanceOverrideHistory,
   markAttendance,
   type AttendanceOverrideLog,
 } from "../../api/attendance";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 type AbsentLesson = {
   lessonId: number;
@@ -58,30 +50,12 @@ const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.ro
 
 const AdminAttendancePage = () => {
   const qc = useQueryClient();
-  const { data: directions, isLoading: loadingDirections } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: students } = useQuery({
-    queryKey: ["admin-students"],
-    queryFn: () => fetchUsers("student"),
-  });
-  const { data: lessons } = useQuery({
-    queryKey: ["admin-lessons"],
-    queryFn: fetchLessonsAdmin,
-  });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
+  const { data: directions, isLoading: loadingDirections } = useQuery(adminQueryOptions.directions());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: students } = useQuery(adminQueryOptions.students());
+  const { data: lessons } = useQuery(adminQueryOptions.lessons());
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
 
   const [selectedDirection, setSelectedDirection] = useState<any>(null);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -126,21 +100,14 @@ const AdminAttendancePage = () => {
   }, [lessons, selectedSubject, lessonSubjectMap]);
 
   const lessonIds = useMemo(() => lessonsForSubject.map((lesson) => lesson.id), [lessonsForSubject]);
+  const lessonIdsKey = useMemo(() => lessonIds.join(","), [lessonIds]);
 
   const { data: attendanceRecords, isLoading: loadingAttendance } = useQuery({
-    queryKey: ["admin-attendance", lessonIds.join(",")],
-    queryFn: async () => {
-      if (!lessonIds.length) return [];
-      const results = await Promise.all(
-        lessonIds.map((id) => fetchLessonAttendance(id).catch(() => []))
-      );
-      return results.flat();
-    },
+    ...adminQueryOptions.attendance(lessonIds),
     enabled: lessonIds.length > 0,
   });
   const { data: overrideHistory, isLoading: loadingOverrideHistory } = useQuery({
-    queryKey: ["attendance-override-history", historyTarget?.lesson, historyTarget?.student],
-    queryFn: () => fetchAttendanceOverrideHistory(historyTarget!.lesson, historyTarget!.student),
+    ...adminQueryOptions.attendanceOverrideHistory(historyTarget?.lesson, historyTarget?.student),
     enabled: !!historyTarget,
   });
 
@@ -248,8 +215,8 @@ const AdminAttendancePage = () => {
       message.success("Davomat override qilindi.");
       setOverrideDraft(null);
       setOverrideReason("");
-      await qc.invalidateQueries({ queryKey: ["admin-attendance", lessonIds.join(",")] });
-      await qc.invalidateQueries({ queryKey: ["attendance-override-history"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.attendance(lessonIdsKey) });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.attendanceOverrideHistory() });
     },
     onError: (error: any) => {
       message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || "Override saqlanmadi.");

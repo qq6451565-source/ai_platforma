@@ -2,14 +2,26 @@ import type { QueryClient } from "@tanstack/react-query";
 
 export const ADMIN_QUERY_KEYS = {
   users: ["admin-users"] as const,
+  students: ["admin-students"] as const,
+  teachers: ["admin-teachers"] as const,
   studentPlacementUsers: ["admin-users", "student-placement"] as const,
   teacherWorkloadUsers: ["admin-users", "teacher-workload"] as const,
   directions: ["admin-directions"] as const,
   groups: ["admin-groups"] as const,
   subjects: ["admin-subjects"] as const,
+  lessons: ["admin-lessons"] as const,
   studentProfiles: ["admin-student-profiles"] as const,
   teacherSubjects: ["admin-teacher-subjects"] as const,
   passports: ["admin-passports"] as const,
+  gradebook: ["admin-gradebook"] as const,
+  materials: ["admin-materials"] as const,
+  assignments: ["admin-assignments"] as const,
+  tests: ["admin-tests"] as const,
+  submissions: ["admin-submissions"] as const,
+  studentTests: ["admin-student-tests"] as const,
+  attendance: (lessonIdsKey: string) => ["admin-attendance", lessonIdsKey] as const,
+  attendanceOverrideHistory: (lesson?: number, student?: number) =>
+    ["attendance-override-history", lesson, student] as const,
 };
 
 export const ADMIN_INVALIDATION_GROUPS = {

@@ -2,33 +2,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, Form, Select, InputNumber, Button, List, Empty, Popconfirm, Modal, message } from "antd";
 import {
-  fetchStudentProfiles,
   createStudentProfile,
   updateStudentProfile,
   deleteStudentProfile,
-  fetchDirections,
-  fetchGroupsAdmin,
-  fetchUsers,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminProfilesPage = () => {
   const qc = useQueryClient();
-  const { data: studentProfiles } = useQuery({
-    queryKey: ["admin-student-profiles"],
-    queryFn: fetchStudentProfiles,
-  });
-  const { data: directions } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: students } = useQuery({
-    queryKey: ["admin-students"],
-    queryFn: () => fetchUsers("student"),
-  });
+  const { data: studentProfiles } = useQuery(adminQueryOptions.studentProfiles());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: students } = useQuery(adminQueryOptions.students());
 
   const [editStudent, setEditStudent] = useState<any>(null);
   const [studentForm] = Form.useForm();
@@ -44,7 +30,7 @@ const AdminProfilesPage = () => {
     mutationFn: (vals: any) => createStudentProfile(vals),
     onSuccess: async () => {
       message.success("Talaba profili qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-student-profiles"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles });
     },
     onError: () => message.error("Xatolik"),
   });
@@ -110,7 +96,7 @@ const AdminProfilesPage = () => {
                 title="O'chirish?"
                 onConfirm={() =>
                   deleteStudentProfile(p.id).then(() =>
-                    qc.invalidateQueries({ queryKey: ["admin-student-profiles"] })
+                    qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles })
                   )
                 }
               >
@@ -139,7 +125,7 @@ const AdminProfilesPage = () => {
             await updateStudentProfile(editStudent.id, vals);
             message.success("Yangilandi");
             setEditStudent(null);
-            await qc.invalidateQueries({ queryKey: ["admin-student-profiles"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

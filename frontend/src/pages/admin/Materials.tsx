@@ -17,14 +17,10 @@ import {
 } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useMemo, useState } from "react";
-import { createMaterial, deleteMaterial, fetchMaterials, updateMaterial } from "../../api/materials";
-import {
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
-  fetchTeacherSubjects as fetchTeacherSubjectsAdmin,
-  fetchUsers,
-} from "../../api/admin";
+import { createMaterial, deleteMaterial, updateMaterial } from "../../api/materials";
 import type { Material, MaterialResource } from "../../types/material";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -87,17 +83,11 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
 
 const AdminMaterialsPage = () => {
   const qc = useQueryClient();
-  const { data: materials, isLoading } = useQuery({
-    queryKey: ["admin-materials"],
-    queryFn: fetchMaterials,
-  });
-  const { data: subjects } = useQuery({ queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin });
-  const { data: groups } = useQuery({ queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin });
-  const { data: teachers } = useQuery({ queryKey: ["admin-teachers"], queryFn: () => fetchUsers("teacher") });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjectsAdmin,
-  });
+  const { data: materials, isLoading } = useQuery(adminQueryOptions.materials());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: teachers } = useQuery(adminQueryOptions.teachers());
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
 
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
@@ -225,7 +215,7 @@ const AdminMaterialsPage = () => {
       setSelectedTeacher(null);
       setSelectedSubject(null);
       setFileList([]);
-      await qc.invalidateQueries({ queryKey: ["admin-materials"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials });
     } catch (err: any) {
       message.error(getErrorMessage(err));
     } finally {
@@ -380,7 +370,7 @@ const AdminMaterialsPage = () => {
                               title="O'chirish?"
                               onConfirm={() =>
                                 deleteMaterial(m.id)
-                                  .then(() => qc.invalidateQueries({ queryKey: ["admin-materials"] }))
+                                  .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials }))
                                   .catch(() => message.error("O'chirishda xato"))
                               }
                             >
@@ -469,7 +459,7 @@ const AdminMaterialsPage = () => {
             });
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-materials"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials });
           } catch (err: any) {
             if (!err?.errorFields) message.error(getErrorMessage(err));
           } finally {

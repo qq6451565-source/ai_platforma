@@ -8,9 +8,6 @@ import {
   TeacherSubject,
   assignTeacherWorkload,
   deleteTeacherSubject,
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
-  fetchTeacherSubjects,
   fetchUsers,
   updateTeacherSubject,
 } from "../../../api/admin";
@@ -25,6 +22,7 @@ import {
   buildTeacherWorkloadFormValues,
   filterGroupsBySubject,
 } from "../utils/adminWorkflowForms";
+import { adminQueryOptions } from "../utils/adminQueryOptions";
 import {
   ADMIN_QUERY_KEYS,
   ADMIN_INVALIDATION_GROUPS,
@@ -48,18 +46,9 @@ export const useTeacherWorkloadController = () => {
     queryKey: ADMIN_QUERY_KEYS.teacherWorkloadUsers,
     queryFn: () => fetchUsers("teacher"),
   });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.teacherSubjects,
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.subjects,
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.groups,
-    queryFn: fetchGroupsAdmin,
-  });
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
 
   const requestedUserId = useMemo(() => getRequestedUserId(location.search), [location.search]);
 

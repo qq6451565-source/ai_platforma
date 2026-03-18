@@ -1,33 +1,24 @@
-import { Skeleton, Statistic, Row, Col } from "antd";
+import { Skeleton, Statistic } from "antd";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  fetchUsers,
-  fetchGroupsAdmin,
-  fetchDirections,
-  fetchSubjectsAdmin,
-  fetchLessonsAdmin,
-} from "../../api/admin";
-import { fetchMaterials } from "../../api/materials";
-import { fetchAssignments } from "../../api/assignments";
-import { fetchTests } from "../../api/tests";
 import { PageContainer, SectionCard, GridLayout } from "../../components/ui";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const results = useQueries({
     queries: [
-      { queryKey: ["admin-users"], queryFn: () => fetchUsers() },
-      { queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin },
-      { queryKey: ["admin-directions"], queryFn: fetchDirections },
-      { queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin },
-      { queryKey: ["admin-lessons"], queryFn: fetchLessonsAdmin },
-      { queryKey: ["admin-materials"], queryFn: fetchMaterials },
-      { queryKey: ["admin-assignments"], queryFn: fetchAssignments },
-      { queryKey: ["admin-tests"], queryFn: fetchTests },
+      adminQueryOptions.users(),
+      adminQueryOptions.groups(),
+      adminQueryOptions.directions(),
+      adminQueryOptions.subjects(),
+      adminQueryOptions.lessons(),
+      adminQueryOptions.materials(),
+      adminQueryOptions.assignments(),
+      adminQueryOptions.tests(),
     ],
   });
 

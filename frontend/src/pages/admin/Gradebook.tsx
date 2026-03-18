@@ -18,43 +18,22 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import {
-  fetchGradebookEntries,
-  fetchSubjectsAdmin,
-  fetchDirections,
-  fetchGroupsAdmin,
-  fetchUsers,
-  fetchTeacherSubjects,
-  fetchStudentTests,
 } from "../../api/admin";
-import { fetchAllSubmissions } from "../../api/submissions";
 import { gradeSubmission } from "../../api/submissions";
 import { updateStudentTestRecord } from "../../api/studentTests";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminGradebookPage = () => {
   const qc = useQueryClient();
-  const { data: entries, isLoading } = useQuery({
-    queryKey: ["admin-gradebook"],
-    queryFn: fetchGradebookEntries,
-  });
-  const { data: subjects } = useQuery({ queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin });
-  const { data: directions, isLoading: directionsLoading } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
-  const { data: groups } = useQuery({ queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin });
-  const { data: students } = useQuery({ queryKey: ["admin-students"], queryFn: () => fetchUsers("student") });
-  const { data: teacherSubjects } = useQuery({
-    queryKey: ["admin-teacher-subjects"],
-    queryFn: fetchTeacherSubjects,
-  });
-  const { data: submissions } = useQuery({
-    queryKey: ["admin-submissions"],
-    queryFn: fetchAllSubmissions,
-  });
-  const { data: testResults } = useQuery({
-    queryKey: ["admin-student-tests"],
-    queryFn: fetchStudentTests,
-  });
+  const { data: entries, isLoading } = useQuery(adminQueryOptions.gradebook());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: directions, isLoading: directionsLoading } = useQuery(adminQueryOptions.directions());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: students } = useQuery(adminQueryOptions.students());
+  const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
+  const { data: submissions } = useQuery(adminQueryOptions.submissions());
+  const { data: testResults } = useQuery(adminQueryOptions.studentTests());
 
   const [selectedDirection, setSelectedDirection] = useState<any>(null);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -265,7 +244,7 @@ const AdminGradebookPage = () => {
           grade: typeof detailScore === "number" ? detailScore : 0,
           teacher_comment: detailComment || undefined,
         });
-        await qc.invalidateQueries({ queryKey: ["admin-submissions"] });
+        await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.submissions });
       } else {
         const total = getTestTotal(detailItem);
         const scoreValue = typeof detailScore === "number" ? detailScore : 0;
@@ -273,7 +252,7 @@ const AdminGradebookPage = () => {
         await updateStudentTestRecord(detailItem.id, {
           score_percent: Number.isFinite(percent) ? Number(percent.toFixed(2)) : 0,
         });
-        await qc.invalidateQueries({ queryKey: ["admin-student-tests"] });
+        await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentTests });
       }
       message.success("Yangilandi");
       setDetailOpen(false);

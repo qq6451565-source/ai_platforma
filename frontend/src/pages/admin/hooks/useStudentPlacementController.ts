@@ -3,14 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, message } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import {
-  AdminUser,
-  assignStudentPlacement,
-  fetchDirections,
-  fetchGroupsAdmin,
-  fetchStudentProfiles,
-  fetchUsers,
-} from "../../../api/admin";
+import { AdminUser, assignStudentPlacement, fetchUsers } from "../../../api/admin";
 import {
   buildDirectionNameMap,
   buildGroupEntityMap,
@@ -22,6 +15,7 @@ import {
   buildStudentPlacementFormValues,
   filterGroupsByDirection,
 } from "../utils/adminWorkflowForms";
+import { adminQueryOptions } from "../utils/adminQueryOptions";
 import {
   ADMIN_QUERY_KEYS,
   ADMIN_INVALIDATION_GROUPS,
@@ -43,18 +37,9 @@ export const useStudentPlacementController = () => {
     queryKey: ADMIN_QUERY_KEYS.studentPlacementUsers,
     queryFn: () => fetchUsers("student"),
   });
-  const { data: studentProfiles } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.studentProfiles,
-    queryFn: fetchStudentProfiles,
-  });
-  const { data: directions } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.directions,
-    queryFn: fetchDirections,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ADMIN_QUERY_KEYS.groups,
-    queryFn: fetchGroupsAdmin,
-  });
+  const { data: studentProfiles } = useQuery(adminQueryOptions.studentProfiles());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
 
   const requestedUserId = useMemo(() => getRequestedUserId(location.search), [location.search]);
 

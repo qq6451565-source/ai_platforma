@@ -16,7 +16,9 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import type { UploadFile } from "antd/es/upload/interface";
-import { fetchUsers, AdminUser, createPassportData, deletePassportData, fetchPassportData, updatePassportData } from "../../api/admin";
+import { AdminUser, createPassportData, deletePassportData, updatePassportData } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const normFile = (e: any) => {
   if (Array.isArray(e)) return e;
@@ -41,14 +43,8 @@ const buildFormData = (values: any) => {
 
 const PassportDataPage = () => {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-passports"],
-    queryFn: fetchPassportData,
-  });
-  const { data: users } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: () => fetchUsers(),
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.passports());
+  const { data: users } = useQuery(adminQueryOptions.users());
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -59,7 +55,7 @@ const PassportDataPage = () => {
     mutationFn: (vals: any) => createPassportData(buildFormData(vals)),
     onSuccess: async () => {
       message.success("Pasport ma'lumotlari qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
       createForm.resetFields();
     },
     onError: () => message.error("Saqlashda xato"),
@@ -69,7 +65,7 @@ const PassportDataPage = () => {
     mutationFn: ({ id, vals }: { id: number; vals: any }) => updatePassportData(id, buildFormData(vals)),
     onSuccess: async () => {
       message.success("Yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
       setEditOpen(false);
       setEditing(null);
     },
@@ -80,7 +76,7 @@ const PassportDataPage = () => {
     mutationFn: (id: number) => deletePassportData(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-passports"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
     },
     onError: () => message.error("O'chirishda xato"),
   });
