@@ -3,15 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
   Card,
-  Descriptions,
-  Drawer,
   Empty,
   Form,
   Input,
-  List,
-  Modal,
-  Popconfirm,
-  Select,
   Space,
   Statistic,
   Table,
@@ -38,6 +32,8 @@ import {
   filterTeachersByWorkload,
   getTeacherWorkloadStats,
 } from "./utils/adminRegistry";
+import AdminTeacherWorkloadDrawer from "./components/AdminTeacherWorkloadDrawer";
+import AdminTeacherWorkloadModal from "./components/AdminTeacherWorkloadModal";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const TeacherWorkloadPage = () => {
@@ -274,10 +270,11 @@ const TeacherWorkloadPage = () => {
         )}
       </Space>
 
-      <Drawer
-        title="Teacher Workload"
+      <AdminTeacherWorkloadDrawer
+        assignments={selectedTeacher ? assignmentsByTeacher.get(selectedTeacher.id) || [] : []}
+        deleteLoading={deleteMutation.isPending}
+        groupMap={groupMap}
         open={drawerOpen}
-        width={520}
         onClose={() => {
           navigate(
             { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
@@ -286,150 +283,42 @@ const TeacherWorkloadPage = () => {
           setDrawerOpen(false);
           setSelectedTeacher(null);
         }}
-        extra={
-          selectedTeacher ? (
-            <Button type="primary" onClick={() => openCreateModal(selectedTeacher)}>
-              Fan biriktirish
-            </Button>
-          ) : null
-        }
-      >
-        {selectedTeacher ? (
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            <Descriptions size="small" bordered column={1}>
-              <Descriptions.Item label="O'qituvchi">
-                {`${selectedTeacher.first_name || ""} ${selectedTeacher.last_name || ""}`.trim() || selectedTeacher.username}
-              </Descriptions.Item>
-              <Descriptions.Item label="Login">{selectedTeacher.username}</Descriptions.Item>
-              <Descriptions.Item label="Telefon">{selectedTeacher.phone || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Email">{selectedTeacher.email || "-"}</Descriptions.Item>
-            </Descriptions>
+        onCreate={openCreateModal}
+        onDelete={(assignmentId) => deleteMutation.mutate(assignmentId)}
+        onEdit={openEditModal}
+        selectedTeacher={selectedTeacher}
+        subjectMap={subjectMap}
+      />
 
-            <List
-              dataSource={assignmentsByTeacher.get(selectedTeacher.id) || []}
-              locale={{ emptyText: <Empty description="Workload biriktirilmagan" /> }}
-              renderItem={(assignment) => (
-                <List.Item
-                  actions={[
-                    <Button size="small" onClick={() => openEditModal(selectedTeacher, assignment)}>
-                      Tahrirlash
-                    </Button>,
-                    <Popconfirm
-                      title="Biriktirishni o'chirishni tasdiqlaysizmi?"
-                      onConfirm={() => deleteMutation.mutate(assignment.id)}
-                    >
-                      <Button size="small" danger loading={deleteMutation.isPending}>
-                        O'chirish
-                      </Button>
-                    </Popconfirm>,
-                  ]}
-                >
-                  <Descriptions size="small" column={1} bordered style={{ width: "100%" }}>
-                    <Descriptions.Item label="Fan">
-                      {subjectMap.get(assignment.subject)?.name || `Fan #${assignment.subject}`}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Guruhlar">
-                      {assignment.groups?.length ? (
-                        <Space wrap>
-                          {assignment.groups.map((groupId) => (
-                            <Tag key={groupId}>{groupMap.get(groupId)?.name || `#${groupId}`}</Tag>
-                          ))}
-                        </Space>
-                      ) : (
-                        "-"
-                      )}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </List.Item>
-              )}
-            />
-          </Space>
-        ) : null}
-      </Drawer>
-
-      <Modal
-        title={editingAssignment ? "Workloadni tahrirlash" : "Teacher Workload yaratish"}
+      <AdminTeacherWorkloadModal
+        availableGroups={availableGroups}
+        editingAssignment={editingAssignment}
+        form={form}
+        loading={saveMutation.isPending}
         open={modalOpen}
         onCancel={() => {
           setModalOpen(false);
           setEditingAssignment(null);
           form.resetFields();
         }}
-        onOk={() => form.submit()}
-        confirmLoading={saveMutation.isPending}
-        destroyOnClose
-      >
-        {selectedTeacher ? (
-          <Form
-            layout="vertical"
-            form={form}
-            onFinish={(values) => {
-              if (editingAssignment) {
-                saveMutation.mutate({
-                  userId: selectedTeacher.id,
-                  assignmentId: editingAssignment.id,
-                  payload: values,
-                });
-                return;
-              }
-              saveMutation.mutate({
-                userId: selectedTeacher.id,
-                payload: values,
-              });
-            }}
-          >
-            <Form.Item label="O'qituvchi">
-              <Input
-                disabled
-                value={`${selectedTeacher.first_name || ""} ${selectedTeacher.last_name || ""}`.trim() || selectedTeacher.username}
-              />
-            </Form.Item>
-            {editingAssignment ? (
-              <>
-                <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
-                  <Select
-                    showSearch
-                    options={(subjects || []).map((subject) => ({
-                      value: subject.id,
-                      label: subject.name,
-                    }))}
-                  />
-                </Form.Item>
-                <Form.Item name="groups" label="Guruhlar">
-                  <Select
-                    mode="multiple"
-                    options={availableGroups.map((group) => ({
-                      value: group.id,
-                      label: group.name,
-                    }))}
-                  />
-                </Form.Item>
-              </>
-            ) : (
-              <>
-                <Form.Item name="subject_id" label="Fan" rules={[{ required: true }]}>
-                  <Select
-                    showSearch
-                    options={(subjects || []).map((subject) => ({
-                      value: subject.id,
-                      label: subject.name,
-                    }))}
-                  />
-                </Form.Item>
-                <Form.Item name="group_ids" label="Guruhlar">
-                  <Select
-                    mode="multiple"
-                    options={availableGroups.map((group) => ({
-                      value: group.id,
-                      label: group.name,
-                    }))}
-                  />
-                </Form.Item>
-              </>
-            )}
-          </Form>
-        ) : null}
-      </Modal>
+        onSubmit={(values) => {
+          if (!selectedTeacher) return;
+          if (editingAssignment) {
+            saveMutation.mutate({
+              userId: selectedTeacher.id,
+              assignmentId: editingAssignment.id,
+              payload: values,
+            });
+            return;
+          }
+          saveMutation.mutate({
+            userId: selectedTeacher.id,
+            payload: values,
+          });
+        }}
+        selectedTeacher={selectedTeacher}
+        subjects={subjects || []}
+      />
     </Card>
   );
 };

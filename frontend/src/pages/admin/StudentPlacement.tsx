@@ -6,9 +6,6 @@ import {
   Empty,
   Form,
   Input,
-  InputNumber,
-  Modal,
-  Select,
   Space,
   Statistic,
   Table,
@@ -32,6 +29,7 @@ import {
   filterStudentPlacementUsers,
   getStudentPlacementStats,
 } from "./utils/adminRegistry";
+import AdminStudentPlacementModal from "./components/AdminStudentPlacementModal";
 import { clearRequestedUserIdSearch, getRequestedUserId } from "./utils/workflowRouting";
 
 const StudentPlacementPage = () => {
@@ -234,8 +232,11 @@ const StudentPlacementPage = () => {
         )}
       </Space>
 
-      <Modal
-        title="Student Placement"
+      <AdminStudentPlacementModal
+        availableGroups={availableGroups}
+        directions={directions || []}
+        form={form}
+        loading={saveMutation.isPending}
         open={modalOpen}
         onCancel={() => {
           navigate(
@@ -246,61 +247,15 @@ const StudentPlacementPage = () => {
           setSelectedUser(null);
           form.resetFields();
         }}
-        onOk={() => form.submit()}
-        confirmLoading={saveMutation.isPending}
-        destroyOnClose
-      >
-        {selectedUser ? (
-          <Form
-            layout="vertical"
-            form={form}
-            onFinish={(values) =>
-              saveMutation.mutate({
-                userId: selectedUser.id,
-                payload: values,
-              })
-            }
-          >
-            <Form.Item label="Talaba">
-              <Input
-                disabled
-                value={`${selectedUser.first_name || ""} ${selectedUser.last_name || ""}`.trim() || selectedUser.username}
-              />
-            </Form.Item>
-            <Form.Item name="direction_id" label="Yo'nalish" rules={[{ required: true }]}>
-              <Select
-                showSearch
-                options={(directions || []).map((direction) => ({
-                  value: direction.id,
-                  label: direction.name,
-                }))}
-              />
-            </Form.Item>
-            <Form.Item name="group_id" label="Guruh" rules={[{ required: true }]}>
-              <Select
-                showSearch
-                options={availableGroups.map((group) => ({
-                  value: group.id,
-                  label: group.name,
-                }))}
-              />
-            </Form.Item>
-            <Form.Item name="admission_year" label="Qabul yili" rules={[{ required: true }]}>
-              <InputNumber min={2000} max={2100} style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-              <Select
-                options={[
-                  { value: "active", label: "Active" },
-                  { value: "academic_leave", label: "Academic leave" },
-                  { value: "expelled", label: "Expelled" },
-                  { value: "graduated", label: "Graduated" },
-                ]}
-              />
-            </Form.Item>
-          </Form>
-        ) : null}
-      </Modal>
+        onSubmit={(values) => {
+          if (!selectedUser) return;
+          saveMutation.mutate({
+            userId: selectedUser.id,
+            payload: values,
+          });
+        }}
+        selectedUser={selectedUser}
+      />
     </Card>
   );
 };
