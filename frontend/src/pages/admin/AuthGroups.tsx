@@ -6,21 +6,15 @@ import {
   PermissionItem,
   createAuthGroup,
   deleteAuthGroup,
-  fetchAuthGroups,
-  fetchPermissions,
   updateAuthGroup,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AuthGroupsPage = () => {
   const qc = useQueryClient();
-  const { data: groups, isLoading } = useQuery({
-    queryKey: ["admin-auth-groups"],
-    queryFn: fetchAuthGroups,
-  });
-  const { data: permissions } = useQuery({
-    queryKey: ["admin-permissions"],
-    queryFn: fetchPermissions,
-  });
+  const { data: groups, isLoading } = useQuery(adminQueryOptions.authGroups());
+  const { data: permissions } = useQuery(adminQueryOptions.permissions());
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<AuthGroup | null>(null);
   const [editForm] = Form.useForm();
@@ -38,7 +32,7 @@ const AuthGroupsPage = () => {
     mutationFn: (vals: any) => createAuthGroup(vals),
     onSuccess: async () => {
       message.success("Guruh qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-auth-groups"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
     onError: () => message.error("Saqlashda xato"),
   });
@@ -47,7 +41,7 @@ const AuthGroupsPage = () => {
     mutationFn: ({ id, payload }: { id: number; payload: Partial<AuthGroup> }) => updateAuthGroup(id, payload),
     onSuccess: async () => {
       message.success("Guruh yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-auth-groups"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
       setEditOpen(false);
       setEditing(null);
     },
@@ -58,7 +52,7 @@ const AuthGroupsPage = () => {
     mutationFn: (id: number) => deleteAuthGroup(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-auth-groups"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
     onError: () => message.error("O'chirishda xato"),
   });

@@ -1,23 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Select, Button, List, Empty, Popconfirm, message } from "antd";
-import { fetchLiveRooms, createLiveRoom, deleteLiveRoom, fetchLessonsAdmin } from "../../api/admin";
+import { createLiveRoom, deleteLiveRoom } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminLiveRoomsPage = () => {
   const qc = useQueryClient();
-  const { data: rooms, isLoading } = useQuery({
-    queryKey: ["admin-live-rooms"],
-    queryFn: fetchLiveRooms,
-  });
-  const { data: lessons } = useQuery({
-    queryKey: ["admin-lessons"],
-    queryFn: fetchLessonsAdmin,
-  });
+  const { data: rooms, isLoading } = useQuery(adminQueryOptions.liveRooms());
+  const { data: lessons } = useQuery(adminQueryOptions.lessons());
 
   const createMut = useMutation({
     mutationFn: (vals: any) => createLiveRoom(vals.lesson_id),
     onSuccess: async () => {
       message.success("Live xonasi yaratildi");
-      await qc.invalidateQueries({ queryKey: ["admin-live-rooms"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
     },
     onError: () => message.error("Xatolik"),
   });
@@ -51,7 +47,7 @@ const AdminLiveRoomsPage = () => {
                   deleteLiveRoom(r.id)
                     .then(() => {
                       message.success("O'chirildi");
-                      qc.invalidateQueries({ queryKey: ["admin-live-rooms"] });
+                      qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
                     })
                     .catch(() => message.error("Xatolik"))
                 }

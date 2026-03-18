@@ -6,27 +6,26 @@ import {
   OutstandingToken,
   createBlacklistedToken,
   deleteBlacklistedToken,
-  fetchBlacklistedTokens,
-  fetchOutstandingTokens,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import {
+  ADMIN_QUERY_KEYS,
+  invalidateAdminQueries,
+} from "./utils/adminWorkflowMutations";
 
 const TokenBlacklistPage = () => {
   const qc = useQueryClient();
-  const { data: outstanding, isLoading: outLoading } = useQuery({
-    queryKey: ["admin-outstanding-tokens"],
-    queryFn: fetchOutstandingTokens,
-  });
-  const { data: blacklisted, isLoading: blkLoading } = useQuery({
-    queryKey: ["admin-blacklisted-tokens"],
-    queryFn: fetchBlacklistedTokens,
-  });
+  const { data: outstanding, isLoading: outLoading } = useQuery(adminQueryOptions.outstandingTokens());
+  const { data: blacklisted, isLoading: blkLoading } = useQuery(adminQueryOptions.blacklistedTokens());
 
   const blockMut = useMutation({
     mutationFn: (tokenId: number) => createBlacklistedToken({ token: tokenId }),
     onSuccess: async () => {
       message.success("Token bloklandi");
-      await qc.invalidateQueries({ queryKey: ["admin-outstanding-tokens"] });
-      await qc.invalidateQueries({ queryKey: ["admin-blacklisted-tokens"] });
+      await invalidateAdminQueries(qc, [
+        ADMIN_QUERY_KEYS.outstandingTokens,
+        ADMIN_QUERY_KEYS.blacklistedTokens,
+      ]);
     },
     onError: () => message.error("Bloklashda xato"),
   });
@@ -35,8 +34,10 @@ const TokenBlacklistPage = () => {
     mutationFn: (id: number) => deleteBlacklistedToken(id),
     onSuccess: async () => {
       message.success("Qora ro'yxatdan chiqarildi");
-      await qc.invalidateQueries({ queryKey: ["admin-outstanding-tokens"] });
-      await qc.invalidateQueries({ queryKey: ["admin-blacklisted-tokens"] });
+      await invalidateAdminQueries(qc, [
+        ADMIN_QUERY_KEYS.outstandingTokens,
+        ADMIN_QUERY_KEYS.blacklistedTokens,
+      ]);
     },
     onError: () => message.error("O'chirishda xato"),
   });

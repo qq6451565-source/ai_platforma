@@ -14,6 +14,8 @@ describe("adminQueryOptions", () => {
     expect(adminQueryOptions.authTokens().queryKey).toEqual(ADMIN_QUERY_KEYS.authTokens);
     expect(adminQueryOptions.enrollmentList().queryKey).toEqual(ADMIN_QUERY_KEYS.enrollmentList);
     expect(adminQueryOptions.enrollmentWindows().queryKey).toEqual(ADMIN_QUERY_KEYS.enrollmentWindows);
+    expect(adminQueryOptions.authGroups().queryKey).toEqual(ADMIN_QUERY_KEYS.authGroups);
+    expect(adminQueryOptions.liveRooms().queryKey).toEqual(ADMIN_QUERY_KEYS.liveRooms);
   });
 
   it("builds lesson attendance query keys from lesson ids", () => {
@@ -34,6 +36,12 @@ describe("adminQueryOptions", () => {
     );
     expect(adminQueryOptions.enrollmentAudit(15).queryKey).toEqual(
       ADMIN_QUERY_KEYS.enrollmentAudit(15),
+    );
+  });
+
+  it("builds audit log query keys from active filters", () => {
+    expect(adminQueryOptions.auditLogs("enrollment", "all", "ali").queryKey).toEqual(
+      ADMIN_QUERY_KEYS.auditLogs("enrollment", "all", "ali"),
     );
   });
 });

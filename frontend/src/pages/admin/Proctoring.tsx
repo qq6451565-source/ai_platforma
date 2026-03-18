@@ -1,17 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, List, Empty, Popconfirm, Button, Tabs, message } from "antd";
-import { fetchProctorSessions, fetchProctorEvents, deleteProctorSession, deleteProctorEvent } from "../../api/admin";
+import { deleteProctorSession, deleteProctorEvent } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminProctoringPage = () => {
   const qc = useQueryClient();
-  const { data: sessions, isLoading: sessionsLoading } = useQuery({
-    queryKey: ["admin-proctor-sessions"],
-    queryFn: fetchProctorSessions,
-  });
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["admin-proctor-events"],
-    queryFn: fetchProctorEvents,
-  });
+  const { data: sessions, isLoading: sessionsLoading } = useQuery(adminQueryOptions.proctorSessions());
+  const { data: events, isLoading: eventsLoading } = useQuery(adminQueryOptions.proctorEvents());
 
   return (
     <Card title="Proktor (Proctoring)" style={{ marginBottom: 16 }}>
@@ -34,7 +30,7 @@ const AdminProctoringPage = () => {
                           deleteProctorSession(s.id)
                             .then(() => {
                               message.success("O'chirildi");
-                              qc.invalidateQueries({ queryKey: ["admin-proctor-sessions"] });
+                              qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.proctorSessions });
                             })
                             .catch(() => message.error("Xatolik"))
                         }
@@ -69,7 +65,7 @@ const AdminProctoringPage = () => {
                           deleteProctorEvent(e.id)
                             .then(() => {
                               message.success("O'chirildi");
-                              qc.invalidateQueries({ queryKey: ["admin-proctor-events"] });
+                              qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.proctorEvents });
                             })
                             .catch(() => message.error("Xatolik"))
                         }

@@ -2,18 +2,14 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Popconfirm, Table, Tag, message } from "antd";
 import dayjs from "dayjs";
-import { deleteLiveParticipant, fetchLiveParticipants, fetchLiveRooms } from "../../api/admin";
+import { deleteLiveParticipant } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const LiveParticipantsPage = () => {
   const qc = useQueryClient();
-  const { data: participants, isLoading } = useQuery({
-    queryKey: ["admin-live-participants"],
-    queryFn: fetchLiveParticipants,
-  });
-  const { data: rooms } = useQuery({
-    queryKey: ["admin-live-rooms"],
-    queryFn: fetchLiveRooms,
-  });
+  const { data: participants, isLoading } = useQuery(adminQueryOptions.liveParticipants());
+  const { data: rooms } = useQuery(adminQueryOptions.liveRooms());
 
   const roomMap = useMemo(() => new Map((rooms || []).map((r: any) => [r.id, r.room_name])), [rooms]);
 
@@ -21,7 +17,7 @@ const LiveParticipantsPage = () => {
     mutationFn: (id: number) => deleteLiveParticipant(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-live-participants"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveParticipants });
     },
     onError: () => message.error("O'chirishda xato"),
   });

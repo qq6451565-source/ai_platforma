@@ -5,8 +5,10 @@ import {
   fetchExamAttempts,
   fetchExams,
   fetchExamTypes,
+  fetchAuthGroups,
   fetchAuthTokens,
   fetchAuditLogs,
+  fetchBlacklistedTokens,
   fetchEnrollment,
   fetchEnrollmentApplicant,
   fetchEnrollmentDocuments,
@@ -16,8 +18,15 @@ import {
   fetchLessonsAdmin,
   fetchLessonAttendance,
   fetchLessonSlotsAdmin,
+  fetchLiveParticipants,
+  fetchLiveRooms,
   fetchPassportData,
+  fetchPermissions,
+  fetchProctorEvents,
+  fetchProctorSessions,
+  fetchOutstandingTokens,
   fetchStudentProfiles,
+  fetchStudentAnswers,
   fetchStudentTests,
   fetchSubjectsAdmin,
   fetchTeacherSubjects,
@@ -119,6 +128,16 @@ export const adminQueryOptions = {
       queryKey: ADMIN_QUERY_KEYS.authTokens,
       queryFn: fetchAuthTokens,
     }),
+  authGroups: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.authGroups,
+      queryFn: fetchAuthGroups,
+    }),
+  permissions: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.permissions,
+      queryFn: fetchPermissions,
+    }),
   journalRecords: () =>
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.journalRecords,
@@ -173,6 +192,46 @@ export const adminQueryOptions = {
       queryKey: ADMIN_QUERY_KEYS.enrollmentVerifications,
       queryFn: fetchVerificationResults,
     }),
+  outstandingTokens: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.outstandingTokens,
+      queryFn: fetchOutstandingTokens,
+    }),
+  blacklistedTokens: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.blacklistedTokens,
+      queryFn: fetchBlacklistedTokens,
+    }),
+  proctorSessions: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.proctorSessions,
+      queryFn: fetchProctorSessions,
+    }),
+  proctorEvents: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.proctorEvents,
+      queryFn: fetchProctorEvents,
+    }),
+  liveRooms: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.liveRooms,
+      queryFn: fetchLiveRooms,
+    }),
+  liveParticipants: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.liveParticipants,
+      queryFn: fetchLiveParticipants,
+    }),
+  auditLogs: (domain: "all" | "auth" | "enrollment", action: string, search: string) =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.auditLogs(domain, action, search),
+      queryFn: () =>
+        fetchAuditLogs({
+          domain,
+          action,
+          search: search.trim() || undefined,
+        }),
+    }),
   submissions: () =>
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.submissions,
@@ -182,6 +241,11 @@ export const adminQueryOptions = {
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.studentTests,
       queryFn: fetchStudentTests,
+    }),
+  studentAnswers: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.studentAnswers,
+      queryFn: fetchStudentAnswers,
     }),
   attendance: (lessonIds: number[]) => {
     const lessonKey = lessonIds.join(",");

@@ -2,7 +2,9 @@ import { Button, Card, Input, InputNumber, List, Modal, Skeleton, Typography, me
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
-import { fetchAllSubmissions, gradeSubmission } from "../../api/submissions";
+import { gradeSubmission } from "../../api/submissions";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -19,10 +21,7 @@ const toAbsoluteUrl = (url?: string | null) => {
 
 const AdminSubmissionsPage = () => {
   const qc = useQueryClient();
-  const { data: subs, isLoading } = useQuery({
-    queryKey: ["admin-submissions"],
-    queryFn: fetchAllSubmissions,
-  });
+  const { data: subs, isLoading } = useQuery(adminQueryOptions.submissions());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -54,7 +53,7 @@ const AdminSubmissionsPage = () => {
       setOpen(false);
       setGrade(null);
       setComment("");
-      await qc.invalidateQueries({ queryKey: ["admin-submissions"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.submissions });
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Xatolik");
     } finally {

@@ -1,17 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, Tabs, List, Empty, Popconfirm, Button, message } from "antd";
-import { fetchStudentTests, fetchStudentAnswers, deleteStudentTest, deleteStudentAnswer } from "../../api/admin";
+import { deleteStudentTest, deleteStudentAnswer } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminStudentTestsPage = () => {
   const qc = useQueryClient();
-  const { data: tests, isLoading: testsLoading } = useQuery({
-    queryKey: ["admin-student-tests"],
-    queryFn: fetchStudentTests,
-  });
-  const { data: answers, isLoading: answersLoading } = useQuery({
-    queryKey: ["admin-student-answers"],
-    queryFn: fetchStudentAnswers,
-  });
+  const { data: tests, isLoading: testsLoading } = useQuery(adminQueryOptions.studentTests());
+  const { data: answers, isLoading: answersLoading } = useQuery(adminQueryOptions.studentAnswers());
 
   return (
     <Card title="Student testlari" style={{ marginBottom: 16 }}>
@@ -34,7 +30,7 @@ const AdminStudentTestsPage = () => {
                           deleteStudentTest(t.id)
                             .then(() => {
                               message.success("O'chirildi");
-                              qc.invalidateQueries({ queryKey: ["admin-student-tests"] });
+                              qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentTests });
                             })
                             .catch(() => message.error("Xatolik"))
                         }
@@ -66,7 +62,7 @@ const AdminStudentTestsPage = () => {
                           deleteStudentAnswer(a.id)
                             .then(() => {
                               message.success("O'chirildi");
-                              qc.invalidateQueries({ queryKey: ["admin-student-answers"] });
+                              qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentAnswers });
                             })
                             .catch(() => message.error("Xatolik"))
                         }

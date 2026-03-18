@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Input, Popconfirm, Select, Space, Table, Tag, Typography, message } from "antd";
 import dayjs from "dayjs";
-import { AuditLog, deleteAuditLog, fetchAuditLogs } from "../../api/admin";
+import { AuditLog, deleteAuditLog } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const { Text } = Typography;
 
@@ -36,21 +38,13 @@ const AuditLogsPage = () => {
   const [domain, setDomain] = useState<"all" | "auth" | "enrollment">("all");
   const [action, setAction] = useState("all");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-audit-logs", domain, action, search],
-    queryFn: () =>
-      fetchAuditLogs({
-        domain,
-        action,
-        search: search.trim() || undefined,
-      }),
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.auditLogs(domain, action, search));
 
   const delMut = useMutation({
     mutationFn: (id: number) => deleteAuditLog(id),
     onSuccess: async () => {
       message.success("Audit log o'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-audit-logs"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.auditLogs(domain, action, search) });
     },
     onError: () => message.error("O'chirishda xato"),
   });
