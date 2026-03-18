@@ -33,17 +33,16 @@ import {
   EnrollmentDetailItem,
   EnrollmentItem,
   EnrollmentVerification,
-  fetchDirections,
-  fetchEnrollment,
-  fetchEnrollmentApplicant,
-  fetchAuditLogs,
-  fetchGroupsAdmin,
-  fetchSubjectsAdmin,
   reopenEnrollment,
   rejectEnrollment,
   reverifyEnrollment,
   updateEnrollmentApplicant,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import {
+  getEnrollmentInvalidationKeys,
+  invalidateAdminQueries,
+} from "./utils/adminWorkflowMutations";
 
 const { Text, Title } = Typography;
 
@@ -235,34 +234,16 @@ const EnrollmentPage = () => {
   const [reopenForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-enrollment-list"],
-    queryFn: fetchEnrollment,
-  });
-  const { data: groups } = useQuery({
-    queryKey: ["admin-groups"],
-    queryFn: fetchGroupsAdmin,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
-  const { data: directions } = useQuery({
-    queryKey: ["admin-directions"],
-    queryFn: fetchDirections,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.enrollmentList());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: directions } = useQuery(adminQueryOptions.directions());
   const { data: detailApplicant, isFetching: detailLoading } = useQuery({
-    queryKey: ["admin-enrollment-detail", detailApplicantId],
-    queryFn: () => fetchEnrollmentApplicant(detailApplicantId as number),
+    ...adminQueryOptions.enrollmentDetail(detailApplicantId),
     enabled: detailOpen && detailApplicantId !== null,
   });
   const { data: applicantAuditHistory, isFetching: applicantAuditLoading } = useQuery({
-    queryKey: ["admin-enrollment-audit", detailApplicantId],
-    queryFn: () =>
-      fetchAuditLogs({
-        domain: "enrollment",
-        applicant_id: detailApplicantId as number,
-      }),
+    ...adminQueryOptions.enrollmentAudit(detailApplicantId),
     enabled: detailOpen && detailApplicantId !== null,
   });
 
@@ -275,11 +256,7 @@ const EnrollmentPage = () => {
   }, [directions]);
 
   const invalidateEnrollment = async (id?: number | null) => {
-    await qc.invalidateQueries({ queryKey: ["admin-enrollment-list"] });
-    if (id) {
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-detail", id] });
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-audit", id] });
-    }
+    await invalidateAdminQueries(qc, getEnrollmentInvalidationKeys(id));
   };
 
   const closeDetail = () => {

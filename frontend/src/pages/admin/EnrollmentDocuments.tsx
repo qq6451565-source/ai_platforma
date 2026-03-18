@@ -15,9 +15,9 @@ import type { UploadFile } from "antd/es/upload/interface";
 import {
   createEnrollmentDocument,
   deleteEnrollmentDocument,
-  fetchEnrollment,
-  fetchEnrollmentDocuments,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const normFile = (e: any) => {
   if (Array.isArray(e)) return e;
@@ -36,14 +36,8 @@ const buildFormData = (values: any) => {
 
 const EnrollmentDocumentsPage = () => {
   const qc = useQueryClient();
-  const { data: docs, isLoading } = useQuery({
-    queryKey: ["admin-enrollment-docs"],
-    queryFn: fetchEnrollmentDocuments,
-  });
-  const { data: applicants } = useQuery({
-    queryKey: ["admin-enrollment-applicants"],
-    queryFn: fetchEnrollment,
-  });
+  const { data: docs, isLoading } = useQuery(adminQueryOptions.enrollmentDocuments());
+  const { data: applicants } = useQuery(adminQueryOptions.enrollmentList());
   const [createForm] = Form.useForm();
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -56,7 +50,7 @@ const EnrollmentDocumentsPage = () => {
     mutationFn: (vals: any) => createEnrollmentDocument(buildFormData(vals)),
     onSuccess: async () => {
       message.success("Hujjat qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-docs"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
       createForm.resetFields();
     },
     onError: () => message.error("Saqlashda xato"),
@@ -66,7 +60,7 @@ const EnrollmentDocumentsPage = () => {
     mutationFn: (id: number) => deleteEnrollmentDocument(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-docs"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
     },
     onError: () => message.error("O'chirishda xato"),
   });

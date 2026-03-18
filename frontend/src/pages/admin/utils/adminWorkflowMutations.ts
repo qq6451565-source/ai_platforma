@@ -24,6 +24,12 @@ export const ADMIN_QUERY_KEYS = {
   examTypes: ["admin-exam-types"] as const,
   exams: ["admin-exams"] as const,
   examAttempts: ["admin-exam-attempts"] as const,
+  enrollmentList: ["admin-enrollment-list"] as const,
+  enrollmentDetail: (id?: number | null) => ["admin-enrollment-detail", id] as const,
+  enrollmentAudit: (id?: number | null) => ["admin-enrollment-audit", id] as const,
+  enrollmentWindows: ["admin-enrollment-windows"] as const,
+  enrollmentDocuments: ["admin-enrollment-docs"] as const,
+  enrollmentVerifications: ["admin-enrollment-verifications"] as const,
   submissions: ["admin-submissions"] as const,
   studentTests: ["admin-student-tests"] as const,
   attendance: (lessonIdsKey: string) => ["admin-attendance", lessonIdsKey] as const,
@@ -100,3 +106,11 @@ export const invalidateAdminQueries = async (
     ),
   );
 };
+
+export const getEnrollmentInvalidationKeys = (id?: number | null) =>
+  [
+    ADMIN_QUERY_KEYS.enrollmentList,
+    ...(id
+      ? [ADMIN_QUERY_KEYS.enrollmentDetail(id), ADMIN_QUERY_KEYS.enrollmentAudit(id)]
+      : []),
+  ] as const;

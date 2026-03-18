@@ -3,16 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Space, Switch, Tag, message } from "antd";
 import {
   createEnrollmentWindow,
-  fetchEnrollmentWindows,
   updateEnrollmentWindow,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const EnrollmentWindowsPage = () => {
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-enrollment-windows"],
-    queryFn: fetchEnrollmentWindows,
-  });
+  const { data, isLoading } = useQuery(adminQueryOptions.enrollmentWindows());
 
   const currentWindow = useMemo(() => (data && data.length ? data[0] : null), [data]);
   const hasMultiple = (data?.length || 0) > 1;
@@ -21,7 +19,7 @@ const EnrollmentWindowsPage = () => {
     mutationFn: (is_active: boolean) => createEnrollmentWindow({ is_active }),
     onSuccess: async () => {
       message.success("Saqlandi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-windows"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentWindows });
     },
     onError: () => message.error("Saqlashda xato"),
   });
@@ -31,7 +29,7 @@ const EnrollmentWindowsPage = () => {
       updateEnrollmentWindow(id, { is_active }),
     onSuccess: async () => {
       message.success("Yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-windows"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentWindows });
     },
     onError: () => message.error("Yangilashda xato"),
   });

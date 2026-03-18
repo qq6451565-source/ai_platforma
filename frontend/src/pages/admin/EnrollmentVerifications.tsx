@@ -18,21 +18,15 @@ import dayjs from "dayjs";
 import {
   createVerificationResult,
   deleteVerificationResult,
-  fetchEnrollment,
-  fetchVerificationResults,
   updateVerificationResult,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const EnrollmentVerificationsPage = () => {
   const qc = useQueryClient();
-  const { data: results, isLoading } = useQuery({
-    queryKey: ["admin-enrollment-verifications"],
-    queryFn: fetchVerificationResults,
-  });
-  const { data: applicants } = useQuery({
-    queryKey: ["admin-enrollment-applicants"],
-    queryFn: fetchEnrollment,
-  });
+  const { data: results, isLoading } = useQuery(adminQueryOptions.enrollmentVerifications());
+  const { data: applicants } = useQuery(adminQueryOptions.enrollmentList());
 
   const applicantOptions = useMemo(
     () => (applicants || []).map((a: any) => ({ value: a.id, label: a.full_name || `#${a.id}` })),
@@ -47,7 +41,7 @@ const EnrollmentVerificationsPage = () => {
     mutationFn: (vals: any) => createVerificationResult(vals),
     onSuccess: async () => {
       message.success("Tekshiruv natijasi qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-verifications"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentVerifications });
     },
     onError: () => message.error("Saqlashda xato"),
   });
@@ -56,7 +50,7 @@ const EnrollmentVerificationsPage = () => {
     mutationFn: ({ id, payload }: { id: number; payload: any }) => updateVerificationResult(id, payload),
     onSuccess: async () => {
       message.success("Yangilandi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-verifications"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentVerifications });
       setEditOpen(false);
       setEditing(null);
     },
@@ -67,7 +61,7 @@ const EnrollmentVerificationsPage = () => {
     mutationFn: (id: number) => deleteVerificationResult(id),
     onSuccess: async () => {
       message.success("O'chirildi");
-      await qc.invalidateQueries({ queryKey: ["admin-enrollment-verifications"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentVerifications });
     },
     onError: () => message.error("O'chirishda xato"),
   });

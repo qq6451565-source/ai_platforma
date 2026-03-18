@@ -12,6 +12,8 @@ describe("adminQueryOptions", () => {
     expect(adminQueryOptions.timetables().queryKey).toEqual(ADMIN_QUERY_KEYS.timetables);
     expect(adminQueryOptions.examTypes().queryKey).toEqual(ADMIN_QUERY_KEYS.examTypes);
     expect(adminQueryOptions.authTokens().queryKey).toEqual(ADMIN_QUERY_KEYS.authTokens);
+    expect(adminQueryOptions.enrollmentList().queryKey).toEqual(ADMIN_QUERY_KEYS.enrollmentList);
+    expect(adminQueryOptions.enrollmentWindows().queryKey).toEqual(ADMIN_QUERY_KEYS.enrollmentWindows);
   });
 
   it("builds lesson attendance query keys from lesson ids", () => {
@@ -23,6 +25,15 @@ describe("adminQueryOptions", () => {
   it("builds override history query keys from lesson and student", () => {
     expect(adminQueryOptions.attendanceOverrideHistory(7, 9).queryKey).toEqual(
       ADMIN_QUERY_KEYS.attendanceOverrideHistory(7, 9),
+    );
+  });
+
+  it("builds enrollment detail and audit query keys from applicant id", () => {
+    expect(adminQueryOptions.enrollmentDetail(15).queryKey).toEqual(
+      ADMIN_QUERY_KEYS.enrollmentDetail(15),
+    );
+    expect(adminQueryOptions.enrollmentAudit(15).queryKey).toEqual(
+      ADMIN_QUERY_KEYS.enrollmentAudit(15),
     );
   });
 });

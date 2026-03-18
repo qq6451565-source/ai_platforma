@@ -6,6 +6,11 @@ import {
   fetchExams,
   fetchExamTypes,
   fetchAuthTokens,
+  fetchAuditLogs,
+  fetchEnrollment,
+  fetchEnrollmentApplicant,
+  fetchEnrollmentDocuments,
+  fetchEnrollmentWindows,
   fetchGroupsAdmin,
   fetchJournalRecords,
   fetchLessonsAdmin,
@@ -18,6 +23,7 @@ import {
   fetchTeacherSubjects,
   fetchTimetablesAdmin,
   fetchUsers,
+  fetchVerificationResults,
   fetchGradebookEntries,
 } from "../../../api/admin";
 import { fetchAttendanceOverrideHistory } from "../../../api/attendance";
@@ -132,6 +138,40 @@ export const adminQueryOptions = {
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.examAttempts,
       queryFn: fetchExamAttempts,
+    }),
+  enrollmentList: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentList,
+      queryFn: fetchEnrollment,
+    }),
+  enrollmentDetail: (id?: number | null) =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentDetail(id),
+      queryFn: () => fetchEnrollmentApplicant(id as number),
+    }),
+  enrollmentAudit: (id?: number | null) =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentAudit(id),
+      queryFn: () =>
+        fetchAuditLogs({
+          domain: "enrollment",
+          applicant_id: id as number,
+        }),
+    }),
+  enrollmentWindows: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentWindows,
+      queryFn: fetchEnrollmentWindows,
+    }),
+  enrollmentDocuments: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments,
+      queryFn: fetchEnrollmentDocuments,
+    }),
+  enrollmentVerifications: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.enrollmentVerifications,
+      queryFn: fetchVerificationResults,
     }),
   submissions: () =>
     queryOptions({
