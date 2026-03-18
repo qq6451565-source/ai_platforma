@@ -18,9 +18,10 @@ import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
-import { fetchAssignments, createAssignment, deleteAssignment, updateAssignment } from "../../api/assignments";
-import { fetchLessonsAdmin, fetchSubjectsAdmin } from "../../api/admin";
+import { createAssignment, deleteAssignment, updateAssignment } from "../../api/assignments";
 import type { Assignment } from "../../types/assignment";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -43,18 +44,9 @@ const extractFile = (list: UploadFile[]) => {
 
 const AdminAssignmentsPage = () => {
   const qc = useQueryClient();
-  const { data: assignments, isLoading } = useQuery({
-    queryKey: ["admin-assignments"],
-    queryFn: fetchAssignments,
-  });
-  const { data: lessons } = useQuery({
-    queryKey: ["admin-lessons"],
-    queryFn: fetchLessonsAdmin,
-  });
-  const { data: subjects } = useQuery({
-    queryKey: ["admin-subjects"],
-    queryFn: fetchSubjectsAdmin,
-  });
+  const { data: assignments, isLoading } = useQuery(adminQueryOptions.assignments());
+  const { data: lessons } = useQuery(adminQueryOptions.lessons());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
 
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [form] = Form.useForm();
@@ -117,7 +109,7 @@ const AdminAssignmentsPage = () => {
       message.success("Topshiriq yaratildi");
       setFileList([]);
       form.resetFields();
-      await qc.invalidateQueries({ queryKey: ["admin-assignments"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Xatolik");
     } finally {
@@ -224,7 +216,7 @@ const AdminAssignmentsPage = () => {
                         try {
                           await deleteAssignment(item.id);
                           message.success("O'chirildi");
-                          await qc.invalidateQueries({ queryKey: ["admin-assignments"] });
+                          await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
                         } catch {
                           message.error("O'chirishda xato");
                         }
@@ -272,7 +264,7 @@ const AdminAssignmentsPage = () => {
             });
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-assignments"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
           } catch (err: any) {
             if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
           } finally {

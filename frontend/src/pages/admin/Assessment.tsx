@@ -18,31 +18,27 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import {
-  fetchExamTypes,
   createExamType,
   updateExamType,
   deleteExamType,
-  fetchExams,
   createExam,
   updateExam,
   deleteExam,
-  fetchExamAttempts,
   updateExamAttempt,
   deleteExamAttempt,
-  fetchSubjectsAdmin,
-  fetchGroupsAdmin,
-  fetchUsers,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminAssessmentPage = () => {
   const qc = useQueryClient();
-  const { data: examTypes } = useQuery({ queryKey: ["admin-exam-types"], queryFn: fetchExamTypes });
-  const { data: exams } = useQuery({ queryKey: ["admin-exams"], queryFn: fetchExams });
-  const { data: attempts } = useQuery({ queryKey: ["admin-exam-attempts"], queryFn: fetchExamAttempts });
-  const { data: subjects } = useQuery({ queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin });
-  const { data: groups } = useQuery({ queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin });
-  const { data: teachers } = useQuery({ queryKey: ["admin-teachers"], queryFn: () => fetchUsers("teacher") });
-  const { data: students } = useQuery({ queryKey: ["admin-students"], queryFn: () => fetchUsers("student") });
+  const { data: examTypes } = useQuery(adminQueryOptions.examTypes());
+  const { data: exams } = useQuery(adminQueryOptions.exams());
+  const { data: attempts } = useQuery(adminQueryOptions.examAttempts());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: teachers } = useQuery(adminQueryOptions.teachers());
+  const { data: students } = useQuery(adminQueryOptions.students());
 
   const subjectMap = new Map((subjects || []).map((s) => [s.id, s.name]));
   const groupMap = new Map((groups || []).map((g) => [g.id, g.name]));
@@ -64,7 +60,7 @@ const AdminAssessmentPage = () => {
     mutationFn: (vals: any) => createExamType(vals),
     onSuccess: async () => {
       message.success("Exam type qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-exam-types"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes });
     },
     onError: () => message.error("Exam type qo'shishda xato"),
   });
@@ -84,7 +80,7 @@ const AdminAssessmentPage = () => {
       }),
     onSuccess: async () => {
       message.success("Exam qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-exams"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams });
     },
     onError: () => message.error("Exam qo'shishda xato"),
   });
@@ -121,7 +117,7 @@ const AdminAssessmentPage = () => {
                         >
                           Tahrirlash
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExamType(t.id).then(() => qc.invalidateQueries({ queryKey: ["admin-exam-types"] }))}>
+                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExamType(t.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes }))}>
                           <Button danger type="link">O'chirish</Button>
                         </Popconfirm>,
                       ]}
@@ -215,7 +211,7 @@ const AdminAssessmentPage = () => {
                         >
                           Tahrirlash
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExam(e.id).then(() => qc.invalidateQueries({ queryKey: ["admin-exams"] }))}>
+                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExam(e.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams }))}>
                           <Button danger type="link">O'chirish</Button>
                         </Popconfirm>,
                       ]}
@@ -251,7 +247,7 @@ const AdminAssessmentPage = () => {
                       >
                         Tahrirlash
                       </Button>,
-                      <Popconfirm title="O'chirish?" onConfirm={() => deleteExamAttempt(a.id).then(() => qc.invalidateQueries({ queryKey: ["admin-exam-attempts"] }))}>
+                      <Popconfirm title="O'chirish?" onConfirm={() => deleteExamAttempt(a.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts }))}>
                         <Button danger type="link">O'chirish</Button>
                       </Popconfirm>,
                     ]}
@@ -277,7 +273,7 @@ const AdminAssessmentPage = () => {
             await updateExamType(editType.id, vals);
             message.success("Yangilandi");
             setEditType(null);
-            await qc.invalidateQueries({ queryKey: ["admin-exam-types"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {
@@ -315,7 +311,7 @@ const AdminAssessmentPage = () => {
             });
             message.success("Yangilandi");
             setEditExam(null);
-            await qc.invalidateQueries({ queryKey: ["admin-exams"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {
@@ -376,7 +372,7 @@ const AdminAssessmentPage = () => {
             });
             message.success("Yangilandi");
             setEditAttempt(null);
-            await qc.invalidateQueries({ queryKey: ["admin-exam-attempts"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

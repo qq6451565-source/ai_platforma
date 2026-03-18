@@ -19,17 +19,15 @@ import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { fetchTests, deleteTest, updateTest, uploadTest, fetchTest } from "../../api/tests";
-import { fetchLessonsAdmin, fetchSubjectsAdmin } from "../../api/admin";
+import { deleteTest, updateTest, uploadTest, fetchTest } from "../../api/tests";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminTestsPage = () => {
   const qc = useQueryClient();
-  const { data: tests, isLoading } = useQuery({
-    queryKey: ["admin-tests"],
-    queryFn: fetchTests,
-  });
-  const { data: lessons } = useQuery({ queryKey: ["admin-lessons"], queryFn: fetchLessonsAdmin });
-  const { data: subjects } = useQuery({ queryKey: ["admin-subjects"], queryFn: fetchSubjectsAdmin });
+  const { data: tests, isLoading } = useQuery(adminQueryOptions.tests());
+  const { data: lessons } = useQuery(adminQueryOptions.lessons());
+  const { data: subjects } = useQuery(adminQueryOptions.subjects());
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -91,7 +89,7 @@ const AdminTestsPage = () => {
       message.success("Test Word fayldan yaratildi");
       form.resetFields();
       setFileList([]);
-      await qc.invalidateQueries({ queryKey: ["admin-tests"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
     } catch (err: any) {
       message.error(err?.response?.data?.detail || "Xatolik");
     } finally {
@@ -243,7 +241,7 @@ const AdminTestsPage = () => {
                             try {
                               await deleteTest(item.id);
                               message.success("O'chirildi");
-                              await qc.invalidateQueries({ queryKey: ["admin-tests"] });
+                              await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
                             } catch {
                               message.error("O'chirishda xato");
                             }
@@ -310,7 +308,7 @@ const AdminTestsPage = () => {
             });
             message.success("Yangilandi");
             setEditOpen(false);
-            await qc.invalidateQueries({ queryKey: ["admin-tests"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
           } catch (err: any) {
             if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
           } finally {

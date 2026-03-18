@@ -14,24 +14,19 @@ import {
   message,
 } from "antd";
 import {
-  fetchJournalRecords,
   createJournalRecord,
   updateJournalRecord,
   deleteJournalRecord,
-  fetchLessonsAdmin,
-  fetchGroupsAdmin,
-  fetchUsers,
 } from "../../api/admin";
+import { adminQueryOptions } from "./utils/adminQueryOptions";
+import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminJournalPage = () => {
   const qc = useQueryClient();
-  const { data: records, isLoading } = useQuery({
-    queryKey: ["admin-journal-records"],
-    queryFn: fetchJournalRecords,
-  });
-  const { data: lessons } = useQuery({ queryKey: ["admin-lessons"], queryFn: fetchLessonsAdmin });
-  const { data: groups } = useQuery({ queryKey: ["admin-groups"], queryFn: fetchGroupsAdmin });
-  const { data: students } = useQuery({ queryKey: ["admin-students"], queryFn: () => fetchUsers("student") });
+  const { data: records, isLoading } = useQuery(adminQueryOptions.journalRecords());
+  const { data: lessons } = useQuery(adminQueryOptions.lessons());
+  const { data: groups } = useQuery(adminQueryOptions.groups());
+  const { data: students } = useQuery(adminQueryOptions.students());
 
   const lessonMap = new Map((lessons || []).map((l) => [l.id, l.topic || `Dars #${l.id}`]));
   const groupMap = new Map((groups || []).map((g) => [g.id, g.name]));
@@ -45,7 +40,7 @@ const AdminJournalPage = () => {
     mutationFn: (vals: any) => createJournalRecord(vals),
     onSuccess: async () => {
       message.success("Jurnal yozuvi qo'shildi");
-      await qc.invalidateQueries({ queryKey: ["admin-journal-records"] });
+      await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.journalRecords });
     },
     onError: () => message.error("Qo'shishda xato"),
   });
@@ -116,7 +111,7 @@ const AdminJournalPage = () => {
               >
                 Tahrirlash
               </Button>,
-              <Popconfirm title="O'chirish?" onConfirm={() => deleteJournalRecord(r.id).then(() => qc.invalidateQueries({ queryKey: ["admin-journal-records"] }))}>
+              <Popconfirm title="O'chirish?" onConfirm={() => deleteJournalRecord(r.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.journalRecords }))}>
                 <Button danger type="link">O'chirish</Button>
               </Popconfirm>,
             ]}
@@ -139,7 +134,7 @@ const AdminJournalPage = () => {
             await updateJournalRecord(editItem.id, vals);
             message.success("Yangilandi");
             setEditItem(null);
-            await qc.invalidateQueries({ queryKey: ["admin-journal-records"] });
+            await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.journalRecords });
           } catch (err: any) {
             if (!err?.errorFields) message.error("Xatolik");
           } finally {

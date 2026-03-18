@@ -2,7 +2,12 @@ import { queryOptions } from "@tanstack/react-query";
 
 import {
   fetchDirections,
+  fetchExamAttempts,
+  fetchExams,
+  fetchExamTypes,
+  fetchAuthTokens,
   fetchGroupsAdmin,
+  fetchJournalRecords,
   fetchLessonsAdmin,
   fetchLessonAttendance,
   fetchLessonSlotsAdmin,
@@ -102,6 +107,31 @@ export const adminQueryOptions = {
     queryOptions({
       queryKey: ADMIN_QUERY_KEYS.tests,
       queryFn: fetchTests,
+    }),
+  authTokens: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.authTokens,
+      queryFn: fetchAuthTokens,
+    }),
+  journalRecords: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.journalRecords,
+      queryFn: fetchJournalRecords,
+    }),
+  examTypes: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.examTypes,
+      queryFn: fetchExamTypes,
+    }),
+  exams: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.exams,
+      queryFn: fetchExams,
+    }),
+  examAttempts: () =>
+    queryOptions({
+      queryKey: ADMIN_QUERY_KEYS.examAttempts,
+      queryFn: fetchExamAttempts,
     }),
   submissions: () =>
     queryOptions({
