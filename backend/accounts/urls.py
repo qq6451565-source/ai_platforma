@@ -25,6 +25,7 @@ from .views import (
     FaceVerificationView,
     EmailVerificationSendView,
     EmailVerificationConfirmView,
+    ApproveUserView,
 )
 
 router = DefaultRouter()
@@ -49,6 +50,7 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view()),
     path('logout/', LogoutView.as_view()),
     path('admin/set-role/', AdminSetRoleView.as_view()),
+    path('admin/approve-user/', ApproveUserView.as_view()),
     path('admin/students/<int:user_id>/placement/', AdminStudentPlacementView.as_view()),
     path('admin/teachers/<int:user_id>/workload/', AdminTeacherWorkloadView.as_view()),
     path('admin/reanalyze-face/', AdminReanalyzeFaceView.as_view()),

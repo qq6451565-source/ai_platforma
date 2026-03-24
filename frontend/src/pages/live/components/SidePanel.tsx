@@ -52,15 +52,19 @@ const SidebarMiniVideo: React.FC<{
     if (!container) return;
 
     if (!track || !isActive) {
+      console.debug("[SidePanel] Video not playing:", { isActive, hasTrack: !!track, studentName });
       container.innerHTML = "";
       return;
     }
 
     try {
+      console.debug("[SidePanel] Playing track:", { isActive, studentName });
       const playResult = track.play(container, { fit: "cover", mirror: false });
-      Promise.resolve(playResult).catch(() => undefined);
-    } catch {
-      // Sidebar preview is best-effort and should not break class flow.
+      Promise.resolve(playResult).catch((err) => {
+        console.error("[SidePanel] Play error:", err);
+      });
+    } catch (error) {
+      console.error("[SidePanel] Play exception:", error);
     }
 
     return () => {

@@ -42,8 +42,19 @@ export const StudentTile: React.FC<StudentTileProps> = ({
   const videoRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!videoTrack || !videoRef.current) return;
+    if (!videoTrack || !videoRef.current) {
+      console.debug("[StudentTile] No video track or ref:", { 
+        studentId: student.user_id, 
+        hasTrack: !!videoTrack, 
+        hasRef: !!videoRef.current 
+      });
+      return;
+    }
     try {
+      console.debug("[StudentTile] Playing video track:", { 
+        studentId: student.user_id, 
+        trackType: videoTrack ? 'PlayableVideoTrack' : 'undefined' 
+      });
       videoTrack.play(videoRef.current, { fit: "cover", mirror: false });
     } catch (error) {
       console.error("Error playing video track:", error);

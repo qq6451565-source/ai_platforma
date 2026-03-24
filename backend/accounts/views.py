@@ -32,6 +32,7 @@ from .serializers import (
     AuthTokenSerializer,
     OutstandingTokenSerializer,
     BlacklistedTokenSerializer,
+    ApproveUserSerializer,
 )
 from .admin_registry import set_user_role, upsert_student_placement, upsert_teacher_workload
 from .models import User, PassportData, AuditLog, EmailVerificationCode
@@ -626,3 +627,108 @@ class BlacklistedTokenViewSet(
     queryset = BlacklistedToken.objects.select_related("token", "token__user").order_by("-blacklisted_at")
     serializer_class = BlacklistedTokenSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
+
+
+class ApproveUserView(APIView):
+    """
+    Admin foydalanuvchini ma'qullamalari va rol berish.
+    POST /api/accounts/admin/approve-user/
+    {
+        "user_id": 123,
+        "role": "student",  // "student", "teacher", "admin"
+        "group_id": 1,      // faqat talaba uchun
+        "subject_ids": [1, 2, 3]  // faqat oqituvchi uchun
+    }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not (request.user.is_superuser or getattr(request.user, "role", None) == "admin"):
+            raise PermissionDenied("Faqat admin bajarishi mumkin.")
+
+        serializer = ApproveUserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=serializer.validated_data["user_id"])
+        except User.DoesNotExist:
+            return Response({"detail": "Foydalanuvchi topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+        role = serializer.validated_data["role"]
+        group_id = serializer.validated_data.get("group_id")
+        subject_ids = serializer.validated_data.get("subject_ids", [])
+
+        try:
+            # 1. Rol o'rnating
+            user = set_user_role(user, role)
+
+            # 2. Talaba bo'lsa, guruhni o'rnat
+            if role == "student" and group_id:
+                try:
+                    group = Group.objects.get(id=group_id)
+                except Group.DoesNotExist:
+                    return Response({"detail": "Guruh topilmadi."}, status=status.HTTP_404_NOT_FOUND)
+
+                upsert_student_placement(
+                    user,
+                    group=group,
+                    direction=group.direction,
+                    admission_year=timezone.now().year,
+                    status="active",
+                )
+
+            # 3. O'qituvchi bo'lsa, fanlarni o'rnat
+            if role == "teacher" and subject_ids:
+                from teacher_subject.models import TeacherSubject
+                
+                # Mavjud o'qituvchi-fan bog'lanishlarini o'chirib tashlash
+                TeacherSubject.objects.filter(teacher=user).delete()
+
+                # Yangi bog'lanishlarni yaratish
+                for subject_id in subject_ids:
+                    try:
+                        subject = Subject.objects.get(id=subject_id)
+                        TeacherSubject.objects.create(
+                            teacher=user,
+                            subject=subject,
+                        )
+                    except Subject.DoesNotExist:
+                        return Response(
+                            {"detail": f"Fan id={subject_id} topilmadi."},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
+
+            log_audit(
+                request,
+                "user_approved",
+                user=request.user,
+                role=getattr(request.user, "role", None),
+                extra={
+                    "approved_user_id": user.id,
+                    "approved_role": role,
+                    "group_id": group_id,
+                    "subject_ids": subject_ids,
+                },
+            )
+
+            return Response(
+                {
+                    "detail": "Foydalanuvchi muvaffaqiyatli ma'qullandi.",
+                    "user_id": user.id,
+                    "role": user.role,
+                    "group_id": group_id,
+                    "subject_ids": subject_ids,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"detail": f"Xato: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+

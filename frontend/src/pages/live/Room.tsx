@@ -487,11 +487,13 @@ export default function Room() {
           const remoteUid = normalizeUid(user.uid);
           if (user.videoTrack) {
             videoTracksMap.current.set(remoteUid, user.videoTrack);
+            console.debug("[Room] Video track synced:", { remoteUid, label, hasTrack: true });
             setTrackVersion((prev) => prev + 1);
             pushDebug(label, { uid: remoteUid, hasVideoTrack: true });
             return;
           }
           videoTracksMap.current.delete(remoteUid);
+          console.debug("[Room] Video track removed:", { remoteUid, label, hasTrack: false });
           setTrackVersion((prev) => prev + 1);
           pushDebug(label, { uid: remoteUid, hasVideoTrack: false });
         };
@@ -517,8 +519,13 @@ export default function Room() {
               if (!alreadySyncedVideo && !videoInFlight.has(remoteUid)) {
                 videoInFlight.add(remoteUid);
                 try {
+                  console.debug("[Room] Subscribing to video:", { remoteUid });
                   await client.subscribe(user, "video");
+                  console.debug("[Room] Video subscribe success:", { remoteUid, hasTrack: !!user.videoTrack });
                   syncRemoteVideoTrack(user, "video subscribed");
+                } catch (subscribeError) {
+                  console.error("[Room] Video subscribe failed:", { remoteUid, error: toErrorText(subscribeError) });
+                  throw subscribeError;
                 } finally {
                   videoInFlight.delete(remoteUid);
                 }
@@ -702,7 +709,13 @@ export default function Room() {
         pushDebug("joined channel", { channel: tokenData.channel, uid: tokenUid || "(empty)" });
 
         pushDebug("initial remote scan", { count: client.remoteUsers.length });
-        await Promise.allSettled(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
+        const initialResults = await Promise.allSettled(client.remoteUsers.map((remoteUser) => subscribeRemoteUser(remoteUser)));
+        const initialErrors = initialResults.filter(r => r.status === 'rejected');
+        if (initialErrors.length > 0) {
+          console.error("[Room] Initial subscribe errors:", initialErrors.map(e => ('reason' in e) ? e.reason : 'unknown'));
+          pushDebug("initial subscribe errors", { count: initialErrors.length });
+        }
+        console.debug("[Room] Initial subscribe results:", { total: initialResults.length, succeeded: initialResults.filter(r => r.status === 'fulfilled').length });
 
         const videoTrack = await createOptimizedCameraTrack();
         await videoTrack.setEnabled(true).catch(() => undefined);

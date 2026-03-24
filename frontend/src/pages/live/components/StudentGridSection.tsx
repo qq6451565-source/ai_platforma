@@ -34,6 +34,12 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
   const { t } = useTranslation();
   const sortedStudents = sortStudents(participants, studentStatuses);
 
+  // DEBUG: Log video tracks availability
+  React.useEffect(() => {
+    console.debug("[StudentGridSection] videoTracks keys:", Array.from(videoTracks.keys()));
+    console.debug("[StudentGridSection] participants user_ids:", participants.map(p => String(p.user_id)));
+  }, [videoTracks, participants]);
+
   return (
     <div className="students-grid-section">
       {/* Header */}

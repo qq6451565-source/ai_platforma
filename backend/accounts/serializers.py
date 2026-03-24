@@ -9,8 +9,9 @@ from directions.models import Direction
 from groups.models import Group as AcademicGroup
 from profiles.models import StudentProfile
 from subjects.models import Subject
+from teacher_subject.models import TeacherSubject
 
-from .admin_registry import set_user_role, upsert_student_placement
+from .admin_registry import set_user_role, upsert_student_placement, upsert_teacher_workload
 from .models import User, PassportData, AuditLog
 
 
@@ -355,3 +356,33 @@ class BlacklistedTokenSerializer(serializers.ModelSerializer):
         model = BlacklistedToken
         fields = ["id", "token", "token_jti", "user", "user_username", "blacklisted_at"]
         read_only_fields = ["id", "token_jti", "user", "user_username", "blacklisted_at"]
+
+
+class ApproveUserSerializer(serializers.Serializer):
+    """User ro'yxatdan o'tish ma'qullamalari uchun serializer"""
+    user_id = serializers.IntegerField()
+    role = serializers.ChoiceField(choices=["student", "teacher", "admin"], required=True)
+    group_id = serializers.IntegerField(required=False, allow_null=True)  # Faqat student uchun
+    subject_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True
+    )  # Faqat teacher uchun
+    
+    def validate(self, data):
+        role = data.get("role")
+        group_id = data.get("group_id")
+        subject_ids = data.get("subject_ids", [])
+        
+        if role == "student" and not group_id:
+            raise serializers.ValidationError({"group_id": "Talaba uchun guruh belgilash majburiy."})
+        
+        if role == "teacher" and not subject_ids:
+            raise serializers.ValidationError({"subject_ids": "O'qituvchi uchun fanlari belgilash majburiy."})
+        
+        if role not in ["student", "teacher"] and (group_id or subject_ids):
+            raise serializers.ValidationError(
+                "Faqat talaba va o'qituvchilarga guruh/fan belgilash mumkin."
+            )
+        
+        return data
