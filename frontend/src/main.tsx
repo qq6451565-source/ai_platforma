@@ -9,6 +9,14 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 import { loadSavedTheme } from "./utils/themeManager";
+import { validateEnvironment } from "./utils/envValidation";
+
+// Environment validation
+try {
+  validateEnvironment();
+} catch (error) {
+  console.error("Environment validation failed:", error);
+}
 
 // Saqlangan temani yuklash / Load saved theme
 loadSavedTheme();

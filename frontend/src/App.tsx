@@ -1,5 +1,6 @@
 import { Spin } from "antd";
 import { ToastProvider } from "./components/ui";
+import ErrorBoundary from "./components/ErrorBoundary";
 import {
   CalendarOutlined,
   FileDoneOutlined,
@@ -243,7 +244,8 @@ const App = () => {
   }
 
   return (
-    <ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
       <Routes>
         <Route path="/" element={<LazyPageRoute component={LandingPage} fullscreen />} />
         <Route path="/login" element={<LazyPageRoute component={LoginPage} fullscreen />} />
@@ -292,6 +294,7 @@ const App = () => {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

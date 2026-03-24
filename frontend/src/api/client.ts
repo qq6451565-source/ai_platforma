@@ -28,8 +28,17 @@ api.interceptors.response.use(
     const isMeEndpoint = url.includes("/api/accounts/me");
     const isAuthEndpoint = url.includes("/api/token");
 
+    // Log API errors for debugging
+    console.error("[API Error]", {
+      method: error.config?.method?.toUpperCase(),
+      url,
+      status,
+      message: error.response?.data?.detail || error.message,
+    });
+
     if (!isAuthEndpoint && isCurrentToken) {
       if (status === 401 || (status === 403 && isMeEndpoint)) {
+        console.warn("[Auth] Token expired or unauthorized, redirecting to login");
         clearTokens();
         window.location.href = "/login";
       }
