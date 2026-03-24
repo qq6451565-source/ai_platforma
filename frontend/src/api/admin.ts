@@ -45,6 +45,16 @@ export type AdminTeacherWorkloadPayload = {
 export const assignTeacherWorkload = async (userId: number, payload: AdminTeacherWorkloadPayload) =>
   (await api.post(`/api/accounts/admin/teachers/${userId}/workload/`, payload)).data;
 
+export type ApproveUserPayload = {
+  user_id: number;
+  role: "student" | "teacher" | "admin";
+  group_id?: number;
+  subject_ids?: number[];
+};
+
+export const approveUser = async (payload: ApproveUserPayload) =>
+  (await api.post("/api/accounts/admin/approve-user/", payload)).data;
+
 // ==== Groups ====
 export type AdminGroup = {
   id: number;
