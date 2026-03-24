@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  ai-gateway:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      - AI_API_KEY=${AI_API_KEY:-change-me}
+      - DEBUG=${DEBUG:-false}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - FACE_MATCH_THRESHOLD=${FACE_MATCH_THRESHOLD:-0.55}
+      - PRESENCE_THRESHOLD=${PRESENCE_THRESHOLD:-0.5}
+      - MAX_IMAGE_SIZE_MB=${MAX_IMAGE_SIZE_MB:-8}
+      - FACE_MODEL=${FACE_MODEL:-Facenet512}
+      - DETECTION_BACKEND=${DETECTION_BACKEND:-opencv}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
