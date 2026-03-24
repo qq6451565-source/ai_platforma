@@ -280,6 +280,49 @@
   color: #ffd1d8;
 }
 
+/* Face verification status badge */
+.stage-face-status {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.face-badge {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: fadePulse 2s ease-in-out infinite;
+}
+
+.face-badge-detected {
+  background: linear-gradient(135deg, #11d680, #0ab85a);
+}
+
+.face-badge-not_detected {
+  background: linear-gradient(135deg, #ff4f63, #e6003a);
+}
+
+.face-badge-multiple {
+  background: linear-gradient(135deg, #f3a448, #d97a1a);
+}
+
+.face-badge-checking {
+  background: linear-gradient(135deg, #4a90e2, #2563c7);
+}
+
+@keyframes fadePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .stage-title {
   font-size: 0.92rem;
   font-weight: 500;
