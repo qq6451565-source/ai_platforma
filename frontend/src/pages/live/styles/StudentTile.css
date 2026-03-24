@@ -87,10 +87,21 @@
   height: 0.74rem;
   border-radius: 999px;
   border: 0.125rem solid rgba(255, 255, 255, 0.26);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.45rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .status-ring {
   display: none;
+}
+
+.status-label {
+  display: inline;
 }
 
 .student-info {

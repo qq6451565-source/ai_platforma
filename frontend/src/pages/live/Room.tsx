@@ -47,6 +47,7 @@ import {
   resolveVisualStatus,
   sortStudents,
   summarizeEligibility,
+  getFaceStatusDisplay,
 } from "./utils/studentSorting";
 import i18next from "../../i18n";
 
@@ -1455,6 +1456,14 @@ export default function Room() {
     () => (stageParticipant?.is_teacher ? null : getStudentEligibilityBadge(stageStatus)),
     [stageParticipant?.is_teacher, stageStatus]
   );
+  const stageFaceStatus = useMemo(() => {
+    if (!stageParticipant || stageParticipant.is_teacher) return undefined;
+    return stageStatus?.faceStatus || "CHECKING";
+  }, [stageParticipant, stageStatus]);
+  const stageFaceStatusDisplay = useMemo(() => {
+    if (!stageFaceStatus) return undefined;
+    return getFaceStatusDisplay(stageFaceStatus);
+  }, [stageFaceStatus]);
   const eligibilitySummary = useMemo(
     () => summarizeEligibility(state.participants, studentStatuses),
     [state.participants, studentStatuses]
@@ -1567,6 +1576,28 @@ export default function Room() {
                       {stageEligibilityBadge.label}
                     </span>
                   )}
+                </div>
+              )}
+              
+              {/* Face verification status badge */}
+              {stageFaceStatus && (
+                <div className="stage-face-status" style={{ marginTop: '0.5rem' }}>
+                  <div
+                    className={`face-badge face-badge-${stageFaceStatus.toLowerCase()}`}
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.35rem 0.65rem',
+                      borderRadius: '12px',
+                      background: stageFaceStatusDisplay?.color,
+                      color: '#fff',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      boxShadow: `0 0 8px ${stageFaceStatusDisplay?.color}80`,
+                    }}
+                    title={`Yuz holati: ${stageFaceStatus}`}
+                  >
+                    {stageFaceStatusDisplay?.label}
+                  </div>
                 </div>
               )}
             </div>

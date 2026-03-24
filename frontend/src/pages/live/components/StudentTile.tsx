@@ -96,12 +96,14 @@ export const StudentTile: React.FC<StudentTileProps> = ({
 
       <div
         className={`face-status-indicator ${faceStatus.toLowerCase()}`}
+        title={`Face: ${faceStatus}`}
         style={{
           background: `linear-gradient(135deg, ${statusDisplay.color}, ${statusDisplay.color}dd)`,
           boxShadow: `0 0 12px ${statusDisplay.color}cc`,
         }}
       >
         <div className="status-ring" />
+        <span className="status-label">{statusDisplay.label.charAt(0)}</span>
       </div>
 
       <div className="student-info">
