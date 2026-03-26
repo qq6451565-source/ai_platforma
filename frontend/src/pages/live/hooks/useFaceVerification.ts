@@ -286,7 +286,14 @@ export const useStudentMonitoring = (roomName: string, enabled: boolean = false)
     const ws = new WebSocket(buildWebSocketUrl(`/ws/live-monitoring/${roomName}/`));
     wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
+    ws.onopen = () => {
+      setConnected(true);
+      try {
+        ws.send(JSON.stringify({ type: "request_update", timestamp: new Date().toISOString() }));
+      } catch {
+        // ignore send errors; periodic requestUpdate will retry
+      }
+    };
 
     ws.onmessage = (event) => {
       try {
@@ -348,6 +355,7 @@ export const useStudentMonitoring = (roomName: string, enabled: boolean = false)
       setConnected(false);
       wsRef.current = null;
       if (!enabled || !roomName) return;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = window.setTimeout(connect, RECONNECT_DELAY_MS);
     };
   }, [applyIncomingUpdate, applyRoomState, enabled, roomName]);
@@ -363,7 +371,11 @@ export const useStudentMonitoring = (roomName: string, enabled: boolean = false)
 
   const requestUpdate = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current.send(JSON.stringify({ type: "request_update", timestamp: new Date().toISOString() }));
+    try {
+      wsRef.current.send(JSON.stringify({ type: "request_update", timestamp: new Date().toISOString() }));
+    } catch {
+      // ignore send failures
+    }
   }, []);
 
   useEffect(() => {

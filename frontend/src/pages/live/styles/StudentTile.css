@@ -81,19 +81,20 @@
 
 .face-status-indicator {
   position: absolute;
-  top: 0.42rem;
-  right: 0.42rem;
-  width: 0.74rem;
-  height: 0.74rem;
+  top: 0.38rem;
+  right: 0.38rem;
+  min-width: 1.02rem;
+  height: 0.78rem;
   border-radius: 999px;
   border: 0.125rem solid rgba(255, 255, 255, 0.26);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.45rem;
+  font-size: 0.5rem;
   font-weight: 700;
   color: #fff;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  padding: 0 0.2rem;
 }
 
 .status-ring {
@@ -106,7 +107,7 @@
 
 .student-info {
   display: grid;
-  gap: 0.22rem;
+  gap: 0.18rem;
   padding: 0.45rem 0.5rem;
   background: rgba(4, 13, 33, 0.9);
   border-top: 0.0625rem solid rgba(82, 122, 191, 0.22);

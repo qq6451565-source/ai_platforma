@@ -226,11 +226,16 @@ class LiveFaceEvent(models.Model):
     """Individual face verification event/check."""
     
     EVENT_TYPES = [
-        ('verification', 'Verification'),
+        ('success', 'Verification Success'),
+        ('low_confidence', 'Low Confidence'),
         ('multiple_faces', 'Multiple Faces Detected'),
         ('no_face', 'No Face Detected'),
-        ('low_confidence', 'Low Confidence'),
-        ('success', 'Verification Success'),
+        ('no_reference', 'No Reference Embedding'),
+        ('no_embedding', 'No Frame Embedding'),
+        ('invalid_frame', 'Invalid Frame'),
+        ('ai_error', 'AI Service Error'),
+        ('disabled', 'Verification Disabled'),
+        ('error', 'General Error'),
         ('failure', 'Verification Failure'),
     ]
     

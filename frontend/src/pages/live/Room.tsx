@@ -60,6 +60,7 @@ const STAGE_PLAY_RETRY_MS = 180;
 const STAGE_PLAY_MAX_RETRY = 2;
 const SIDEBAR_ACTIVE_VIDEO_CAP = 10;
 const REMOTE_TRACK_RECOVERY_INTERVAL_MS = 12000;
+const MONITORING_STALE_THRESHOLD_MS = 15000;
 const VIDEO_RECOVERY_BACKOFF_MS = [400, 900, 1800] as const;
 const CAMERA_ENCODER_CONFIG = {
   width: 1280,
@@ -271,7 +272,7 @@ export default function Room() {
     lastStatusEventAt,
     lastStatusReason,
     lastRoomStateEventAt,
-  } = useStudentMonitoring(roomName, Boolean(state.connected && roomName));
+  } = useStudentMonitoring(roomName, Boolean(state.connected && roomName && isTeacher));
 
   // Merge the local user's live face status into the shared map so their own tile gets a border
   const studentStatuses = useMemo(() => {
@@ -895,6 +896,20 @@ export default function Room() {
   }, [monitoringConnected, requestMonitoringUpdate, roomMeta?.roomId, state.connected]);
 
   useEffect(() => {
+    if (!isTeacher || !monitoringConnected) return;
+
+    const interval = window.setInterval(() => {
+      const last = lastStatusEventAt ? Date.parse(lastStatusEventAt) : 0;
+      const stale = !last || Number.isNaN(last) || Date.now() - last >= MONITORING_STALE_THRESHOLD_MS;
+      if (stale) {
+        requestMonitoringUpdate();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isTeacher, lastStatusEventAt, monitoringConnected, requestMonitoringUpdate]);
+
+  useEffect(() => {
     if (!state.connected) return;
     const interval = window.setInterval(() => {
       const client = clientRef.current;
@@ -1494,33 +1509,16 @@ export default function Room() {
     <div className={`live-page ${isDesktop ? "sidebar-open" : "sidebar-closed"}`}>
       <header className="room-meta-bar">
         <div className="room-meta-main">
-          <div className="room-meta-title">
-            <span className="room-meta-name">{roomDisplayName}</span>
-            <span className="room-meta-divider">|</span>
-            <span className="room-meta-participants">
-              {t("live.room.participants", { count: participantsCount })}
-            </span>
-          </div>
+          <span className="room-meta-subject">{roomMeta?.subjectName || roomDisplayName}</span>
+          <span className="room-meta-dot" />
+          <span className="room-meta-date">
+            {new Date().toLocaleDateString("uz-UZ", { day: "numeric", month: "long", year: "numeric" })}
+          </span>
         </div>
         {isDemoMode && <div className="room-mode-pill">Demo rejim</div>}
       </header>
 
-      {isTeacher && studentCount > 0 && (
-        <section className="room-summary-bar">
-          <div className="summary-card summary-card-eligible">
-            <span className="summary-card-label">Eligible</span>
-            <strong className="summary-card-value">{eligibilitySummary.eligible}</strong>
-          </div>
-          <div className="summary-card summary-card-risk">
-            <span className="summary-card-label">Risk</span>
-            <strong className="summary-card-value">{eligibilitySummary.risk}</strong>
-          </div>
-          <div className="summary-card summary-card-blocked">
-            <span className="summary-card-label">Blocked</span>
-            <strong className="summary-card-value">{eligibilitySummary.blocked}</strong>
-          </div>
-        </section>
-      )}
+      {/* summary-bar olib tashlandi */}
 
       {state.error && (
         <div className="room-alert room-alert-error">{state.error}</div>
@@ -1581,19 +1579,9 @@ export default function Room() {
               
               {/* Face verification status badge */}
               {stageFaceStatus && (
-                <div className="stage-face-status" style={{ marginTop: '0.5rem' }}>
+                <div className="stage-face-status">
                   <div
                     className={`face-badge face-badge-${stageFaceStatus.toLowerCase()}`}
-                    style={{
-                      display: 'inline-block',
-                      padding: '0.35rem 0.65rem',
-                      borderRadius: '12px',
-                      background: stageFaceStatusDisplay?.color,
-                      color: '#fff',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      boxShadow: `0 0 8px ${stageFaceStatusDisplay?.color}80`,
-                    }}
                     title={`Yuz holati: ${stageFaceStatus}`}
                   >
                     {stageFaceStatusDisplay?.label}

@@ -26,20 +26,25 @@ from attendance.services import get_live_attendance_thresholds
 logger = logging.getLogger(__name__)
 
 # Event types that mean "face genuinely detected in frame"
-_FACE_DETECTED_EVENTS = {"success", "low_confidence", "multiple_faces", "no_reference", "no_embedding"}
+_FACE_DETECTED_EVENTS = {"success"}
 # Event types that yield no face at all
 _FACE_ABSENT_EVENTS = {"no_face", "invalid_frame", "ai_error", "error"}
+# Event types where face was seen but verification failed
+_FACE_UNVERIFIED_EVENTS = {"low_confidence", "no_reference", "no_embedding", "failure"}
 
 
 def _face_detection_status_for(event_type: str) -> str:
-    if event_type == "success":
+    """Map event_type to face detection status.
+
+    IMPORTANT: must stay in sync with LiveMonitoringConsumer._get_face_status()
+    in consumers.py — both functions must return the same value for each event_type.
+    """
+    if event_type in ("success", "disabled"):
         return "DETECTED"
     if event_type == "multiple_faces":
         return "MULTIPLE"
-    if event_type in _FACE_ABSENT_EVENTS:
+    if event_type in _FACE_ABSENT_EVENTS or event_type in _FACE_UNVERIFIED_EVENTS:
         return "NOT_DETECTED"
-    if event_type == "disabled":
-        return "DETECTED"
     return "CHECKING"
 
 

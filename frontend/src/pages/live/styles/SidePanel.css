@@ -1,3 +1,13 @@
+/* ══════════════════════════════════════════════════════════════════
+   SidePanel — Talabalar ro'yxati
+   Rang sxemasi:
+     🟢 yashil  → yuz aniqlandi     (DETECTED)
+     🔴 qizil   → yuz ko'rinmaydi   (NOT_DETECTED / MULTIPLE)
+     🔵 ko'k    → mikrofon ochiq    (audio / stage)
+     ⬜ kulrang → tekshirilmoqda    (CHECKING)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ─── Panel wrapper ─────────────────────────────────────────────── */
 .side-panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -5,103 +15,144 @@
   overflow: hidden;
 }
 
+/* ─── Header ────────────────────────────────────────────────────── */
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.76rem 0.9rem;
-  border-bottom: 0.0625rem solid rgba(76, 120, 197, 0.3);
+  padding: 0.72rem 0.9rem;
+  border-bottom: 0.0625rem solid rgba(66, 119, 202, 0.28);
 }
 
-.panel-header h3 {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #dbe9ff;
+.panel-header__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #c8deff;
+  letter-spacing: 0.02em;
 }
 
-.panel-header .count {
-  font-size: 0.78rem;
+.panel-header__count {
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 700;
   color: #8db0e6;
+  background: rgba(46, 89, 179, 0.2);
+  border: 0.0625rem solid rgba(66, 119, 202, 0.35);
+  padding: 0 0.38rem;
 }
 
+/* ─── Body ──────────────────────────────────────────────────────── */
 .panel-body {
   min-height: 0;
-  padding: 0.68rem;
+  padding: 0.56rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.56rem;
+  gap: 0.44rem;
 }
 
 .panel-body::-webkit-scrollbar {
-  width: 0.33rem;
+  width: 0.26rem;
 }
 
 .panel-body::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(112, 152, 221, 0.4);
+  background: rgba(100, 140, 210, 0.3);
 }
 
-.empty-state {
+.panel-empty {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 8rem;
-  color: #88a7d6;
+  color: #6a90cc;
+  font-size: 0.84rem;
   text-align: center;
-  font-size: 0.88rem;
 }
 
-.panel-participant-row {
+/* ─── Talaba kard ───────────────────────────────────────────────── */
+.student-card {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.62rem;
-  padding: 0.5rem 0.54rem;
-  min-height: 7.2rem;
-  border-radius: 0.72rem;
-  border: 0.0625rem solid rgba(86, 126, 197, 0.35);
-  background: rgba(7, 20, 47, 0.82);
-  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  gap: 0.6rem;
+  padding: 0.48rem 0.52rem;
+  border-radius: 0.78rem;
+  border: 2px solid rgba(86, 126, 197, 0.28);
+  background: rgba(7, 18, 44, 0.88);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.2s ease;
 }
 
-.panel-participant-row:hover {
-  background: rgba(11, 31, 70, 0.84);
-}
-
-.panel-participant-row.is-clickable {
+.student-card--clickable {
   cursor: pointer;
 }
 
-.panel-participant-row.is-clickable:hover {
-  transform: translateY(-0.0625rem);
+.student-card--clickable:hover {
+  background: rgba(12, 28, 64, 0.92);
 }
 
-.panel-participant-row.status-verified {
-  border-color: rgba(17, 214, 128, 0.7);
+/* 🟢 Yuz aniqlandi */
+.student-card--verified {
+  border-color: #11d680;
+  box-shadow:
+    0 0 0 1px rgba(17, 214, 128, 0.14),
+    0 0 12px rgba(17, 214, 128, 0.22);
+  background: rgba(7, 22, 44, 0.92);
 }
 
-.panel-participant-row.status-unverified {
-  border-color: rgba(255, 79, 99, 0.7);
+/* 🔴 Yuz ko'rinmaydi */
+.student-card--unverified {
+  border-color: #ff4f63;
+  box-shadow:
+    0 0 0 1px rgba(255, 79, 99, 0.12),
+    0 0 12px rgba(255, 79, 99, 0.2);
+  background: rgba(22, 7, 12, 0.9);
+  animation: pulse-red 2.5s ease-in-out infinite;
 }
 
-.panel-participant-row.status-checking {
-  border-color: rgba(148, 163, 184, 0.6);
+/* 🔵 Mikrofon ochiq / sahnadagi talaba */
+.student-card--audio {
+  border-color: #2e8dff;
+  box-shadow:
+    0 0 0 1px rgba(46, 141, 255, 0.14),
+    0 0 14px rgba(46, 141, 255, 0.28);
+  background: rgba(6, 15, 40, 0.94);
+  animation: pulse-blue 2s ease-in-out infinite;
 }
 
-.panel-participant-row.stage-user {
-  box-shadow: 0 0 0 0.0625rem rgba(46, 141, 255, 0.35) inset;
+/* ⬜ Tekshirilmoqda */
+.student-card--checking {
+  border-color: rgba(100, 130, 190, 0.38);
 }
 
-.participant-mini-video {
-  width: 5.9rem;
-  height: 3.9rem;
-  border-radius: 0.62rem;
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 79, 99, 0.12), 0 0 10px rgba(255, 79, 99, 0.18); }
+  50%       { box-shadow: 0 0 0 1px rgba(255, 79, 99, 0.2),  0 0 18px rgba(255, 79, 99, 0.32); }
+}
+
+@keyframes pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(46, 141, 255, 0.12), 0 0 10px rgba(46, 141, 255, 0.22); }
+  50%       { box-shadow: 0 0 0 1px rgba(46, 141, 255, 0.22), 0 0 20px rgba(46, 141, 255, 0.4); }
+}
+
+/* ─── Thumbnail (mini video yoki avatar) ───────────────────────── */
+.card-thumb {
+  position: relative;
+  width: 3.6rem;
+  height: 3.6rem;
+  border-radius: 0.56rem;
   overflow: hidden;
-  border: 0.0625rem solid rgba(108, 144, 208, 0.34);
-  background: rgba(6, 18, 47, 0.92);
   flex-shrink: 0;
+  background: rgba(6, 18, 47, 0.92);
+  border: 0.0625rem solid rgba(108, 144, 208, 0.28);
 }
 
 .mini-video-element,
@@ -119,148 +170,141 @@
   align-items: center;
   justify-content: center;
   color: #dceaff;
-  font-size: 1.58rem;
+  font-size: 1.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, rgba(30, 58, 108, 0.95), rgba(17, 38, 78, 0.95));
 }
 
-.participant-info {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 0.14rem;
+/* Mikrofon dot — ko'k, pastda o'ng */
+.card-thumb__mic {
+  position: absolute;
+  bottom: 0.2rem;
+  right: 0.2rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: #2e8dff;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 6px #2e8dff;
+  animation: mic-blink 1.2s ease-in-out infinite;
 }
 
-.participant-info .name {
-  font-size: 0.9rem;
+@keyframes mic-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Qo'l ko'tarish emoji */
+.card-thumb__hand {
+  position: absolute;
+  bottom: 0.1rem;
+  right: 0.1rem;
+  font-size: 0.72rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+}
+
+/* ─── Talaba ma'lumoti ─────────────────────────────────────────── */
+.card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.card-info__name {
+  font-size: 0.82rem;
   font-weight: 600;
   color: #e2eeff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
-.participant-info .meta {
-  font-size: 0.84rem;
-  color: #8eb1e8;
+.card-info__group {
+  font-size: 0.7rem;
+  color: #7a9dcc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
 }
 
-.participant-info .meta.meta-metrics {
-  font-size: 0.72rem;
-  color: #c9dcff;
-}
-
-.participant-info .meta.meta-attendance {
-  font-size: 0.68rem;
-  color: #92b8ee;
-}
-
-.participant-eligibility-badge {
+/* ─── Yuz holati badge ─────────────────────────────────────────── */
+.fs-badge {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  min-height: 1rem;
-  padding: 0 0.38rem;
+  padding: 0.14rem 0.42rem;
   border-radius: 999px;
-  border: 0.0625rem solid rgba(118, 152, 213, 0.3);
-  background: rgba(8, 23, 53, 0.88);
-  color: #d5e9ff;
-  font-size: 0.58rem;
-  font-weight: 700;
-}
-
-.participant-eligibility-badge.eligibility-eligible {
-  border-color: rgba(17, 214, 128, 0.5);
-  background: rgba(17, 214, 128, 0.14);
-  color: #bff6d7;
-}
-
-.participant-eligibility-badge.eligibility-risk {
-  border-color: rgba(243, 164, 72, 0.5);
-  background: rgba(243, 164, 72, 0.14);
-  color: #ffdba9;
-}
-
-.participant-eligibility-badge.eligibility-blocked {
-  border-color: rgba(255, 79, 99, 0.5);
-  background: rgba(255, 79, 99, 0.14);
-  color: #ffd1d8;
-}
-
-.status-dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 999px;
-  box-shadow: 0 0 0.45rem currentColor;
-  flex-shrink: 0;
-}
-
-.status-label {
-  display: none;
-  min-width: 0;
-  text-align: center;
   font-size: 0.62rem;
-  border-radius: 999px;
-  padding: 0.16rem 0.3rem;
-  font-weight: 600;
-  border: 0.0625rem solid rgba(127, 160, 219, 0.4);
-  color: #c3d8fb;
-  background: rgba(8, 24, 55, 0.78);
+  font-weight: 700;
+  border: 0.0625rem solid transparent;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  margin-top: 0.08rem;
 }
 
-.panel-participant-row .status-label {
-  position: absolute;
-  right: 0.42rem;
-  top: 0.38rem;
-  opacity: 0.88;
+.fs-badge--green {
+  color: #7affc9;
+  border-color: rgba(17, 214, 128, 0.55);
+  background: rgba(17, 214, 128, 0.12);
 }
 
-.status-label.verified {
-  border-color: rgba(17, 214, 128, 0.66);
-  color: #baf9db;
-  background: rgba(17, 214, 128, 0.14);
+.fs-badge--red {
+  color: #ff9aaa;
+  border-color: rgba(255, 79, 99, 0.55);
+  background: rgba(255, 79, 99, 0.12);
 }
 
-.status-label.unverified {
-  border-color: rgba(255, 79, 99, 0.66);
-  color: #ffd2d8;
-  background: rgba(255, 79, 99, 0.14);
+.fs-badge--orange {
+  color: #ffd08a;
+  border-color: rgba(243, 164, 72, 0.55);
+  background: rgba(243, 164, 72, 0.12);
 }
 
-.status-label.checking {
-  border-color: rgba(148, 163, 184, 0.6);
-  color: #d1ddf1;
-  background: rgba(148, 163, 184, 0.14);
+.fs-badge--gray {
+  color: #8aabda;
+  border-color: rgba(134, 166, 219, 0.35);
+  background: rgba(134, 166, 219, 0.08);
 }
 
-.hand-raised-indicator {
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 999px;
-  border: 0.0625rem solid rgba(46, 141, 255, 0.66);
-  color: #d6e9ff;
-  background: rgba(46, 141, 255, 0.22);
+/* ─── Mic tugmasi (o'qituvchi uchun) ──────────────────────────── */
+.card-mic-btn {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: 0.0625rem solid rgba(86, 126, 197, 0.4);
+  background: rgba(8, 22, 54, 0.8);
+  color: #8db0e6;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.audio-control-btn {
-  width: 1.6rem;
-  height: 1.6rem;
-  flex-shrink: 0;
-  border-radius: 999px;
-  border: 0.0625rem solid rgba(127, 160, 219, 0.4);
-  background: rgba(8, 24, 55, 0.78);
-  color: #d8e8ff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+  font-size: 0.82rem;
   cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  padding: 0;
 }
 
-.audio-control-btn:hover {
-  border-color: rgba(172, 202, 248, 0.62);
+.card-mic-btn:hover {
+  border-color: rgba(130, 168, 235, 0.65);
+  background: rgba(20, 48, 100, 0.88);
+}
+
+.card-mic-btn--active {
+  border-color: #2e8dff;
+  background: rgba(46, 141, 255, 0.2);
+  color: #80c8ff;
+  box-shadow: 0 0 8px rgba(46, 141, 255, 0.3);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 1279px) {
+  .card-thumb {
+    width: 3.2rem;
+    height: 3.2rem;
+  }
 }

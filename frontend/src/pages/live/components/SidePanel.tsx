@@ -1,13 +1,6 @@
 import React from "react";
-import {
-  getFaceStatusDisplay,
-  getStudentAttendanceNote,
-  getStudentEligibilityBadge,
-  getStudentMetricsSummary,
-  resolveStudentGroup,
-} from "../utils/studentSorting";
+import { resolveStudentGroup } from "../utils/studentSorting";
 import type { Student, StudentStatus } from "../utils/studentSorting";
-import { AudioOutlined, AudioMutedOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import "../styles/SidePanel.css";
 
@@ -30,7 +23,7 @@ interface SidePanelProps {
   stageUserId?: string | null;
 }
 
-const getInitials = (value: string) => {
+const getInitials = (value: string): string => {
   const cleaned = value.trim();
   if (!cleaned) return "?";
   const parts = cleaned.split(/\s+/).filter(Boolean);
@@ -50,35 +43,39 @@ const SidebarMiniVideo: React.FC<{
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     if (!track || !isActive) {
-      console.debug("[SidePanel] Video not playing:", { isActive, hasTrack: !!track, studentName });
       container.innerHTML = "";
       return;
     }
-
     try {
-      console.debug("[SidePanel] Playing track:", { isActive, studentName });
       const playResult = track.play(container, { fit: "cover", mirror: false });
-      Promise.resolve(playResult).catch((err) => {
-        console.error("[SidePanel] Play error:", err);
-      });
-    } catch (error) {
-      console.error("[SidePanel] Play exception:", error);
+      Promise.resolve(playResult).catch(() => undefined);
+    } catch {
+      // ignore
     }
-
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
+      if (containerRef.current) containerRef.current.innerHTML = "";
     };
   }, [isActive, track]);
 
   if (!track || !isActive) {
     return <div className="mini-avatar">{getInitials(studentName)}</div>;
   }
-
   return <div className="mini-video-element" ref={containerRef} />;
+};
+
+// ─── Yuz holati belgisi ──────────────────────────────────────────────────────
+const FaceStatusBadge: React.FC<{ faceStatus: string }> = ({ faceStatus }) => {
+  if (faceStatus === "DETECTED") {
+    return <span className="fs-badge fs-badge--green">✓ Aniqlandi</span>;
+  }
+  if (faceStatus === "MULTIPLE") {
+    return <span className="fs-badge fs-badge--orange">⚠ Ko'p yuz</span>;
+  }
+  if (faceStatus === "NOT_DETECTED") {
+    return <span className="fs-badge fs-badge--red">✕ Ko'rinmaydi</span>;
+  }
+  return <span className="fs-badge fs-badge--gray">… Tekshirilyapti</span>;
 };
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -92,115 +89,88 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   stageUserId = null,
 }) => {
   const { t } = useTranslation();
-  const students = participants.filter((participant) => !participant.is_teacher);
+  const students = participants.filter((p) => !p.is_teacher);
 
   return (
     <aside className="side-panel">
+      {/* ─── Header ─────────────────────────────────────────────────── */}
       <div className="panel-header">
-        <h3>{t("live.panel.participants")}</h3>
-        <span className="count">({students.length})</span>
+        <span className="panel-header__title">Talabalar</span>
+        <span className="panel-header__count">{students.length}</span>
       </div>
 
+      {/* ─── Ro'yxat ─────────────────────────────────────────────────── */}
       <div className="panel-body">
         {students.length === 0 ? (
-          <div className="empty-state">
-            <p>{t("live.panel.noStudents")}</p>
-          </div>
+          <div className="panel-empty">{t("live.panel.noStudents")}</div>
         ) : (
           students.map((student) => {
             const status = studentStatuses.get(student.user_id);
-            const normalizedStudentId = String(student.user_id);
-            const faceStatus = status?.faceStatus || "CHECKING";
-            const statusDisplay = getFaceStatusDisplay(faceStatus);
+            const uid = String(student.user_id);
+            const faceStatus = status?.faceStatus ?? "CHECKING";
             const isHandRaised = Boolean(status?.handRaised || student.hand_raised);
-            const videoTrack = videoTracks.get(normalizedStudentId);
-            const canPlayMiniVideo = activeVideoUids.has(normalizedStudentId);
-            const isStage = stageUserId === normalizedStudentId;
-            const verificationClass =
-              faceStatus === "DETECTED"
-                ? "status-verified"
-                : faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE"
-                ? "status-unverified"
-                : "status-checking";
-            const metricsSummary = getStudentMetricsSummary(status);
-            const attendanceNote = getStudentAttendanceNote(status);
-            const eligibilityBadge = getStudentEligibilityBadge(status);
+            const isAudioEnabled = Boolean(status?.audioEnabled);
+            const isStage = stageUserId === uid;
+            const canPlayVideo = activeVideoUids.has(uid);
+            const videoTrack = videoTracks.get(uid);
+            const groupLabel = resolveStudentGroup(student);
+
+            // Kard border rangi:
+            // ko'k   — mikrofon ochiq (stage/audio)
+            // yashil — yuz aniqlandi
+            // qizil  — yuz aniqlanmadi / ko'p yuz
+            // kulrang — tekshirilmoqda
+            let cardMod = "card--checking";
+            if (isAudioEnabled || isStage) {
+              cardMod = "card--audio";
+            } else if (faceStatus === "DETECTED") {
+              cardMod = "card--verified";
+            } else if (faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE") {
+              cardMod = "card--unverified";
+            }
 
             return (
               <div
                 key={student.user_id}
-                className={`panel-participant-row ${verificationClass} ${
-                  isStage ? "stage-user" : ""
-                } ${isTeacher && onStudentSelect ? "is-clickable" : ""}`}
-                onClick={() => {
-                  if (isTeacher) {
-                    onStudentSelect?.(student.user_id);
-                  }
-                }}
+                className={`student-card ${cardMod} ${isTeacher && onStudentSelect ? "student-card--clickable" : ""}`}
+                onClick={() => isTeacher && onStudentSelect?.(student.user_id)}
+                title={student.user_name}
               >
-                <div className="participant-mini-video">
+                {/* Mini video / avatar */}
+                <div className="card-thumb">
                   <SidebarMiniVideo
                     track={videoTrack}
-                    isActive={canPlayMiniVideo}
+                    isActive={canPlayVideo}
                     studentName={student.user_name}
                   />
-                </div>
-
-                <div className="participant-info">
-                  <span className="name">{student.user_name}</span>
-                  <span className="meta">
-                    {resolveStudentGroup(student)}
-                  </span>
-                  {metricsSummary && <span className="meta meta-metrics">{metricsSummary}</span>}
-                  {attendanceNote && <span className="meta meta-attendance">{attendanceNote}</span>}
-                  {eligibilityBadge && (
-                    <span
-                      className={`participant-eligibility-badge ${eligibilityBadge.className}`}
-                      title={eligibilityBadge.reason}
-                    >
-                      {eligibilityBadge.label}
-                    </span>
+                  {/* Audio indikator — ko'k dot */}
+                  {isAudioEnabled && <span className="card-thumb__mic" title="Mikrofon ochiq" />}
+                  {/* Qo'l ko'tarish */}
+                  {isHandRaised && !isAudioEnabled && (
+                    <span className="card-thumb__hand" title="Qo'l ko'tardi">✋</span>
                   )}
                 </div>
 
-                <div
-                  className={`status-dot ${statusDisplay.animation}`}
-                  style={{ backgroundColor: statusDisplay.color }}
-                  title={statusDisplay.label}
-                />
+                {/* Ma'lumot */}
+                <div className="card-info">
+                  <span className="card-info__name">{student.user_name}</span>
+                  {groupLabel && groupLabel !== "Guruh belgilanmagan" && (
+                    <span className="card-info__group">{groupLabel}</span>
+                  )}
+                  <FaceStatusBadge faceStatus={faceStatus} />
+                </div>
 
-                <span className={`status-label ${verificationClass.replace("status-", "")}`}>
-                  {faceStatus === "DETECTED"
-                    ? "Verified"
-                    : faceStatus === "NOT_DETECTED" || faceStatus === "MULTIPLE"
-                    ? "Unverified"
-                    : "Checking"}
-                </span>
-
-                {isHandRaised && (
-                  <span className="hand-raised-indicator" title={t("live.tile.handRaised")}>
-                    <AudioOutlined />
-                  </span>
-                )}
-
+                {/* O'qituvchi uchun stage tugmasi */}
                 {isTeacher && onStudentAudioToggle && (
                   <button
-                    className="audio-control-btn"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onStudentAudioToggle?.(student.user_id);
+                    className={`card-mic-btn ${isAudioEnabled ? "card-mic-btn--active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStudentAudioToggle(student.user_id);
                     }}
-                    title={
-                      status?.audioEnabled
-                        ? "Hozir markazda gapiryapti"
-                        : "Gapirish uchun markazga chiqarish"
-                    }
+                    title={isAudioEnabled ? "Markazda" : "Sahngaga chiqarish"}
                   >
-                    {status?.audioEnabled ? (
-                      <AudioOutlined style={{ fontSize: "12px" }} />
-                    ) : (
-                      <AudioMutedOutlined style={{ fontSize: "12px" }} />
-                    )}
+                    {isAudioEnabled ? "🔊" : "🎤"}
                   </button>
                 )}
               </div>

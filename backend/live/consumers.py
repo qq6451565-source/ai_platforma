@@ -342,7 +342,12 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
                 ],
                 "timestamp": timezone.now().isoformat(),
             }
-        except Exception:
+        except Exception as exc:
+            import logging
+            logging.getLogger("live.consumers").exception(
+                "build_student_status_payload failed for user=%s room=%s: %s",
+                getattr(self, 'user', None), self.room_name, exc,
+            )
             return None
 
 
@@ -558,18 +563,20 @@ class LiveMonitoringConsumer(AsyncWebsocketConsumer):
     def _get_face_status(event) -> str:
         if not event:
             return "CHECKING"
-        if event.event_type == "success":
+        if event.event_type in ("success", "disabled"):
             return "DETECTED"
         if event.event_type == "multiple_faces":
             return "MULTIPLE"
         if event.event_type in {
             "no_face",
-            "low_confidence",
             "no_reference",
+            "no_embedding",
             "ai_error",
             "invalid_frame",
-            "no_embedding",
             "error",
+            "failure",
         }:
+            return "NOT_DETECTED"
+        if event.event_type == "low_confidence":
             return "NOT_DETECTED"
         return "CHECKING"
