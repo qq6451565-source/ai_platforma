@@ -263,7 +263,7 @@ export default function Room() {
     connected: faceConnected,
     verifyFrame,
     localFaceStatus,
-  } = useFaceVerification(roomName, Boolean(state.connected && roomName));
+  } = useFaceVerification(roomName, Boolean(state.connected && roomName && !isTeacher));
   const {
     studentStatuses: monitoringStatuses,
     connected: monitoringConnected,
@@ -1041,7 +1041,7 @@ export default function Room() {
         captureVideoElementRef.current = null;
       }
     };
-  }, [faceConnected, state.connected, verifyFrame]);
+  }, [faceConnected, state.connected, verifyFrame, localTrackVersion]);
 
   const detachScreenTrackEndedHandler = useCallback((track: ILocalVideoTrack | null) => {
     const handler = screenTrackEndedHandlerRef.current;
@@ -1512,9 +1512,92 @@ export default function Room() {
           <span className="room-meta-subject">{roomMeta?.subjectName || roomDisplayName}</span>
           <span className="room-meta-dot" />
           <span className="room-meta-date">
-            {new Date().toLocaleDateString("uz-UZ", { day: "numeric", month: "long", year: "numeric" })}
+            {new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
           </span>
         </div>
+
+        <div className="header-controls">
+          {/* Face status (faqat talaba) */}
+          {state.connected && !isTeacher && (
+            <div className={`face-status-badge face-status-${localFaceStatus.toLowerCase()}`}>
+              <span className="face-status-dot" />
+              <span className="face-status-label">
+                {localFaceStatus === "DETECTED"
+                  ? "Yuz aniqlandi"
+                  : localFaceStatus === "NOT_DETECTED"
+                  ? "Yuz ko'rinmaydi"
+                  : localFaceStatus === "MULTIPLE"
+                  ? "Ko'p yuz"
+                  : "Tekshirilmoqda..."}
+              </span>
+            </div>
+          )}
+
+          <Button
+            variant="ghost"
+            className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}
+            onClick={handleMicToggle}
+            icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
+            disabled={!state.connected || (!isTeacher && !isStageUser)}
+          />
+
+          <Button
+            variant="ghost"
+            className={`control-btn ${state.cameraOn ? "is-active" : "is-off"}`}
+            onClick={handleCameraToggle}
+            icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
+            disabled={!state.connected || state.screenSharing}
+          />
+
+          {(isStageUser || state.screenSharing) && (
+            <Button
+              variant="ghost"
+              className={`control-btn ${state.screenSharing ? "is-active" : ""}`}
+              onClick={handleScreenShareToggle}
+              icon={<DesktopOutlined />}
+              disabled={!canShareScreen}
+            />
+          )}
+
+          {isTeacher && canReturnStageToTeacher && (
+            <Button
+              variant="ghost"
+              className="control-btn"
+              onClick={handleReturnStageToTeacher}
+              icon={<RollbackOutlined />}
+              disabled={!state.connected}
+            />
+          )}
+
+          {!isTeacher && (
+            <Button
+              variant="ghost"
+              className={`control-btn ${state.handRaised ? "is-active" : ""}`}
+              onClick={handleHandRaise}
+              icon={<HighlightOutlined />}
+              disabled={!state.connected}
+            />
+          )}
+
+          {!isDesktop && (
+            <Button
+              variant="ghost"
+              className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
+              onClick={() =>
+                setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
+              }
+              icon={<TeamOutlined />}
+            />
+          )}
+
+          <Button
+            variant="ghost"
+            className="control-btn exit-btn"
+            onClick={handleExitRoom}
+            icon={<LogoutOutlined />}
+          />
+        </div>
+
         {isDemoMode && <div className="room-mode-pill">Demo rejim</div>}
       </header>
 
@@ -1670,100 +1753,7 @@ export default function Room() {
         />
       )}
 
-      <div className="live-controls">
-        {state.connected && (
-          <div className={`face-status-badge face-status-${localFaceStatus.toLowerCase()}`}>
-            <span className="face-status-dot" />
-            <span className="face-status-label">
-              {localFaceStatus === "DETECTED"
-                ? "Yuz aniqlandi"
-                : localFaceStatus === "NOT_DETECTED"
-                ? "Yuz ko'rinmaydi"
-                : localFaceStatus === "MULTIPLE"
-                ? "Ko'p yuz"
-                : "Tekshirilmoqda..."}
-            </span>
-          </div>
-        )}
-
-        <Button
-          variant="ghost"
-          className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}
-          onClick={handleMicToggle}
-          icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
-          disabled={!state.connected || (!isTeacher && !isStageUser)}
-        >
-          {state.micOn ? "Mic On" : "Mic Off"}
-        </Button>
-
-        <Button
-          variant="ghost"
-          className={`control-btn ${state.cameraOn ? "is-active" : "is-off"}`}
-          onClick={handleCameraToggle}
-          icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
-          disabled={!state.connected || state.screenSharing}
-        >
-          {state.cameraOn ? "Cam On" : "Cam Off"}
-        </Button>
-
-        {(isStageUser || state.screenSharing) && (
-          <Button
-            variant="ghost"
-            className={`control-btn ${state.screenSharing ? "is-active" : ""}`}
-            onClick={handleScreenShareToggle}
-            icon={<DesktopOutlined />}
-            disabled={!canShareScreen}
-          >
-            {state.screenSharing ? "Stop Share" : "Screen Share"}
-          </Button>
-        )}
-
-        {isTeacher && canReturnStageToTeacher && (
-          <Button
-            variant="ghost"
-            className="control-btn"
-            onClick={handleReturnStageToTeacher}
-            icon={<RollbackOutlined />}
-            disabled={!state.connected}
-          >
-            O'qituvchiga qaytarish
-          </Button>
-        )}
-
-        {!isTeacher && (
-          <Button
-            variant="ghost"
-            className={`control-btn ${state.handRaised ? "is-active" : ""}`}
-            onClick={handleHandRaise}
-            icon={<HighlightOutlined />}
-            disabled={!state.connected}
-          >
-            {state.handRaised ? "So'z so'raldi" : "So'z so'rash"}
-          </Button>
-        )}
-
-        {!isDesktop && (
-          <Button
-            variant="ghost"
-            className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
-            onClick={() =>
-              setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
-            }
-            icon={<TeamOutlined />}
-          >
-            Talabalar
-          </Button>
-        )}
-
-        <Button
-          variant="ghost"
-          className="control-btn exit-btn"
-          onClick={handleExitRoom}
-          icon={<LogoutOutlined />}
-        >
-          Chiqish
-        </Button>
-      </div>
+      {/* kontrol tugmalari header ichiga ko'chirildi */}
     </div>
   );
 }

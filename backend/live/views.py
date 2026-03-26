@@ -361,10 +361,19 @@ class JoinLiveLessonView(APIView):
 
         _broadcast_room_state(room)
 
+        lesson = room.lesson
+        subject_name = ""
+        try:
+            subject_name = lesson.teacher_subject.subject.name
+        except Exception:
+            pass
+
         return Response(
             {
                 "room_id": room.id,
                 "room": room.room_name,
+                "lesson_topic": getattr(lesson, "topic", "") or "",
+                "subject_name": subject_name,
                 "jitsi_url": room.jitsi_url,
                 "livekit_url": _build_ws_url(),
                 "token": _build_livekit_token(request.user, room.room_name),
@@ -395,10 +404,19 @@ class JoinLiveRoomView(APIView):
 
         _broadcast_room_state(room)
 
+        lesson = room.lesson
+        subject_name = ""
+        try:
+            subject_name = lesson.teacher_subject.subject.name
+        except Exception:
+            pass
+
         return Response(
             {
                 "message": "Joined",
                 "room": room.room_name,
+                "lesson_topic": getattr(lesson, "topic", "") or "",
+                "subject_name": subject_name,
                 "jitsi_url": room.jitsi_url,
                 "livekit_url": _build_ws_url(),
                 "token": _build_livekit_token(request.user, room.room_name),
