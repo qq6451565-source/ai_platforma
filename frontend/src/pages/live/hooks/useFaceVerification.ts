@@ -177,15 +177,20 @@ export function applyUpdatesToMap(
 // • Sends webcam frames via verifyFrame()
 // • Returns localFaceStatus — green/red border on the caller's own video tile
 
+const FACE_VERIFY_TIMEOUT_MS = 20_000; // 20s — agar shu vaqtda natija kelmasa NOT_DETECTED
+
 export const useFaceVerification = (roomName: string, enabled: boolean = true) => {
   const [studentStatuses, setStudentStatuses] = useState<Map<number, StudentStatus>>(new Map());
   const [connected, setConnected] = useState(false);
 
-  // Own face detection status for local video border (teacher + student)
+  // Own face detection status for local video border
   const [localFaceStatus, setLocalFaceStatus] = useState<FaceDetectionStatus>("CHECKING");
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
+  const lastResultAtRef = useRef<number>(0);
+  const verifyTimeoutRef = useRef<number | null>(null);
+  const frameSentCountRef = useRef<number>(0);
 
   const connect = useCallback(() => {
     if (!enabled || !roomName) return;
@@ -194,18 +199,40 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
     const ws = new WebSocket(buildWebSocketUrl(`/ws/face-verify/${roomName}/`));
     wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
+    ws.onopen = () => {
+      setConnected(true);
+      frameSentCountRef.current = 0;
+      lastResultAtRef.current = Date.now();
+    };
 
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data) as VerificationResult;
-        if (data.type !== "verification_result") return;
+        const data = JSON.parse(event.data);
 
-        // Derive status from server response and update local border
-        const next: FaceDetectionStatus =
-          data.face_detection_status ??
-          (data.verified ? "DETECTED" : "NOT_DETECTED");
-        setLocalFaceStatus(next);
+        // Session started — server accepted us
+        if (data.type === "session_started") {
+          return;
+        }
+
+        // Error from server (e.g. AI Gateway unreachable)
+        if (data.type === "error") {
+          console.warn("[FaceVerify] server error:", data.message);
+          setLocalFaceStatus("NOT_DETECTED");
+          return;
+        }
+
+        // Pong — ignore
+        if (data.type === "pong") return;
+
+        // Verification result — the main response
+        if (data.type === "verification_result") {
+          lastResultAtRef.current = Date.now();
+          const next: FaceDetectionStatus =
+            data.face_detection_status ??
+            (data.verified ? "DETECTED" : "NOT_DETECTED");
+          setLocalFaceStatus(next);
+          return;
+        }
       } catch {
         // ignore malformed frames
       }
@@ -221,10 +248,32 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
     };
   }, [enabled, roomName]);
 
+  // Timeout: agar uzoq vaqt CHECKING da qolsa, NOT_DETECTED ga tushirish
+  useEffect(() => {
+    if (!enabled) return;
+
+    const check = () => {
+      const elapsed = Date.now() - lastResultAtRef.current;
+      if (
+        frameSentCountRef.current >= 2 &&
+        elapsed > FACE_VERIFY_TIMEOUT_MS &&
+        localFaceStatus === "CHECKING"
+      ) {
+        setLocalFaceStatus("NOT_DETECTED");
+      }
+    };
+
+    verifyTimeoutRef.current = window.setInterval(check, 5000);
+    return () => {
+      if (verifyTimeoutRef.current) clearInterval(verifyTimeoutRef.current);
+    };
+  }, [enabled, localFaceStatus]);
+
   useEffect(() => {
     connect();
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (verifyTimeoutRef.current) clearInterval(verifyTimeoutRef.current);
       wsRef.current?.close();
       wsRef.current = null;
     };
@@ -240,6 +289,7 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
           timestamp: new Date().toISOString(),
         })
       );
+      frameSentCountRef.current += 1;
     } catch {
       // ignore send errors — reconnect will handle it
     }

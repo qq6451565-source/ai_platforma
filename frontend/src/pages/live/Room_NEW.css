@@ -168,7 +168,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: none !important;
 }
 
 .stage-loading,

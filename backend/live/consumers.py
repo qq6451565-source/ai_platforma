@@ -201,11 +201,24 @@ class FaceVerificationConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"type": "error", "message": "No frame data provided"}))
             return
 
-        result = await database_sync_to_async(FaceVerificationService.verify_frame)(
-            room_name=self.room_name,
-            user=self.user,
-            frame_data=frame_data,
-        )
+        try:
+            result = await database_sync_to_async(FaceVerificationService.verify_frame)(
+                room_name=self.room_name,
+                user=self.user,
+                frame_data=frame_data,
+            )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).exception("verify_frame exception user=%s room=%s", self.user.id, self.room_name)
+            await self.send(text_data=json.dumps({
+                "type": "verification_result",
+                "verified": False,
+                "face_detection_status": "NOT_DETECTED",
+                "event_type": "ai_error",
+                "message": str(exc)[:200],
+                "alert": False,
+            }))
+            return
 
         await self.send(text_data=json.dumps({"type": "verification_result", **result}))
 

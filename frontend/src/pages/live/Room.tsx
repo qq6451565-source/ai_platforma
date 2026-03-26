@@ -385,8 +385,8 @@ export default function Room() {
           roomId: roomData.room_id,
           roomName: roomData.room,
           subjectName:
-            (roomData as { lesson_topic?: string; subject_name?: string }).lesson_topic ||
             (roomData as { lesson_topic?: string; subject_name?: string }).subject_name ||
+            (roomData as { lesson_topic?: string; subject_name?: string }).lesson_topic ||
             roomData.room,
         });
 
@@ -1336,7 +1336,7 @@ export default function Room() {
       videoElement.style.width = "100%";
       videoElement.style.height = "100%";
       videoElement.style.objectFit = "cover";
-      videoElement.style.transform = "scaleX(1)";
+      videoElement.style.transform = "scaleX(-1)";
       stageVideoRef.current.appendChild(videoElement);
       localFallbackVideo = videoElement;
       Promise.resolve(videoElement.play()).catch(() => undefined);
