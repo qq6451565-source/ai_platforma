@@ -21,13 +21,20 @@ class AIConnectionError(AIError):
 
 
 def _ai_base():
+    """
+    AI Gateway URL ni aniqlash:
+    1. Avval DB dagi AISettings (admin panel orqali sozlanadi)
+    2. Keyin Django settings (env vars)
+    3. Hech biri bo'lmasa — None
+    """
     ai_settings = _get_ai_settings()
     if ai_settings and ai_settings.ai_enabled and ai_settings.api_base_url:
         return ai_settings.api_base_url.rstrip("/")
 
-    enabled = getattr(settings, "AI_ENABLED", False)
+    # DB da URL yo'q — settings fallback (AI_ENABLED tekshirmasdan URL qaytaramiz,
+    # chunki AI_ENABLED faqat DB row yaratilganda default sifatida ishlatiladi)
     base_url = getattr(settings, "AI_BASE_URL", None)
-    if enabled and base_url:
+    if base_url:
         return base_url.rstrip("/")
     return None
 

@@ -246,9 +246,9 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 # AI integratsiya sozlamalari
 AI_ENABLED = os.getenv("AI_ENABLED", "false").lower() == "true"
-AI_BASE_URL = os.getenv("AI_BASE_URL")
-AI_API_KEY = os.getenv("AI_API_KEY")
-AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "5"))
+AI_BASE_URL = os.getenv("AI_BASE_URL") or "https://qwertyu6451565-ai-gataware.hf.space"
+AI_API_KEY = os.getenv("AI_API_KEY") or "default-key"
+AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
 AI_RETRY = int(os.getenv("AI_RETRY", "1"))
 FACE_ATTENDANCE_WINDOW_SECONDS = int(os.getenv("FACE_ATTENDANCE_WINDOW_SECONDS", "60"))
 FACE_ATTENDANCE_MIN_SAMPLES = int(os.getenv("FACE_ATTENDANCE_MIN_SAMPLES", "3"))
