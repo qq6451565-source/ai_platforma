@@ -1639,13 +1639,11 @@ export default function Room() {
           )}
 
           <div className="stage-overlay">
+            {/* Top info — faqat talaba sahnadagida metrikalar ko'rsatiladi */}
+            {stageParticipant && !stageParticipant.is_teacher && (
+              stageMetricChips.length > 0 || stageAttendanceNote || stageEligibilityBadge || (stageFaceStatus && stageFaceStatus !== "CHECKING")
+            ) ? (
             <div className="stage-top-info">
-              <div className="stage-title">
-                {state.screenSharing ? "Ekran ulashish" : "Markaziy sahna"}
-              </div>
-              <div className="stage-subtitle">
-                {stageParticipant?.is_teacher ? "O'qituvchi markazda" : "Talaba markazda"}
-              </div>
               {(stageMetricChips.length > 0 || Boolean(stageAttendanceNote) || Boolean(stageEligibilityBadge)) && (
                 <div className="stage-metrics">
                   {stageMetricChips.map((chip) => (
@@ -1670,7 +1668,7 @@ export default function Room() {
               )}
               
               {/* Face verification status badge */}
-              {stageFaceStatus && (
+              {stageFaceStatus && stageFaceStatus !== "CHECKING" && (
                 <div className="stage-face-status">
                   <div
                     className={`face-badge face-badge-${stageFaceStatus.toLowerCase()}`}
@@ -1681,6 +1679,7 @@ export default function Room() {
                 </div>
               )}
             </div>
+            ) : null}
             <div className="stage-bottom-info">
               <div className="stage-user-label">
                 {stageName}

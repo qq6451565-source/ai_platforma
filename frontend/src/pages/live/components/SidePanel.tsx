@@ -65,7 +65,7 @@ const SidebarMiniVideo: React.FC<{
 };
 
 // ─── Yuz holati belgisi ──────────────────────────────────────────────────────
-const FaceStatusBadge: React.FC<{ faceStatus: string }> = ({ faceStatus }) => {
+const FaceStatusBadge: React.FC<{ faceStatus: string; statusReason?: string }> = ({ faceStatus, statusReason }) => {
   if (faceStatus === "DETECTED") {
     return <span className="fs-badge fs-badge--green">✓ Aniqlandi</span>;
   }
@@ -73,7 +73,11 @@ const FaceStatusBadge: React.FC<{ faceStatus: string }> = ({ faceStatus }) => {
     return <span className="fs-badge fs-badge--orange">⚠ Ko'p yuz</span>;
   }
   if (faceStatus === "NOT_DETECTED") {
-    return <span className="fs-badge fs-badge--red">✕ Ko'rinmaydi</span>;
+    // AI xizmati ishlamayotgan bo'lsa, aniqroq xabar
+    if (statusReason === "ai_error" || statusReason === "error") {
+      return <span className="fs-badge fs-badge--gray">⚡ AI mavjud emas</span>;
+    }
+    return <span className="fs-badge fs-badge--red">✕ Aniqlanmadi</span>;
   }
   return <span className="fs-badge fs-badge--gray">… Tekshirilyapti</span>;
 };
@@ -157,7 +161,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   {groupLabel && groupLabel !== "Guruh belgilanmagan" && (
                     <span className="card-info__group">{groupLabel}</span>
                   )}
-                  <FaceStatusBadge faceStatus={faceStatus} />
+                  <FaceStatusBadge faceStatus={faceStatus} statusReason={status?.statusReason} />
                 </div>
 
                 {/* O'qituvchi uchun stage tugmasi */}
