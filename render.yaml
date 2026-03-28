@@ -1,6 +1,6 @@
 services:
-  # ── Backend (Django + Channels) ──────────────────────────────────────
   # AI Gateway is hosted on HF Spaces: https://qwertyu6451565-ai-gataware.hf.space
+  # ── Backend (Django + Channels) ──────────────────────────────────────
   - type: web
     name: ai-platforma-backend
     env: python
