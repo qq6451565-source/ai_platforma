@@ -24,7 +24,7 @@ services:
       - key: AI_API_KEY
         sync: false
       - key: AI_BASE_URL
-        sync: false
+        value: "https://qwertyu6451565-ai-gataware.hf.space"
       - key: AI_TIMEOUT
         value: "120"
       - key: AI_RETRY
