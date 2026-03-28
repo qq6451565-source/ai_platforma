@@ -441,6 +441,18 @@
   50%       { opacity: 0.2; }
 }
 
+/* AI xizmati mavjud emas holati */
+.face-status-badge.face-status-unavailable {
+  background: rgba(120, 120, 130, 0.14);
+  border-color: rgba(120, 120, 130, 0.45);
+  color: #9a9aa8;
+}
+.face-status-badge.face-status-unavailable .face-status-dot {
+  background: #9a9aa8;
+  box-shadow: 0 0 4px #9a9aa8;
+  opacity: 0.5;
+}
+
 .control-btn {
   min-height: 2.2rem !important;
   min-width: 2.2rem !important;

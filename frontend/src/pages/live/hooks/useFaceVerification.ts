@@ -96,6 +96,8 @@ interface MonitoringStartedMessage {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const RECONNECT_DELAY_MS = 2500;
+const MAX_RECONNECT_ATTEMPTS = 5; // 5 marta urinib ko'radi, keyin to'xtaydi
+const WS_CONNECT_TIMEOUT_MS = 10_000; // 10s — agar WS ochilmasa, xato
 
 function buildWebSocketUrl(path: string): string {
   const apiBase =
@@ -182,27 +184,49 @@ const FACE_VERIFY_TIMEOUT_MS = 20_000; // 20s — agar shu vaqtda natija kelmasa
 export const useFaceVerification = (roomName: string, enabled: boolean = true) => {
   const [studentStatuses, setStudentStatuses] = useState<Map<number, StudentStatus>>(new Map());
   const [connected, setConnected] = useState(false);
+  const [wsUnavailable, setWsUnavailable] = useState(false); // WS umuman ishlamaydi
 
   // Own face detection status for local video border
   const [localFaceStatus, setLocalFaceStatus] = useState<FaceDetectionStatus>("CHECKING");
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
+  const connectTimeoutRef = useRef<number | null>(null);
   const lastResultAtRef = useRef<number>(0);
   const verifyTimeoutRef = useRef<number | null>(null);
   const frameSentCountRef = useRef<number>(0);
+  const reconnectAttemptsRef = useRef<number>(0);
+  const aiErrorCountRef = useRef<number>(0); // Ketma-ket AI xatolar soni
 
   const connect = useCallback(() => {
     if (!enabled || !roomName) return;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+    // Reconnect limiti
+    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.warn("[FaceVerify] max reconnect attempts reached — WS unavailable");
+      setWsUnavailable(true);
+      setLocalFaceStatus("NOT_DETECTED");
+      return;
+    }
 
     const ws = new WebSocket(buildWebSocketUrl(`/ws/face-verify/${roomName}/`));
     wsRef.current = ws;
 
+    // Connection timeout — agar WS 10s ichida ochilmasa, yopamiz
+    connectTimeoutRef.current = window.setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        console.warn("[FaceVerify] WS connect timeout");
+        ws.close();
+      }
+    }, WS_CONNECT_TIMEOUT_MS);
+
     ws.onopen = () => {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
       setConnected(true);
+      setWsUnavailable(false);
       frameSentCountRef.current = 0;
       lastResultAtRef.current = Date.now();
+      reconnectAttemptsRef.current = 0; // Muvaffaqiyatli ulanish — counter reset
     };
 
     ws.onmessage = (event) => {
@@ -227,6 +251,20 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
         // Verification result — the main response
         if (data.type === "verification_result") {
           lastResultAtRef.current = Date.now();
+
+          // AI Gateway xatosi — ketma-ket 3 ta bo'lsa, "unavailable" deb belgilaymiz
+          if (data.event_type === "ai_error") {
+            aiErrorCountRef.current += 1;
+            if (aiErrorCountRef.current >= 3) {
+              console.warn("[FaceVerify] 3 consecutive AI errors — marking unavailable");
+              setWsUnavailable(true);
+              setLocalFaceStatus("NOT_DETECTED");
+              return;
+            }
+          } else {
+            aiErrorCountRef.current = 0; // Muvaffaqiyatli natija — reset
+          }
+
           const next: FaceDetectionStatus =
             data.face_detection_status ??
             (data.verified ? "DETECTED" : "NOT_DETECTED");
@@ -238,13 +276,25 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
       }
     };
 
-    ws.onerror = () => setConnected(false);
+    ws.onerror = () => {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+      setConnected(false);
+    };
 
     ws.onclose = () => {
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
       setConnected(false);
       wsRef.current = null;
       if (!enabled || !roomName) return;
-      reconnectTimerRef.current = window.setTimeout(connect, RECONNECT_DELAY_MS);
+      reconnectAttemptsRef.current += 1;
+      if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+        console.warn("[FaceVerify] max reconnect attempts — stopping");
+        setWsUnavailable(true);
+        setLocalFaceStatus("NOT_DETECTED");
+        return;
+      }
+      const delay = RECONNECT_DELAY_MS * Math.min(reconnectAttemptsRef.current, 4);
+      reconnectTimerRef.current = window.setTimeout(connect, delay);
     };
   }, [enabled, roomName]);
 
@@ -273,6 +323,7 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
     connect();
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
       if (verifyTimeoutRef.current) clearInterval(verifyTimeoutRef.current);
       wsRef.current?.close();
       wsRef.current = null;
@@ -295,7 +346,7 @@ export const useFaceVerification = (roomName: string, enabled: boolean = true) =
     }
   }, []);
 
-  return { studentStatuses, setStudentStatuses, connected, verifyFrame, localFaceStatus };
+  return { studentStatuses, setStudentStatuses, connected, wsUnavailable, verifyFrame, localFaceStatus };
 };
 
 // ─── useStudentMonitoring ─────────────────────────────────────────────────────

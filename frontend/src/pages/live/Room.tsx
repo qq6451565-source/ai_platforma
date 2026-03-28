@@ -261,6 +261,7 @@ export default function Room() {
   const roomName = roomMeta?.roomName ?? "";
   const {
     connected: faceConnected,
+    wsUnavailable: faceWsUnavailable,
     verifyFrame,
     localFaceStatus,
   } = useFaceVerification(roomName, Boolean(state.connected && roomName && !isTeacher));
@@ -1519,13 +1520,21 @@ export default function Room() {
         <div className="header-controls">
           {/* Face status (faqat talaba) */}
           {state.connected && !isTeacher && (
-            <div className={`face-status-badge face-status-${localFaceStatus.toLowerCase()}`}>
+            <div className={`face-status-badge face-status-${
+              faceWsUnavailable ? "unavailable"
+              : !faceConnected ? "checking"
+              : localFaceStatus.toLowerCase()
+            }`}>
               <span className="face-status-dot" />
               <span className="face-status-label">
-                {localFaceStatus === "DETECTED"
-                  ? "Yuz aniqlandi"
+                {faceWsUnavailable
+                  ? "AI xizmati mavjud emas"
+                  : !faceConnected
+                  ? "Ulanmoqda..."
+                  : localFaceStatus === "DETECTED"
+                  ? "Yuz aniqlandi ✓"
                   : localFaceStatus === "NOT_DETECTED"
-                  ? "Yuz ko'rinmaydi"
+                  ? "Yuz aniqlanmadi"
                   : localFaceStatus === "MULTIPLE"
                   ? "Ko'p yuz"
                   : "Tekshirilmoqda..."}
