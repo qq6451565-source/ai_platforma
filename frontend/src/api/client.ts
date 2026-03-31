@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken, clearTokens } from "../utils/token";
+import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../utils/token";
 
 // VITE_API_BASE is primary; keep backward compatibility with VITE_API_BASE_URL.
 const baseURL =
@@ -8,6 +8,17 @@ const baseURL =
   "http://127.0.0.1:8000";
 
 const api = axios.create({ baseURL });
+
+// Separate instance for token refresh — avoids interceptor loop
+const refreshApi = axios.create({ baseURL });
+
+let isRefreshing = false;
+let refreshQueue: Array<(token: string) => void> = [];
+
+function processQueue(newToken: string) {
+  refreshQueue.forEach((cb) => cb(newToken));
+  refreshQueue = [];
+}
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -19,14 +30,11 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
     const status = error.response?.status;
     const url = error.config?.url || "";
-    const requestAuth = error.config?.headers?.Authorization;
-    const currentAuth = `Bearer ${getAccessToken() || ""}`;
-    const isCurrentToken = requestAuth && requestAuth === currentAuth;
-    const isMeEndpoint = url.includes("/api/accounts/me");
     const isAuthEndpoint = url.includes("/api/token");
+    const isMeEndpoint = url.includes("/api/accounts/me");
 
     // Log API errors for debugging
     console.error("[API Error]", {
@@ -36,13 +44,57 @@ api.interceptors.response.use(
       message: error.response?.data?.detail || error.message,
     });
 
-    if (!isAuthEndpoint && isCurrentToken) {
-      if (status === 401 || (status === 403 && isMeEndpoint)) {
-        console.warn("[Auth] Token expired or unauthorized, redirecting to login");
+    const shouldRefresh =
+      !isAuthEndpoint &&
+      status === 401 &&
+      !error.config._retry;
+
+    if (shouldRefresh) {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
         clearTokens();
         window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        // Queue this request until refresh completes
+        return new Promise((resolve, reject) => {
+          refreshQueue.push((newToken: string) => {
+            error.config.headers.Authorization = `Bearer ${newToken}`;
+            error.config._retry = true;
+            resolve(api(error.config));
+          });
+        });
+      }
+
+      error.config._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await refreshApi.post("/api/token/refresh/", { refresh: refreshToken });
+        const newAccess: string = res.data.access;
+        const newRefresh: string | undefined = res.data.refresh;
+        saveTokens(newAccess, newRefresh);
+        processQueue(newAccess);
+        error.config.headers.Authorization = `Bearer ${newAccess}`;
+        return api(error.config);
+      } catch {
+        clearTokens();
+        refreshQueue = [];
+        window.location.href = "/login";
+        return Promise.reject(error);
+      } finally {
+        isRefreshing = false;
       }
     }
+
+    if (!isAuthEndpoint && (status === 403 && isMeEndpoint)) {
+      console.warn("[Auth] Forbidden on /me, redirecting to login");
+      clearTokens();
+      window.location.href = "/login";
+    }
+
     return Promise.reject(error);
   }
 );

@@ -62,8 +62,16 @@
     "learning": "Учебный процесс",
     "aiSettings": "Настройки ИИ",
     "submissions": "Отправленные задания",
-    "student": "???????",
-    "teacher": "?????????????"
+    "student": "Студент",
+    "teacher": "Учитель",
+    "monitoring": "Мониторинг",
+    "extra": "Дополнительно",
+    "auditLogs": "Журнал аудита",
+    "scheduleAdmin": "Расписание",
+    "assessment": "Оценивание",
+    "comms": "Коммуникации",
+    "authGroups": "Auth группы",
+    "tokens": "Токены"
   },
   "schedule": {
     "title": "Расписание",

@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Card } from "../components/ui";
+import { Button, Card } from "antd";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
 import "./Landing.css";
@@ -68,27 +68,27 @@ const Landing: React.FC = () => {
           </p>
 
           <div className="cta-buttons">
-            <Button variant="primary" size="lg" onClick={() => navigate("/login")}>
+            <Button type="primary" size="large" onClick={() => navigate("/login")}>
               {t("landing.exploreNow")}
             </Button>
-            <Button variant="outline" size="lg" onClick={() => navigate("/register")}>
+            <Button size="large" onClick={() => navigate("/register")}>
               {t("landing.getStarted")}
             </Button>
           </div>
         </div>
 
         <div className="features-grid">
-          <Card className="feature-card" hoverable>
+          <Card hoverable>
             <div className="feature-icon">AI</div>
             <h3>{t("landing.featureAI.title")}</h3>
             <p>{t("landing.featureAI.description")}</p>
           </Card>
-          <Card className="feature-card" hoverable>
+          <Card hoverable>
             <div className="feature-icon">FX</div>
             <h3>{t("landing.featureLightning.title")}</h3>
             <p>{t("landing.featureLightning.description")}</p>
           </Card>
-          <Card className="feature-card" hoverable>
+          <Card hoverable>
             <div className="feature-icon">AN</div>
             <h3>{t("landing.featureAnalytics.title")}</h3>
             <p>{t("landing.featureAnalytics.description")}</p>

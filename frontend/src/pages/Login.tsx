@@ -1,31 +1,21 @@
 ﻿import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { message } from "antd";
+import { Button, Card, Form, Input, message, Space, Typography } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { clearTokens, saveTokens } from "../utils/token";
 import { getDefaultRedirect } from "../utils/roleRedirect";
-import { Button, Input, Card } from "../components/ui";
 
 const LoginPage = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.username || !formData.password) {
-      message.error(t("auth.loginError"));
-      return;
-    }
-
-    setLoading(true);
+  const handleFinish = async (values: { username: string; password: string }) => {
     try {
-      const tokens = await login(formData);
+      const tokens = await login(values);
       saveTokens(tokens.access, tokens.refresh);
       const me = await fetchMe();
       if (me.role === "admin") {
@@ -39,8 +29,6 @@ const LoginPage = () => {
     } catch (err: any) {
       clearTokens();
       message.error(err?.response?.data?.detail || t("auth.loginError"));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -52,54 +40,38 @@ const LoginPage = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.5rem",
-        background: "var(--color-background)",
+        background: "#f0f2f5",
       }}
     >
       <div style={{ maxWidth: 420, width: "100%" }}>
         <Card
-          title={t("common.login")}
-          extra={
-            <Link to="/register" className="body-sm">
-              {t("register.title")}
-            </Link>
-          }
+          title={<Typography.Title level={4} style={{ margin: 0 }}>{t("common.login")}</Typography.Title>}
+          extra={<Link to="/register">{t("register.title")}</Link>}
         >
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
-            <Input
+          <Form form={form} layout="vertical" onFinish={handleFinish}>
+            <Form.Item
+              name="username"
               label={t("auth.username")}
-              icon={<UserOutlined />}
-              placeholder={t("auth.usernamePlaceholder")}
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              required
-            />
-            <Input
-              label={t("auth.password")}
-              type="password"
-              icon={<LockOutlined />}
-              placeholder="********"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
-            <Button
-              type="submit"
-              block
-              isLoading={loading}
-              size="lg"
-              style={{ marginTop: "0.25rem" }}
+              rules={[{ required: true, message: t("auth.loginError") }]}
             >
-              {t("common.login")}
-            </Button>
-            <div style={{ textAlign: "center", marginTop: "0.25rem" }}>
-              <Link to="/admin-login" className="caption" style={{ opacity: 0.6 }}>
-                {t("auth.adminLogin")}
-              </Link>
+              <Input prefix={<UserOutlined />} placeholder={t("auth.usernamePlaceholder")} size="large" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label={t("auth.password")}
+              rules={[{ required: true, message: t("auth.loginError") }]}
+            >
+              <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Button type="primary" htmlType="submit" block size="large">
+                {t("common.login")}
+              </Button>
+            </Form.Item>
+            <div style={{ textAlign: "center" }}>
+              <Link to="/admin-login"><Typography.Text type="secondary">{t("auth.adminLogin")}</Typography.Text></Link>
             </div>
-          </form>
+          </Form>
         </Card>
       </div>
     </div>

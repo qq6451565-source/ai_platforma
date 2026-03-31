@@ -1,25 +1,20 @@
 ﻿import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { message } from "antd";
+import { Button, Card, Form, Input, message, Typography } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { login } from "../api/auth";
 import { saveTokens, clearTokens } from "../utils/token";
 import { fetchMe } from "../api/user";
-import { Button, Input, Card } from "../components/ui";
 
 const AdminLoginPage = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleFinish = async (values: { username: string; password: string }) => {
     try {
-      const tokens = await login(formData);
+      const tokens = await login(values);
       saveTokens(tokens.access, tokens.refresh);
       const me = await fetchMe();
       if (me.role !== "admin") {
@@ -33,47 +28,37 @@ const AdminLoginPage = () => {
     } catch (err: any) {
       clearTokens();
       message.error(err?.response?.data?.detail || t("adminLogin.failed"));
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="flex-center h-screen bg-background p-4 animate-fade-in">
-      <div style={{ maxWidth: "420px", width: "100%" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", background: "#f0f2f5" }}>
+      <div style={{ maxWidth: 420, width: "100%" }}>
         <Card
-          className="w-full"
-          title={t("adminLogin.title")}
-          extra={<Link to="/login" className="body-sm">{t("adminLogin.backToUserLogin")}</Link>}
+          title={<Typography.Title level={4} style={{ margin: 0 }}>{t("adminLogin.title")}</Typography.Title>}
+          extra={<Link to="/login">{t("adminLogin.backToUserLogin")}</Link>}
         >
-          <form onSubmit={handleSubmit} className="d-flex flex-direction-column" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <Input
+          <Form form={form} layout="vertical" onFinish={handleFinish}>
+            <Form.Item
+              name="username"
               label={t("auth.username")}
-              icon={<UserOutlined />}
-              placeholder={t("adminLogin.usernamePlaceholder")}
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              required
-            />
-            <Input
-              label={t("auth.password")}
-              type="password"
-              icon={<LockOutlined />}
-              placeholder="********"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
-            <Button
-              type="submit"
-              block
-              isLoading={loading}
-              size="lg"
-              className="mt-2"
+              rules={[{ required: true }]}
             >
-              {t("adminLogin.submit")}
-            </Button>
-          </form>
+              <Input prefix={<UserOutlined />} placeholder={t("adminLogin.usernamePlaceholder")} size="large" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label={t("auth.password")}
+              rules={[{ required: true }]}
+            >
+              <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Button type="primary" htmlType="submit" block size="large">
+                {t("adminLogin.submit")}
+              </Button>
+            </Form.Item>
+          </Form>
         </Card>
       </div>
     </div>

@@ -1,11 +1,10 @@
-import { Skeleton, List } from "antd";
+import { Button, Card, Skeleton, List } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Card, Button } from "../../components/ui";
 import { useTranslation } from "react-i18next";
 
 const TeacherDashboard = () => {
@@ -45,7 +44,7 @@ const TeacherDashboard = () => {
       </div>
 
       <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <Card title={t('dashboard.todayLessons')} className="h-full" hasBeam>
+        <Card title={t('dashboard.todayLessons')} style={{ height: '100%' }}>
           {loadingLessons ? (
             <Skeleton active />
           ) : (
@@ -61,8 +60,8 @@ const TeacherDashboard = () => {
                     onClick={() => navigate("/app/teacher/lessons")}
                     extra={
                       <Button
-                        size="sm"
-                        variant={liveStatus.canJoin ? "neon" : "outline"}
+                        size="small"
+                        type={liveStatus.canJoin ? "primary" : "default"}
                         disabled={!liveStatus.canJoin}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -91,7 +90,7 @@ const TeacherDashboard = () => {
           )}
         </Card>
 
-        <Card title={t('dashboard.todayAssignments')} className="h-full" hasBeam>
+        <Card title={t('dashboard.todayAssignments')} style={{ height: '100%' }}>
           {loadingAssignments ? (
             <Skeleton active />
           ) : (
@@ -114,7 +113,7 @@ const TeacherDashboard = () => {
           )}
         </Card>
 
-        <Card title={t('dashboard.todayTests')} className="h-full" hasBeam>
+        <Card title={t('dashboard.todayTests')} style={{ height: '100%' }}>
           {loadingTests ? (
             <Skeleton active />
           ) : (

@@ -1,11 +1,10 @@
-import { Skeleton, List } from "antd";
+import { Button, Card, Row, Col, Skeleton, List, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { fetchAssignments } from "../../api/assignments";
 import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { PageContainer, SectionCard, GridLayout, Button } from "../../components/ui";
 import { useTranslation } from "react-i18next";
 
 const StudentDashboard = () => {
@@ -47,12 +46,14 @@ const StudentDashboard = () => {
   };
 
   return (
-    <PageContainer 
-      title={t('dashboard.title')}
-      subtitle={dayjs().format('DD.MM.YYYY')}
-    >
-      <GridLayout columns="auto" minColumnWidth="320px" gap="lg">
-        <SectionCard title={t('dashboard.todayLessons')} loading={loadingLessons}>
+    <div>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <Typography.Title level={3} style={{ margin: 0 }}>{t('dashboard.title')}</Typography.Title>
+        <Typography.Text type="secondary">{dayjs().format('DD.MM.YYYY')}</Typography.Text>
+      </div>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} md={8}>
+          <Card title={t('dashboard.todayLessons')} loading={loadingLessons}>
           {loadingLessons ? (
             <Skeleton active />
           ) : (
@@ -68,8 +69,8 @@ const StudentDashboard = () => {
                     onClick={() => navigate("/app/student/schedule")}
                     extra={
                       <Button
-                        size="sm"
-                        variant={liveStatus.canJoin ? "primary" : "outline"}
+                        size="small"
+                        type={liveStatus.canJoin ? "primary" : "default"}
                         disabled={!liveStatus.canJoin}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -96,9 +97,10 @@ const StudentDashboard = () => {
               }}
             />
           )}
-        </SectionCard>
-
-        <SectionCard title={t('dashboard.todayAssignments')} loading={loadingAssignments}>
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card title={t('dashboard.todayAssignments')} loading={loadingAssignments}>
           {loadingAssignments ? (
             <Skeleton active />
           ) : (
@@ -119,9 +121,10 @@ const StudentDashboard = () => {
               )}
             />
           )}
-        </SectionCard>
-
-        <SectionCard title={t('dashboard.todayTests')} loading={loadingTests}>
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card title={t('dashboard.todayTests')} loading={loadingTests}>
           {loadingTests ? (
             <Skeleton active />
           ) : (
@@ -142,9 +145,10 @@ const StudentDashboard = () => {
               )}
             />
           )}
-        </SectionCard>
-      </GridLayout>
-    </PageContainer>
+          </Card>
+        </Col>
+      </Row>
+    </div>
   );
 };
 

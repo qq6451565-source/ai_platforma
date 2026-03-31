@@ -1,9 +1,8 @@
-import { Skeleton, Statistic } from "antd";
+import { Card, Row, Col, Skeleton, Statistic, Typography } from "antd";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { PageContainer, SectionCard, GridLayout } from "../../components/ui";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 
 const AdminDashboard = () => {
@@ -95,34 +94,31 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <PageContainer title={t('nav.dashboard')}>
+    <div>
+      <Typography.Title level={3} style={{ marginBottom: 24 }}>{t('nav.dashboard')}</Typography.Title>
       {loading ? (
         <Skeleton active />
       ) : (
-        <GridLayout columns="auto" minColumnWidth="240px" gap="md">
+        <Row gutter={[16, 16]}>
           {stats.map((stat) => (
-            <SectionCard
-              key={stat.key}
-              hoverable
-              onClick={() => navigate(stat.to)}
-              noPadding
-            >
-              <div style={{ padding: 'var(--space-5)' }}>
+            <Col key={stat.key} xs={24} sm={12} md={6}>
+              <Card hoverable onClick={() => navigate(stat.to)} style={{ cursor: 'pointer' }}>
                 <Statistic title={stat.title} value={stat.value} />
-              </div>
-            </SectionCard>
+              </Card>
+            </Col>
           ))}
-        </GridLayout>
+        </Row>
       )}
 
       {!loading && (
-        <div style={{ marginTop: 'var(--space-8)' }}>
-          <h2 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-lg)', color: 'var(--color-text-secondary)' }}>
+        <div style={{ marginTop: 32 }}>
+          <Typography.Title level={5} style={{ marginBottom: 16, color: '#6b7280' }}>
             {t('nav.main')}
-          </h2>
-          <GridLayout columns="auto" minColumnWidth="300px" gap="lg">
-            <SectionCard title={t('nav.enrollment')} hoverable>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          </Typography.Title>
+        <Row gutter={[16, 16]}>
+            <Col xs={24} md={8}>
+              <Card title={t('nav.enrollment')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/enrollment?tab=windows")}>
                   {t('nav.enrollment')}
                 </div>
@@ -130,10 +126,11 @@ const AdminDashboard = () => {
                   {t('nav.students')}
                 </div>
               </div>
-            </SectionCard>
-            
-            <SectionCard title={t('nav.academic')} hoverable>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card title={t('nav.academic')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=directions")}>
                   {t('nav.curriculum')}
                 </div>
@@ -144,10 +141,11 @@ const AdminDashboard = () => {
                   {t('nav.groups')}
                 </div>
               </div>
-            </SectionCard>
-            
-            <SectionCard title={t('nav.learning')} hoverable>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              </Card>
+            </Col>
+            <Col xs={24} md={8}>
+              <Card title={t('nav.learning')} hoverable>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/learning?section=lessons")}>
                   {t('nav.schedule')}
                 </div>
@@ -158,11 +156,12 @@ const AdminDashboard = () => {
                   {t('nav.tests')}
                 </div>
               </div>
-            </SectionCard>
-          </GridLayout>
+              </Card>
+            </Col>
+          </Row>
         </div>
       )}
-    </PageContainer>
+    </div>
   );
 };
 

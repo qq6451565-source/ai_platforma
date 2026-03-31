@@ -1,9 +1,8 @@
-import { Empty, List, Skeleton, Tag, Typography } from "antd";
+import { Card, Empty, List, Skeleton, Tag, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAttendance } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
-import { Card } from "../../components/ui";
 
 const StudentAttendance = () => {
   const { data: me } = useMe();
@@ -45,7 +44,7 @@ const StudentAttendance = () => {
       ) : !items.length ? (
         <Empty description="Davomat yozuvlari yo'q" />
       ) : (
-        <Card hasBeam>
+        <Card>
           <List
             dataSource={items}
             renderItem={(record) => {

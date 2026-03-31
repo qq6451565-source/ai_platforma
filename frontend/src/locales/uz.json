@@ -63,7 +63,15 @@
     "aiSettings": "AI sozlamalari",
     "submissions": "Yuborilgan topshiriqlar",
     "student": "Talaba",
-    "teacher": "O'qituvchi"
+    "teacher": "O'qituvchi",
+    "monitoring": "Monitoring",
+    "extra": "Qo'shimcha",
+    "auditLogs": "Audit jurnali",
+    "scheduleAdmin": "Jadval",
+    "assessment": "Baholash",
+    "comms": "Muloqot",
+    "authGroups": "Auth guruhlar",
+    "tokens": "Tokenlar"
   },
   "schedule": {
     "title": "Dars jadvali",

@@ -1,11 +1,9 @@
-import { List, Modal, Skeleton, Space, Typography, Grid } from "antd";
+import { Button, Card, List, Modal, Skeleton, Space, Typography, Grid } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
 import dayjs from "dayjs";
 
 const StudentSchedule = () => {
@@ -88,11 +86,11 @@ const StudentSchedule = () => {
         <Skeleton active />
       ) : (
         <>
-          <Card className="mb-6">
+          <Card style={{ marginBottom: 24 }}>
             <div className="d-flex justify-between items-center flex-wrap gap-4">
               <Space size="middle">
                 <Button
-                  size="sm"
+                  size="small"
                   onClick={() =>
                     setSelectedDate(
                       normalizeDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
@@ -102,7 +100,7 @@ const StudentSchedule = () => {
                   {"<"}
                 </Button>
                 <Button
-                  size="sm"
+                  size="small"
                   onClick={() =>
                     setSelectedDate(
                       normalizeDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
@@ -111,20 +109,20 @@ const StudentSchedule = () => {
                 >
                   {">"}
                 </Button>
-                <Button size="sm" onClick={() => setSelectedDate(normalizeDate(dayjs()))}>
+                <Button size="small" onClick={() => setSelectedDate(normalizeDate(dayjs()))}>
                   {t('common.today')}
                 </Button>
                 <Button
-                  size="sm"
-                  variant={viewMode === "week" ? "primary" : "secondary"}
+                  size="small"
+                  type={viewMode === "week" ? "primary" : "default"}
                   onClick={() => setViewMode("week")}
                 >
                   {t('common.week')}
                 </Button>
                 {!isMobile && (
                   <Button
-                    size="sm"
-                    variant={viewMode === "month" ? "primary" : "secondary"}
+                    size="small"
+                    type={viewMode === "month" ? "primary" : "default"}
                     onClick={() => setViewMode("month")}
                   >
                     {t('common.month')}
@@ -150,13 +148,8 @@ const StudentSchedule = () => {
               return (
                 <Card
                   key={key}
-                  hasBeam={isToday}
                   hoverable={!isOutside}
-                  style={{
-                    opacity: isOutside ? 0.5 : 1,
-                    cursor: isOutside ? 'default' : 'pointer',
-                    minHeight: '200px'
-                  }}
+                  style={{ opacity: isOutside ? 0.5 : 1, cursor: isOutside ? 'default' : 'pointer', minHeight: '180px' }}
                   onClick={() => {
                     if (!isOutside) {
                       setSelectedDate(day);
@@ -227,7 +220,7 @@ const StudentSchedule = () => {
             open={dayOpen}
             onCancel={() => setDayOpen(false)}
             footer={[
-              <Button key="close" onClick={() => setDayOpen(false)}>
+            <Button key="close" onClick={() => setDayOpen(false)}>
                 {t('common.close')}
               </Button>,
             ]}
@@ -249,8 +242,8 @@ const StudentSchedule = () => {
                     actions={[
                       <Button
                         key="live"
-                        size="sm"
-                        variant={liveStatus.canJoin ? "primary" : "secondary"}
+                        size="small"
+                        type={liveStatus.canJoin ? "primary" : "default"}
                         disabled={!liveStatus.canJoin}
                         onClick={() => navigate(`/app/live/${item.id}`)}
                       >

@@ -1,9 +1,8 @@
-import { Alert, Avatar, Tabs, Form, Upload, message } from "antd";
+import { Alert, Avatar, Button, Card, Input, Tabs, Form, Upload, message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
-import { Button, Input, Card } from "../../components/ui";
 import { runProfileAiVerification } from "../../api/auth";
 import {
   clearPendingCredentials,
@@ -180,7 +179,7 @@ const StudentProfile = () => {
       key: "profile",
       label: "Shaxsiy ma'lumotlar",
       children: (
-        <Card hasBeam>
+        <Card>
           <div className="d-flex items-center mb-6 gap-4">
             <Avatar size={80} src={user?.face_image || undefined}>
               {user?.first_name?.[0] || user?.username?.[0] || "U"}
@@ -193,7 +192,7 @@ const StudentProfile = () => {
               maxCount={1}
               showUploadList={false}
             >
-              <Button variant="outline" size="sm">Rasm yuklash</Button>
+              <Button size="small">Rasm yuklash</Button>
             </Upload>
             {file && <span className="caption">{file.name}</span>}
           </div>
@@ -203,7 +202,7 @@ const StudentProfile = () => {
               className="d-grid"
               style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}
             >
-              <Form.Item label="Ism" name="first_name">
+            <Form.Item label="Ism" name="first_name">
                 <Input />
               </Form.Item>
               <Form.Item label="Familiya" name="last_name">
@@ -217,7 +216,7 @@ const StudentProfile = () => {
               </Form.Item>
             </div>
             <div className="mt-4">
-              <Button type="submit" isLoading={loadingProfile}>Saqlash</Button>
+              <Button type="primary" htmlType="submit" loading={loadingProfile}>Saqlash</Button>
             </div>
           </Form>
         </Card>
@@ -228,24 +227,24 @@ const StudentProfile = () => {
       label: "Xavfsizlik",
       children: (
         <div style={{ maxWidth: "500px", width: "100%" }}>
-          <Card hasBeam>
+          <Card>
             <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
               <Form.Item
                 label="Eski parol"
                 name="old_password"
                 rules={[{ required: true, message: "Eski parolni kiriting" }]}
               >
-                <Input type="password" />
+                <Input.Password />
               </Form.Item>
               <Form.Item
                 label="Yangi parol"
                 name="new_password"
                 rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
               >
-                <Input type="password" />
+                <Input.Password />
               </Form.Item>
               <div className="mt-4">
-                <Button type="submit" isLoading={loadingPass}>Parolni yangilash</Button>
+              <Button type="primary" htmlType="submit" loading={loadingPass}>Parolni yangilash</Button>
               </div>
             </Form>
           </Card>
@@ -279,7 +278,7 @@ const StudentProfile = () => {
       )}
 
       {isPendingStudent && pendingCredentials && (
-        <Card hasBeam style={{ marginBottom: 16 }}>
+        <Card style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 600 }}>Kirish ma'lumotlari</div>
           <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
             <div><strong>Username:</strong> {pendingCredentials.username}</div>
@@ -288,7 +287,7 @@ const StudentProfile = () => {
         </Card>
       )}
 
-      <Card hasBeam style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16 }}>
         <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
           <div><strong>Login:</strong> {user?.username || "-"}</div>
           <div><strong>Holat:</strong> {profileStatusText}</div>

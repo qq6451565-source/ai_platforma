@@ -1,9 +1,8 @@
-import { Avatar, Col, Form, Input, Row, Upload, message } from "antd";
+import { Avatar, Button, Card, Col, Form, Input, Row, Upload, message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
-import { Card, Button } from "../../components/ui";
 
 const AdminProfile = () => {
   const qc = useQueryClient();
@@ -46,7 +45,7 @@ const AdminProfile = () => {
     <div style={{ padding: 24 }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <Card title="Profil ma'lumotlari" hasBeam>
+          <Card title="Profil ma'lumotlari">
             <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 12 }}>
               <Avatar size={64} src={user?.face_image || undefined}>
                 {user?.first_name?.[0]}
@@ -58,7 +57,7 @@ const AdminProfile = () => {
                 }}
                 maxCount={1}
               >
-                <Button variant="outline" size="sm">Yangi rasm</Button>
+                <Button size="small">Yangi rasm</Button>
               </Upload>
             </div>
             <Form
@@ -85,13 +84,13 @@ const AdminProfile = () => {
                 <Input />
               </Form.Item>
               <Form.Item>
-                <Button type="submit" isLoading={loadingProfile}>Saqlash</Button>
+                <Button type="primary" htmlType="submit" loading={loadingProfile}>Saqlash</Button>
               </Form.Item>
             </Form>
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card title="Parolni almashtirish" hasBeam>
+          <Card title="Parolni almashtirish">
             <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
               <Form.Item
                 label="Eski parol"
@@ -108,7 +107,7 @@ const AdminProfile = () => {
                 <Input type="password" />
               </Form.Item>
               <Form.Item>
-                <Button type="submit" isLoading={loadingPass}>Almashtirish</Button>
+                <Button type="primary" htmlType="submit" loading={loadingPass}>Almashtirish</Button>
               </Form.Item>
             </Form>
           </Card>

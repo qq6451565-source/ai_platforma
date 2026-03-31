@@ -17,8 +17,6 @@ import {
   Divider,
 } from "antd";
 import dayjs from "dayjs";
-import {
-} from "../../api/admin";
 import { gradeSubmission } from "../../api/submissions";
 import { updateStudentTestRecord } from "../../api/studentTests";
 import { adminQueryOptions } from "./utils/adminQueryOptions";

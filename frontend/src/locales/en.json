@@ -63,7 +63,15 @@
     "aiSettings": "AI Settings",
     "submissions": "Submissions",
     "student": "Student",
-    "teacher": "Teacher"
+    "teacher": "Teacher",
+    "monitoring": "Monitoring",
+    "extra": "Extra",
+    "auditLogs": "Audit Logs",
+    "scheduleAdmin": "Schedule",
+    "assessment": "Assessment",
+    "comms": "Communications",
+    "authGroups": "Auth Groups",
+    "tokens": "Tokens"
   },
   "schedule": {
     "title": "Schedule",

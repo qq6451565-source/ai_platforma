@@ -1,5 +1,4 @@
-import { Col, Row, Typography } from "antd";
-import { Card } from "../components/ui/Card";
+import { Card, Col, Row, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 
 const DashboardPage = () => {
@@ -13,21 +12,21 @@ const DashboardPage = () => {
       
       <Row gutter={[24, 24]}>
         <Col xs={24} md={8}>
-          <Card title={t('dashboard.todayLessons')} hasBeam>
+          <Card title={t('dashboard.todayLessons')}>
             <div className="text-secondary">
               {t('dashboard.noLessonsToday')}
             </div>
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card title={t('dashboard.todayAssignments')} hasBeam>
+          <Card title={t('dashboard.todayAssignments')}>
             <div className="text-secondary">
               {t('dashboard.noAssignmentsToday')}
             </div>
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card title={t('dashboard.todayTests')} hasBeam>
+          <Card title={t('dashboard.todayTests')}>
             <div className="text-secondary">
               {t('dashboard.noTestsToday')}
             </div>

@@ -1,3 +1,9 @@
+databases:
+  - name: ai-platforma-db
+    plan: free
+    databaseName: ai_platforma
+    user: ai_platforma_user
+
 services:
   # AI Gateway is hosted on HF Spaces: https://qwertyu6451565-ai-gataware.hf.space
   # ── Backend (Django + Channels) ──────────────────────────────────────
@@ -36,15 +42,25 @@ services:
       - key: AGORA_TOKEN_TTL
         value: "3600"
       - key: DB_HOST
-        sync: false
+        fromDatabase:
+          name: ai-platforma-db
+          property: host
       - key: DB_NAME
-        sync: false
+        fromDatabase:
+          name: ai-platforma-db
+          property: database
       - key: DB_USER
-        sync: false
+        fromDatabase:
+          name: ai-platforma-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: ai-platforma-db
+          property: password
       - key: DB_PORT
-        value: "5432"
+        fromDatabase:
+          name: ai-platforma-db
+          property: port
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: AUTO_CREATE_SUPERUSER

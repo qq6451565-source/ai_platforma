@@ -7,7 +7,7 @@ import AgoraRTC, {
   ILocalVideoTrack,
   IRemoteVideoTrack,
 } from "agora-rtc-sdk-ng";
-import { Spin } from "antd";
+import { Button, Spin } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -34,7 +34,6 @@ import {
 } from "../../api/live";
 import type { LiveParticipantState } from "../../api/live";
 import { useMe } from "../../hooks/useMe";
-import { Button } from "../../components/ui";
 
 import SidePanel from "./components/SidePanel";
 import StudentGridSection from "./components/StudentGridSection";
@@ -1543,7 +1542,7 @@ export default function Room() {
           )}
 
           <Button
-            variant="ghost"
+            type="text"
             className={`control-btn ${state.micOn ? "is-active" : "is-off"}`}
             onClick={handleMicToggle}
             icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
@@ -1551,7 +1550,7 @@ export default function Room() {
           />
 
           <Button
-            variant="ghost"
+            type="text"
             className={`control-btn ${state.cameraOn ? "is-active" : "is-off"}`}
             onClick={handleCameraToggle}
             icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
@@ -1560,7 +1559,7 @@ export default function Room() {
 
           {(isStageUser || state.screenSharing) && (
             <Button
-              variant="ghost"
+              type="text"
               className={`control-btn ${state.screenSharing ? "is-active" : ""}`}
               onClick={handleScreenShareToggle}
               icon={<DesktopOutlined />}
@@ -1570,7 +1569,7 @@ export default function Room() {
 
           {isTeacher && canReturnStageToTeacher && (
             <Button
-              variant="ghost"
+              type="text"
               className="control-btn"
               onClick={handleReturnStageToTeacher}
               icon={<RollbackOutlined />}
@@ -1580,7 +1579,7 @@ export default function Room() {
 
           {!isTeacher && (
             <Button
-              variant="ghost"
+              type="text"
               className={`control-btn ${state.handRaised ? "is-active" : ""}`}
               onClick={handleHandRaise}
               icon={<HighlightOutlined />}
@@ -1590,7 +1589,7 @@ export default function Room() {
 
           {!isDesktop && (
             <Button
-              variant="ghost"
+              type="text"
               className={`control-btn ${participantsPanelOpen ? "is-active" : ""}`}
               onClick={() =>
                 setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
@@ -1600,7 +1599,7 @@ export default function Room() {
           )}
 
           <Button
-            variant="ghost"
+            type="text"
             className="control-btn exit-btn"
             onClick={handleExitRoom}
             icon={<LogoutOutlined />}

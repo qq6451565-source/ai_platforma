@@ -4,15 +4,14 @@ import {
   PhoneOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Form, message } from "antd";
+import { Button, Card, Form, Input, Select, Steps, Typography, message } from "antd";
 import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../api/client";
 import { login, registerFinalize, registerStart } from "../api/auth";
 import { fetchMe } from "../api/user";
-import { Button, Input, Card } from "../components/ui";
 import { saveTokens } from "../utils/token";
 import { savePendingCredentials } from "../utils/pendingCredentials";
 import "./Register.css";
@@ -752,36 +751,15 @@ const RegisterPage = () => {
     <div className="registration-page">
       <div className="registration-container">
         <Card
-          className="wizard-card"
-          title={t("register.title")}
-          extra={
-            <Link to="/login" className="body-sm">
-              {t("register.loginLink")}
-            </Link>
-          }
+          title={<Typography.Title level={4} style={{ margin: 0 }}>{t("register.title")}</Typography.Title>}
+          extra={<Link to="/login">{t("register.loginLink")}</Link>}
         >
           {/* ── Horizontal stepper ─────────────────────────────── */}
-          <div className="wizard-steps">
-            {stepTitles.map((title, index) => (
-              <Fragment key={title}>
-                <div
-                  className={[
-                    "wizard-step",
-                    index === currentStep ? "active" : "",
-                    index < currentStep ? "done" : "",
-                  ].filter(Boolean).join(" ")}
-                >
-                  <div className="step-circle">
-                    {index < currentStep ? <CheckOutlined /> : index + 1}
-                  </div>
-                  <span className="step-label">{title}</span>
-                </div>
-                {index < stepTitles.length - 1 && (
-                  <div className={`step-connector ${index < currentStep ? "done" : ""}`} />
-                )}
-              </Fragment>
-            ))}
-          </div>
+          <Steps
+            current={currentStep}
+            items={stepTitles.map((title) => ({ title }))}
+            style={{ marginBottom: 24 }}
+          />
 
           {/* ── Step 0: Personal details ─────────────────────── */}
           {currentStep === 0 && (
@@ -801,7 +779,7 @@ const RegisterPage = () => {
                   name="full_name"
                   rules={[{ required: true, message: t("register.fullNameRequired") }]}
                 >
-                  <Input icon={<UserOutlined />} placeholder={t("register.fullNamePlaceholder")} />
+                  <Input prefix={<UserOutlined />} placeholder={t("register.fullNamePlaceholder")} />
                 </Form.Item>
 
                 <Form.Item
@@ -809,16 +787,12 @@ const RegisterPage = () => {
                   name="direction_choice"
                   rules={[{ required: true, message: t("register.directionRequired") }]}
                 >
-                  <select className="direction-select" defaultValue="">
-                    <option value="" disabled>
-                      {directionsLoading ? t("common.loading") : t("register.directionPlaceholder")}
-                    </option>
-                    {directions.map((direction) => (
-                      <option key={direction.id} value={direction.id}>
-                        {direction.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    placeholder={directionsLoading ? t("common.loading") : t("register.directionPlaceholder")}
+                    loading={directionsLoading}
+                    options={directions.map((d) => ({ value: d.id, label: d.name }))}
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
 
                 <Form.Item
@@ -826,11 +800,11 @@ const RegisterPage = () => {
                   name="phone"
                   rules={[{ required: true, message: t("register.phoneRequired") }]}
                 >
-                  <Input icon={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
+                  <Input prefix={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
                 </Form.Item>
               </div>
 
-              <Button type="submit" block isLoading={loading} size="lg" onClick={() => form.submit()}>
+              <Button type="primary" htmlType="submit" block loading={loading} size="large" onClick={() => form.submit()}>
                 {t("common.next")}
               </Button>
             </Form>
@@ -872,10 +846,10 @@ const RegisterPage = () => {
               )}
 
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(0)}>
+                <Button type="text" onClick={() => setCurrentStep(0)}>
                   {t("common.back")}
                 </Button>
-                <Button onClick={handlePassportNext} isLoading={loading}>
+                <Button type="primary" onClick={handlePassportNext} loading={loading}>
                   {t("common.next")}
                 </Button>
               </div>
@@ -966,7 +940,7 @@ const RegisterPage = () => {
                 {/* Retry button */}
                 {scanFailed && !loading && livenessStage === "idle" && !cameraActive && (
                   <div className="scanner-retry">
-                    <Button variant="outline" onClick={handleRetryScan} size="sm">
+                    <Button type="default" onClick={handleRetryScan} size="small">
                       {t("register.scanNow")}
                     </Button>
                   </div>
@@ -975,7 +949,7 @@ const RegisterPage = () => {
               </div>
 
               <div className="wizard-actions">
-                <Button variant="ghost" onClick={() => setCurrentStep(1)} disabled={loading}>
+                <Button type="text" onClick={() => setCurrentStep(1)} disabled={loading}>
                   {t("common.back")}
                 </Button>
               </div>

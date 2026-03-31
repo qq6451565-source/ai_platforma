@@ -64,6 +64,16 @@ const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
 const AdminUniversityHub = lazy(() => import("./pages/admin/UniversityHub"));
 const AdminLearningHub = lazy(() => import("./pages/admin/LearningHub"));
 const AdminProfile = lazy(() => import("./pages/admin/Profile"));
+const AdminLiveHub = lazy(() => import("./pages/admin/LiveHub"));
+const AdminSchedule = lazy(() => import("./pages/admin/Schedule"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminAuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const AdminAnnouncements = lazy(() => import("./pages/admin/Announcements"));
+const AdminProctoring = lazy(() => import("./pages/admin/Proctoring"));
+const AdminAssessmentHub = lazy(() => import("./pages/admin/AssessmentHub"));
+const AdminCommsHub = lazy(() => import("./pages/admin/CommsHub"));
+const AdminAuthGroups = lazy(() => import("./pages/admin/AuthGroups"));
+const AdminTokenBlacklist = lazy(() => import("./pages/admin/TokenBlacklist"));
 
 const PageFallback = ({ fullscreen = false }: { fullscreen?: boolean }) => (
   <div
@@ -152,8 +162,24 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
       ],
     },
     {
-      label: t('nav.system'),
-      children: [{ key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> }],
+      label: t('nav.monitoring'),
+      children: [
+        { key: "admin/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
+        { key: "admin/analytics", label: t('nav.analytics'), icon: <DashboardOutlined /> },
+        { key: "admin/audit-logs", label: t('nav.auditLogs'), icon: <FileDoneOutlined /> },
+        { key: "admin/proctoring", label: t('nav.proctoring'), icon: <ExperimentOutlined /> },
+      ],
+    },
+    {
+      label: t('nav.extra'),
+      children: [
+        { key: "admin/schedule", label: t('nav.scheduleAdmin'), icon: <CalendarOutlined /> },
+        { key: "admin/assessment", label: t('nav.assessment'), icon: <FileDoneOutlined /> },
+        { key: "admin/comms", label: t('nav.comms'), icon: <TeamOutlined /> },
+        { key: "admin/auth", label: t('nav.authGroups'), icon: <UserOutlined /> },
+        { key: "admin/tokens", label: t('nav.tokens'), icon: <SettingOutlined /> },
+        { key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> },
+      ],
     },
   ], [t]);
 
@@ -286,6 +312,16 @@ const App = () => {
               <Route path="university" element={<AdminUniversityHub />} />
               <Route path="learning" element={<AdminLearningHub />} />
               <Route path="ai-settings" element={<AdminAISettings />} />
+              <Route path="live" element={<AdminLiveHub />} />
+              <Route path="schedule" element={<AdminSchedule />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="audit-logs" element={<AdminAuditLogs />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="proctoring" element={<AdminProctoring />} />
+              <Route path="assessment" element={<AdminAssessmentHub />} />
+              <Route path="comms" element={<AdminCommsHub />} />
+              <Route path="auth" element={<AdminAuthGroups />} />
+              <Route path="tokens" element={<AdminTokenBlacklist />} />
               <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
             </Route>
             <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />

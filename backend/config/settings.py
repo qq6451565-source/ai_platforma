@@ -204,6 +204,9 @@ if DB_HOST:
             'PASSWORD': os.getenv('DB_PASSWORD'),
             'HOST': DB_HOST,
             'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
         }
     }
 else:

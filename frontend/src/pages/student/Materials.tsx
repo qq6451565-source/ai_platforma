@@ -1,10 +1,9 @@
-import { Button, Empty, List, Skeleton, Tag, Typography } from "antd";
+import { Button, Card, Empty, List, Skeleton, Tag, Typography } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchMaterials } from "../../api/materials";
 import { fetchLessons } from "../../api/lessons";
 import type { MaterialResource } from "../../types/material";
-import { Card } from "../../components/ui";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -116,7 +115,7 @@ const StudentMaterials = () => {
             dataSource={subjectCards}
             renderItem={(subject) => (
               <List.Item>
-                <Card hoverable onClick={() => setActiveSubject(subject.id)} hasBeam>
+                <Card hoverable onClick={() => setActiveSubject(subject.id)}>
                   <Typography.Text strong>{subject.name}</Typography.Text>
                   <div className="caption" style={{ marginTop: 6 }}>{subject.count} ta material</div>
                 </Card>

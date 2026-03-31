@@ -43,7 +43,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       theme={{
         token: {
           colorPrimary: "#2563eb",
+          colorBgContainer: "#ffffff",
           borderRadius: 8,
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        components: {
+          Layout: {
+            siderBg: "#ffffff",
+            headerBg: "#ffffff",
+          },
+          Menu: {
+            itemBg: "transparent",
+          },
         },
       }}
     >

@@ -1,10 +1,9 @@
-import { Divider, Empty, List, Modal, Table, Typography } from "antd";
+import { Card, Divider, Empty, List, Modal, Table, Typography } from "antd";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchGradebook } from "../../api/gradebook";
 import { fetchMySubmissions } from "../../api/submissions";
 import { fetchStudentTestRecords } from "../../api/studentTests";
-import { Card } from "../../components/ui";
 
 const StudentGrades = () => {
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -108,7 +107,7 @@ const StudentGrades = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
-      <Card hasBeam>
+      <Card>
         <div className="table-scroll">
           <Table
             columns={columns}

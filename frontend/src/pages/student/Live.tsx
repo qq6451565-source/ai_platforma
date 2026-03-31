@@ -1,9 +1,8 @@
-import { List, Skeleton, Typography } from "antd";
+import { Card, List, Skeleton, Typography, Button } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Button } from "../../components/ui";
 
 const StudentLive = () => {
   const navigate = useNavigate();
@@ -22,7 +21,7 @@ const StudentLive = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Live darslar</Typography.Title>
-      <Card hasBeam>
+      <Card>
         {isLoading ? (
           <Skeleton active />
         ) : (
@@ -33,10 +32,10 @@ const StudentLive = () => {
                 actions={[
                   <Button
                     key="join"
-                    variant="neon"
-                    size="sm"
+                    type="primary"
+                    size="small"
                     onClick={() => handleJoin(item.id)}
-                    isLoading={joining === item.id}
+                    loading={joining === item.id}
                   >
                     Kirish
                   </Button>,
