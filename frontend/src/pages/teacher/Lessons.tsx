@@ -198,7 +198,7 @@ const TeacherLessons = () => {
             {t('common.close')}
           </Button>,
         ]}
-        bodyStyle={{ maxHeight: 460, overflowY: "auto" }}
+        styles={{ body: { maxHeight: 460, overflowY: "auto" } }}
       >
         <List
           dataSource={selectedLessons}
@@ -227,7 +227,7 @@ const TeacherLessons = () => {
               >
                 <Space direction="vertical" size={0}>
                   <div>{`${subjectLabel} - ${groupLabel}`}</div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{timeLabel}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{timeLabel}</div>
                 </Space>
               </List.Item>
             );

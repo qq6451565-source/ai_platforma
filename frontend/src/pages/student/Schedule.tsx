@@ -164,10 +164,10 @@ const StudentSchedule = () => {
                     {isToday && (
                       <span style={{
                         padding: '2px 8px',
-                        background: 'rgba(0, 255, 255, 0.2)',
+                        background: 'rgba(37, 99, 235, 0.1)',
                         borderRadius: '4px',
                         fontSize: '12px',
-                        color: 'var(--neon-cyan)'
+                        color: '#2563eb'
                       }}>
                         {t('common.today')}
                       </span>
@@ -177,7 +177,7 @@ const StudentSchedule = () => {
                     display: 'block',
                     fontSize: '24px',
                     fontWeight: 700,
-                    marginBottom: 'var(--space-4)'
+                    marginBottom: 16
                   }}>
                     {day.format("DD.MM")}
                   </Typography.Text>
@@ -224,7 +224,7 @@ const StudentSchedule = () => {
                 {t('common.close')}
               </Button>,
             ]}
-            bodyStyle={{ maxHeight: 460, overflowY: "auto" }}
+            styles={{ body: { maxHeight: 460, overflowY: "auto" } }}
           >
             <List
               dataSource={selectedLessons}
@@ -252,8 +252,8 @@ const StudentSchedule = () => {
                     ]}
                   >
                     <Space direction="vertical" size={0}>
-                      <div style={{ color: 'var(--color-text-primary)' }}>{`${subjectLabel} - ${groupLabel}`}</div>
-                      <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{timeLabel}</div>
+                      <div style={{ color: '#374151' }}>{`${subjectLabel} - ${groupLabel}`}</div>
+                      <div style={{ fontSize: 12, color: "#6b7280" }}>{timeLabel}</div>
                     </Space>
                   </List.Item>
                 );

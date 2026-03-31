@@ -333,7 +333,7 @@ const AdminLessonsPage = () => {
         title={`Kundagi darslar: ${selectedDate.format("DD.MM.YYYY")}`}
         open={dayOpen}
         onCancel={() => setDayOpen(false)}
-        bodyStyle={{ maxHeight: 460, overflowY: "auto" }}
+        styles={{ body: { maxHeight: 460, overflowY: "auto" } }}
         footer={[
           <Button key="close" onClick={() => setDayOpen(false)}>
             Yopish
