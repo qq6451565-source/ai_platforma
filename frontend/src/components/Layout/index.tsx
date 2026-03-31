@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd';
 import {
   MenuFoldOutlined,
@@ -16,22 +16,9 @@ const { Header, Sider, Content } = Layout;
 interface LayoutProps {
   children: React.ReactNode;
   user: any;
-  items: any[];
+  items: MenuProps['items'];
   onLogout: () => void;
   title: string;
-}
-
-function buildMenuItems(groups: any[]): MenuProps['items'] {
-  return groups.map((group, idx) => ({
-    key: `group-${idx}`,
-    label: group.label,
-    type: 'group' as const,
-    children: group.children.map((item: any) => ({
-      key: item.key,
-      icon: item.icon,
-      label: item.label,
-    })),
-  }));
 }
 
 export const ResponsiveLayout: React.FC<LayoutProps> = ({
@@ -51,7 +38,17 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     ? location.pathname.replace('/app/', '')
     : '';
 
-  const menuItems = buildMenuItems(items);
+  const defaultOpenKeys = useMemo(() => {
+    if (!items) return [];
+    const keys: string[] = [];
+    for (const item of items) {
+      if (item && 'children' in item && Array.isArray((item as any).children)) {
+        const hasActive = (item as any).children.some((child: any) => child?.key === selectedKey);
+        if (hasActive) keys.push(item.key as string);
+      }
+    }
+    return keys;
+  }, [items, selectedKey]);
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -105,7 +102,8 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={menuItems}
+          defaultOpenKeys={defaultOpenKeys}
+          items={items}
           style={{ border: 'none', marginTop: 8 }}
           onClick={({ key }) => navigate(`/app/${key}`)}
         />

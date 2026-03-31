@@ -1,4 +1,5 @@
 import { Spin } from "antd";
+import type { MenuProps } from "antd";
 import { ToastProvider } from "./components/ui";
 import ErrorBoundary from "./components/ErrorBoundary";
 import {
@@ -101,83 +102,47 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const isStudent = user?.role === "student";
   const isPendingStudent = isStudent && !user?.group;
 
-  const studentGroup = useMemo(() => [
-    {
-      label: t('nav.student'),
-      children: [
-        { key: "student/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
-        { key: "student/schedule", label: t('nav.schedule'), icon: <CalendarOutlined /> },
-        { key: "student/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
-        { key: "student/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
-        { key: "student/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
-        { key: "student/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
-        { key: "student/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
-        { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-      ],
-    },
+  const studentGroup = useMemo((): MenuProps['items'] => [
+    { key: "student/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+    { key: "student/schedule", label: t('nav.schedule'), icon: <CalendarOutlined /> },
+    { key: "student/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
+    { key: "student/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
+    { key: "student/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
+    { key: "student/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
+    { key: "student/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
+    { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
   ], [t]);
 
-  const pendingStudentGroup = useMemo(() => [
-    {
-      label: t('nav.student'),
-      children: [
-        { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-      ],
-    },
+  const pendingStudentGroup = useMemo((): MenuProps['items'] => [
+    { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
   ], [t]);
 
-  const teacherGroup = useMemo(() => [
-    {
-      label: t('nav.teacher'),
-      children: [
-        { key: "teacher/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
-        { key: "teacher/lessons", label: t('nav.schedule'), icon: <CalendarOutlined /> },
-        { key: "teacher/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
-        { key: "teacher/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
-        { key: "teacher/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
-        { key: "teacher/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
-        { key: "teacher/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
-        { key: "teacher/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
-        { key: "teacher/submissions", label: t('nav.submissions'), icon: <FileDoneOutlined /> },
-        { key: "teacher/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-      ],
-    },
+  const teacherGroup = useMemo((): MenuProps['items'] => [
+    { key: "teacher/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+    { key: "teacher/lessons", label: t('nav.schedule'), icon: <CalendarOutlined /> },
+    { key: "teacher/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
+    { key: "teacher/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
+    { key: "teacher/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
+    { key: "teacher/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
+    { key: "teacher/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
+    { key: "teacher/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
+    { key: "teacher/submissions", label: t('nav.submissions'), icon: <FileDoneOutlined /> },
+    { key: "teacher/profile", label: t('nav.profile'), icon: <UserOutlined /> },
   ], [t]);
 
-  const adminGroup = useMemo(() => [
+  const adminGroup = useMemo((): MenuProps['items'] => [
+    { key: "admin/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+    { key: "admin/users", label: t('nav.users'), icon: <TeamOutlined /> },
+    { key: "admin/university", label: t('nav.university'), icon: <BookOutlined /> },
+    { key: "admin/learning", label: t('nav.learning'), icon: <CalendarOutlined /> },
+    { key: "admin/enrollment", label: t('nav.enrollment'), icon: <FileTextOutlined /> },
     {
-      label: t('nav.main'),
+      key: "settings-group",
+      label: t('nav.settings'),
+      icon: <SettingOutlined />,
       children: [
-        { key: "admin/dashboard", label: t('nav.dashboard'), icon: <DashboardOutlined /> },
         { key: "admin/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-      ],
-    },
-    {
-      label: t('nav.academic'),
-      children: [
-        { key: "admin/users", label: t('nav.users'), icon: <TeamOutlined /> },
-        { key: "admin/university", label: t('nav.university'), icon: <BookOutlined /> },
-        { key: "admin/learning", label: t('nav.learning'), icon: <CalendarOutlined /> },
-        { key: "admin/enrollment", label: t('nav.enrollment'), icon: <FileTextOutlined /> },
-      ],
-    },
-    {
-      label: t('nav.monitoring'),
-      children: [
-        { key: "admin/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
-        { key: "admin/analytics", label: t('nav.analytics'), icon: <DashboardOutlined /> },
         { key: "admin/audit-logs", label: t('nav.auditLogs'), icon: <FileDoneOutlined /> },
-        { key: "admin/proctoring", label: t('nav.proctoring'), icon: <ExperimentOutlined /> },
-      ],
-    },
-    {
-      label: t('nav.extra'),
-      children: [
-        { key: "admin/schedule", label: t('nav.scheduleAdmin'), icon: <CalendarOutlined /> },
-        { key: "admin/assessment", label: t('nav.assessment'), icon: <FileDoneOutlined /> },
-        { key: "admin/comms", label: t('nav.comms'), icon: <TeamOutlined /> },
-        { key: "admin/auth", label: t('nav.authGroups'), icon: <UserOutlined /> },
-        { key: "admin/tokens", label: t('nav.tokens'), icon: <SettingOutlined /> },
         { key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> },
       ],
     },

@@ -12,6 +12,9 @@ import {
 
 import { AdminUser } from "../../api/admin";
 import AdminPassportModal from "./components/AdminPassportModal";
+import AdminStudentPlacementModal from "./components/AdminStudentPlacementModal";
+import AdminTeacherWorkloadDrawer from "./components/AdminTeacherWorkloadDrawer";
+import AdminTeacherWorkloadModal from "./components/AdminTeacherWorkloadModal";
 import AdminUserFormModal from "./components/AdminUserFormModal";
 import AdminUserProfileDrawer from "./components/AdminUserProfileDrawer";
 import { useAdminUsersController } from "./hooks/useAdminUsersController";
@@ -207,8 +210,45 @@ const UsersPage = () => {
         onSave={controller.savePassport}
         onSelfieFileChange={controller.setPassportSelfieFile}
       />
+
+      <AdminStudentPlacementModal
+        availableGroups={controller.availablePlacementGroups}
+        directions={controller.directions}
+        form={controller.placementForm}
+        loading={controller.placementLoading}
+        open={controller.placementModalOpen}
+        selectedUser={controller.selectedUser}
+        onCancel={controller.closePlacementModal}
+        onSubmit={controller.submitPlacement}
+      />
+
+      <AdminTeacherWorkloadDrawer
+        assignments={controller.selectedTeacherAssignments}
+        deleteLoading={controller.workloadDeleteLoading}
+        groupMap={controller.groupEntityMap}
+        open={controller.workloadDrawerOpen}
+        selectedTeacher={controller.selectedUser}
+        subjectMap={controller.subjectEntityMap}
+        onClose={controller.closeWorkloadDrawer}
+        onCreate={controller.openWorkloadCreateModal}
+        onDelete={controller.deleteWorkload}
+        onEdit={controller.openWorkloadEditModal}
+      />
+
+      <AdminTeacherWorkloadModal
+        availableGroups={controller.availableWorkloadGroups}
+        editingAssignment={controller.editingWorkloadAssignment}
+        form={controller.workloadForm}
+        loading={controller.workloadSaveLoading}
+        open={controller.workloadModalOpen}
+        selectedTeacher={controller.selectedUser}
+        subjects={controller.subjects}
+        onCancel={controller.closeWorkloadModal}
+        onSubmit={controller.submitWorkload}
+      />
     </Card>
   );
 };
 
 export default UsersPage;
+

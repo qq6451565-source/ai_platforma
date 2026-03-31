@@ -5,19 +5,26 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   AdminUser,
+  TeacherSubject,
+  assignStudentPlacement,
+  assignTeacherWorkload,
   createAdminUser,
   createPassportData,
   deleteAdminUser,
   deletePassportData,
+  deleteTeacherSubject,
   setUserRole,
   updateAdminUser,
   updatePassportData,
+  updateTeacherSubject,
 } from "../../../api/admin";
 import {
   buildAssignmentsByTeacher,
   buildDirectionNameMap,
+  buildGroupEntityMap,
   buildGroupNameMap,
   buildProfileByUser,
+  buildSubjectEntityMap,
   buildSubjectNameMap,
   filterAdminUsers,
   getAdminUserRoleCounts,
@@ -26,7 +33,11 @@ import {
   buildEditableUserFormValues,
   buildPassportFormData,
   buildPassportFormValues,
+  buildStudentPlacementFormValues,
+  buildTeacherWorkloadFormValues,
   buildUserSubmitPayload,
+  filterGroupsByDirection,
+  filterGroupsBySubject,
   getRoleFilterFromSearch,
 } from "../utils/adminWorkflowForms";
 import { adminQueryOptions } from "../utils/adminQueryOptions";
@@ -63,6 +74,16 @@ export const useAdminUsersController = () => {
   const [form] = Form.useForm();
   const [passportForm] = Form.useForm();
 
+  // Placement state
+  const [placementModalOpen, setPlacementModalOpen] = useState(false);
+  const [placementForm] = Form.useForm();
+
+  // Workload state
+  const [workloadDrawerOpen, setWorkloadDrawerOpen] = useState(false);
+  const [workloadModalOpen, setWorkloadModalOpen] = useState(false);
+  const [editingWorkloadAssignment, setEditingWorkloadAssignment] = useState<TeacherSubject | null>(null);
+  const [workloadForm] = Form.useForm();
+
   const profileByUser = useMemo(() => buildProfileByUser(studentProfiles || []), [studentProfiles]);
   const passportByUser = useMemo(
     () => new Map((passports || []).map((passport) => [passport.user, passport])),
@@ -74,7 +95,25 @@ export const useAdminUsersController = () => {
   );
   const directionMap = useMemo(() => buildDirectionNameMap(directions || []), [directions]);
   const groupMap = useMemo(() => buildGroupNameMap(groups || []), [groups]);
+  const groupEntityMap = useMemo(() => buildGroupEntityMap(groups || []), [groups]);
   const subjectMap = useMemo(() => buildSubjectNameMap(subjects || []), [subjects]);
+  const subjectEntityMap = useMemo(() => buildSubjectEntityMap(subjects || []), [subjects]);
+
+  const selectedPlacementDirectionId = Form.useWatch("direction_id", placementForm);
+  const availablePlacementGroups = useMemo(
+    () => filterGroupsByDirection(groups || [], selectedPlacementDirectionId),
+    [groups, selectedPlacementDirectionId],
+  );
+
+  const selectedWorkloadSubjectId = Form.useWatch("subject", workloadForm);
+  const availableWorkloadGroups = useMemo(
+    () =>
+      filterGroupsBySubject(
+        groups || [],
+        selectedWorkloadSubjectId ? subjectEntityMap.get(selectedWorkloadSubjectId) : undefined,
+      ),
+    [groups, selectedWorkloadSubjectId, subjectEntityMap],
+  );
 
   const selectedStudentProfile = useMemo(() => {
     if (!selectedUser) return null;
@@ -163,6 +202,74 @@ export const useAdminUsersController = () => {
       message.error(getAdminApiErrorMessage(error, ["detail"], "O'chirishda xato")),
   });
 
+  const placementMutation = useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: number;
+      payload: {
+        direction_id?: number | null;
+        group_id?: number | null;
+        admission_year?: number;
+        status?: "active" | "academic_leave" | "expelled" | "graduated";
+      };
+    }) => assignStudentPlacement(userId, payload),
+    onSuccess: async () => {
+      message.success("Talaba placement saqlandi");
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.studentPlacement);
+      setPlacementModalOpen(false);
+      placementForm.resetFields();
+    },
+    onError: (error: any) =>
+      message.error(getAdminApiErrorMessage(error, ["group_id", "group"], "Placementni saqlashda xato")),
+  });
+
+  const workloadSaveMutation = useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+      assignmentId,
+    }: {
+      userId: number;
+      payload: { subject_id?: number; group_ids?: number[]; subject?: number; groups?: number[] };
+      assignmentId?: number | null;
+    }) => {
+      if (assignmentId) {
+        return updateTeacherSubject(assignmentId, {
+          teacher: userId,
+          subject: payload.subject,
+          groups: payload.groups || [],
+        });
+      }
+      return assignTeacherWorkload(userId, {
+        subject_id: payload.subject_id as number,
+        group_ids: payload.group_ids || [],
+      });
+    },
+    onSuccess: async () => {
+      message.success("Teacher workload saqlandi");
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
+      setWorkloadModalOpen(false);
+      setEditingWorkloadAssignment(null);
+      workloadForm.resetFields();
+    },
+    onError: (error: any) =>
+      message.error(
+        getAdminApiErrorMessage(error, ["groups", "group_ids", "non_field_errors"], "Teacher workloadni saqlashda xato"),
+      ),
+  });
+
+  const workloadDeleteMutation = useMutation({
+    mutationFn: (id: number) => deleteTeacherSubject(id),
+    onSuccess: async () => {
+      message.success("Workload o'chirildi");
+      await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
+    },
+    onError: (error: any) =>
+      message.error(getAdminApiErrorMessage(error, ["detail"], "Workloadni o'chirishda xato")),
+  });
+
   const filteredUsers = useMemo(
     () =>
       filterAdminUsers({
@@ -224,14 +331,70 @@ export const useAdminUsersController = () => {
     setPassportModalOpen(false);
   };
 
-  const openWorkflow = (tab: "student-placement" | "teacher-workload", userId: number) => {
-    navigate(
-      {
-        pathname: location.pathname,
-        search: updateAdminHubSearch(location.search, { tab, userId }),
-      },
-      { replace: true },
-    );
+  const openWorkflow = (tab: "student-placement" | "teacher-workload", _userId: number) => {
+    if (tab === "student-placement") {
+      if (!selectedUser) return;
+      placementForm.resetFields();
+      placementForm.setFieldsValue(buildStudentPlacementFormValues(selectedStudentProfile, groupEntityMap));
+      setPlacementModalOpen(true);
+    } else {
+      setWorkloadDrawerOpen(true);
+    }
+  };
+
+  const closePlacementModal = () => {
+    setPlacementModalOpen(false);
+    placementForm.resetFields();
+  };
+
+  const submitPlacement = async (values: {
+    direction_id?: number | null;
+    group_id?: number | null;
+    admission_year?: number;
+    status?: "active" | "academic_leave" | "expelled" | "graduated";
+  }) => {
+    if (!selectedUser) return;
+    await placementMutation.mutateAsync({ userId: selectedUser.id, payload: values });
+  };
+
+  const closeWorkloadDrawer = () => {
+    setWorkloadDrawerOpen(false);
+  };
+
+  const openWorkloadCreateModal = () => {
+    setEditingWorkloadAssignment(null);
+    workloadForm.resetFields();
+    setWorkloadModalOpen(true);
+  };
+
+  const openWorkloadEditModal = (_teacher: AdminUser, assignment: TeacherSubject) => {
+    setEditingWorkloadAssignment(assignment);
+    workloadForm.setFieldsValue(buildTeacherWorkloadFormValues(assignment));
+    setWorkloadModalOpen(true);
+  };
+
+  const closeWorkloadModal = () => {
+    setWorkloadModalOpen(false);
+    setEditingWorkloadAssignment(null);
+    workloadForm.resetFields();
+  };
+
+  const submitWorkload = async (values: {
+    subject_id?: number;
+    group_ids?: number[];
+    subject?: number;
+    groups?: number[];
+  }) => {
+    if (!selectedUser) return;
+    await workloadSaveMutation.mutateAsync({
+      userId: selectedUser.id,
+      payload: values,
+      assignmentId: editingWorkloadAssignment?.id ?? null,
+    });
+  };
+
+  const deleteWorkload = async (assignmentId: number) => {
+    await workloadDeleteMutation.mutateAsync(assignmentId);
   };
 
   const openPassportEditor = () => {
@@ -310,17 +473,26 @@ export const useAdminUsersController = () => {
 
   return {
     assignmentsByTeacher,
+    availablePlacementGroups,
+    availableWorkloadGroups,
     changeRole: (id: number, role: "student" | "teacher" | "admin") =>
       roleMutation.mutate({ id, role }),
     closePassportModal,
+    closePlacementModal,
     closeProfile,
     closeUserModal,
+    closeWorkloadDrawer,
+    closeWorkloadModal,
     deletePassport,
+    deleteWorkload,
+    directions: directions || [],
     directionMap,
     drawerOpen,
+    editingWorkloadAssignment,
     editing,
     filteredUsers,
     form,
+    groupEntityMap,
     groupMap,
     isLoading,
     modalOpen,
@@ -329,8 +501,13 @@ export const useAdminUsersController = () => {
     openPassportEditor,
     openProfile,
     openWorkflow,
+    openWorkloadCreateModal,
+    openWorkloadEditModal,
     passportForm,
     passportModalOpen,
+    placementForm,
+    placementLoading: placementMutation.isPending,
+    placementModalOpen,
     profileByUser,
     removeUser: (id: number) => deleteMutation.mutate(id),
     roleCounts,
@@ -346,8 +523,17 @@ export const useAdminUsersController = () => {
     setPassportSelfieFile,
     setRoleFromTab,
     setSearch,
+    subjectEntityMap,
     subjectMap,
+    subjects: subjects || [],
+    submitPlacement,
     submitUserForm,
+    submitWorkload,
     userFormLoading: createMutation.isPending || updateMutation.isPending,
+    workloadDeleteLoading: workloadDeleteMutation.isPending,
+    workloadDrawerOpen,
+    workloadForm,
+    workloadModalOpen,
+    workloadSaveLoading: workloadSaveMutation.isPending,
   };
 };

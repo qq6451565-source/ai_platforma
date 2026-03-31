@@ -95,7 +95,7 @@ const AdminDashboard = () => {
 
   return (
     <div>
-      <Typography.Title level={3} style={{ marginBottom: 24 }}>{t('nav.dashboard')}</Typography.Title>
+      <Typography.Title level={3} style={{ marginBottom: 24 }}>Dashboard</Typography.Title>
       {loading ? (
         <Skeleton active />
       ) : (
@@ -112,9 +112,6 @@ const AdminDashboard = () => {
 
       {!loading && (
         <div style={{ marginTop: 32 }}>
-          <Typography.Title level={5} style={{ marginBottom: 16, color: '#6b7280' }}>
-            {t('nav.main')}
-          </Typography.Title>
         <Row gutter={[16, 16]}>
             <Col xs={24} md={8}>
               <Card title={t('nav.enrollment')} hoverable>
@@ -129,7 +126,7 @@ const AdminDashboard = () => {
               </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Card title={t('nav.academic')} hoverable>
+              <Card title={t('nav.university')} hoverable>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div className="p-2 clickable-row sidebar-link" onClick={() => navigate("/app/admin/university?section=directions")}>
                   {t('nav.curriculum')}
