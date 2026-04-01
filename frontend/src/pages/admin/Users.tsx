@@ -166,9 +166,6 @@ const UsersPage = () => {
         columns={columns}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 980 }}
-        onRow={(record) => ({
-          onClick: () => controller.openProfile(record),
-        })}
       />
 
       <AdminUserFormModal
