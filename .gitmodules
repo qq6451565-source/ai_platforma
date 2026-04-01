@@ -1,4 +1,0 @@
-[submodule "ai-gateway"]
-	path = ai-gateway
-	url = https://huggingface.co/spaces/qwertyu6451565/ai-gataware
-	branch = main
