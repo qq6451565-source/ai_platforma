@@ -46,24 +46,6 @@ const AdminUserProfileDrawer = ({
           <Button size="small" onClick={onEditUser}>
             Asosiy ma'lumotlarni tahrirlash
           </Button>
-          {user.role === "student" ? (
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => onOpenWorkflow("student-placement", user.id)}
-            >
-              Placementni ochish
-            </Button>
-          ) : null}
-          {user.role === "teacher" ? (
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => onOpenWorkflow("teacher-workload", user.id)}
-            >
-              Workloadni ochish
-            </Button>
-          ) : null}
         </Space>
 
         <Descriptions size="small" column={1} bordered>
@@ -97,7 +79,7 @@ const AdminUserProfileDrawer = ({
                 type="primary"
                 onClick={() => onOpenWorkflow("student-placement", user.id)}
               >
-                Workflowga o'tish
+                Tahrirlash
               </Button>
             }
           >
@@ -130,7 +112,7 @@ const AdminUserProfileDrawer = ({
                 type="primary"
                 onClick={() => onOpenWorkflow("teacher-workload", user.id)}
               >
-                Workflowga o'tish
+                Tahrirlash
               </Button>
             }
           >

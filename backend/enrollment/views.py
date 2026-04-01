@@ -849,12 +849,10 @@ class ApproveApplicantView(APIView):
             )
             _ensure_passport_data(user, applicant, documents)
 
-        approval_password = (applicant.passport_id or applicant.card_number or "").strip()
-        if not approval_password:
-            raise ValidationError({"detail": "Passport seriya/raqami topilmadi. Tasdiqlab bo'lmaydi."})
-
-        user.set_password(approval_password)
-        user.save(update_fields=["password"])
+        approval_password = (applicant.passport_id or applicant.card_number or applicant.phone or "").strip()
+        if approval_password:
+            user.set_password(approval_password)
+            user.save(update_fields=["password"])
 
         applicant.status = "approved"
         applicant.approved_by = request.user
