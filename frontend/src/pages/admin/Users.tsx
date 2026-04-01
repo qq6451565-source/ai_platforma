@@ -110,7 +110,7 @@ const UsersPage = () => {
             size="small"
             onClick={(event) => {
               event.stopPropagation();
-              controller.openEdit(user);
+              controller.openProfile(user);
             }}
           >
             Tahrirlash
