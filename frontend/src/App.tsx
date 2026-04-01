@@ -30,7 +30,6 @@ import { getAccessToken } from "./utils/token";
 import { getDefaultRedirect } from "./utils/roleRedirect";
 import { useMe } from "./hooks/useMe";
 import { ResponsiveLayout } from "./components/Layout";
-import LanguageSwitcher from "./components/LanguageSwitcher";
 import "./App.css";
 
 type LazyPageComponent = LazyExoticComponent<ComponentType<object>>;
@@ -65,16 +64,7 @@ const AdminAISettings = lazy(() => import("./pages/admin/AISettings"));
 const AdminUniversityHub = lazy(() => import("./pages/admin/UniversityHub"));
 const AdminLearningHub = lazy(() => import("./pages/admin/LearningHub"));
 const AdminProfile = lazy(() => import("./pages/admin/Profile"));
-const AdminLiveHub = lazy(() => import("./pages/admin/LiveHub"));
-const AdminSchedule = lazy(() => import("./pages/admin/Schedule"));
-const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminAuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
-const AdminAnnouncements = lazy(() => import("./pages/admin/Announcements"));
-const AdminProctoring = lazy(() => import("./pages/admin/Proctoring"));
-const AdminAssessmentHub = lazy(() => import("./pages/admin/AssessmentHub"));
-const AdminCommsHub = lazy(() => import("./pages/admin/CommsHub"));
-const AdminAuthGroups = lazy(() => import("./pages/admin/AuthGroups"));
-const AdminTokenBlacklist = lazy(() => import("./pages/admin/TokenBlacklist"));
 
 const PageFallback = ({ fullscreen = false }: { fullscreen?: boolean }) => (
   <div
@@ -191,9 +181,6 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
   return (
     <ResponsiveLayout user={user} items={items} onLogout={handleLogout} title={title}>
-      <div style={{ position: 'absolute', top: '20px', right: '150px', zIndex: 100 }}>
-        <LanguageSwitcher />
-      </div>
       <Suspense fallback={<PageFallback />}>
         <Outlet />
       </Suspense>
@@ -277,16 +264,7 @@ const App = () => {
               <Route path="university" element={<AdminUniversityHub />} />
               <Route path="learning" element={<AdminLearningHub />} />
               <Route path="ai-settings" element={<AdminAISettings />} />
-              <Route path="live" element={<AdminLiveHub />} />
-              <Route path="schedule" element={<AdminSchedule />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="audit-logs" element={<AdminAuditLogs />} />
-              <Route path="announcements" element={<AdminAnnouncements />} />
-              <Route path="proctoring" element={<AdminProctoring />} />
-              <Route path="assessment" element={<AdminAssessmentHub />} />
-              <Route path="comms" element={<AdminCommsHub />} />
-              <Route path="auth" element={<AdminAuthGroups />} />
-              <Route path="tokens" element={<AdminTokenBlacklist />} />
               <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
             </Route>
             <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
