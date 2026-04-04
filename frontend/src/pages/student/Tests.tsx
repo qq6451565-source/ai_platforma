@@ -1,6 +1,7 @@
 import { Button, Card, Empty, List, Typography, Skeleton, Modal, Radio, Tag, message } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { fetchTests } from "../../api/tests";
 import { fetchLessons } from "../../api/lessons";
 import { startTest, answerTest, finishTest, StartTestResponse } from "../../api/studentTests";
@@ -8,36 +9,37 @@ import { startTestProctoring, verifyProctoring, presenceProctoring, finishProcto
 import type { LessonAccessSnapshot, TestItem } from "../../types/test";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import type { TFunction } from "i18next";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
-const getAttendanceLabel = (access?: LessonAccessSnapshot | null) => {
+const getAttendanceLabel = (t: TFunction, access?: LessonAccessSnapshot | null) => {
   if (!access) return "-";
-  if (!access.attendance_finalized) return "Yakunlanmagan";
-  if (access.attendance_status === "present") return "Bor";
-  if (access.attendance_status === "absent") return "Yoq";
+  if (!access.attendance_finalized) return t('studentTests.notFinalized');
+  if (access.attendance_status === "present") return t('studentTests.present');
+  if (access.attendance_status === "absent") return t('studentTests.absent');
   return "-";
 };
 
-const getStartState = (test: TestItem) => {
+const getStartState = (t: TFunction, test: TestItem) => {
   const access = test.access;
   if (test.is_active === false) {
     return {
       canStart: false,
-      label: "Inactive",
-      reason: "Test faol emas.",
-      statusLabel: "Inactive",
+      label: t('studentTests.inactive'),
+      reason: t('studentTests.testInactive'),
+      statusLabel: t('studentTests.inactive'),
       color: "default" as const,
     };
   }
   if (!access) {
     return {
       canStart: false,
-      label: "Tekshirilmoqda",
-      reason: "Ruxsat holati yuklanmoqda.",
-      statusLabel: "Tekshirilmoqda",
+      label: t('studentTests.checking'),
+      reason: t('studentTests.loadingAccess'),
+      statusLabel: t('studentTests.checking'),
       color: "default" as const,
     };
   }
@@ -45,9 +47,9 @@ const getStartState = (test: TestItem) => {
   if (access.allowed) {
     return {
       canStart: true,
-      label: "Boshlash",
-      reason: "Testni boshlashingiz mumkin.",
-      statusLabel: "Ochiq",
+      label: t('studentTests.start'),
+      reason: t('studentTests.canStart'),
+      statusLabel: t('studentTests.open'),
       color: "green" as const,
     };
   }
@@ -55,18 +57,18 @@ const getStartState = (test: TestItem) => {
   if (access.status === "pending_attendance") {
     return {
       canStart: false,
-      label: "Kutilmoqda",
-      reason: access.reason || "Live dars davomi hali yakunlanmagan.",
-      statusLabel: "Kutilmoqda",
+      label: t('studentTests.pending'),
+      reason: access.reason || t('studentTests.pendingReason'),
+      statusLabel: t('studentTests.pending'),
       color: "gold" as const,
     };
   }
 
   return {
     canStart: false,
-    label: "Bloklangan",
-    reason: access.reason || "Bu test hozircha yopiq.",
-    statusLabel: "Bloklangan",
+    label: t('studentTests.blocked'),
+    reason: access.reason || t('studentTests.blockedReason'),
+    statusLabel: t('studentTests.blocked'),
     color: "red" as const,
   };
 };
@@ -75,6 +77,7 @@ const hasPendingAccess = (items?: TestItem[]) =>
   Boolean(items?.some((item) => item.access?.status === "pending_attendance"));
 
 const StudentTests = () => {
+  const { t } = useTranslation();
   usePageTitle('nav.tests');
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
@@ -196,10 +199,10 @@ const StudentTests = () => {
       } else {
         setFaceStatus("NOT_DETECTED");
         setProctorVerified(false);
-        message.error("Yuz tasdiqlanmadi. Qayta urinib ko'ring.");
+        message.error(t('studentTests.faceNotVerified'));
       }
     } catch (err: unknown) {
-      message.warning(getApiError(err, "Yuz tekshiruvi ishlamadi"));
+      message.warning(getApiError(err, t('studentTests.faceCheckFailed')));
     }
   };
 
@@ -213,19 +216,19 @@ const StudentTests = () => {
         const proctor = await startTestProctoring(resp.student_test_id);
         setProctorSessionId(proctor.session_id);
       } catch (err: unknown) {
-        message.warning(getApiError(err, "Proktor ishga tushmadi"));
+        message.warning(getApiError(err, t('studentTests.proctorFailed')));
       }
       await loadNext(resp);
       setOpen(true);
     } catch (err: unknown) {
-      message.error(getApiError(err, "Boshlashda xato"));
+      message.error(getApiError(err, t('studentTests.startError')));
     }
   };
 
   const handleAnswer = async () => {
     if (!studentTestId || !current?.question || !selectedOption) return;
     if (proctorSessionId && (!proctorVerified || proctorBlocked)) {
-      message.error("Proktor tekshiruvi tugallanmagan yoki bloklangan.");
+      message.error(t('studentTests.proctorNotReady'));
       return;
     }
     setSending(true);
@@ -236,13 +239,13 @@ const StudentTests = () => {
         option_id: selectedOption,
       });
       if (resp.detail && resp.detail.includes("Savollar tugadi")) {
-        message.info("Savollar tugadi, finish bosing");
+        message.info(t('studentTests.questionsFinishedPrompt'));
         setCurrent({ ...resp, question: undefined });
       } else {
         await loadNext(resp);
       }
     } catch (err: unknown) {
-      message.error(getApiError(err, "Javob yuborishda xato"));
+      message.error(getApiError(err, t('studentTests.answerError')));
     } finally {
       setSending(false);
     }
@@ -257,7 +260,7 @@ const StudentTests = () => {
         try {
           await finishProctoring(proctorSessionId);
         } catch (err: unknown) {
-          message.warning(getApiError(err, "Proktor yakunlanmadi"));
+          message.warning(getApiError(err, t('studentTests.proctorFinishFailed')));
         }
       }
 
@@ -267,11 +270,11 @@ const StudentTests = () => {
 
       if ((resp as any).is_accepted === false) {
         message.error(
-          `Test qabul qilinmadi: yuz aniqlash ${finalRatio !== null ? Math.round(finalRatio * 100) : "?"}% (minimal 50% kerak)`,
+          t('studentTests.testRejected', { ratio: finalRatio !== null ? Math.round(finalRatio * 100) : '?' }),
           8
         );
       } else {
-        message.success(`Test yakunlandi: ${resp.score_percent ?? "-"}%`);
+        message.success(t('studentTests.testCompleted', { score: resp.score_percent ?? '-' }));
       }
 
       setOpen(false);
@@ -284,7 +287,7 @@ const StudentTests = () => {
       setFaceRatio(0);
       setTotalChecks(0);
     } catch (err: unknown) {
-      message.error(getApiError(err, "Finish xato"));
+      message.error(getApiError(err, t('studentTests.finishError')));
     } finally {
       setSending(false);
     }
@@ -300,7 +303,7 @@ const StudentTests = () => {
       } catch (err: unknown) {
         if (!presenceWarnedRef.current) {
           presenceWarnedRef.current = true;
-          message.warning(err instanceof Error ? err.message : "Kamera ruxsatini tekshiring");
+          message.warning(err instanceof Error ? err.message : t('studentTests.cameraPermission'));
         }
         return;
       }
@@ -332,21 +335,21 @@ const StudentTests = () => {
             if (stats.total >= 3 && ratio < 0.5 && !presenceWarnedRef.current) {
               presenceWarnedRef.current = true;
               message.warning(
-                `Diqqat! Yuz aniqlash ko'rsatkichi ${Math.round(ratio * 100)}% — 50% dan past. Test qabul qilinmasligi mumkin.`,
+                t('studentTests.faceWarning', { ratio: Math.round(ratio * 100) }),
                 6
               );
             }
 
             if (resp.blocked) {
               setProctorBlocked(true);
-              message.error("Proktor blokladi: yuz uzoq vaqt yo'q");
+              message.error(t('studentTests.proctorBlocked'));
               stopPresenceLoop();
               stopCamera();
             }
           } catch (err: unknown) {
             if (!presenceWarnedRef.current) {
               presenceWarnedRef.current = true;
-              message.warning(getApiError(err, "Proktor tekshiruvi ishlamadi"));
+              message.warning(getApiError(err, t('studentTests.proctorCheckFailed')));
             }
           } finally {
             presenceBusyRef.current = false;
@@ -367,17 +370,17 @@ const StudentTests = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Test / Imtihonlar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('studentTests.title')}</Typography.Title>
       {hasPendingTests && (
         <Typography.Text type="secondary">
-          Live davomat yakunlangach testlar ro'yxati avtomatik yangilanadi.
+          {t('studentTests.pendingInfo')}
         </Typography.Text>
       )}
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
         ) : !subjectCards.length ? (
-          <Empty description="Testlar yo'q" />
+          <Empty description={t('studentTests.noTests')} />
         ) : (
           <List
             grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
@@ -386,7 +389,7 @@ const StudentTests = () => {
               <List.Item>
                 <Card hoverable onClick={() => setSelectedSubject(card.name)}>
                   <Typography.Text strong>{card.name}</Typography.Text>
-                  <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{card.count} ta test</div>
+                  <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{card.count} {t('studentTests.countSuffix')}</div>
                 </Card>
               </List.Item>
             )}
@@ -395,18 +398,18 @@ const StudentTests = () => {
       ) : (
         <>
           <div className="page-header-row">
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
           {isLoading ? (
             <Skeleton active />
           ) : !filteredTests.length ? (
-            <Empty description="Testlar yo'q" />
+            <Empty description={t('studentTests.noTests')} />
           ) : (
             <List
               dataSource={filteredTests}
               renderItem={(item) => {
-                const startState = getStartState(item);
+                const startState = getStartState(t, item);
                 return (
                   <List.Item
                     actions={[
@@ -422,32 +425,32 @@ const StudentTests = () => {
                   >
                     <div style={{ width: "100%" }}>
                       <div className="kv-grid">
-                        <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.titleLabel')}</span>
                         <strong>{item.title}</strong>
-                        <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.subject')}</span>
                         <span>{item.subject_name || item.subject || "-"}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Dars</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.lesson')}</span>
                         <span>{item.lesson_topic || "-"}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Guruh</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.group')}</span>
                         <span>{item.group_name || item.group || "-"}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Vaqt</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.time')}</span>
                         <span>{item.time_limit_minutes ?? "-"} min</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Umumiy ball</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.totalScore')}</span>
                         <span>{item.total_score ?? "-"}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Holat</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.statusLabel')}</span>
                         <span>
                           <Tag color={startState.color}>{startState.statusLabel}</Tag>
                         </span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Sabab</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.reason')}</span>
                         <span>{startState.reason}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Davomat</span>
-                        <span>{getAttendanceLabel(item.access)}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Qatnashuv</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.attendance')}</span>
+                        <span>{getAttendanceLabel(t, item.access)}</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.participation')}</span>
                         <span>{formatRatio(item.access?.attendance_joined_ratio)}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Face ratio</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.faceRatioLabel')}</span>
                         <span>{formatRatio(item.access?.attendance_face_verified_ratio)}</span>
-                        <span style={{ color: "var(--color-text-muted)" }}>Final</span>
-                        <span>{item.access?.attendance_finalized ? "Ha" : "Yo'q"}</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t('studentTests.finalLabel')}</span>
+                        <span>{item.access?.attendance_finalized ? t('common.yes') : t('common.no')}</span>
                       </div>
                     </div>
                   </List.Item>
@@ -459,7 +462,7 @@ const StudentTests = () => {
       )}
 
       <Modal
-        title="Test"
+        title={t('studentTests.test')}
         open={open}
         onCancel={() => {
           setOpen(false);
@@ -474,13 +477,13 @@ const StudentTests = () => {
         }}
         footer={[
           <Button key="verify" onClick={runVerify} disabled={!proctorSessionId || sending}>
-            Yuzni tekshirish
+            {t('studentTests.faceVerify')}
           </Button>,
           <Button key="finish" onClick={handleFinish} disabled={!studentTestId} loading={sending}>
-            Yakunlash
+            {t('studentTests.finish')}
           </Button>,
           <Button key="answer" type="primary" onClick={handleAnswer} disabled={!canAnswer} loading={sending}>
-            Javob yuborish
+            {t('studentTests.answerSubmit')}
           </Button>,
         ]}
       >
@@ -536,10 +539,10 @@ const StudentTests = () => {
                 }}
               >
                 {faceStatus === "DETECTED"
-                  ? "✓ Yuz aniqlandi"
+                  ? t('studentTests.faceDetected')
                   : faceStatus === "NOT_DETECTED"
-                    ? "✗ Yuz ko'rinmaydi"
-                    : "Tekshirilmoqda..."}
+                    ? t('studentTests.faceNotVisible')
+                    : t('studentTests.faceChecking')}
               </div>
               {totalChecks > 0 && (
                 <div
@@ -556,7 +559,7 @@ const StudentTests = () => {
                     color: faceRatio >= 0.5 ? "var(--color-success)" : "var(--color-error)",
                   }}
                 >
-                  {Math.round(faceRatio * 100)}% • {totalChecks} tekshiruv
+                  {Math.round(faceRatio * 100)}% • {totalChecks} {t('studentTests.checkCount')}
                 </div>
               )}
             </div>
@@ -578,7 +581,7 @@ const StudentTests = () => {
             </Radio.Group>
           </>
         ) : (
-          <Typography.Text>Savollar tugagan, yakunlash tugmasini bosing.</Typography.Text>
+          <Typography.Text>{t('studentTests.questionsFinished')}</Typography.Text>
         )}
       </Modal>
       <canvas ref={canvasRef} style={{ display: "none" }} />

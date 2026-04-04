@@ -11,6 +11,7 @@ import type { LessonAccessSnapshot } from "../../types/test";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from "react-i18next";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -22,50 +23,50 @@ const extractFile = (list: UploadFile[]) => {
 
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
-const getAttendanceLabel = (access?: LessonAccessSnapshot | null) => {
+const getAttendanceLabel = (access: LessonAccessSnapshot | null | undefined, t: (k: string) => string) => {
   if (!access) return "-";
-  if (!access.attendance_finalized) return "Yakunlanmagan";
-  if (access.attendance_status === "present") return "Bor";
-  if (access.attendance_status === "absent") return "Yoq";
+  if (!access.attendance_finalized) return t('access.notFinalized');
+  if (access.attendance_status === "present") return t('access.present');
+  if (access.attendance_status === "absent") return t('access.absent');
   return "-";
 };
 
-const getUploadState = (assignment: Assignment, hasSubmission: boolean) => {
+const getUploadState = (assignment: Assignment, hasSubmission: boolean, t: (k: string) => string) => {
   const access = assignment.access;
-  const defaultLabel = hasSubmission ? "Qayta yuborish" : "Yuborish";
+  const defaultLabel = hasSubmission ? t('studentAssignments.resubmit') : t('common.submit');
   if (!access) {
     return {
       canSubmit: false,
-      actionLabel: "Tekshirilmoqda",
-      statusLabel: "Tekshirilmoqda",
+      actionLabel: t('access.checking'),
+      statusLabel: t('access.checking'),
       color: "default" as const,
-      reason: "Ruxsat holati yuklanmoqda.",
+      reason: t('access.permissionLoading'),
     };
   }
   if (access.allowed) {
     return {
       canSubmit: true,
       actionLabel: defaultLabel,
-      statusLabel: "Ochiq",
+      statusLabel: t('access.open'),
       color: "green" as const,
-      reason: "Topshiriqni yuborishingiz mumkin.",
+      reason: t('access.canSubmit'),
     };
   }
   if (access.status === "pending_attendance") {
     return {
       canSubmit: false,
-      actionLabel: "Kutilmoqda",
-      statusLabel: "Kutilmoqda",
+      actionLabel: t('access.pending'),
+      statusLabel: t('access.pending'),
       color: "gold" as const,
-      reason: access.reason || "Live dars davomi hali yakunlanmagan.",
+      reason: access.reason || t('access.pendingReason'),
     };
   }
   return {
     canSubmit: false,
-    actionLabel: "Bloklangan",
-    statusLabel: "Bloklangan",
+    actionLabel: t('access.blocked'),
+    statusLabel: t('access.blocked'),
     color: "red" as const,
-    reason: access.reason || "Topshiriq hozircha yopiq.",
+    reason: access.reason || t('access.blockedAssignment'),
   };
 };
 
@@ -74,6 +75,7 @@ const hasPendingAccess = (items?: Assignment[]) =>
 
 const StudentAssignments = () => {
   usePageTitle('nav.assignments');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["assignments"],
@@ -124,18 +126,18 @@ const StudentAssignments = () => {
     if (!selectedId) return;
     const file = extractFile(fileList);
     if (!file) {
-      message.warning("Fayl majburiy.");
+      message.warning(t('studentAssignments.fileRequired'));
       return;
     }
     setUploading(true);
     try {
       await submitAssignment({ assignment: selectedId, file });
-      message.success("Topshiriq yuborildi");
+      message.success(t('studentAssignments.submitted'));
       setOpen(false);
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ["my-submissions"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Yuborishda xato"));
+      message.error(getApiError(err, t('studentAssignments.submitError')));
     } finally {
       setUploading(false);
     }
@@ -143,23 +145,23 @@ const StudentAssignments = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Topshiriqlar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('nav.assignments')}</Typography.Title>
       {hasPendingAssignments && (
         <Typography.Text type="secondary">
-          Live davomat yakunlangach topshiriqlar ro'yxati avtomatik yangilanadi.
+          {t('access.autoUpdateAssignment')}
         </Typography.Text>
       )}
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
         ) : !subjectCards.length ? (
-          <Empty description="Topshiriqlar yo'q" />
+          <Empty description={t('studentAssignments.noAssignments')} />
         ) : (
           <div className="card-grid">
             {subjectCards.map((card) => (
               <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
                 <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
-                <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta topshiriq</div>
+                <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} {t('studentAssignments.countSuffix')}</div>
               </Card>
             ))}
           </div>
@@ -167,21 +169,21 @@ const StudentAssignments = () => {
       ) : (
         <>
           <div className="page-header-row">
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
 
           {isLoading ? (
             <Skeleton active />
           ) : !filteredAssignments.length ? (
-            <Empty description="Topshiriqlar yo'q" />
+            <Empty description={t('studentAssignments.noAssignments')} />
           ) : (
             <List
               itemLayout="horizontal"
               dataSource={filteredAssignments}
               renderItem={(item) => {
                 const sub = getSubmission(item.id);
-                const uploadState = getUploadState(item, !!sub);
+                const uploadState = getUploadState(item, !!sub, t);
                 return (
                   <List.Item
                     actions={[
@@ -202,7 +204,7 @@ const StudentAssignments = () => {
                   >
                     <List.Item.Meta
                       title={item.title}
-                      description={`Dars: ${item.lesson_topic || "-"} | Topshirish: ${dayjs(item.deadline).format(
+                      description={`${t('studentAssignments.lessonLabel')}: ${item.lesson_topic || "-"} | ${t('studentAssignments.deadlineLabel')}: ${dayjs(item.deadline).format(
                         "DD.MM.YYYY HH:mm"
                       )}`}
                     />
@@ -211,13 +213,13 @@ const StudentAssignments = () => {
                         <Tag color={uploadState.color}>{uploadState.statusLabel}</Tag>
                       </span>
                       <span>{uploadState.reason}</span>
-                      <span>Davomat: {getAttendanceLabel(item.access)}</span>
-                      <span>Qatnashuv: {formatRatio(item.access?.attendance_joined_ratio)}</span>
-                      <span>Face ratio: {formatRatio(item.access?.attendance_face_verified_ratio)}</span>
-                      <span>Final: {item.access?.attendance_finalized ? "Ha" : "Yo'q"}</span>
+                      <span>{t('access.attendance')}: {getAttendanceLabel(item.access, t)}</span>
+                      <span>{t('access.participation')}: {formatRatio(item.access?.attendance_joined_ratio)}</span>
+                      <span>{t('access.faceRatio')}: {formatRatio(item.access?.attendance_face_verified_ratio)}</span>
+                      <span>{t('access.final')}: {item.access?.attendance_finalized ? t('common.yes') : t('common.no')}</span>
                       {item.file ? (
                         <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                          Topshiriq fayli
+                          {t('studentAssignments.assignmentFile')}
                         </a>
                       ) : (
                         <span>-</span>
@@ -225,11 +227,11 @@ const StudentAssignments = () => {
                       <span>
                         {sub ? (
                           <>
-                            Yuborildi ({sub.submitted_at ? dayjs(sub.submitted_at).format("DD.MM.YYYY HH:mm") : ""})
-                            {sub.grade != null ? ` | Bahosi: ${sub.grade}` : ""}
+                            {t('studentAssignments.submittedAt')} ({sub.submitted_at ? dayjs(sub.submitted_at).format("DD.MM.YYYY HH:mm") : ""})
+                            {sub.grade != null ? ` | ${t('studentAssignments.grade')}: ${sub.grade}` : ""}
                           </>
                         ) : (
-                          "Yuborilmagan"
+                          t('studentAssignments.notSubmitted')
                         )}
                       </span>
                     </div>
@@ -242,11 +244,11 @@ const StudentAssignments = () => {
       )}
 
       <Modal
-        title="Topshiriqni yuborish"
+        title={t('studentAssignments.submitTitle')}
         open={open}
         onCancel={() => setOpen(false)}
         onOk={handleSubmit}
-        okText="Yuborish"
+        okText={t('common.submit')}
         confirmLoading={uploading}
       >
         <Upload
@@ -255,7 +257,7 @@ const StudentAssignments = () => {
           beforeUpload={() => false}
           onChange={({ fileList: next }) => setFileList(next)}
         >
-          <Button>Fayl yuklash</Button>
+          <Button>{t('common.upload')}</Button>
         </Upload>
       </Modal>
     </div>

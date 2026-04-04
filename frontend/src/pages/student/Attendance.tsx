@@ -4,9 +4,11 @@ import { fetchAttendance } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const StudentAttendance = () => {
   usePageTitle('nav.attendance');
+  const { t } = useTranslation();
   const { data: me } = useMe();
   const { data: attendance, isLoading } = useQuery({
     queryKey: ["attendance", me?.id],
@@ -22,7 +24,7 @@ const StudentAttendance = () => {
     (lessons || []).map((lesson: any) => [
       lesson.id,
       {
-        topic: lesson.topic || `Dars #${lesson.id}`,
+        topic: lesson.topic || `${t('form.lesson')} #${lesson.id}`,
         subject: lesson.subject_name || lesson.subject || "-",
         group: lesson.group_name || lesson.group || "-",
         start: lesson.start_time,
@@ -40,31 +42,31 @@ const StudentAttendance = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Davomat</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('access.attendance')}</Typography.Title>
       {isLoading ? (
         <Skeleton active />
       ) : !items.length ? (
-        <Empty description="Davomat yozuvlari yo'q" />
+        <Empty description={t('studentAttendance.noRecords')} />
       ) : (
         <Card>
           <List
             dataSource={items}
             renderItem={(record) => {
               const lesson = lessonMap.get(record.lesson);
-              const statusLabel = record.status === "present" ? "Bor" : "Yoq";
+              const statusLabel = record.status === "present" ? t('access.present') : t('access.absent');
               return (
                 <List.Item>
                   <div style={{ width: "100%" }}>
                     <div className="kv-grid">
-                      <span>Dars</span>
-                      <strong>{lesson?.topic || `Dars #${record.lesson}`}</strong>
-                      <span>Fan</span>
+                      <span>{t('form.lesson')}</span>
+                      <strong>{lesson?.topic || `${t('form.lesson')} #${record.lesson}`}</strong>
+                      <span>{t('form.subject')}</span>
                       <span>{lesson?.subject || "-"}</span>
-                      <span>Guruh</span>
+                      <span>{t('form.group')}</span>
                       <span>{lesson?.group || "-"}</span>
-                      <span>Holat</span>
+                      <span>{t('common.status')}</span>
                       <Tag color={record.status === "present" ? "green" : "red"}>{statusLabel}</Tag>
-                      <span>Vaqt</span>
+                      <span>{t('studentAttendance.time')}</span>
                       <span>{lesson?.start ? new Date(lesson.start).toLocaleString() : "-"}</span>
                     </div>
                   </div>

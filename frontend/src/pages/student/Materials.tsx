@@ -6,10 +6,11 @@ import { fetchLessons } from "../../api/lessons";
 import type { MaterialResource } from "../../types/material";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const isVideo = (url?: string | null) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
 
-const renderResources = (resources: MaterialResource[], fallbackFile?: string | null) => {
+const renderResources = (resources: MaterialResource[], fallbackFile: string | null | undefined, t: (k: string) => string) => {
   const items = resources?.length
     ? resources
     : fallbackFile
@@ -30,7 +31,7 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
                 <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
               ) : null}
               <a href={fileUrl} target="_blank" rel="noreferrer">
-                Yuklab olish
+                {t('common.download')}
               </a>
             </div>
           );
@@ -43,6 +44,7 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
 
 const StudentMaterials = () => {
   usePageTitle('nav.materials');
+  const { t } = useTranslation();
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
     queryFn: fetchMaterials,
@@ -84,7 +86,7 @@ const StudentMaterials = () => {
       <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1)' }}>
         {files.map((res) => {
           const fileUrl = toAbsoluteUrl(res.file);
-          const name = res.title || fileUrl.split("/").pop() || "Fayl";
+          const name = res.title || fileUrl.split("/").pop() || t('studentMaterials.file');
           return (
             <a key={res.id ?? res.file} href={fileUrl} target="_blank" rel="noreferrer">
               {name}
@@ -97,7 +99,7 @@ const StudentMaterials = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Materiallar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('nav.materials')}</Typography.Title>
       {isLoading ? (
         <Skeleton active />
       ) : !activeSubject ? (
@@ -109,13 +111,13 @@ const StudentMaterials = () => {
               <List.Item>
                 <Card hoverable onClick={() => setActiveSubject(subject.id)}>
                   <Typography.Text strong>{subject.name}</Typography.Text>
-                  <div className="caption" style={{ marginTop: 'var(--space-1-5)' }}>{subject.count} ta material</div>
+                  <div className="caption" style={{ marginTop: 'var(--space-1-5)' }}>{subject.count} {t('studentMaterials.countSuffix')}</div>
                 </Card>
               </List.Item>
             )}
           />
         ) : (
-          <Empty description="Ma'lumot yo'q" />
+          <Empty description={t('common.noData')} />
         )
       ) : (
         (() => {
@@ -125,7 +127,7 @@ const StudentMaterials = () => {
           return (
             <>
               <div className="page-header-row">
-                <Button onClick={() => setActiveSubject(null)}>Orqaga</Button>
+                <Button onClick={() => setActiveSubject(null)}>{t('common.back')}</Button>
                 <Typography.Title level={5} style={{ margin: 0 }}>
                   {subjectName}
                 </Typography.Title>
@@ -145,19 +147,19 @@ const StudentMaterials = () => {
                         return (
                           <div style={{ width: "100%" }}>
                             <div className="kv-grid" style={{ marginBottom: 'var(--space-2-5)' }}>
-                              <span>Sarlavha</span>
+                              <span>{t('form.title')}</span>
                               <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)' }}>
                                 <strong>{item.title}</strong>
                               </div>
-                              <span>Fan</span>
+                              <span>{t('form.subject')}</span>
                               <span>{item.subject_name || `Fan #${item.subject}`}</span>
-                              <span>O'qituvchi</span>
+                              <span>{t('studentMaterials.teacher')}</span>
                               <span>{item.teacher_name || "-"}</span>
-                              <span>Guruhlar</span>
+                              <span>{t('studentMaterials.groups')}</span>
                               <span>
                                 {(item.group_names || []).join(", ") || item.group_name || "-"}
                               </span>
-                              <span>Fayl</span>
+                              <span>{t('studentMaterials.file')}</span>
                               {renderFileLinks(currentResources)}
                             </div>
                           </div>
@@ -165,12 +167,12 @@ const StudentMaterials = () => {
                       })()}
                       {item.versions && item.versions.length > 1 ? (
                         <details style={{ marginTop: 'var(--space-2)' }}>
-                          <summary>Versiyalar ({item.versions.length})</summary>
+                          <summary>{t('studentMaterials.versions')} ({item.versions.length})</summary>
                           <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
                             {item.versions.map((ver) => (
                               <div key={ver.version}>
                                 <strong>v{ver.version}</strong>
-                                {renderResources(ver.resources || [])}
+                                {renderResources(ver.resources || [], undefined, t)}
                               </div>
                             ))}
                           </div>
@@ -180,7 +182,7 @@ const StudentMaterials = () => {
                   )}
                 />
               ) : (
-                <Empty description="Ma'lumot yo'q" />
+                <Empty description={t('common.noData')} />
               )}
             </>
           );

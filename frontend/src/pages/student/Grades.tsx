@@ -5,9 +5,11 @@ import { fetchGradebook } from "../../api/gradebook";
 import { fetchMySubmissions } from "../../api/submissions";
 import { fetchStudentTestRecords } from "../../api/studentTests";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const StudentGrades = () => {
   usePageTitle('nav.grades');
+  const { t } = useTranslation();
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const { data: grades, isLoading } = useQuery({
     queryKey: ["gradebook"],
@@ -75,9 +77,9 @@ const StudentGrades = () => {
 
   const columns = useMemo(
     () => [
-      { title: "Fan", dataIndex: "subject_name", key: "subject_name" },
+      { title: t('form.subject'), dataIndex: "subject_name", key: "subject_name" },
       {
-        title: "Topshiriq",
+        title: t('nav.assignments'),
         dataIndex: "assignment_score",
         key: "assignment_score",
         render: (_: any, record: any) =>
@@ -86,7 +88,7 @@ const StudentGrades = () => {
             : record.assignment_score,
       },
       {
-        title: "Test",
+        title: t('studentTests.test'),
         dataIndex: "midterm_score",
         key: "midterm_score",
         render: (_: any, record: any) =>
@@ -108,7 +110,7 @@ const StudentGrades = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('nav.grades')}</Typography.Title>
       <Card>
         <div className="table-scroll">
           <Table
@@ -127,42 +129,42 @@ const StudentGrades = () => {
       </Card>
 
       <Modal
-        title={selectedSubject ? `${selectedSubject.subject_name}` : "Baholar"}
+        title={selectedSubject ? `${selectedSubject.subject_name}` : t('nav.grades')}
         open={!!selectedSubject}
         onCancel={() => setSelectedSubject(null)}
         footer={null}
       >
-        <Divider orientation="left">Topshiriqlar</Divider>
+        <Divider orientation="left">{t('nav.assignments')}</Divider>
         {currentSubmissions.length ? (
         <List
           dataSource={currentSubmissions}
           renderItem={(item: any) => (
             <List.Item>
               <div style={{ flex: 1 }}>
-                <Typography.Text strong>{item.assignment_title || "Topshiriq"}</Typography.Text>
+                <Typography.Text strong>{item.assignment_title || t('nav.assignments')}</Typography.Text>
                 <div className="caption">
-                  {item.lesson_topic || "Dars"}
+                  {item.lesson_topic || t('form.lesson')}
                 </div>
               </div>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
-                {typeof item.grade === "number" ? item.grade : "Baholanmagan"}
+                {typeof item.grade === "number" ? item.grade : t('studentGrades.ungraded')}
               </div>
             </List.Item>
           )}
         />
         ) : (
-        <Empty description="Topshiriqlar yo'q" />
+        <Empty description={t('studentGrades.noAssignments')} />
         )}
-        <Divider orientation="left">Testlar</Divider>
+        <Divider orientation="left">{t('nav.tests')}</Divider>
         {currentTests.length ? (
         <List
           dataSource={currentTests}
           renderItem={(item: any) => (
             <List.Item>
               <div style={{ flex: 1 }}>
-                <Typography.Text strong>{item.test_title || "Test"}</Typography.Text>
+                <Typography.Text strong>{item.test_title || t('studentTests.test')}</Typography.Text>
                 <div className="caption">
-                  {item.lesson_topic || "Dars"}
+                  {item.lesson_topic || t('form.lesson')}
                 </div>
               </div>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
@@ -172,7 +174,7 @@ const StudentGrades = () => {
           )}
         />
         ) : (
-        <Empty description="Testlar yo'q" />
+        <Empty description={t('studentGrades.noTests')} />
         )}
       </Modal>
     </div>
