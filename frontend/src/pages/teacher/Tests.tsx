@@ -90,12 +90,12 @@ const TeacherTests = () => {
   const onFinish = async (values: any) => {
     const file = fileList[0]?.originFileObj as File | undefined;
     if (!file) {
-      message.error("Word faylni yuklang (.doc yoki .docx).");
+      message.error(t('teacherTests.wordFileRequired'));
       return;
     }
     const lower = file.name.toLowerCase();
     if (!lower.endsWith(".doc") && !lower.endsWith(".docx")) {
-      message.error("Faqat .doc yoki .docx fayl qabul qilinadi.");
+      message.error(t('teacherTests.onlyDocx'));
       return;
     }
 
@@ -109,7 +109,7 @@ const TeacherTests = () => {
         total_score: values.total_score,
         is_active: values.is_active,
       });
-      message.success("Test Word fayldan yaratildi");
+      message.success(t('teacherTests.testCreated'));
       form.resetFields();
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ["tests"] });
@@ -127,7 +127,7 @@ const TeacherTests = () => {
       const data = await fetchTest(id);
       setViewItem(data);
     } catch {
-      message.error("Testni yuklab bo'lmadi");
+      message.error(t('teacherTests.testLoadError'));
       setViewOpen(false);
     } finally {
       setViewLoading(false);
@@ -136,7 +136,7 @@ const TeacherTests = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Testlar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('teacherTests.pageTitle')}</Typography.Title>
       {selectedSubject ? (
         <Form
           form={form}
@@ -148,20 +148,20 @@ const TeacherTests = () => {
           <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true, message: "Dars tanlang" }]}>
+          <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true, message: t('teacherTests.selectLesson') }]}>
             <Select
               showSearch
               allowClear
-              notFoundContent="Dars topilmadi"
+              notFoundContent={t('teacherTests.lessonNotFound')}
               options={filteredLessons.map((l) => ({
                 value: l.id,
-                label: `${l.subject_name || "Fan"} | ${l.group_name || `Guruh #${l.group}`} | ${dayjs(
+                label: `${l.subject_name || t('teacherTests.subjectLabel')} | ${l.group_name || `${t('teacherTests.groupLabel')} #${l.group}`} | ${dayjs(
                   l.start_time
                 ).format("DD.MM HH:mm")}`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="time_limit_minutes" label="Vaqt (min)">
+          <Form.Item name="time_limit_minutes" label={t('teacherTests.timeMinutes')}>
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
@@ -174,7 +174,7 @@ const TeacherTests = () => {
           <Form.Item name="is_active" label="Active" valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item label="Test fayli (.doc/.docx)" required>
+          <Form.Item label={t('teacherTests.testFile')} required>
             <Upload
               accept=".doc,.docx"
               beforeUpload={() => false}
@@ -182,15 +182,15 @@ const TeacherTests = () => {
               maxCount={1}
               onChange={({ fileList: next }) => setFileList(next.slice(-1))}
             >
-              <Button>Fayl tanlash</Button>
+              <Button>{t('teacherTests.selectFile')}</Button>
             </Upload>
             <Typography.Text type="secondary">
-              Har savolda 4 ta variant bo'lishi kerak, to'g'ri javob * bilan belgilanadi.
+              {t('teacherTests.testFileHint')}
             </Typography.Text>
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              Yaratish
+              {t('common.create')}
             </Button>
           </Form.Item>
         </Form>
@@ -215,7 +215,7 @@ const TeacherTests = () => {
                       }}
                     >
                       <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta test</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{t('teacherTests.testsCount', { count: subject.count })}</div>
                     </Card>
                   </List.Item>
                 )}
@@ -226,7 +226,7 @@ const TeacherTests = () => {
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+                <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
                 <Typography.Title level={5} style={{ margin: 0 }}>
                   {selectedSubject}
                 </Typography.Title>
@@ -266,7 +266,7 @@ const TeacherTests = () => {
                           onClick={async () => {
                             try {
                               await deleteTest(item.id);
-                              message.success("O'chirildi");
+                              message.success(t('teacherTests.deleted'));
                               await qc.invalidateQueries({ queryKey: ["tests"] });
                             } catch {
                               message.error(t('common.deleteError'));
@@ -279,20 +279,20 @@ const TeacherTests = () => {
                     >
                       <div style={{ width: "100%" }}>
                         <div className="kv-grid">
-                          <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.heading')}</span>
                           <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
-                          <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.subjectLabel')}</span>
                           <span>{item.subject_name || item.subject || "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Dars</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.lessonLabel')}</span>
                           <span>{item.lesson_topic || "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Guruh</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.groupLabel')}</span>
                           <span>{item.group_name || item.group || "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Vaqt</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.time')}</span>
                           <span>{item.time_limit_minutes ?? "-"} min</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Umumiy ball</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.totalScore')}</span>
                           <span>{item.total_score ?? "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Holat</span>
-                          <span>{item.is_active ? "Active" : "Inactive"}</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.status')}</span>
+                          <span>{item.is_active ? t('teacherTests.active') : t('teacherTests.inactive')}</span>
                         </div>
                       </div>
                     </List.Item>
@@ -307,7 +307,7 @@ const TeacherTests = () => {
       )}
 
       <Modal
-        title="Testni tahrirlash"
+        title={t('teacherTests.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -347,30 +347,30 @@ const TeacherTests = () => {
               showSearch
                             options={(selectedSubject ? filteredLessons : lessons || []).map((l) => ({
                               value: l.id,
-                              label: `${l.subject_name || "Fan"} | ${l.group_name || `Guruh #${l.group}`} | ${dayjs(
+                              label: `${l.subject_name || t('teacherTests.subjectLabel')} | ${l.group_name || `${t('teacherTests.groupLabel')} #${l.group}`} | ${dayjs(
                                 l.start_time
                               ).format("DD.MM HH:mm")}`,
                             }))}
             />
           </Form.Item>
-          <Form.Item name="time_limit_minutes" label="Vaqt (min)">
+          <Form.Item name="time_limit_minutes" label={t('teacherTests.timeMinutes')}>
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
             name="total_score"
-            label="Umumiy ball"
-            rules={[{ required: true, message: "Umumiy ball kiriting" }]}
+            label={t('teacherTests.totalScore')}
+            rules={[{ required: true, message: t('teacherTests.totalScoreRequired') }]}
           >
             <InputNumber style={{ width: "100%" }} min={1} />
           </Form.Item>
-          <Form.Item name="is_active" label="Active" valuePropName="checked">
+          <Form.Item name="is_active" label={t('teacherTests.active')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Testni ko'rish"
+        title={t('teacherTests.viewTitle')}
         open={viewOpen}
         onCancel={() => setViewOpen(false)}
         footer={null}
@@ -381,7 +381,7 @@ const TeacherTests = () => {
         ) : viewItem ? (
           <div>
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Typography.Text type="secondary">Sarlavha: </Typography.Text>
+              <Typography.Text type="secondary">{t('teacherTests.heading')}: </Typography.Text>
               <Typography.Text strong>{viewItem.title}</Typography.Text>
             </div>
             {viewItem.questions?.length ? (
@@ -414,7 +414,7 @@ const TeacherTests = () => {
                 )}
               />
             ) : (
-              <Empty description="Savollar topilmadi" />
+              <Empty description={t('teacherTests.noQuestions')} />
             )}
           </div>
         ) : (

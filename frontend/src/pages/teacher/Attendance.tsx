@@ -13,6 +13,7 @@ import {
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
+import { useTranslation } from "react-i18next";
 
 type LessonItem = {
   id: number;
@@ -55,6 +56,7 @@ const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.ro
 
 const TeacherAttendancePage = () => {
   usePageTitle('nav.attendance');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: lessons, isLoading: loadingLessons } = useQuery({
     queryKey: ["teacher-lessons"],
@@ -186,14 +188,14 @@ const TeacherAttendancePage = () => {
     mutationFn: (payload: { student: number; lesson: number; status: "present" | "absent"; reason: string }) =>
       markAttendance(payload),
     onSuccess: async () => {
-      message.success("Davomat override qilindi.");
+      message.success(t('teacherAttendance.overrideSuccess'));
       setOverrideDraft(null);
       setOverrideReason("");
       await qc.invalidateQueries({ queryKey: ["teacher-attendance", selectedLessonId] });
       await qc.invalidateQueries({ queryKey: ["attendance-override-history"] });
     },
     onError: (error: any) => {
-      message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || "Override saqlanmadi.");
+      message.error(error?.response?.data?.reason?.[0] || error?.response?.data?.detail || t('teacherAttendance.overrideError'));
     },
   });
 
@@ -206,7 +208,7 @@ const TeacherAttendancePage = () => {
     if (!overrideDraft) return;
     const reason = overrideReason.trim();
     if (reason.length < 5) {
-      message.warning("Override uchun kamida 5 ta belgi sabab yozing.");
+      message.warning(t('teacherAttendance.overrideMinReason'));
       return;
     }
     markMut.mutate({ ...overrideDraft, reason });
@@ -214,17 +216,17 @@ const TeacherAttendancePage = () => {
 
   const columns = [
     {
-      title: "Talaba",
+      title: t('teacherAttendance.student'),
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Guruh",
+      title: t('teacherAttendance.group'),
       dataIndex: "groupName",
       key: "groupName",
     },
     {
-      title: "Davomat",
+      title: t('teacherAttendance.attendance'),
       key: "status",
       render: (_: unknown, row: StudentRow) => (
         <Select
@@ -240,26 +242,26 @@ const TeacherAttendancePage = () => {
             });
           }}
           options={[
-            { value: "present", label: "Bor" },
-            { value: "absent", label: "Yoq" },
+            { value: "present", label: t('teacherAttendance.present') },
+            { value: "absent", label: t('teacherAttendance.absent') },
           ]}
         />
       ),
     },
     {
-      title: "Oxirgi belgilash",
+      title: t('teacherAttendance.lastMarked'),
       key: "timestamp",
       render: (_: unknown, row: StudentRow) =>
         row.timestamp ? dayjs(row.timestamp).format("DD.MM.YYYY HH:mm") : "-",
     },
     {
-      title: "Override",
+      title: t('teacherAttendance.override'),
       key: "override",
       render: (_: unknown, row: StudentRow) =>
         row.manualOverride ? (
           <Tag
             color="blue"
-          title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
+          title={`${row.overrideReason || t('teacherAttendance.noReason')}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
               row.overriddenAt ? ` | ${dayjs(row.overriddenAt).format("DD.MM.YYYY HH:mm")}` : ""
             }`}
             style={{ cursor: "pointer" }}
@@ -272,26 +274,26 @@ const TeacherAttendancePage = () => {
               })
             }
           >
-            Manual
+            {t('teacherAttendance.manual')}
           </Tag>
         ) : (
           "-"
         ),
     },
     {
-      title: "Final",
+      title: t('teacherAttendance.final'),
       key: "finalized",
       render: (_: unknown, row: StudentRow) => (
-        <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? "Yakunlangan" : "Jarayonda"}</Tag>
+        <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? t('teacherAttendance.finalized') : t('teacherAttendance.inProgress')}</Tag>
       ),
     },
     {
-      title: "Qatnashuv",
+      title: t('teacherAttendance.participation'),
       key: "joinedRatio",
       render: (_: unknown, row: StudentRow) => formatRatio(row.joinedRatio),
     },
     {
-      title: "Face ratio",
+      title: t('teacherAttendance.faceRatio'),
       key: "faceVerifiedRatio",
       render: (_: unknown, row: StudentRow) => formatRatio(row.faceVerifiedRatio),
     },
@@ -299,7 +301,7 @@ const TeacherAttendancePage = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Davomat</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('nav.attendance')}</Typography.Title>
 
       {!selectedSubject ? (
         loadingLessons ? (
@@ -309,12 +311,12 @@ const TeacherAttendancePage = () => {
             {subjectCards.map((subject) => (
               <Card key={subject.name} hoverable onClick={() => setSelectedSubject(subject.name)}>
                 <Typography.Text strong>{subject.name}</Typography.Text>
-                <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta dars</div>
+                <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{t('teacherAttendance.lessonsCount', { count: subject.count })}</div>
               </Card>
             ))}
           </div>
         ) : (
-          <Empty description="Fanlar topilmadi" />
+          <Empty description={t('teacherAttendance.noSubjects')} />
         )
       ) : (
         <>
@@ -326,51 +328,51 @@ const TeacherAttendancePage = () => {
                 setSearch("");
               }}
             >
-              Orqaga
+              {t('common.back')}
             </Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
 
           <div className="filters-row">
             <Select
-              placeholder="Darsni tanlang"
+              placeholder={t('teacherAttendance.selectLesson')}
               style={{ minWidth: 280 }}
               value={selectedLessonId ?? undefined}
               onChange={(value) => setSelectedLessonId(value)}
               options={subjectLessons.map((lesson: LessonItem) => ({
                 value: lesson.id,
-                label: `${lesson.topic || "Dars"} | ${lesson.group_name || "Guruh"} | ${dayjs(
+                label: `${lesson.topic || t('teacherAttendance.lesson')} | ${lesson.group_name || t('teacherAttendance.group')} | ${dayjs(
                   lesson.start_time
                 ).format("DD.MM HH:mm")}`,
               }))}
             />
             <Input
-              placeholder="Talaba qidirish"
+              placeholder={t('teacherAttendance.searchStudent')}
               style={{ width: 220 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
             {selectedLesson ? (
-              <Tag color="blue">{selectedLesson.group_name || "Guruh"}</Tag>
+              <Tag color="blue">{selectedLesson.group_name || t('teacherAttendance.group')}</Tag>
             ) : null}
           </div>
 
           {!selectedLessonId ? (
-            <Empty description="Dars tanlang" />
+            <Empty description={t('teacherAttendance.selectLessonPrompt')} />
           ) : loadingAttendance ? (
-            <Empty description="Davomat yuklanmoqda..." />
+            <Empty description={t('teacherAttendance.loadingAttendance')} />
           ) : rows.length ? (
             <div className="table-scroll">
               <Table rowKey="id" columns={columns} dataSource={rows} pagination={{ pageSize: 10 }} scroll={{ x: 1080 }} size="small" />
             </div>
           ) : (
-            <Empty description="Talabalar topilmadi" />
+            <Empty description={t('teacherAttendance.noStudents')} />
           )}
         </>
       )}
 
       <Modal
-        title="Davomat override"
+        title={t('teacherAttendance.overrideTitle')}
         open={!!overrideDraft}
         onCancel={() => {
           if (markMut.isPending) return;
@@ -378,33 +380,33 @@ const TeacherAttendancePage = () => {
           setOverrideReason("");
         }}
         onOk={submitOverride}
-        okText="Saqlash"
+        okText={t('common.save')}
         confirmLoading={markMut.isPending}
       >
         <Typography.Paragraph style={{ marginBottom: 'var(--space-3)' }}>
-          {overrideDraft?.studentName} uchun davomatni{" "}
-          <strong>{overrideDraft?.status === "present" ? "Bor" : "Yoq"}</strong> deb belgilaysiz.
+          {overrideDraft?.studentName} {t('teacherAttendance.overrideConfirm', { name: '' })}{" "}
+          <strong>{overrideDraft?.status === "present" ? t('teacherAttendance.present') : t('teacherAttendance.absent')}</strong> {t('teacherAttendance.overrideSet')}
         </Typography.Paragraph>
         <Input.TextArea
           rows={4}
           value={overrideReason}
           onChange={(event) => setOverrideReason(event.target.value)}
-          placeholder="Override sababi"
+          placeholder={t('teacherAttendance.overrideReason')}
           maxLength={500}
         />
       </Modal>
 
       <Modal
-        title={`Override tarixi${historyTarget ? `: ${historyTarget.studentName}` : ""}`}
+        title={`${t('teacherAttendance.historyTitle')}${historyTarget ? `: ${historyTarget.studentName}` : ""}`}
         open={!!historyTarget}
         onCancel={() => setHistoryTarget(null)}
         footer={null}
         width={760}
       >
         {loadingOverrideHistory ? (
-          <Empty description="Yuklanmoqda..." />
+          <Empty description={t('common.loading')} />
         ) : !overrideHistory?.length ? (
-          <Empty description="Override tarixi yo'q" />
+          <Empty description={t('teacherAttendance.historyNoRecords')} />
         ) : (
           <Table<AttendanceOverrideLog>
             rowKey="id"
@@ -412,26 +414,26 @@ const TeacherAttendancePage = () => {
             dataSource={overrideHistory}
             columns={[
               {
-                title: "Vaqt",
+                title: t('teacherAttendance.historyTime'),
                 dataIndex: "created_at",
                 key: "created_at",
                 render: (value: string | undefined) =>
                   value ? dayjs(value).format("DD.MM.YYYY HH:mm") : "-",
               },
               {
-                title: "Kim",
+                title: t('teacherAttendance.historyWho'),
                 dataIndex: "changed_by_name",
                 key: "changed_by_name",
                 render: (value: string | null | undefined) => value || "-",
               },
               {
-                title: "Holat",
+                title: t('teacherAttendance.historyStatus'),
                 key: "status_change",
                 render: (_: unknown, row: AttendanceOverrideLog) =>
                   `${row.previous_status || "-"} -> ${row.new_status}`,
               },
               {
-                title: "Sabab",
+                title: t('teacherAttendance.historyReason'),
                 dataIndex: "reason",
                 key: "reason",
               },

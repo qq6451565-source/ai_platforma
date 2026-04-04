@@ -6,9 +6,11 @@ import { fetchLessons } from "../../api/lessons";
 import { createLiveRoom } from "../../api/live";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from "react-i18next";
 
 const TeacherLive = () => {
   usePageTitle('nav.live');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: lessons, isLoading } = useQuery({
@@ -22,11 +24,11 @@ const TeacherLive = () => {
     setCreating(lessonId);
     try {
       await createLiveRoom(lessonId);
-      message.success("Live xona yaratildi");
+      message.success(t('teacherLive.roomCreated'));
       await qc.invalidateQueries({ queryKey: ["lessons"] });
       navigate(`/app/live/${lessonId}`);
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xato"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setCreating(null);
     }
@@ -40,7 +42,7 @@ const TeacherLive = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Live darslar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('teacherLive.pageTitle')}</Typography.Title>
       <Card>
         {isLoading ? (
           <Skeleton active />
@@ -56,7 +58,7 @@ const TeacherLive = () => {
                     onClick={() => handleStart(item.id)}
                     loading={creating === item.id}
                   >
-                    Boshlash
+                    {t('teacherLive.start')}
                   </Button>,
                   <Button
                     key="join"
@@ -64,7 +66,7 @@ const TeacherLive = () => {
                     onClick={() => handleJoin(item.id)}
                     loading={joining === item.id}
                   >
-                    Kirish
+                    {t('teacherLive.join')}
                   </Button>,
                 ]}
               >

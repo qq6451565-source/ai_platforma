@@ -94,7 +94,7 @@ const TeacherAssignments = () => {
     () =>
       subjectLessons.map((l) => ({
         value: l.id,
-        label: `${l.topic} | ${l.group_name || "Guruh"} | ${dayjs(l.start_time).format("DD.MM HH:mm")}`,
+        label: `${l.topic} | ${l.group_name || t('teacherAttendance.group')} | ${dayjs(l.start_time).format("DD.MM HH:mm")}`,
       })),
     [subjectLessons]
   );
@@ -103,11 +103,11 @@ const TeacherAssignments = () => {
 
   const onFinish = async (values: any) => {
     if (!selectedSubject) {
-      message.warning("Avval fan tanlang.");
+      message.warning(t('teacherAssignments.selectSubjectFirst'));
       return;
     }
     if (!values.lesson) {
-      message.warning("Dars majburiy.");
+      message.warning(t('teacherAssignments.lessonRequired'));
       return;
     }
     setSubmitting(true);
@@ -117,7 +117,7 @@ const TeacherAssignments = () => {
         title: values.title,
         file: extractFile(fileList),
       });
-      message.success("Topshiriq yaratildi");
+      message.success(t('teacherAssignments.created'));
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["assignments"] });
@@ -141,12 +141,12 @@ const TeacherAssignments = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Topshiriqlar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('teacherAssignments.pageTitle')}</Typography.Title>
       {!subjectNames.length ? (
         <Alert
           type="warning"
-          message="Sizga dars biriktirilmagan"
-          description="Topshiriq yaratish uchun admin tomonidan fan/guruh biriktirilsin."
+          message={t('teacherAssignments.noLessonWarning')}
+          description={t('teacherAssignments.noLessonDescription')}
           showIcon
           style={{ marginBottom: 'var(--space-4)' }}
         />
@@ -157,37 +157,37 @@ const TeacherAssignments = () => {
           {subjectCards.map((card) => (
             <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
-              <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta topshiriq</div>
+              <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{t('teacherAssignments.assignmentsCount', { count: card.count })}</div>
             </Card>
           ))}
         </div>
       ) : (
         <>
           <div className="page-header-row">
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
 
           {!subjectLessons.length ? (
             <Alert
               type="info"
-              message="Bu fan uchun darslar yo'q"
-              description="Topshiriq yaratish uchun avval dars jadvalda bo'lishi kerak."
+              message={t('teacherAssignments.noLessonsForSubject')}
+              description={t('teacherAssignments.noLessonsDescription')}
               showIcon
               style={{ marginBottom: 'var(--space-4)' }}
             />
           ) : null}
           <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
             <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true }]}>
-              <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
+              <Select showSearch placeholder={t('teacherAssignments.selectLesson')} options={lessonOptions} />
             </Form.Item>
             <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Topshirish sanasi">
-              <Input value={lessonDeadlineText(selectedLessonId)} disabled placeholder="Dars tanlang" />
+            <Form.Item label={t('teacherAssignments.deadline')}>
+              <Input value={lessonDeadlineText(selectedLessonId)} disabled placeholder={t('teacherAssignments.selectLesson')} />
             </Form.Item>
-            <Form.Item label="Fayl (ixtiyoriy)">
+            <Form.Item label={t('teacherAssignments.fileOptional')}>
               <Upload
                 maxCount={1}
                 fileList={fileList}
@@ -199,7 +199,7 @@ const TeacherAssignments = () => {
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={submitting}>
-                Yaratish
+                {t('common.create')}
               </Button>
             </Form.Item>
           </Form>
@@ -207,7 +207,7 @@ const TeacherAssignments = () => {
           {isLoading ? (
             <Skeleton active />
           ) : !filteredAssignments.length ? (
-            <Empty description="Topshiriqlar yo'q" />
+            <Empty description={t('teacherAssignments.noAssignments')} />
           ) : (
             <List
               dataSource={filteredAssignments}
@@ -232,11 +232,11 @@ const TeacherAssignments = () => {
                     </Button>,
                     <Popconfirm
                       key="delete"
-                      title="O'chirish?"
+                      title={t('teacherAssignments.deleteConfirm')}
                       onConfirm={async () => {
                         try {
                           await deleteAssignment(item.id);
-                          message.success("O'chirildi");
+                          message.success(t('teacherAssignments.deleted'));
                           await qc.invalidateQueries({ queryKey: ["assignments"] });
                         } catch {
                           message.error(t('common.deleteError'));
@@ -270,7 +270,7 @@ const TeacherAssignments = () => {
       )}
 
       <Modal
-        title="Topshiriqni tahrirlash"
+        title={t('teacherAssignments.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -296,22 +296,22 @@ const TeacherAssignments = () => {
       >
         <Form layout="vertical" form={editForm}>
           <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true }]}>
-            <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
+            <Select showSearch placeholder={t('teacherAssignments.selectLesson')} options={lessonOptions} />
           </Form.Item>
           <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="Topshirish sanasi">
+          <Form.Item label={t('teacherAssignments.deadline')}>
             <Input value={lessonDeadlineText(editLessonId)} disabled />
           </Form.Item>
-          <Form.Item label="Fayl (ixtiyoriy)">
+          <Form.Item label={t('teacherAssignments.fileOptional')}>
             <Upload
               maxCount={1}
               fileList={editFileList}
               beforeUpload={() => false}
               onChange={({ fileList: next }) => setEditFileList(next)}
             >
-              <Button>Yangi fayl</Button>
+              <Button>{t('teacherAssignments.newFile')}</Button>
             </Upload>
           </Form.Item>
         </Form>

@@ -101,7 +101,7 @@ const TeacherMaterials = () => {
       .map((g) => ({ value: g.id, label: `${g.name} (${g.level}-bosqich)` }));
   }, [groups, allowedGroupIds, selectedSubject, teacherSubjectMap]);
   const activeSubjectName =
-    subjectOptions.find((opt) => opt.value === filterSubject)?.label || "Fan";
+    subjectOptions.find((opt) => opt.value === filterSubject)?.label || t('teacherMaterials.subject');
 
   const subjectCards = useMemo(() => {
     const names = new Map<number, string>();
@@ -151,7 +151,7 @@ const TeacherMaterials = () => {
   const onFinish = async (values: any) => {
     const files = extractFiles(fileList);
     if (!files.length) {
-      message.warning("Fayl majburiy.");
+      message.warning(t('teacherMaterials.fileRequired'));
       return;
     }
     setSubmitting(true);
@@ -162,7 +162,7 @@ const TeacherMaterials = () => {
         groups: values.groups,
         files,
       });
-      message.success("Material yaratildi");
+      message.success(t('teacherMaterials.created'));
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["materials"] });
@@ -180,7 +180,7 @@ const TeacherMaterials = () => {
       <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1)' }}>
         {files.map((res) => {
           const fileUrl = toAbsoluteUrl(res.file);
-          const name = res.title || fileUrl.split("/").pop() || "Fayl";
+          const name = res.title || fileUrl.split("/").pop() || t('teacherMaterials.file');
           return (
             <a key={res.id ?? res.file} href={fileUrl} target="_blank" rel="noreferrer">
               {name}
@@ -205,7 +205,7 @@ const TeacherMaterials = () => {
                   <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
                 ) : null}
                 <a href={fileUrl} target="_blank" rel="noreferrer">
-                  Yuklab olish
+                  {t('common.download')}
                 </a>
               </div>
             );
@@ -218,12 +218,12 @@ const TeacherMaterials = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Materiallar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('teacherMaterials.pageTitle')}</Typography.Title>
       {!allowedSubjectIds.length ? (
         <Alert
           type="warning"
-          message="Sizga fan/guruh biriktirilmagan"
-          description="Material qo'shish uchun admin tomonidan o'qituvchi-fan-guruh biriktirilsin."
+          message={t('teacherMaterials.noSubjectWarning')}
+          description={t('teacherMaterials.noSubjectDescription')}
           showIcon
           style={{ marginBottom: 'var(--space-4)' }}
         />
@@ -241,16 +241,16 @@ const TeacherMaterials = () => {
               mode="multiple"
               showSearch
               options={groupOptions}
-              placeholder="Bir yoki bir nechta guruh tanlang"
+              placeholder={t('teacherMaterials.selectGroups')}
             />
           </Form.Item>
-          <Form.Item label="Fayllar">
+          <Form.Item label={t('teacherMaterials.files')}>
             <Upload
               multiple
               fileList={fileList}
               beforeUpload={(f) => {
                 if (!isAllowedFile(f)) {
-                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  message.error(t('teacherMaterials.allowedFormats', { formats: allowedExtensionsLabel }));
                   return Upload.LIST_IGNORE;
                 }
                 return false;
@@ -263,7 +263,7 @@ const TeacherMaterials = () => {
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={submitting} disabled={!allowedSubjectIds.length}>
-              Yaratish
+              {t('common.create')}
             </Button>
           </Form.Item>
         </Form>
@@ -290,7 +290,7 @@ const TeacherMaterials = () => {
                       }}
                     >
                       <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta material</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{t('teacherMaterials.materialsCount', { count: subject.count })}</div>
                     </Card>
                   </List.Item>
                 )}
@@ -312,7 +312,7 @@ const TeacherMaterials = () => {
                         setSelectedSubject(null);
                       }}
                     >
-                      Orqaga
+                      {t('common.back')}
                     </Button>
                     <Typography.Title level={5} style={{ margin: 0 }}>
                       {subjectName}
@@ -343,11 +343,11 @@ const TeacherMaterials = () => {
                             </Button>,
                             <Popconfirm
                               key="delete"
-                              title="O'chirish?"
+                              title={t('teacherMaterials.deleteConfirm')}
                               onConfirm={async () => {
                                 try {
                                   await deleteMaterial(item.id);
-                                  message.success("O'chirildi");
+                                  message.success(t('teacherMaterials.deleted'));
                                   await qc.invalidateQueries({ queryKey: ["materials"] });
                                 } catch {
                                   message.error(t('common.deleteError'));
@@ -369,18 +369,18 @@ const TeacherMaterials = () => {
                             return (
                               <div style={{ width: "100%" }}>
                                 <div className="kv-grid" style={{ marginBottom: 'var(--space-2-5)' }}>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.heading')}</span>
                                   <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)' }}>
                                     <strong>{item.title}</strong>
                                     <Tag color="blue">v{item.current_version || 1}</Tag>
                                   </div>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.subject')}</span>
                                   <span>{item.subject_name || `Fan #${item.subject}`}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>O'qituvchi</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.teacher')}</span>
                                   <span>{item.teacher_name || "-"}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Guruhlar</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.groups')}</span>
                                   <span>{(item.group_names || []).join(", ") || "-"}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Fayl</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.file')}</span>
                                   {renderFileLinks(currentResources)}
                                 </div>
                               </div>
@@ -388,7 +388,7 @@ const TeacherMaterials = () => {
                           })()}
                           {item.versions && item.versions.length > 1 ? (
                             <details style={{ marginTop: 'var(--space-2)' }}>
-                              <summary>Versiyalar ({item.versions.length})</summary>
+                              <summary>{t('teacherMaterials.versions')} ({item.versions.length})</summary>
                               <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
                                 {item.versions.map((ver) => (
                                   <div key={ver.version}>
@@ -413,7 +413,7 @@ const TeacherMaterials = () => {
       )}
 
       <Modal
-        title="Materialni tahrirlash"
+        title={t('teacherMaterials.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -452,13 +452,13 @@ const TeacherMaterials = () => {
           <Form.Item name="groups" label={t('form.group')} rules={[{ required: true }]}>
             <Select mode="multiple" showSearch options={groupOptions} />
           </Form.Item>
-          <Form.Item label="Yangi fayl(lar)">
+          <Form.Item label={t('teacherMaterials.newFiles')}>
             <Upload
               multiple
               fileList={editFileList}
               beforeUpload={(f) => {
                 if (!isAllowedFile(f)) {
-                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  message.error(t('teacherMaterials.allowedFormats', { formats: allowedExtensionsLabel }));
                   return Upload.LIST_IGNORE;
                 }
                 return false;
@@ -470,7 +470,7 @@ const TeacherMaterials = () => {
             </Upload>
           </Form.Item>
           <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>
-            Yangi fayl qo'shsangiz yangi versiya yaratiladi.
+            {t('teacherMaterials.newVersionHint')}
           </div>
         </Form>
       </Modal>

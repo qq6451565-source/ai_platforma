@@ -302,10 +302,10 @@ const TeacherGradesPage = () => {
 
   const tableColumns = useMemo(
     () => [
-      { title: "Talaba", dataIndex: "student_name", key: "student_name" },
-      { title: "Guruh", dataIndex: "group_name", key: "group_name" },
+      { title: t('teacherGrades.student'), dataIndex: "student_name", key: "student_name" },
+      { title: t('teacherGrades.group'), dataIndex: "group_name", key: "group_name" },
       {
-        title: "Topshiriq",
+        title: t('teacherGrades.assignment'),
         dataIndex: "assignment_score",
         key: "assignment_score",
         render: (_: any, record: any) =>
@@ -314,7 +314,7 @@ const TeacherGradesPage = () => {
             : record.assignment_score,
       },
       {
-        title: "Test",
+        title: t('teacherGrades.test'),
         dataIndex: "midterm_score",
         key: "midterm_score",
         render: (_: any, record: any) =>
@@ -342,12 +342,12 @@ const TeacherGradesPage = () => {
             )}
           />
         ) : (
-          <Empty description="Fanlar yo'q" />
+          <Empty description={t('teacherGrades.noSubjects')} />
         )
       ) : (
         <>
           <div className="page-header-row">
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {selectedSubject.name}
             </Typography.Title>
@@ -355,7 +355,7 @@ const TeacherGradesPage = () => {
           <Space wrap className="filters-row">
             <Select
               allowClear
-              placeholder="Guruh"
+              placeholder={t('teacherGrades.groupFilter')}
               style={{ width: 200 }}
               value={groupFilter ?? undefined}
               onChange={(v) => setGroupFilter(v ?? null)}
@@ -363,7 +363,7 @@ const TeacherGradesPage = () => {
             />
             <Select
               allowClear
-              placeholder="Til"
+              placeholder={t('teacherGrades.langFilter')}
               style={{ width: 140 }}
               value={languageFilter ?? undefined}
               onChange={(v) => setLanguageFilter(v ?? null)}
@@ -375,17 +375,17 @@ const TeacherGradesPage = () => {
             />
             <Select
               allowClear
-              placeholder="Bosqich"
+              placeholder={t('teacherGrades.levelFilter')}
               style={{ width: 140 }}
               value={levelFilter ?? undefined}
               onChange={(v) => setLevelFilter(v ?? null)}
               options={Array.from({ length: 10 }).map((_, idx) => ({
                 value: idx + 1,
-                label: `${idx + 1}-bosqich`,
+                label: `${idx + 1}-${t('teacherGrades.levelFilter').toLowerCase()}`,
               }))}
             />
             <Input
-              placeholder="Qidirish"
+              placeholder={t('teacherGrades.search')}
               style={{ width: 220 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -415,7 +415,7 @@ const TeacherGradesPage = () => {
       )}
 
       <Modal
-        title="Talaba baholari"
+        title={t('teacherGrades.studentGrades')}
         open={!!editStudent}
         onCancel={() => {
           setEditStudent(null);
@@ -425,61 +425,61 @@ const TeacherGradesPage = () => {
         {editStudent ? (
           <>
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Typography.Text type="secondary">Talaba</Typography.Text>
+              <Typography.Text type="secondary">{t('teacherGrades.student')}</Typography.Text>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {`${editStudent?.first_name || ""} ${editStudent?.last_name || ""}`.trim() ||
                   editStudent?.username ||
                   `#${editStudent?.id}`}
               </div>
             </div>
-            <Divider orientation="left">Darslar bo'yicha</Divider>
+            <Divider orientation="left">{t('teacherGrades.byLessons')}</Divider>
             {lessonBuckets.length ? (
               <div style={{ display: "grid", gap: 'var(--space-3)' }}>
                 {lessonBuckets.map((bucket) => (
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
                     <div className="detail-two-col">
                       <div>
-                        <Typography.Text type="secondary">Topshiriqlar</Typography.Text>
+                        <Typography.Text type="secondary">{t('teacherGrades.assignments')}</Typography.Text>
                         {bucket.submissions.length ? (
                           <div className="mini-card-grid">
                             {bucket.submissions.map((item: any) => (
                               <Card
                                 key={item.id}
                                 size="small"
-                                title={item.assignment_title || "Topshiriq"}
+                                title={item.assignment_title || t('teacherGrades.assignment')}
                                 hoverable
                                 onClick={() => openDetail(item, "assignment")}
                               >
                                 <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  {typeof item.grade === "number" ? `Ball: ${item.grade}` : "Baholanmagan"}
+                                  {typeof item.grade === "number" ? `${t('teacherGrades.score')}: ${item.grade}` : t('teacherGrades.ungraded')}
                                 </div>
                               </Card>
                             ))}
                           </div>
                         ) : (
-                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Topshiriq yo'q" />
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('teacherGrades.noAssignments')} />
                         )}
                       </div>
                       <div>
-                        <Typography.Text type="secondary">Testlar</Typography.Text>
+                        <Typography.Text type="secondary">{t('teacherGrades.tests')}</Typography.Text>
                         {bucket.tests.length ? (
                           <div className="mini-card-grid">
                             {bucket.tests.map((item: any) => (
                               <Card
                                 key={item.id}
                                 size="small"
-                                title={item.test_title || "Test"}
+                                title={item.test_title || t('teacherGrades.test')}
                                 hoverable
                                 onClick={() => openDetail(item, "test")}
                               >
                                 <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  Ball: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
+                                  {t('teacherGrades.score')}: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
                                 </div>
                               </Card>
                             ))}
                           </div>
                         ) : (
-                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Test yo'q" />
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('teacherGrades.noTests')} />
                         )}
                       </div>
                     </div>
@@ -487,14 +487,14 @@ const TeacherGradesPage = () => {
                 ))}
               </div>
             ) : (
-              <Empty description="Darslar bo'yicha ma'lumot yo'q" />
+              <Empty description={t('teacherGrades.noLessonData')} />
             )}
           </>
         ) : null}
       </Modal>
 
       <Modal
-        title={detailType === "assignment" ? "Topshiriq tafsilotlari" : "Test tafsilotlari"}
+        title={detailType === "assignment" ? t('teacherGrades.assignmentDetails') : t('teacherGrades.testDetails')}
         open={detailOpen}
         onCancel={() => {
           setDetailOpen(false);
@@ -506,53 +506,53 @@ const TeacherGradesPage = () => {
         {detailItem ? (
           <div style={{ display: "grid", gap: 'var(--space-2)' }}>
             <div>
-              <Typography.Text type="secondary">Sarlavha</Typography.Text>
+              <Typography.Text type="secondary">{t('teacherGrades.heading')}</Typography.Text>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {detailType === "assignment"
-                  ? detailItem.assignment_title || "Topshiriq"
-                  : detailItem.test_title || "Test"}
+                  ? detailItem.assignment_title || t('teacherGrades.assignment')
+                  : detailItem.test_title || t('teacherGrades.test')}
               </div>
             </div>
             <div>
-              <Typography.Text type="secondary">Dars</Typography.Text>
-              <div>{detailItem.lesson_topic || "Dars"}</div>
+              <Typography.Text type="secondary">{t('teacherGrades.lesson')}</Typography.Text>
+              <div>{detailItem.lesson_topic || t('teacherGrades.lesson')}</div>
             </div>
             <div>
-              <Typography.Text type="secondary">Fan</Typography.Text>
+              <Typography.Text type="secondary">{t('teacherGrades.subject')}</Typography.Text>
               <div>{detailItem.subject_name || "-"}</div>
             </div>
             <div>
-              <Typography.Text type="secondary">Guruh</Typography.Text>
+              <Typography.Text type="secondary">{t('teacherGrades.group')}</Typography.Text>
               <div>{detailItem.group_name || "-"}</div>
             </div>
             {detailType === "assignment" ? (
               <>
                 <div>
-                  <Typography.Text type="secondary">Topshirilgan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('teacherGrades.submittedAt')}</Typography.Text>
                   <div>{formatDate(detailItem.submitted_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Baho</Typography.Text>
-                  <div>{typeof detailItem.grade === "number" ? detailItem.grade : "Baholanmagan"}</div>
+                  <Typography.Text type="secondary">{t('teacherGrades.grade')}</Typography.Text>
+                  <div>{typeof detailItem.grade === "number" ? detailItem.grade : t('teacherGrades.ungraded')}</div>
                 </div>
                 {detailItem.comment ? (
                   <div>
-                    <Typography.Text type="secondary">Izoh</Typography.Text>
+                    <Typography.Text type="secondary">{t('teacherGrades.comment')}</Typography.Text>
                     <div>{detailItem.comment}</div>
                   </div>
                 ) : null}
                 {detailItem.teacher_comment ? (
                   <div>
-                    <Typography.Text type="secondary">O'qituvchi izohi</Typography.Text>
+                    <Typography.Text type="secondary">{t('teacherGrades.teacherComment')}</Typography.Text>
                     <div>{detailItem.teacher_comment}</div>
                   </div>
                 ) : null}
                 {detailItem.file ? (
                   <div>
-                    <Typography.Text type="secondary">Fayl</Typography.Text>
+                    <Typography.Text type="secondary">{t('teacherGrades.file')}</Typography.Text>
                     <div>
                       <a href={detailItem.file} target="_blank" rel="noreferrer">
-                        Yuklab olish
+                        {t('common.download')}
                       </a>
                     </div>
                   </div>
@@ -561,15 +561,15 @@ const TeacherGradesPage = () => {
             ) : (
               <>
                 <div>
-                  <Typography.Text type="secondary">Boshlagan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('teacherGrades.startedAt')}</Typography.Text>
                   <div>{formatDate(detailItem.started_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Yakunlangan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('teacherGrades.finishedAt')}</Typography.Text>
                   <div>{formatDate(detailItem.finished_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Ball</Typography.Text>
+                  <Typography.Text type="secondary">{t('teacherGrades.score')}</Typography.Text>
                   <div>
                     {formatScore(getTestScore(detailItem))} / {formatScore(getTestTotal(detailItem))}
                   </div>
@@ -589,14 +589,14 @@ const TeacherGradesPage = () => {
                 style={{ width: "100%" }}
                 value={detailScore ?? undefined}
                 onChange={(val) => setDetailScore(typeof val === "number" ? val : null)}
-                placeholder={detailType === "assignment" ? "Ball" : "Natija (%)"}
+                placeholder={detailType === "assignment" ? t('teacherGrades.score') : t('teacherGrades.result')}
               />
               {detailType === "assignment" ? (
                 <Input.TextArea
                   rows={3}
                   value={detailComment}
                   onChange={(e) => setDetailComment(e.target.value)}
-                  placeholder="O'qituvchi izohi"
+                  placeholder={t('teacherGrades.teacherComment')}
                 />
               ) : null}
               <Button type="primary" loading={detailSaving} onClick={saveDetail}>

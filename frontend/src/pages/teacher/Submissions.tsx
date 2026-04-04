@@ -9,9 +9,11 @@ import { fetchGroups } from "../../api/groups";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from "react-i18next";
 
 const TeacherSubmissions = () => {
   usePageTitle('nav.submissions');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: subs, isLoading } = useQuery({
     queryKey: ["submissions"],
@@ -102,13 +104,13 @@ const TeacherSubmissions = () => {
     setLoading(true);
     try {
       await gradeSubmission(selectedId, { grade: grade ?? undefined, teacher_comment: comment });
-      message.success("Baholandi");
+      message.success(t('teacherSubmissions.graded'));
       setOpen(false);
       setGrade(null);
       setComment("");
       await qc.invalidateQueries({ queryKey: ["submissions"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setLoading(false);
     }
@@ -116,12 +118,12 @@ const TeacherSubmissions = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Yuborilgan topshiriqlar</Typography.Title>
+      <Typography.Title level={4} className="page-title">{t('teacherSubmissions.pageTitle')}</Typography.Title>
       {!selectedSubject ? (
         isLoading ? (
           <Skeleton active />
         ) : !subjectCards.length ? (
-          <Typography.Text>Hali yuborilgan topshiriqlar yo'q.</Typography.Text>
+          <Typography.Text>{t('teacherSubmissions.noSubmissions')}</Typography.Text>
         ) : (
           <div className="card-grid">
             {subjectCards.map((card) => (
@@ -151,12 +153,12 @@ const TeacherSubmissions = () => {
                 }
               }}
             >
-              Orqaga
+              {t('common.back')}
             </Button>
             <Typography.Text strong>{selectedSubject?.name}</Typography.Text>
             {selectedGroupId ? (
               <Typography.Text type="secondary">
-                / {(groups || []).find((g) => g.id === selectedGroupId)?.name || "Guruh"}
+                / {(groups || []).find((g) => g.id === selectedGroupId)?.name || t('teacherSubmissions.group')}
               </Typography.Text>
             ) : null}
           </div>
@@ -165,13 +167,13 @@ const TeacherSubmissions = () => {
             <Skeleton active />
           ) : !selectedGroupId ? (
             !groupCards.length ? (
-              <Empty description="Guruhlar topilmadi" />
+              <Empty description={t('teacherSubmissions.noGroups')} />
             ) : (
               <div className="card-grid">
                 {groupCards.map((card) => (
                   <Card key={card.id} hoverable onClick={() => setSelectedGroupId(card.id)}>
                     <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
-                    <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta yuborilgan</div>
+                    <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{t('teacherSubmissions.submittedCount', { count: card.count })}</div>
                   </Card>
                 ))}
               </div>
@@ -191,29 +193,29 @@ const TeacherSubmissions = () => {
                           setOpen(true);
                         }}
                       >
-                        Baholash
+                        {t('teacherSubmissions.gradeAction')}
                       </Button>,
                     ]}
                   >
                     <List.Item.Meta
-                      title={`${item.assignment_title || "Topshiriq"} | ${
+                      title={`${item.assignment_title || t('teacherSubmissions.assignment')} | ${
                         item.student_name || item.student_username || `Student #${item.student}`
                       }`}
-                      description={`Fan: ${item.subject_name || "-"} | Dars: ${item.lesson_topic || "-"} | Guruh: ${
+                      description={`${t('teacherSubmissions.subject')}: ${item.subject_name || "-"} | ${t('teacherSubmissions.lesson')}: ${item.lesson_topic || "-"} | ${t('teacherSubmissions.group')}: ${
                         item.group_name || item.student_group_name || "-"
-                      } | Yuborildi: ${
+                      } | ${t('teacherSubmissions.submitted')}: ${
                         item.submitted_at ? dayjs(item.submitted_at).format("DD.MM.YYYY HH:mm") : "-"
                       }`}
                     />
                     <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                       {item.file ? (
                         <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                          Fayl
+                          {t('teacherSubmissions.file')}
                         </a>
                       ) : (
                         <span>-</span>
                       )}
-                      <span>{item.grade != null ? `Bahosi: ${item.grade}` : "Baholanmagan"}</span>
+                      <span>{item.grade != null ? `${t('teacherSubmissions.score')}: ${item.grade}` : t('teacherSubmissions.ungraded')}</span>
                     </div>
                   </List.Item>
                 );
@@ -224,22 +226,22 @@ const TeacherSubmissions = () => {
       )}
 
       <Modal
-        title="Baholash"
+        title={t('teacherSubmissions.gradeTitle')}
         open={open}
         onCancel={() => setOpen(false)}
         onOk={onGrade}
         confirmLoading={loading}
-        okText="Saqlash"
+        okText={t('common.save')}
       >
         <InputNumber
           style={{ width: "100%", marginBottom: 'var(--space-3)' }}
-          placeholder="Baho (0-100)"
+          placeholder={t('teacherSubmissions.gradeInput')}
           value={grade === null ? undefined : grade}
           onChange={(v) => setGrade(v ?? null)}
         />
         <Input.TextArea
           rows={3}
-          placeholder="Izoh"
+          placeholder={t('teacherSubmissions.commentInput')}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
