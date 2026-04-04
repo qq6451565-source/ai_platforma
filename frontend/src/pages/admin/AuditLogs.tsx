@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Input, Popconfirm, Select, Space, Table, Tag, Typography, message } from "antd";
 import dayjs from "dayjs";
@@ -35,6 +36,7 @@ const actionColors: Record<string, string> = {
 
 const AuditLogsPage = () => {
   usePageTitle('nav.auditLogs');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState<"all" | "auth" | "enrollment">("all");
@@ -48,7 +50,7 @@ const AuditLogsPage = () => {
       message.success("Audit log o'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.auditLogs(domain, action, search) });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   const actionOptions = [
@@ -181,9 +183,9 @@ const AuditLogsPage = () => {
           {
             title: "Amallar",
             render: (_: unknown, row: AuditLog) => (
-              <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => delMut.mutate(row.id)}>
+              <Popconfirm title={t('common.confirmDelete')} onConfirm={() => delMut.mutate(row.id)}>
                 <Button size="small" danger>
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>
             ),

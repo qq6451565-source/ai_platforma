@@ -27,6 +27,7 @@ import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import type { Material, MaterialResource } from "../../types/material";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 const isVideo = (url?: string) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
 const allowedExtensions = new Set(["doc", "docx", "xls", "xlsx", "ppt", "pptx", "mp4", "webm"]);
 const allowedExtensionsLabel = "doc, docx, xls, xlsx, ppt, pptx, mp4, webm";
@@ -44,6 +45,7 @@ const extractFiles = (list: UploadFile[]) =>
 
 const TeacherMaterials = () => {
   usePageTitle('nav.materials');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
@@ -131,9 +133,9 @@ const TeacherMaterials = () => {
   }, [materials, subjectOptions, lessons]);
 
   const getErrorMessage = (err: unknown) => {
-    if (!axios.isAxiosError(err)) return "Xatolik";
+    if (!axios.isAxiosError(err)) return t('common.error');
     const data = err.response?.data;
-    if (!data) return "Xatolik";
+    if (!data) return t('common.error');
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
     if (Array.isArray(data)) return data.join(" ");
@@ -143,7 +145,7 @@ const TeacherMaterials = () => {
       if (Array.isArray(msg)) return `${field}: ${msg.join(" ")}`;
       return `${field}: ${msg}`;
     }
-    return "Xatolik";
+    return t('common.error');
   };
 
   const onFinish = async (values: any) => {
@@ -228,13 +230,13 @@ const TeacherMaterials = () => {
       ) : null}
       {filterSubject ? (
         <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="Fan">
+          <Form.Item label={t('form.subject')}>
             <Input value={activeSubjectName} disabled />
           </Form.Item>
-          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
+          <Form.Item name="groups" label={t('form.group')} rules={[{ required: true }]}>
             <Select
               mode="multiple"
               showSearch
@@ -256,7 +258,7 @@ const TeacherMaterials = () => {
               onChange={({ fileList: nextList }) => setFileList(nextList)}
               accept={acceptExtensions}
             >
-              <Button>Fayl(lar) yuklash</Button>
+              <Button>{t('common.filesUpload')}</Button>
             </Upload>
           </Form.Item>
           <Form.Item>
@@ -294,7 +296,7 @@ const TeacherMaterials = () => {
                 )}
               />
             ) : (
-              <Empty description="Ma'lumot yo'q" />
+              <Empty description={t('common.noData')} />
             )
           ) : (
             (() => {
@@ -337,7 +339,7 @@ const TeacherMaterials = () => {
                                 setEditOpen(true);
                               }}
                             >
-                              Tahrirlash
+                              {t('common.edit')}
                             </Button>,
                             <Popconfirm
                               key="delete"
@@ -348,12 +350,12 @@ const TeacherMaterials = () => {
                                   message.success("O'chirildi");
                                   await qc.invalidateQueries({ queryKey: ["materials"] });
                                 } catch {
-                                  message.error("O'chirishda xato");
+                                  message.error(t('common.deleteError'));
                                 }
                               }}
                             >
                               <Button danger type="link">
-                                O'chirish
+                                {t('common.delete')}
                               </Button>
                             </Popconfirm>,
                           ]}
@@ -401,7 +403,7 @@ const TeacherMaterials = () => {
                       )}
                     />
                   ) : (
-                    <Empty description="Ma'lumot yo'q" />
+                    <Empty description={t('common.noData')} />
                   )}
                 </>
               );
@@ -426,7 +428,7 @@ const TeacherMaterials = () => {
               groups: vals.groups,
               files,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["materials"] });
           } catch (err: unknown) {
@@ -438,16 +440,16 @@ const TeacherMaterials = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(subjects || []).map((s) => ({ value: s.id, label: `${s.name}` }))}
             />
           </Form.Item>
-          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
+          <Form.Item name="groups" label={t('form.group')} rules={[{ required: true }]}>
             <Select mode="multiple" showSearch options={groupOptions} />
           </Form.Item>
           <Form.Item label="Yangi fayl(lar)">
@@ -464,7 +466,7 @@ const TeacherMaterials = () => {
               onChange={({ fileList: nextList }) => setEditFileList(nextList)}
               accept={acceptExtensions}
             >
-              <Button>Fayl(lar) yuklash</Button>
+              <Button>{t('common.filesUpload')}</Button>
             </Upload>
           </Form.Item>
           <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>

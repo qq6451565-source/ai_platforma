@@ -30,7 +30,19 @@
     "actions": "Harakatlar",
     "view": "Ko'rish",
     "download": "Yuklab olish",
-    "upload": "Yuklash"
+    "upload": "Yuklash",
+    "add": "Qo'shish",
+    "error": "Xatolik",
+    "success": "Muvaffaqiyat",
+    "updated": "Yangilandi",
+    "saved": "Saqlandi",
+    "deleted": "O'chirildi",
+    "deleteError": "O'chirishda xato",
+    "saveError": "Saqlashda xato",
+    "loadError": "Yuklashda xato",
+    "confirmDelete": "O'chirishni tasdiqlaysizmi?",
+    "fileUpload": "Fayl yuklash",
+    "filesUpload": "Fayl(lar) yuklash"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -582,6 +594,26 @@
       }
     }
   },
+  "form": {
+    "firstName": "Ism",
+    "lastName": "Familiya",
+    "phone": "Telefon",
+    "password": "Parol",
+    "oldPassword": "Eski parol",
+    "newPassword": "Yangi parol",
+    "confirmPassword": "Parolni tasdiqlang",
+    "subject": "Fan",
+    "group": "Guruh",
+    "lesson": "Dars",
+    "comment": "Izoh",
+    "description": "Tavsif",
+    "name": "Nomi",
+    "title": "Sarlavha",
+    "score": "Ball",
+    "date": "Sana",
+    "type": "Turi",
+    "semester": "Semestr"
+  },
   "assignments": {
     "deadline": "Muddat",
     "submitted": "Topshirilgan",
@@ -598,6 +630,12 @@
     "confirmPasswordMismatch": "Parollar mos kelmaydi",
     "passwordCopied": "Parol nusxalandi",
     "copyPassword": "Nusxalash",
-    "credentials": "Kirish ma'lumotlari"
+    "credentials": "Kirish ma'lumotlari",
+    "title": "Profil ma'lumotlari",
+    "changePassword": "Parolni almashtirish",
+    "updated": "Profil yangilandi",
+    "passwordUpdated": "Parol yangilandi",
+    "updateError": "Profilni yangilashda xato",
+    "passwordError": "Parolni o'zgartirishda xato"
   }
 }

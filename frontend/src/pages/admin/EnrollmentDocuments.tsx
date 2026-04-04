@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -35,6 +36,7 @@ const buildFormData = (values: any) => {
 };
 
 const EnrollmentDocumentsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: docs, isLoading } = useQuery(adminQueryOptions.enrollmentDocuments());
   const { data: applicants } = useQuery(adminQueryOptions.enrollmentList());
@@ -53,7 +55,7 @@ const EnrollmentDocumentsPage = () => {
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
       createForm.resetFields();
     },
-    onError: () => message.error("Saqlashda xato"),
+    onError: () => message.error(t('common.saveError')),
   });
 
   const deleteMut = useMutation({
@@ -62,7 +64,7 @@ const EnrollmentDocumentsPage = () => {
       message.success("O'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   return (
@@ -79,7 +81,7 @@ const EnrollmentDocumentsPage = () => {
           rules={[{ required: true, message: "Pasport oldi kerak" }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
+            <Button>{t('common.upload')}</Button>
           </Upload>
         </Form.Item>
         <Form.Item
@@ -90,11 +92,11 @@ const EnrollmentDocumentsPage = () => {
           rules={[{ required: true, message: "Yuz rasmi kerak" }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
+            <Button>{t('common.upload')}</Button>
           </Upload>
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
@@ -112,24 +114,24 @@ const EnrollmentDocumentsPage = () => {
           {
             title: "Pasport oldi",
             dataIndex: "passport_front",
-            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>Ko'rish</Button> : "-"),
+            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
             title: "Pasport orqasi",
             dataIndex: "passport_back",
-            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>Ko'rish</Button> : "-"),
+            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
             title: "Yuz rasmi",
             dataIndex: "face_image",
-            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>Ko'rish</Button> : "-"),
+            render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
             title: "Amallar",
             render: (_: unknown, r: any) => (
-              <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => deleteMut.mutate(r.id)}>
+              <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                 <Button size="small" danger>
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>
             ),

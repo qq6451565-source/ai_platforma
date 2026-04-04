@@ -26,6 +26,7 @@ import type { Assignment } from "../../types/assignment";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from "react-i18next";
 
 const extractFile = (list: UploadFile[]) => {
   const item = list[0];
@@ -35,6 +36,7 @@ const extractFile = (list: UploadFile[]) => {
 
 const TeacherAssignments = () => {
   usePageTitle('nav.assignments');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["assignments"],
@@ -120,7 +122,7 @@ const TeacherAssignments = () => {
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["assignments"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }
@@ -176,10 +178,10 @@ const TeacherAssignments = () => {
             />
           ) : null}
           <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
-            <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
+            <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true }]}>
               <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
             </Form.Item>
-            <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+            <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
               <Input />
             </Form.Item>
             <Form.Item label="Topshirish sanasi">
@@ -192,7 +194,7 @@ const TeacherAssignments = () => {
                 beforeUpload={() => false}
                 onChange={({ fileList: next }) => setFileList(next)}
               >
-                <Button>Fayl yuklash</Button>
+                <Button>{t('common.fileUpload')}</Button>
               </Upload>
             </Form.Item>
             <Form.Item>
@@ -226,7 +228,7 @@ const TeacherAssignments = () => {
                         setEditOpen(true);
                       }}
                     >
-                      Tahrirlash
+                      {t('common.edit')}
                     </Button>,
                     <Popconfirm
                       key="delete"
@@ -237,12 +239,12 @@ const TeacherAssignments = () => {
                           message.success("O'chirildi");
                           await qc.invalidateQueries({ queryKey: ["assignments"] });
                         } catch {
-                          message.error("O'chirishda xato");
+                          message.error(t('common.deleteError'));
                         }
                       }}
                     >
                       <Button danger type="link">
-                        O'chirish
+                        {t('common.delete')}
                       </Button>
                     </Popconfirm>,
                   ]}
@@ -281,11 +283,11 @@ const TeacherAssignments = () => {
               title: vals.title,
               file: extractFile(editFileList),
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["assignments"] });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, t('common.error')));
           } finally {
             setEditLoading(false);
           }
@@ -293,10 +295,10 @@ const TeacherAssignments = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
+          <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true }]}>
             <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
           </Form.Item>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
           <Form.Item label="Topshirish sanasi">

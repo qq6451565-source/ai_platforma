@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Switch, Table, message } from "antd";
 import {
@@ -10,6 +11,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const TestOptionsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: options, isLoading } = useQuery(adminQueryOptions.testOptions());
   const { data: questions } = useQuery(adminQueryOptions.testQuestions());
@@ -33,7 +35,7 @@ const TestOptionsPage = () => {
       message.success("Variant qo'shildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
-    onError: () => message.error("Saqlashda xato"),
+    onError: () => message.error(t('common.saveError')),
   });
 
   const updateMut = useMutation({
@@ -53,7 +55,7 @@ const TestOptionsPage = () => {
       message.success("O'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   const openEdit = (row: any) => {
@@ -79,7 +81,7 @@ const TestOptionsPage = () => {
           <Switch />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
@@ -105,11 +107,11 @@ const TestOptionsPage = () => {
             render: (_: unknown, r: any) => (
               <Space>
                 <Button size="small" onClick={() => openEdit(r)}>
-                  Tahrirlash
+                  {t('common.edit')}
                 </Button>
-                <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => deleteMut.mutate(r.id)}>
+                <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                   <Button size="small" danger>
-                    O'chirish
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               </Space>

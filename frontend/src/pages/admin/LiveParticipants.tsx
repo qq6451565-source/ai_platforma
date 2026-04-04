@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Popconfirm, Table, Tag, message } from "antd";
 import dayjs from "dayjs";
@@ -7,6 +8,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const LiveParticipantsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: participants, isLoading } = useQuery(adminQueryOptions.liveParticipants());
   const { data: rooms } = useQuery(adminQueryOptions.liveRooms());
@@ -19,7 +21,7 @@ const LiveParticipantsPage = () => {
       message.success("O'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveParticipants });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   return (
@@ -54,9 +56,9 @@ const LiveParticipantsPage = () => {
           {
             title: "Amallar",
             render: (_: unknown, r: any) => (
-              <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => deleteMut.mutate(r.id)}>
+              <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                 <Button size="small" danger>
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>
             ),

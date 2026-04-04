@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, message } from "antd";
 import {
@@ -12,6 +13,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AuthGroupsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: groups, isLoading } = useQuery(adminQueryOptions.authGroups());
   const { data: permissions } = useQuery(adminQueryOptions.permissions());
@@ -34,7 +36,7 @@ const AuthGroupsPage = () => {
       message.success("Guruh qo'shildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
-    onError: () => message.error("Saqlashda xato"),
+    onError: () => message.error(t('common.saveError')),
   });
 
   const updateMut = useMutation({
@@ -54,7 +56,7 @@ const AuthGroupsPage = () => {
       message.success("O'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   const openEdit = (g: AuthGroup) => {
@@ -66,14 +68,14 @@ const AuthGroupsPage = () => {
   return (
     <Card title="Auth guruhlari" style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-4)' }}>
-        <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
+        <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
         <Form.Item name="permissions" label="Ruxsatlar">
           <Select mode="multiple" options={permOptions} placeholder="Ruxsatlarni tanlang" />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
@@ -83,7 +85,7 @@ const AuthGroupsPage = () => {
         dataSource={groups || []}
         pagination={{ pageSize: 10 }}
         columns={[
-          { title: "Nomi", dataIndex: "name" },
+          { title: t('form.name'), dataIndex: "name" },
           {
             title: "Ruxsatlar",
             dataIndex: "permissions",
@@ -94,11 +96,11 @@ const AuthGroupsPage = () => {
             render: (_: unknown, r: AuthGroup) => (
               <Space>
                 <Button size="small" onClick={() => openEdit(r)}>
-                  Tahrirlash
+                  {t('common.edit')}
                 </Button>
-                <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => deleteMut.mutate(r.id)}>
+                <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                   <Button size="small" danger>
-                    O'chirish
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               </Space>
@@ -122,7 +124,7 @@ const AuthGroupsPage = () => {
             updateMut.mutate({ id: editing.id, payload: vals });
           }}
         >
-          <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
+          <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
           <Form.Item name="permissions" label="Ruxsatlar">

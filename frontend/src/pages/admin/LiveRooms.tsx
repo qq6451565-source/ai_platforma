@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Select, Button, List, Empty, Popconfirm, message } from "antd";
+import { useTranslation } from 'react-i18next';
 import { createLiveRoom, deleteLiveRoom } from "../../api/admin";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminLiveRoomsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: rooms, isLoading } = useQuery(adminQueryOptions.liveRooms());
   const { data: lessons } = useQuery(adminQueryOptions.lessons());
@@ -15,7 +17,7 @@ const AdminLiveRoomsPage = () => {
       message.success("Live xonasi yaratildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
     },
-    onError: () => message.error("Xatolik"),
+    onError: () => message.error(t('common.error')),
   });
 
   return (
@@ -37,22 +39,22 @@ const AdminLiveRoomsPage = () => {
       <List
         loading={isLoading}
         dataSource={rooms || []}
-        locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('common.noData')} /> }}
         renderItem={(r) => (
           <List.Item
             actions={[
               <Popconfirm
-                title="O'chirish?"
+                title={t('common.confirmDelete')}
                 onConfirm={() =>
                   deleteLiveRoom(r.id)
                     .then(() => {
                       message.success("O'chirildi");
                       qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
                     })
-                    .catch(() => message.error("Xatolik"))
+                    .catch(() => message.error(t('common.error')))
                 }
               >
-                <Button danger type="link">O'chirish</Button>
+                <Button danger type="link">{t('common.delete')}</Button>
               </Popconfirm>,
             ]}
           >

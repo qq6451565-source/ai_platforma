@@ -25,9 +25,11 @@ import { fetchTeacherStudents } from "../../api/user";
 import { fetchMySubmissions, gradeSubmission } from "../../api/submissions";
 import { fetchStudentTestRecords, updateStudentTestRecord } from "../../api/studentTests";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const TeacherGradesPage = () => {
   usePageTitle('nav.grades');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [groupFilter, setGroupFilter] = useState<number | null>(null);
@@ -239,12 +241,12 @@ const TeacherGradesPage = () => {
         });
         await qc.invalidateQueries({ queryKey: ["teacher-student-tests"] });
       }
-      message.success("Yangilandi");
+      message.success(t('common.updated'));
       setDetailOpen(false);
       setDetailItem(null);
       setDetailType(null);
     } catch (err) {
-      message.error("Xatolik");
+      message.error(t('common.error'));
     } finally {
       setDetailSaving(false);
     }
@@ -324,8 +326,8 @@ const TeacherGradesPage = () => {
 
   return (
     <div className="page-shell">
-      <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
-      <Card title="Baholar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Typography.Title level={4} className="page-title">{t('nav.grades')}</Typography.Title>
+      <Card title={t('nav.grades')} style={{ marginBottom: 'var(--space-4)' }}>
       {!selectedSubject ? (
         subjectCards.length ? (
           <List
@@ -407,7 +409,7 @@ const TeacherGradesPage = () => {
               />
             </div>
           ) : (
-            <Empty description="Ma'lumot yo'q" />
+            <Empty description={t('common.noData')} />
           )}
         </>
       )}
@@ -574,7 +576,7 @@ const TeacherGradesPage = () => {
                 </div>
               </>
             )}
-            <Divider orientation="left">Tahrirlash</Divider>
+            <Divider orientation="left">{t('common.edit')}</Divider>
             <div style={{ display: "grid", gap: 'var(--space-2)' }}>
               <InputNumber
                 min={0}
@@ -598,12 +600,12 @@ const TeacherGradesPage = () => {
                 />
               ) : null}
               <Button type="primary" loading={detailSaving} onClick={saveDetail}>
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>
         ) : (
-          <Empty description="Ma'lumot yo'q" />
+          <Empty description={t('common.noData')} />
         )}
       </Modal>
     </Card>

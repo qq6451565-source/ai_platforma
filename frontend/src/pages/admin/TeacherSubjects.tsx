@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Button, List, message, Empty, Select, Popconfirm, Modal } from "antd";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   createTeacherSubject,
   deleteTeacherSubject,
@@ -10,6 +11,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const TeacherSubjectsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: items, isLoading } = useQuery(adminQueryOptions.teacherSubjects());
   const { data: teachers } = useQuery(adminQueryOptions.teachers());
@@ -30,7 +32,7 @@ const TeacherSubjectsPage = () => {
       message.success("Bog'lanish qo'shildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
     },
-    onError: () => message.error("Xatolik"),
+    onError: () => message.error(t('common.error')),
   });
 
   return (
@@ -43,10 +45,10 @@ const TeacherSubjectsPage = () => {
             options={(teachers || []).map((t) => ({ value: t.id, label: t.username }))}
           />
         </Form.Item>
-        <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+        <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
           <Select
             showSearch
-            placeholder="Fan"
+            placeholder={t('form.subject')}
             options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
           />
         </Form.Item>
@@ -59,14 +61,14 @@ const TeacherSubjectsPage = () => {
           />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
       <List
         loading={isLoading}
         dataSource={items || []}
-        locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('common.noData')} /> }}
         renderItem={(it) => (
           <List.Item
             actions={[
@@ -82,18 +84,18 @@ const TeacherSubjectsPage = () => {
                   setEditOpen(true);
                 }}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>,
               <Popconfirm
-                title="O'chirish?"
+                title={t('common.confirmDelete')}
                 onConfirm={() =>
                   deleteTeacherSubject(it.id)
                     .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects }))
-                    .catch(() => message.error("O'chirishda xato"))
+                    .catch(() => message.error(t('common.deleteError')))
                 }
               >
                 <Button danger type="link">
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>,
             ]}
@@ -117,11 +119,11 @@ const TeacherSubjectsPage = () => {
           try {
             const vals = await editForm.validateFields();
             await updateTeacherSubject(editItem.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setEditLoading(false);
           }
@@ -135,7 +137,7 @@ const TeacherSubjectsPage = () => {
               options={(teachers || []).map((t) => ({ value: t.id, label: t.username }))}
             />
           </Form.Item>
-          <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}

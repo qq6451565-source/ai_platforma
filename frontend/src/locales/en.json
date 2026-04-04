@@ -30,7 +30,19 @@
     "actions": "Actions",
     "view": "View",
     "download": "Download",
-    "upload": "Upload"
+    "upload": "Upload",
+    "add": "Add",
+    "error": "Error",
+    "success": "Success",
+    "updated": "Updated",
+    "saved": "Saved",
+    "deleted": "Deleted",
+    "deleteError": "Delete error",
+    "saveError": "Save error",
+    "loadError": "Load error",
+    "confirmDelete": "Are you sure you want to delete?",
+    "fileUpload": "Upload file",
+    "filesUpload": "Upload file(s)"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -582,6 +594,26 @@
       }
     }
   },
+  "form": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "password": "Password",
+    "oldPassword": "Old password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "subject": "Subject",
+    "group": "Group",
+    "lesson": "Lesson",
+    "comment": "Comment",
+    "description": "Description",
+    "name": "Name",
+    "title": "Title",
+    "score": "Score",
+    "date": "Date",
+    "type": "Type",
+    "semester": "Semester"
+  },
   "assignments": {
     "deadline": "Deadline",
     "submitted": "Submitted",
@@ -598,6 +630,12 @@
     "confirmPasswordMismatch": "Passwords do not match",
     "passwordCopied": "Password copied",
     "copyPassword": "Copy",
-    "credentials": "Login credentials"
+    "credentials": "Login credentials",
+    "title": "Profile information",
+    "changePassword": "Change password",
+    "updated": "Profile updated",
+    "passwordUpdated": "Password updated",
+    "updateError": "Profile update error",
+    "passwordError": "Password change error"
   }
 }

@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty, Select, Popconfirm, Modal, Tag } from "antd";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { createSubject, deleteSubject, updateSubject } from "../../api/admin";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const SubjectsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: subjects, isLoading } = useQuery(adminQueryOptions.subjects());
   const { data: directions } = useQuery(adminQueryOptions.directions());
@@ -27,7 +29,7 @@ const SubjectsPage = () => {
   return (
     <Card title="Fanlar" style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
+        <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
         <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>
@@ -38,14 +40,14 @@ const SubjectsPage = () => {
           />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
       <List
         loading={isLoading}
         dataSource={subjects || []}
-        locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('common.noData')} /> }}
         renderItem={(s) => (
           <List.Item
             actions={[
@@ -60,18 +62,18 @@ const SubjectsPage = () => {
                   setEditOpen(true);
                 }}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>,
               <Popconfirm
-                title="O'chirish?"
+                title={t('common.confirmDelete')}
                 onConfirm={() =>
                   deleteSubject(s.id)
                     .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects }))
-                    .catch(() => message.error("O'chirishda xato"))
+                    .catch(() => message.error(t('common.deleteError')))
                 }
               >
                 <Button danger type="link">
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
             </Popconfirm>,
           ]}
@@ -101,11 +103,11 @@ const SubjectsPage = () => {
           try {
             const vals = await editForm.validateFields();
             await updateSubject(editItem.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setEditLoading(false);
           }
@@ -113,7 +115,7 @@ const SubjectsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
+          <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
           <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>

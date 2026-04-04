@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, Form, Button, message, DatePicker, Modal, Select, List, Space } from "antd";
 import dayjs from "dayjs";
 import {
@@ -11,6 +12,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminLessonsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: lessons, isLoading } = useQuery(adminQueryOptions.lessons());
   const { data: teacherSubjects } = useQuery(adminQueryOptions.teacherSubjects());
@@ -138,9 +140,9 @@ const AdminLessonsPage = () => {
     Modal.confirm({
       title: "Darsni o'chirish?",
       content: "Bu amalni ortga qaytarib bo'lmaydi.",
-      okText: "O'chirish",
+      okText: t('common.delete'),
       okType: "danger",
-      cancelText: "Bekor qilish",
+      cancelText: t('common.cancel'),
       onOk: async () => {
         try {
           await deleteLessonAdmin(lesson.id);
@@ -152,7 +154,7 @@ const AdminLessonsPage = () => {
           }
           await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
         } catch {
-          message.error("O'chirishda xato");
+          message.error(t('common.deleteError'));
         }
       },
     });
@@ -172,13 +174,13 @@ const AdminLessonsPage = () => {
         start_time: vals.start_time?.toISOString(),
         end_time: end?.toISOString(),
       });
-      message.success("Yangilandi");
+      message.success(t('common.updated'));
       setEditOpen(false);
       setEditTeacherSubject(null);
       setEditItem(null);
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
     } catch (err: unknown) {
-      if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+      if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
     } finally {
       setEditLoading(false);
     }
@@ -375,10 +377,10 @@ const AdminLessonsPage = () => {
                       openEditLesson(item);
                     }}
                   >
-                    Tahrirlash
+                    {t('common.edit')}
                   </Button>,
                   <Button key="delete" size="small" danger onClick={() => confirmDelete(item)}>
-                    O'chirish
+                    {t('common.delete')}
                   </Button>,
                 ]}
               >
@@ -422,8 +424,8 @@ const AdminLessonsPage = () => {
               }}
             />
           </Form.Item>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Guruh" options={createGroupOptions} disabled={!createTeacherSubject} />
+          <Form.Item name="group" label={t('form.group')} rules={[{ required: true }]}>
+            <Select showSearch placeholder={t('form.group')} options={createGroupOptions} disabled={!createTeacherSubject} />
           </Form.Item>
           <Form.Item
             name="start_time"
@@ -446,7 +448,7 @@ const AdminLessonsPage = () => {
         }}
         footer={[
           <Button key="delete" danger onClick={() => confirmDelete(editItem)} disabled={!editItem}>
-            O'chirish
+            {t('common.delete')}
           </Button>,
           <Button
             key="cancel"
@@ -456,10 +458,10 @@ const AdminLessonsPage = () => {
               setEditItem(null);
             }}
           >
-            Bekor qilish
+            {t('common.cancel')}
           </Button>,
           <Button key="save" type="primary" onClick={handleUpdate} loading={editLoading}>
-            Saqlash
+            {t('common.save')}
           </Button>,
         ]}
       >
@@ -479,8 +481,8 @@ const AdminLessonsPage = () => {
               }}
             />
           </Form.Item>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Guruh" options={editGroupOptions} disabled={!editTeacherSubject} />
+          <Form.Item name="group" label={t('form.group')} rules={[{ required: true }]}>
+            <Select showSearch placeholder={t('form.group')} options={editGroupOptions} disabled={!editTeacherSubject} />
           </Form.Item>
           <Form.Item
             name="start_time"

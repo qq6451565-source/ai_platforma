@@ -30,7 +30,19 @@
     "actions": "Действия",
     "view": "Просмотр",
     "download": "Скачать",
-    "upload": "Загрузить"
+    "upload": "Загрузить",
+    "add": "Добавить",
+    "error": "Ошибка",
+    "success": "Успех",
+    "updated": "Обновлено",
+    "saved": "Сохранено",
+    "deleted": "Удалено",
+    "deleteError": "Ошибка удаления",
+    "saveError": "Ошибка сохранения",
+    "loadError": "Ошибка загрузки",
+    "confirmDelete": "Вы уверены, что хотите удалить?",
+    "fileUpload": "Загрузить файл",
+    "filesUpload": "Загрузить файл(ы)"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -582,6 +594,26 @@
       }
     }
   },
+  "form": {
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "phone": "Телефон",
+    "password": "Пароль",
+    "oldPassword": "Старый пароль",
+    "newPassword": "Новый пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "subject": "Предмет",
+    "group": "Группа",
+    "lesson": "Урок",
+    "comment": "Комментарий",
+    "description": "Описание",
+    "name": "Название",
+    "title": "Заголовок",
+    "score": "Балл",
+    "date": "Дата",
+    "type": "Тип",
+    "semester": "Семестр"
+  },
   "assignments": {
     "deadline": "Срок сдачи",
     "submitted": "Сдано",
@@ -598,6 +630,12 @@
     "confirmPasswordMismatch": "Пароли не совпадают",
     "passwordCopied": "Пароль скопирован",
     "copyPassword": "Копировать",
-    "credentials": "Данные для входа"
+    "credentials": "Данные для входа",
+    "title": "Информация профиля",
+    "changePassword": "Изменить пароль",
+    "updated": "Профиль обновлён",
+    "passwordUpdated": "Пароль обновлён",
+    "updateError": "Ошибка обновления профиля",
+    "passwordError": "Ошибка смены пароля"
   }
 }

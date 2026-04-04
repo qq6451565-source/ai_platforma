@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card, Form, Popconfirm, Select, Table, message } from "antd";
 import dayjs from "dayjs";
@@ -7,6 +8,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AuthTokensPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: tokens, isLoading } = useQuery(adminQueryOptions.authTokens());
   const { data: users } = useQuery(adminQueryOptions.users());
@@ -31,7 +33,7 @@ const AuthTokensPage = () => {
       message.success("Token o'chirildi");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authTokens });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   return (
@@ -65,7 +67,7 @@ const AuthTokensPage = () => {
             render: (_: unknown, r: AuthToken) => (
               <Popconfirm title="Tokenni o'chirasizmi?" onConfirm={() => deleteMut.mutate(r.key)}>
                 <Button size="small" danger>
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>
             ),

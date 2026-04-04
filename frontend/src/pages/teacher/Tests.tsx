@@ -24,9 +24,11 @@ import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from "react-i18next";
 
 const TeacherTests = () => {
   usePageTitle('nav.tests');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
@@ -112,7 +114,7 @@ const TeacherTests = () => {
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ["tests"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }
@@ -143,10 +145,10 @@ const TeacherTests = () => {
           style={{ maxWidth: 520, marginBottom: 'var(--space-6)' }}
           initialValues={{ is_active: true, time_limit_minutes: 20, total_score: 100 }}
         >
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="lesson" label="Dars" rules={[{ required: true, message: "Dars tanlang" }]}>
+          <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true, message: "Dars tanlang" }]}>
             <Select
               showSearch
               allowClear
@@ -219,7 +221,7 @@ const TeacherTests = () => {
                 )}
               />
             ) : (
-              <Empty description="Ma'lumot yo'q" />
+              <Empty description={t('common.noData')} />
             )
           ) : (
             <>
@@ -237,7 +239,7 @@ const TeacherTests = () => {
                     <List.Item
                       actions={[
                         <Button key="view" type="link" onClick={() => openView(item.id)}>
-                          Ko'rish
+                          {t('common.view')}
                         </Button>,
                         <Button
                           key="edit"
@@ -255,7 +257,7 @@ const TeacherTests = () => {
                             setEditOpen(true);
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
                         <Button
                           danger
@@ -267,11 +269,11 @@ const TeacherTests = () => {
                               message.success("O'chirildi");
                               await qc.invalidateQueries({ queryKey: ["tests"] });
                             } catch {
-                              message.error("O'chirishda xato");
+                              message.error(t('common.deleteError'));
                             }
                           }}
                         >
-                          O'chirish
+                          {t('common.delete')}
                         </Button>,
                       ]}
                     >
@@ -297,7 +299,7 @@ const TeacherTests = () => {
                   )}
                 />
               ) : (
-                <Empty description="Ma'lumot yo'q" />
+                <Empty description={t('common.noData')} />
               )}
             </>
           )}
@@ -321,11 +323,11 @@ const TeacherTests = () => {
               total_score: vals.total_score,
               is_active: vals.is_active,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["tests"] });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, t('common.error')));
           } finally {
             setEditLoading(false);
           }
@@ -333,13 +335,13 @@ const TeacherTests = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="description" label="Izoh">
+          <Form.Item name="description" label={t('form.comment')}>
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Form.Item name="lesson" label="Dars">
+          <Form.Item name="lesson" label={t('form.lesson')}>
             <Select
               allowClear
               showSearch
@@ -416,7 +418,7 @@ const TeacherTests = () => {
             )}
           </div>
         ) : (
-          <Empty description="Ma'lumot yo'q" />
+            <Empty description={t('common.noData')} />
         )}
       </Modal>
     </div>

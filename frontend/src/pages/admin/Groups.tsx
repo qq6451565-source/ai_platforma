@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, Form, Input, Button, List, message, Empty, Popconfirm, Select, Modal } from "antd";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   createGroupAdmin,
   deleteGroupAdmin,
@@ -11,6 +12,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const GroupsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(adminQueryOptions.groups());
   const { data: directions } = useQuery(adminQueryOptions.directions());
@@ -35,7 +37,7 @@ const GroupsPage = () => {
         message.success("O'chirildi");
         qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
       })
-      .catch(() => message.error("O'chirishda xato"));
+      .catch(() => message.error(t('common.deleteError')));
 
   return (
     <Card title="Guruhlar" style={{ marginBottom: 'var(--space-4)' }}>
@@ -74,7 +76,7 @@ const GroupsPage = () => {
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-            Qo'shish
+            {t('common.add')}
           </Button>
         </Form.Item>
       </Form>
@@ -82,7 +84,7 @@ const GroupsPage = () => {
       <List
         loading={isLoading}
         dataSource={data || []}
-        locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('common.noData')} /> }}
         renderItem={(g) => (
           <List.Item
             actions={[
@@ -99,10 +101,10 @@ const GroupsPage = () => {
                   setEditOpen(true);
                 }}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>,
               <Popconfirm
-                title="O'chirish?"
+                title={t('common.confirmDelete')}
                 onConfirm={() => {
                   if (g.id == null) {
                     message.error("Guruh ID topilmadi");
@@ -112,7 +114,7 @@ const GroupsPage = () => {
                 }}
               >
                 <Button danger type="link">
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>,
             ]}
@@ -136,11 +138,11 @@ const GroupsPage = () => {
           try {
             const vals = await editForm.validateFields();
             await updateGroupAdmin(editItem.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setEditLoading(false);
           }
