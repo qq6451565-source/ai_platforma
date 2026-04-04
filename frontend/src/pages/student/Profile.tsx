@@ -11,6 +11,8 @@ import {
 } from "../../utils/pendingCredentials";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
+import { getApiError } from "../../utils/getApiError";
 
 const AI_AUTO_RETRY_LIMIT = 3;
 const AI_AUTO_RETRY_DELAY_MS = 90_000;
@@ -116,11 +118,10 @@ const StudentProfile = () => {
           setAiCheckType("info");
           setAiCheckMessage(result.detail || "AI tekshiruv yakunlandi, admin tekshiruvi davom etadi.");
         })
-        .catch((err: any) => {
-          const detail =
-            err?.response?.data?.detail ||
-            err?.response?.data?.error ||
-            "AI tekshiruvni ishga tushirib bo'lmadi. Keyinroq qayta urinib ko'ring.";
+        .catch((err: unknown) => {
+          const detail = axios.isAxiosError(err)
+            ? (err.response?.data?.detail || err.response?.data?.error || "AI tekshiruvni ishga tushirib bo'lmadi. Keyinroq qayta urinib ko'ring.")
+            : "AI tekshiruvni ishga tushirib bo'lmadi. Keyinroq qayta urinib ko'ring.";
           setAiCheckType("error");
           setAiCheckMessage(detail);
           aiCheckRetryCountRef.current += 1;
@@ -158,8 +159,8 @@ const StudentProfile = () => {
       message.success("Profil yangilandi");
       setFile(undefined);
       await qc.invalidateQueries({ queryKey: ["me"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoadingProfile(false);
     }
@@ -171,8 +172,8 @@ const StudentProfile = () => {
       await changePassword(values);
       message.success("Parol yangilandi");
       passForm.resetFields();
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoadingPass(false);
     }

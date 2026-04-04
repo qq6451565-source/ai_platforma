@@ -274,8 +274,8 @@ const AdminAssessmentPage = () => {
             message.success("Yangilandi");
             setEditType(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setLoadingType(false);
           }
@@ -312,8 +312,8 @@ const AdminAssessmentPage = () => {
             message.success("Yangilandi");
             setEditExam(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setLoadingExam(false);
           }
@@ -373,8 +373,8 @@ const AdminAssessmentPage = () => {
             message.success("Yangilandi");
             setEditAttempt(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setLoadingAttempt(false);
           }

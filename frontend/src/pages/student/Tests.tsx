@@ -7,6 +7,7 @@ import { startTest, answerTest, finishTest, StartTestResponse } from "../../api/
 import { startTestProctoring, verifyProctoring, presenceProctoring, finishProctoring } from "../../api/proctoring";
 import type { LessonAccessSnapshot, TestItem } from "../../types/test";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -197,8 +198,8 @@ const StudentTests = () => {
         setProctorVerified(false);
         message.error("Yuz tasdiqlanmadi. Qayta urinib ko'ring.");
       }
-    } catch (err: any) {
-      message.warning(err?.response?.data?.detail || "Yuz tekshiruvi ishlamadi");
+    } catch (err: unknown) {
+      message.warning(getApiError(err, "Yuz tekshiruvi ishlamadi"));
     }
   };
 
@@ -211,13 +212,13 @@ const StudentTests = () => {
       try {
         const proctor = await startTestProctoring(resp.student_test_id);
         setProctorSessionId(proctor.session_id);
-      } catch (err: any) {
-        message.warning(err?.response?.data?.detail || "Proktor ishga tushmadi");
+      } catch (err: unknown) {
+        message.warning(getApiError(err, "Proktor ishga tushmadi"));
       }
       await loadNext(resp);
       setOpen(true);
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Boshlashda xato");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Boshlashda xato"));
     }
   };
 
@@ -240,8 +241,8 @@ const StudentTests = () => {
       } else {
         await loadNext(resp);
       }
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Javob yuborishda xato");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Javob yuborishda xato"));
     } finally {
       setSending(false);
     }
@@ -255,8 +256,8 @@ const StudentTests = () => {
       if (proctorSessionId) {
         try {
           await finishProctoring(proctorSessionId);
-        } catch (err: any) {
-          message.warning(err?.response?.data?.detail || "Proktor yakunlanmadi");
+        } catch (err: unknown) {
+          message.warning(getApiError(err, "Proktor yakunlanmadi"));
         }
       }
 
@@ -282,8 +283,8 @@ const StudentTests = () => {
       setFaceStatus("CHECKING");
       setFaceRatio(0);
       setTotalChecks(0);
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Finish xato");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Finish xato"));
     } finally {
       setSending(false);
     }
@@ -296,10 +297,10 @@ const StudentTests = () => {
     const init = async () => {
       try {
         await startCamera();
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!presenceWarnedRef.current) {
           presenceWarnedRef.current = true;
-          message.warning(err?.message || "Kamera ruxsatini tekshiring");
+          message.warning(err instanceof Error ? err.message : "Kamera ruxsatini tekshiring");
         }
         return;
       }
@@ -342,10 +343,10 @@ const StudentTests = () => {
               stopPresenceLoop();
               stopCamera();
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             if (!presenceWarnedRef.current) {
               presenceWarnedRef.current = true;
-              message.warning(err?.response?.data?.detail || "Proktor tekshiruvi ishlamadi");
+              message.warning(getApiError(err, "Proktor tekshiruvi ishlamadi"));
             }
           } finally {
             presenceBusyRef.current = false;

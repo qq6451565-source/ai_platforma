@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
   Alert,
   Button,
@@ -129,8 +130,9 @@ const TeacherMaterials = () => {
     }));
   }, [materials, subjectOptions, lessons]);
 
-  const getErrorMessage = (err: any) => {
-    const data = err?.response?.data;
+  const getErrorMessage = (err: unknown) => {
+    if (!axios.isAxiosError(err)) return "Xatolik";
+    const data = err.response?.data;
     if (!data) return "Xatolik";
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
@@ -162,7 +164,7 @@ const TeacherMaterials = () => {
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["materials"] });
-    } catch (err: any) {
+    } catch (err: unknown) {
       message.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
@@ -427,8 +429,8 @@ const TeacherMaterials = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["materials"] });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(getErrorMessage(err));
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getErrorMessage(err));
           } finally {
             setEditLoading(false);
           }

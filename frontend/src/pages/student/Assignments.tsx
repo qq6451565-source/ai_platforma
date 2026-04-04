@@ -10,6 +10,7 @@ import type { Assignment } from "../../types/assignment";
 import type { LessonAccessSnapshot } from "../../types/test";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -133,8 +134,8 @@ const StudentAssignments = () => {
       setOpen(false);
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ["my-submissions"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Yuborishda xato");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Yuborishda xato"));
     } finally {
       setUploading(false);
     }

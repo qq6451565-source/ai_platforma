@@ -7,6 +7,7 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { login } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { clearTokens, saveTokens } from "../utils/token";
+import { getApiError } from "../utils/getApiError";
 import { getDefaultRedirect } from "../utils/roleRedirect";
 
 const LoginPage = () => {
@@ -28,9 +29,9 @@ const LoginPage = () => {
       qc.setQueryData(["me", tokens.access], me);
       message.success(t("auth.loginSuccess"));
       window.location.href = getDefaultRedirect(me.role, me.role === "student" && !me.group);
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTokens();
-      message.error(err?.response?.data?.detail || t("auth.loginError"));
+      message.error(getApiError(err, t("auth.loginError")));
     }
   };
 

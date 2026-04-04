@@ -386,6 +386,19 @@
       "confidence": "Aniqlik: {{value}}%",
       "enableMic": "Mikrofonni yoqish",
       "disableMic": "Mikrofonni o'chirish"
+    },
+    "controls": {
+      "enableMic": "Mikrofonni yoqish",
+      "disableMic": "Mikrofonni o'chirish",
+      "enableCamera": "Kamerani yoqish",
+      "disableCamera": "Kamerani o'chirish",
+      "shareScreen": "Ekranni ulashish",
+      "stopSharing": "Ulashishni to'xtatish",
+      "returnStage": "Sahnani qaytarish",
+      "raiseHand": "Qo'l ko'tarish",
+      "lowerHand": "Qo'lni tushirish",
+      "participants": "Ishtirokchilar",
+      "exit": "Xonadan chiqish"
     }
   },
   "demo": {

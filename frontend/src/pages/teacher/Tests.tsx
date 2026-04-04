@@ -23,6 +23,7 @@ import { fetchLessons } from "../../api/lessons";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const TeacherTests = () => {
   usePageTitle('nav.tests');
@@ -110,8 +111,8 @@ const TeacherTests = () => {
       form.resetFields();
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ["tests"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setSubmitting(false);
     }
@@ -323,8 +324,8 @@ const TeacherTests = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["tests"] });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
           } finally {
             setEditLoading(false);
           }

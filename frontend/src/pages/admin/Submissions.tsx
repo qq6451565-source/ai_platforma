@@ -6,6 +6,7 @@ import { gradeSubmission } from "../../api/submissions";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 import { toAbsoluteUrl } from "../../api/client";
+import { getApiError } from "../../utils/getApiError";
 
 const AdminSubmissionsPage = () => {
   const qc = useQueryClient();
@@ -42,8 +43,8 @@ const AdminSubmissionsPage = () => {
       setGrade(null);
       setComment("");
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.submissions });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoading(false);
     }

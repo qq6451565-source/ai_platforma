@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import api from "../api/client";
+import axios from "axios";
 import { login, registerFinalize, registerStart } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { saveTokens } from "../utils/token";
@@ -148,8 +149,9 @@ const faceMetricsFromLandmarks = (landmarks: NormalizedLandmark[], result: FaceL
   };
 };
 
-const normalizeApiError = (error: any, fallback: string): string => {
-  const data = error?.response?.data;
+const normalizeApiError = (error: unknown, fallback: string): string => {
+  if (!axios.isAxiosError(error)) return fallback;
+  const data = error.response?.data;
   if (!data) return fallback;
   if (typeof data === "string") return data;
   if (typeof data?.detail === "string") return data.detail;
@@ -407,7 +409,7 @@ const RegisterPage = () => {
       message.success(res.detail || t("register.profileSaved"));
       if (res.warning) message.warning(res.warning);
       setCurrentStep(1);
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
       setLoading(false);
@@ -502,7 +504,7 @@ const RegisterPage = () => {
 
     setLoading(true);
     const retryDelays = [0, 800, 1600];
-    let lastError: any = null;
+    let lastError: unknown = null;
     let keepPendingUi = false;
 
     try {

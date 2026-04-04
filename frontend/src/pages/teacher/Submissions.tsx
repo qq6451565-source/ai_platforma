@@ -8,6 +8,7 @@ import { fetchSubjects } from "../../api/subjects";
 import { fetchGroups } from "../../api/groups";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const TeacherSubmissions = () => {
   usePageTitle('nav.submissions');
@@ -106,8 +107,8 @@ const TeacherSubmissions = () => {
       setGrade(null);
       setComment("");
       await qc.invalidateQueries({ queryKey: ["submissions"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoading(false);
     }

@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import { deleteTest, updateTest, uploadTest, fetchTest } from "../../api/tests";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
+import { getApiError } from "../../utils/getApiError";
 
 const AdminTestsPage = () => {
   const qc = useQueryClient();
@@ -90,8 +91,8 @@ const AdminTestsPage = () => {
       form.resetFields();
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setSubmitting(false);
     }
@@ -309,8 +310,8 @@ const AdminTestsPage = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
           } finally {
             setEditLoading(false);
           }

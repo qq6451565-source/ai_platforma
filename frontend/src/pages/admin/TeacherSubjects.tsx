@@ -120,8 +120,8 @@ const TeacherSubjectsPage = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setEditLoading(false);
           }

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchLessons } from "../../api/lessons";
 import { createLiveRoom } from "../../api/live";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const TeacherLive = () => {
   usePageTitle('nav.live');
@@ -24,8 +25,8 @@ const TeacherLive = () => {
       message.success("Live xona yaratildi");
       await qc.invalidateQueries({ queryKey: ["lessons"] });
       navigate(`/app/live/${lessonId}`);
-    } catch (err: any) {
-      message.error(err?.response?.data?.error || "Xato");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xato"));
     } finally {
       setCreating(null);
     }

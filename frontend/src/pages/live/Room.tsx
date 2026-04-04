@@ -1549,6 +1549,7 @@ export default function Room() {
             onClick={handleMicToggle}
             icon={state.micOn ? <AudioOutlined /> : <AudioMutedOutlined />}
             disabled={!state.connected || (!isTeacher && !isStageUser)}
+            aria-label={t(state.micOn ? "live.controls.disableMic" : "live.controls.enableMic")}
           />
 
           <Button
@@ -1557,6 +1558,7 @@ export default function Room() {
             onClick={handleCameraToggle}
             icon={state.cameraOn ? <VideoCameraOutlined /> : <StopOutlined />}
             disabled={!state.connected || state.screenSharing}
+            aria-label={t(state.cameraOn ? "live.controls.disableCamera" : "live.controls.enableCamera")}
           />
 
           {(isStageUser || state.screenSharing) && (
@@ -1566,6 +1568,7 @@ export default function Room() {
               onClick={handleScreenShareToggle}
               icon={<DesktopOutlined />}
               disabled={!canShareScreen}
+              aria-label={t(state.screenSharing ? "live.controls.stopSharing" : "live.controls.shareScreen")}
             />
           )}
 
@@ -1576,6 +1579,7 @@ export default function Room() {
               onClick={handleReturnStageToTeacher}
               icon={<RollbackOutlined />}
               disabled={!state.connected}
+              aria-label={t("live.controls.returnStage")}
             />
           )}
 
@@ -1586,6 +1590,7 @@ export default function Room() {
               onClick={handleHandRaise}
               icon={<HighlightOutlined />}
               disabled={!state.connected}
+              aria-label={t(state.handRaised ? "live.controls.lowerHand" : "live.controls.raiseHand")}
             />
           )}
 
@@ -1597,6 +1602,7 @@ export default function Room() {
                 setState((prev) => ({ ...prev, showStudentsGrid: !prev.showStudentsGrid }))
               }
               icon={<TeamOutlined />}
+              aria-label={t("live.controls.participants")}
             />
           )}
 
@@ -1605,6 +1611,7 @@ export default function Room() {
             className="control-btn exit-btn"
             onClick={handleExitRoom}
             icon={<LogoutOutlined />}
+            aria-label={t("live.controls.exit")}
           />
         </div>
 

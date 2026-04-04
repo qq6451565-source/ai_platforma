@@ -386,6 +386,19 @@
       "confidence": "Confidence: {{value}}%",
       "enableMic": "Enable microphone",
       "disableMic": "Disable microphone"
+    },
+    "controls": {
+      "enableMic": "Enable microphone",
+      "disableMic": "Disable microphone",
+      "enableCamera": "Enable camera",
+      "disableCamera": "Disable camera",
+      "shareScreen": "Share screen",
+      "stopSharing": "Stop sharing",
+      "returnStage": "Return stage",
+      "raiseHand": "Raise hand",
+      "lowerHand": "Lower hand",
+      "participants": "Participants",
+      "exit": "Exit room"
     }
   },
   "demo": {

@@ -22,10 +22,15 @@ const api = axios.create({ baseURL });
 const refreshApi = axios.create({ baseURL });
 
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+let refreshQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
 function processQueue(newToken: string) {
-  refreshQueue.forEach((cb) => cb(newToken));
+  refreshQueue.forEach((p) => p.resolve(newToken));
+  refreshQueue = [];
+}
+
+function processQueueError(err: unknown) {
+  refreshQueue.forEach((p) => p.reject(err));
   refreshQueue = [];
 }
 
@@ -69,10 +74,13 @@ api.interceptors.response.use(
       if (isRefreshing) {
         // Queue this request until refresh completes
         return new Promise((resolve, reject) => {
-          refreshQueue.push((newToken: string) => {
-            error.config.headers.Authorization = `Bearer ${newToken}`;
-            error.config._retry = true;
-            resolve(api(error.config));
+          refreshQueue.push({
+            resolve: (newToken: string) => {
+              error.config.headers.Authorization = `Bearer ${newToken}`;
+              error.config._retry = true;
+              resolve(api(error.config));
+            },
+            reject,
           });
         });
       }
@@ -88,9 +96,9 @@ api.interceptors.response.use(
         processQueue(newAccess);
         error.config.headers.Authorization = `Bearer ${newAccess}`;
         return api(error.config);
-      } catch {
+      } catch (refreshError) {
         clearTokens();
-        refreshQueue = [];
+        processQueueError(refreshError);
         window.location.href = "/login";
         return Promise.reject(error);
       } finally {

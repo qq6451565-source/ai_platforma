@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -93,8 +94,9 @@ const AdminMaterialsPage = () => {
   const [editTeacher, setEditTeacher] = useState<number | null>(null);
   const [editSubject, setEditSubject] = useState<number | null>(null);
 
-  const getErrorMessage = (err: any) => {
-    const data = err?.response?.data;
+  const getErrorMessage = (err: unknown) => {
+    if (!axios.isAxiosError(err)) return "Xatolik";
+    const data = err.response?.data;
     if (!data) return "Xatolik";
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
@@ -205,7 +207,7 @@ const AdminMaterialsPage = () => {
       setSelectedSubject(null);
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials });
-    } catch (err: any) {
+    } catch (err: unknown) {
       message.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
@@ -449,8 +451,8 @@ const AdminMaterialsPage = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(getErrorMessage(err));
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getErrorMessage(err));
           } finally {
             setEditLoading(false);
           }

@@ -5,6 +5,7 @@ import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useTranslation } from "react-i18next";
+import { getApiError } from "../../utils/getApiError";
 
 const TeacherProfile = () => {
   usePageTitle('nav.profile');
@@ -25,8 +26,8 @@ const TeacherProfile = () => {
       message.success("Profil yangilandi");
       setFile(undefined);
       await qc.invalidateQueries({ queryKey: ["me"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoadingProfile(false);
     }
@@ -38,8 +39,8 @@ const TeacherProfile = () => {
       await changePassword(values);
       message.success("Parol yangilandi");
       passForm.resetFields();
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setLoadingPass(false);
     }

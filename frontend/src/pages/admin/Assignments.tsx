@@ -23,6 +23,7 @@ import type { Assignment } from "../../types/assignment";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 import { toAbsoluteUrl } from "../../api/client";
+import { getApiError } from "../../utils/getApiError";
 
 const extractFile = (list: UploadFile[]) => {
   const item = list[0];
@@ -98,8 +99,8 @@ const AdminAssignmentsPage = () => {
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setSubmitting(false);
     }
@@ -253,8 +254,8 @@ const AdminAssignmentsPage = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
           } finally {
             setEditLoading(false);
           }

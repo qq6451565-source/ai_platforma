@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { login } from "../api/auth";
 import { saveTokens, clearTokens } from "../utils/token";
+import { getApiError } from "../utils/getApiError";
 import { fetchMe } from "../api/user";
 
 const AdminLoginPage = () => {
@@ -27,9 +28,9 @@ const AdminLoginPage = () => {
       qc.setQueryData(["me", tokens.access], me);
       message.success(t("adminLogin.success"));
       window.location.href = "/app/admin/dashboard";
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTokens();
-      message.error(err?.response?.data?.detail || t("adminLogin.failed"));
+      message.error(getApiError(err, t("adminLogin.failed")));
     }
   };
 

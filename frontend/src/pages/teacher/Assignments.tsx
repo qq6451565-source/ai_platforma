@@ -25,6 +25,7 @@ import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import type { Assignment } from "../../types/assignment";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { getApiError } from "../../utils/getApiError";
 
 const extractFile = (list: UploadFile[]) => {
   const item = list[0];
@@ -118,8 +119,8 @@ const TeacherAssignments = () => {
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ["assignments"] });
-    } catch (err: any) {
-      message.error(err?.response?.data?.detail || "Xatolik");
+    } catch (err: unknown) {
+      message.error(getApiError(err, "Xatolik"));
     } finally {
       setSubmitting(false);
     }
@@ -283,8 +284,8 @@ const TeacherAssignments = () => {
             message.success("Yangilandi");
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ["assignments"] });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error(err?.response?.data?.detail || "Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
           } finally {
             setEditLoading(false);
           }

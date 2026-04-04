@@ -236,8 +236,8 @@ const AdminSchedulePage = () => {
             message.success("Yangilandi");
             setEditTimetable(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setTtLoadingEdit(false);
           }
@@ -275,8 +275,8 @@ const AdminSchedulePage = () => {
             message.success("Yangilandi");
             setEditSlot(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots });
-          } catch (err: any) {
-            if (!err?.errorFields) message.error("Xatolik");
+          } catch (err: unknown) {
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
           } finally {
             setSlotLoadingEdit(false);
           }
