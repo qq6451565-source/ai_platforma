@@ -29,7 +29,7 @@ textarea:focus-visible {
   padding: var(--space-3) var(--space-5);
   text-decoration: none;
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   z-index: var(--z-tooltip);
   transition: top var(--transition-fast);
 }
@@ -64,8 +64,8 @@ textarea:focus-visible {
 /* ── High Contrast Mode Support ───────────────────────────── */
 @media (prefers-contrast: high) {
   :root {
-    --color-border: rgba(255, 255, 255, 0.3);
-    --border-strong: rgba(255, 255, 255, 0.5);
+    --color-border: rgba(var(--color-white-rgb), 0.3);
+    --border-strong: rgba(var(--color-white-rgb), 0.5);
   }
   
   .btn {
@@ -145,7 +145,7 @@ input[type="radio"],
 /* ── Color Contrast Helpers ───────────────────────────────── */
 .text-high-contrast {
   color: var(--color-text-primary);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .bg-high-contrast {
@@ -189,7 +189,7 @@ input[type="radio"],
 
 .error-message::before {
   content: '⚠';
-  font-size: 16px;
+  font-size: var(--font-size-norm);
 }
 
 /* ── Required Fields ──────────────────────────────────────── */

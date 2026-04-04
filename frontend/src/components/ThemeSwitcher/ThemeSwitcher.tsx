@@ -23,7 +23,9 @@ const { Title, Text } = Typography;
 
 export const ThemeSwitcher: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState<ThemePreset | 'default' | 'custom'>(getCurrentTheme());
-  const [primaryColor, setPrimaryColor] = useState('#3B82F6');
+  const [primaryColor, setPrimaryColor] = useState(() => 
+    getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3B82F6'
+  );
 
   useEffect(() => {
     // Sahifa yuklanganda saqlangan temani yuklash / Load saved theme on page load
@@ -46,7 +48,7 @@ export const ThemeSwitcher: React.FC = () => {
   const handleReset = () => {
     resetTheme();
     setCurrentTheme('default');
-    setPrimaryColor('#3B82F6');
+    setPrimaryColor(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3B82F6');
     message.success('Tema tiklandi');
   };
 
@@ -67,14 +69,14 @@ export const ThemeSwitcher: React.FC = () => {
           <Select
             value={currentTheme === 'default' || currentTheme === 'custom' ? undefined : currentTheme}
             onChange={handleThemeChange}
-            style={{ width: '100%', marginTop: 8 }}
+            style={{ width: '100%', marginTop: 'var(--space-2)' }}
             placeholder="Tema tanlang"
             options={availableThemes.map(theme => ({
               value: theme.value,
               label: (
                 <div>
                   <div>{theme.label}</div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <Text type="secondary" style={{ fontSize: 'var(--font-size-tiny)' }}>
                     {theme.description}
                   </Text>
                 </div>
@@ -85,7 +87,7 @@ export const ThemeSwitcher: React.FC = () => {
 
         <div>
           <Text strong>Maxsus Rang:</Text>
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <ColorPicker
               value={primaryColor}
               onChange={handleColorChange}
@@ -94,7 +96,7 @@ export const ThemeSwitcher: React.FC = () => {
               style={{ width: '100%' }}
             />
           </div>
-          <Text type="secondary" style={{ fontSize: '12px', marginTop: 4, display: 'block' }}>
+          <Text type="secondary" style={{ fontSize: 'var(--font-size-tiny)', marginTop: 'var(--space-1)', display: 'block' }}>
             Asosiy rangni tanlang va ilova avtomatik mos ranglarni yaratadi
           </Text>
         </div>

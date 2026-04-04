@@ -1,7 +1,7 @@
 .students-grid-section {
   border-radius: 0.9rem;
-  border: 0.0625rem solid rgba(76, 120, 197, 0.35);
-  background: linear-gradient(180deg, rgba(8, 19, 45, 0.95), rgba(4, 11, 27, 0.95));
+  border: 0.0625rem solid rgba(var(--live-border-rgb), 0.35);
+  background: linear-gradient(180deg, rgba(var(--live-bg-rgb), 0.95), rgba(var(--live-bg-deep-rgb), 0.95));
   overflow: hidden;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -14,27 +14,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 0.0625rem solid rgba(76, 120, 197, 0.28);
+  border-bottom: 0.0625rem solid rgba(var(--live-border-rgb), 0.28);
 }
 
 .grid-title {
   font-size: 0.82rem;
-  color: #d7e7ff;
-  font-weight: 600;
+  color: var(--live-text);
+  font-weight: var(--font-weight-semibold);
 }
 
 .close-btn {
-  border: 0.0625rem solid rgba(126, 160, 220, 0.45);
-  background: rgba(9, 28, 63, 0.82);
-  color: #d2e4ff;
-  border-radius: 0.5rem;
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.45);
+  background: rgba(var(--live-bg-rgb), 0.82);
+  color: var(--live-text);
+  border-radius: var(--radius-base);
   cursor: pointer;
   font-size: 0.74rem;
   padding: 0.22rem 0.58rem;
 }
 
 .close-btn:hover {
-  border-color: rgba(170, 202, 250, 0.72);
+  border-color: rgba(var(--live-border-light-rgb), 0.72);
 }
 
 .students-grid {
@@ -50,8 +50,8 @@
 }
 
 .students-grid::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(112, 152, 221, 0.4);
+  border-radius: var(--radius-full);
+  background: rgba(var(--live-border-mid-rgb), 0.4);
 }
 
 .empty-grid {
@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #88a7d6;
+  color: var(--live-text-muted);
   font-size: 0.85rem;
 }
 

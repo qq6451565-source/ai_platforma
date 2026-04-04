@@ -36,8 +36,8 @@ const AdminProfilesPage = () => {
   });
 
   return (
-    <Card title="Talaba profillari" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createStudentMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Talaba profillari" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createStudentMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="user" label="Talaba" rules={[{ required: true }]}>
           <Select
             showSearch

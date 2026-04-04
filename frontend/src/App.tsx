@@ -76,9 +76,11 @@ const PageFallback = ({ fullscreen = false }: { fullscreen?: boolean }) => (
 );
 
 const LazyPageRoute = ({ component: Component, fullscreen = false }: { component: LazyPageComponent; fullscreen?: boolean }) => (
-  <Suspense fallback={<PageFallback fullscreen={fullscreen} />}>
-    <Component />
-  </Suspense>
+  <ErrorBoundary>
+    <Suspense fallback={<PageFallback fullscreen={fullscreen} />}>
+      <Component />
+    </Suspense>
+  </ErrorBoundary>
 );
 
 const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
@@ -173,17 +175,21 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
 
   if (isLiveRoute) {
     return (
-      <Suspense fallback={<PageFallback fullscreen />}>
-        <Outlet />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<PageFallback fullscreen />}>
+          <Outlet />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
   return (
     <ResponsiveLayout user={user} items={items} onLogout={handleLogout} title={title}>
-      <Suspense fallback={<PageFallback />}>
-        <Outlet />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
+      </ErrorBoundary>
     </ResponsiveLayout>
   );
 };

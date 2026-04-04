@@ -35,8 +35,8 @@ const AuthTokensPage = () => {
   });
 
   return (
-    <Card title="API tokenlar" style={{ marginBottom: 16 }}>
-      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="API tokenlar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="user" rules={[{ required: true }]}>
           <Select placeholder="Foydalanuvchi" style={{ width: 240 }} options={userOptions} />
         </Form.Item>

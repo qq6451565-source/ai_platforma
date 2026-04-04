@@ -57,7 +57,7 @@ const AdminPassportModal = ({
           <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
         </Upload>
         {passport?.front_image ? (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.front_image} target="_blank" rel="noreferrer">
               Hozirgi rasm
             </a>
@@ -76,7 +76,7 @@ const AdminPassportModal = ({
           <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
         </Upload>
         {passport?.back_image ? (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.back_image} target="_blank" rel="noreferrer">
               Hozirgi rasm
             </a>
@@ -95,7 +95,7 @@ const AdminPassportModal = ({
           <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
         </Upload>
         {passport?.selfie_image ? (
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.selfie_image} target="_blank" rel="noreferrer">
               Hozirgi rasm
             </a>

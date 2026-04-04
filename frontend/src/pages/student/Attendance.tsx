@@ -3,8 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchAttendance } from "../../api/attendance";
 import { fetchLessons } from "../../api/lessons";
 import { useMe } from "../../hooks/useMe";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const StudentAttendance = () => {
+  usePageTitle('nav.attendance');
   const { data: me } = useMe();
   const { data: attendance, isLoading } = useQuery({
     queryKey: ["attendance", me?.id],

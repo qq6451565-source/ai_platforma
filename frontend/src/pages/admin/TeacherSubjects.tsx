@@ -34,8 +34,8 @@ const TeacherSubjectsPage = () => {
   });
 
   return (
-    <Card title="O'qituvchi - Fan - Guruh" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="O'qituvchi - Fan - Guruh" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
           <Select
             showSearch

@@ -22,7 +22,7 @@ const AdminEnrollmentRejectModal = ({ controller }: Props) => (
           showIcon
           message="Rad etilgan ariza history'da saqlanadi"
           description="Applicant record va audit izi qoladi, lekin agar vaqtinchalik user bo'lsa, account o'chiriladi."
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 'var(--space-3)' }}
         />
         <Form.Item
           name="reject_reason"

@@ -17,12 +17,14 @@ import {
 } from "antd";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { updateAISettings } from "../../api/admin";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminAISettingsPage = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.aiSettings');
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(adminQueryOptions.aiSettings());
   const { data: health, isLoading: healthLoading, refetch } = useQuery(adminQueryOptions.aiHealth());
@@ -43,7 +45,7 @@ const AdminAISettingsPage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 'var(--space-6)' }}>
         <Spin />
       </div>
     );
@@ -73,7 +75,7 @@ const AdminAISettingsPage = () => {
             {t("aiSettings.gateway.refresh")}
           </Button>
         }
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: 'var(--space-4)' }}
       >
         {healthLoading ? (
           <Spin />

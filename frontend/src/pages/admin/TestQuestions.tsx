@@ -60,8 +60,8 @@ const TestQuestionsPage = () => {
   };
 
   return (
-    <Card title="Test savollari" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Test savollari" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="test" label="Test" rules={[{ required: true }]}>
           <Select options={testOptions} placeholder="Test tanlang" />
         </Form.Item>

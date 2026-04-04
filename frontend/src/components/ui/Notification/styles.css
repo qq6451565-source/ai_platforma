@@ -21,7 +21,7 @@
 
 .notification-title {
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin: 0;
   display: flex;
@@ -33,7 +33,7 @@
   border: none;
   color: var(--accent);
   font-size: var(--font-size-xs);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
@@ -59,7 +59,7 @@
 }
 
 .notification-empty-icon {
-  font-size: 48px;
+  font-size: var(--font-size-4xl);
   margin-bottom: var(--space-3);
   opacity: 0.5;
 }
@@ -90,7 +90,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 18px;
+  font-size: var(--font-size-sub);
 }
 
 .notification-icon-info {
@@ -120,7 +120,7 @@
 
 .notification-item-title {
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-1);
 }
@@ -128,7 +128,7 @@
 .notification-message {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: var(--leading-relaxed);
   margin-bottom: var(--space-1);
   overflow: hidden;
   text-overflow: ellipsis;

@@ -76,7 +76,7 @@ const AdminSchedulePage = () => {
   );
 
   return (
-    <Card title="Jadval va dars oynalari" style={{ marginBottom: 16 }}>
+    <Card title="Jadval va dars oynalari" style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {
@@ -84,7 +84,7 @@ const AdminSchedulePage = () => {
             label: "Jadval (Timetable)",
             children: (
               <>
-                <Form layout="inline" onFinish={createTimetableMut.mutate} style={{ marginBottom: 12 }}>
+                <Form layout="inline" onFinish={createTimetableMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
                   <Form.Item name="group" rules={[{ required: true, message: "Guruh" }]}>
                     <Select
                       showSearch
@@ -133,7 +133,7 @@ const AdminSchedulePage = () => {
             label: "Dars oynalari (Lesson slots)",
             children: (
               <>
-                <Form layout="vertical" onFinish={createSlotMut.mutate} style={{ marginBottom: 12 }}>
+                <Form layout="vertical" onFinish={createSlotMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
                   <Form.Item name="timetable" label="Jadval" rules={[{ required: true }]}>
                     <Select
                       showSearch

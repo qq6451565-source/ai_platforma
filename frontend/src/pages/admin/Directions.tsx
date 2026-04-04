@@ -23,8 +23,8 @@ const DirectionsPage = () => {
   });
 
   return (
-    <Card title="Yo'nalishlar" style={{ marginBottom: 16 }}>
-      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Yo'nalishlar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name" rules={[{ required: true, message: "Nomi" }]}>
           <Input placeholder="Yo'nalish nomi" />
         </Form.Item>

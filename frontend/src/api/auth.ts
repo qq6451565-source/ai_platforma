@@ -1,4 +1,4 @@
-import api from "./client";
+import api, { baseURL } from "./client";
 import axios from "axios";
 import type {
   AuthTokens,
@@ -14,12 +14,7 @@ import type {
 } from "../types/auth";
 
 
-const publicApi = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE ||
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://127.0.0.1:8000",
-});
+const publicApi = axios.create({ baseURL });
 
 export async function login(payload: LoginPayload): Promise<AuthTokens> {
   const res = await api.post<AuthTokens>("/api/token/", payload);

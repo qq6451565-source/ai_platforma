@@ -3,8 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const TeacherProfile = () => {
+  usePageTitle('nav.profile');
   const qc = useQueryClient();
   const { data: user } = useMe();
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -47,7 +49,7 @@ const TeacherProfile = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card title="Profil ma'lumotlari">
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 'var(--space-4)', gap: 'var(--space-3)' }}>
               <Avatar size={64} src={user?.face_image || undefined}>
                 {user?.first_name?.[0]}
               </Avatar>

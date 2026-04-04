@@ -3,6 +3,7 @@ import { Button, Card, Form, Input, message, Space, Typography } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { login } from "../api/auth";
 import { fetchMe } from "../api/user";
 import { clearTokens, saveTokens } from "../utils/token";
@@ -10,6 +11,7 @@ import { getDefaultRedirect } from "../utils/roleRedirect";
 
 const LoginPage = () => {
   const { t } = useTranslation();
+  usePageTitle('auth.login');
   const qc = useQueryClient();
   const [form] = Form.useForm();
 
@@ -40,7 +42,7 @@ const LoginPage = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.5rem",
-        background: "#f0f2f5",
+        background: "var(--bg-elevated-3)",
       }}
     >
       <div style={{ maxWidth: 420, width: "100%" }}>
@@ -63,7 +65,7 @@ const LoginPage = () => {
             >
               <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
             </Form.Item>
-            <Form.Item style={{ marginBottom: 8 }}>
+            <Form.Item style={{ marginBottom: 'var(--space-2)' }}>
               <Button type="primary" htmlType="submit" block size="large">
                 {t("common.login")}
               </Button>

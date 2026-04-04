@@ -22,8 +22,10 @@ import dayjs from "dayjs";
 import { fetchLessons } from "../../api/lessons";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const TeacherTests = () => {
+  usePageTitle('nav.tests');
   const qc = useQueryClient();
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
@@ -137,7 +139,7 @@ const TeacherTests = () => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          style={{ maxWidth: 520, marginBottom: 24 }}
+          style={{ maxWidth: 520, marginBottom: 'var(--space-6)' }}
           initialValues={{ is_active: true, time_limit_minutes: 20, total_score: 100 }}
         >
           <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
@@ -210,7 +212,7 @@ const TeacherTests = () => {
                       }}
                     >
                       <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta test</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta test</div>
                     </Card>
                   </List.Item>
                 )}
@@ -220,7 +222,7 @@ const TeacherTests = () => {
             )
           ) : (
             <>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
                 <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
                 <Typography.Title level={5} style={{ margin: 0 }}>
                   {selectedSubject}
@@ -274,19 +276,19 @@ const TeacherTests = () => {
                     >
                       <div style={{ width: "100%" }}>
                         <div className="kv-grid">
-                          <span style={{ color: "#94a3b8" }}>Sarlavha</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
                           <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
-                          <span style={{ color: "#94a3b8" }}>Fan</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
                           <span>{item.subject_name || item.subject || "-"}</span>
-                          <span style={{ color: "#94a3b8" }}>Dars</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Dars</span>
                           <span>{item.lesson_topic || "-"}</span>
-                          <span style={{ color: "#94a3b8" }}>Guruh</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Guruh</span>
                           <span>{item.group_name || item.group || "-"}</span>
-                          <span style={{ color: "#94a3b8" }}>Vaqt</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Vaqt</span>
                           <span>{item.time_limit_minutes ?? "-"} min</span>
-                          <span style={{ color: "#94a3b8" }}>Umumiy ball</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Umumiy ball</span>
                           <span>{item.total_score ?? "-"}</span>
-                          <span style={{ color: "#94a3b8" }}>Holat</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>Holat</span>
                           <span>{item.is_active ? "Active" : "Inactive"}</span>
                         </div>
                       </div>
@@ -375,7 +377,7 @@ const TeacherTests = () => {
           <Skeleton active />
         ) : viewItem ? (
           <div>
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <Typography.Text type="secondary">Sarlavha: </Typography.Text>
               <Typography.Text strong>{viewItem.title}</Typography.Text>
             </div>
@@ -388,16 +390,16 @@ const TeacherTests = () => {
                       <Typography.Text strong>
                         {idx + 1}. {q.text}
                       </Typography.Text>
-                      <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                      <div style={{ marginTop: 'var(--space-2)', display: "grid", gap: 'var(--space-1-5)' }}>
                         {(q.options || []).map((opt: any) => (
                           <div
                             key={opt.id}
                             style={{
                               padding: "6px 10px",
-                              borderRadius: 6,
-                              border: "1px solid #1f2937",
-                              background: opt.is_correct ? "rgba(34,197,94,0.12)" : "transparent",
-                              color: opt.is_correct ? "#22c55e" : "#cbd5f5",
+                              borderRadius: 'var(--radius-sm)',
+                              border: "1px solid var(--color-text-primary)",
+                              background: opt.is_correct ? "rgba(var(--color-success-rgb),0.12)" : "transparent",
+                              color: opt.is_correct ? "var(--color-success)" : "var(--color-text-disabled)",
                             }}
                           >
                             {opt.text}

@@ -64,8 +64,8 @@ const AuthGroupsPage = () => {
   };
 
   return (
-    <Card title="Auth guruhlari" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 16 }}>
+    <Card title="Auth guruhlari" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-4)' }}>
         <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
           <Input />
         </Form.Item>

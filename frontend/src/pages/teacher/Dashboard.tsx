@@ -1,4 +1,4 @@
-import { Button, Card, Skeleton, List } from "antd";
+import { Skeleton } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLessons } from "../../api/lessons";
 import { fetchAssignments } from "../../api/assignments";
@@ -6,9 +6,12 @@ import { fetchTests } from "../../api/tests";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../../hooks/usePageTitle";
+import "../student/Dashboard.css";
 
 const TeacherDashboard = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.dashboard');
   const navigate = useNavigate();
   const { data: lessons, isLoading: loadingLessons } = useQuery({ queryKey: ["lessons"], queryFn: fetchLessons });
   const { data: assignments, isLoading: loadingAssignments } = useQuery({
@@ -36,105 +39,138 @@ const TeacherDashboard = () => {
     return { canJoin: true, label: t('schedule.joinLive') };
   };
 
+  const lessonTypeColors = ['var(--color-success)', 'var(--color-warning)', 'var(--accent)', 'var(--accent-3)', 'var(--color-error)', 'var(--color-info)'];
+  const getLessonColor = (index: number) => lessonTypeColors[index % lessonTypeColors.length];
+
   return (
-    <div className="page-container animate-fade-in">
-      <div className="d-flex justify-between items-center mb-6">
-        <h1 className="m-0">{t('dashboard.title')}</h1>
-        <div className="body-sm text-secondary">{dayjs().format('DD.MM.YYYY')}</div>
+    <div className="hemis-dashboard">
+      <div className="hemis-page-header">
+        <div>
+          <h1 className="hemis-page-title">{t('dashboard.title')}</h1>
+        </div>
+        <div className="hemis-page-date">{dayjs().format('DD MMMM, YYYY')}</div>
       </div>
 
-      <div className="d-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        <Card title={t('dashboard.todayLessons')} style={{ height: '100%' }}>
-          {loadingLessons ? (
-            <Skeleton active />
-          ) : (
-            <List
-              size="small"
-              dataSource={todayLessons}
-              locale={{ emptyText: t('dashboard.noLessonsToday') }}
-              renderItem={(item) => {
-                const liveStatus = getLiveStatus(item);
-                return (
-                  <List.Item
-                    style={{ cursor: "pointer", padding: '12px 0' }}
-                    onClick={() => navigate("/app/teacher/lessons")}
-                    extra={
-                      <Button
-                        size="small"
-                        type={liveStatus.canJoin ? "primary" : "default"}
-                        disabled={!liveStatus.canJoin}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          navigate(`/app/live/${item.id}`);
-                        }}
-                      >
-                        {liveStatus.label}
-                      </Button>
-                    }
-                  >
-                    <List.Item.Meta
-                      title={<span className="font-bold text-primary">{item.subject_name || t('schedule.subject')}</span>}
-                      description={
-                        <div>
-                          <div className="text-secondary body-sm">{item.topic || t('schedule.empty')}</div>
-                          <div className="caption">
-                            {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
-                          </div>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                );
-              }}
-            />
-          )}
-        </Card>
+      <div className="hemis-dashboard-grid">
+        {/* Today's Lessons */}
+        <div className="hemis-card">
+          <div className="hemis-card-header">
+            <h3 className="hemis-card-title">{t('dashboard.todayLessons')}</h3>
+            <span className="hemis-card-date">{dayjs().format('DD MMMM')} - {dayjs().format('dddd')}</span>
+          </div>
+          <div className="hemis-card-body">
+            {loadingLessons ? (
+              <Skeleton active paragraph={{ rows: 4 }} />
+            ) : todayLessons.length === 0 ? (
+              <div className="hemis-empty">{t('dashboard.noLessonsToday')}</div>
+            ) : (
+              <div className="hemis-schedule-list">
+                {todayLessons.map((item, idx) => {
+                  const liveStatus = getLiveStatus(item);
+                  const color = getLessonColor(idx);
+                  return (
+                    <div
+                      key={item.id}
+                      className="hemis-schedule-item"
+                      style={{ '--lesson-color': color } as React.CSSProperties}
+                      onClick={() => navigate("/app/teacher/lessons")}
+                    >
+                      <div className="hemis-schedule-color" style={{ background: color }}></div>
+                      <div className="hemis-schedule-content">
+                        <span className="hemis-schedule-type" style={{ color }}>
+                          {item.topic || item.subject_name || t('schedule.subject')}
+                        </span>
+                        <span className="hemis-schedule-teacher">{item.subject_name}</span>
+                        <span className="hemis-schedule-time">
+                          {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
+                        </span>
+                      </div>
+                      {liveStatus.canJoin && (
+                        <button
+                          className="hemis-live-btn"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/app/live/${item.id}`); }}
+                        >
+                          {liveStatus.label}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
-        <Card title={t('dashboard.todayAssignments')} style={{ height: '100%' }}>
-          {loadingAssignments ? (
-            <Skeleton active />
-          ) : (
-            <List
-              size="small"
-              dataSource={todayAssignments}
-              locale={{ emptyText: t('dashboard.noAssignmentsToday') }}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ cursor: "pointer", padding: '12px 0' }}
-                  onClick={() => navigate("/app/teacher/assignments")}
-                >
-                  <List.Item.Meta
-                    title={<span className="font-medium text-primary">{item.title}</span>}
-                    description={<span className="caption">{item.subject || t('schedule.subject')}</span>}
-                  />
-                </List.Item>
-              )}
-            />
-          )}
-        </Card>
+        {/* Today's Assignments */}
+        <div className="hemis-card">
+          <div className="hemis-card-header">
+            <h3 className="hemis-card-title">{t('dashboard.todayAssignments')}</h3>
+            <button type="button" className="hemis-card-action" onClick={() => navigate("/app/teacher/assignments")}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+          <div className="hemis-card-body">
+            {loadingAssignments ? (
+              <Skeleton active paragraph={{ rows: 3 }} />
+            ) : todayAssignments.length === 0 ? (
+              <div className="hemis-empty">{t('dashboard.noAssignmentsToday')}</div>
+            ) : (
+              <div className="hemis-assignment-list">
+                {todayAssignments.map((item, idx) => (
+                  <div key={item.id || idx} className="hemis-assignment-item" role="button" tabIndex={0} onClick={() => navigate("/app/teacher/assignments")}>
+                    <div className="hemis-assignment-info">
+                      <span className="hemis-assignment-title">{item.title}</span>
+                      <span className="hemis-assignment-meta">{item.subject || t('schedule.subject')}</span>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-        <Card title={t('dashboard.todayTests')} style={{ height: '100%' }}>
-          {loadingTests ? (
-            <Skeleton active />
-          ) : (
-            <List
-              size="small"
-              dataSource={todayTests}
-              locale={{ emptyText: t('dashboard.noTestsToday') }}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ cursor: "pointer", padding: '12px 0' }}
-                  onClick={() => navigate("/app/teacher/tests")}
-                >
-                  <List.Item.Meta
-                    title={<span className="font-medium text-primary">{item.title}</span>}
-                    description={<span className="caption">{item.subject_name || t('schedule.subject')}</span>}
-                  />
-                </List.Item>
-              )}
-            />
-          )}
-        </Card>
+        {/* Today's Tests */}
+        <div className="hemis-card">
+          <div className="hemis-card-header">
+            <h3 className="hemis-card-title">{t('dashboard.todayTests')}</h3>
+            <button type="button" className="hemis-card-action" onClick={() => navigate("/app/teacher/tests")}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+          <div className="hemis-card-body">
+            {loadingTests ? (
+              <Skeleton active paragraph={{ rows: 3 }} />
+            ) : todayTests.length === 0 ? (
+              <div className="hemis-empty">{t('dashboard.noTestsToday')}</div>
+            ) : (
+              <div className="hemis-assignment-list">
+                {todayTests.map((item, idx) => (
+                  <div key={item.id || idx} className="hemis-assignment-item" role="button" tabIndex={0} onClick={() => navigate("/app/teacher/tests")}>
+                    <div className="hemis-assignment-info">
+                      <span className="hemis-assignment-title">{item.title}</span>
+                      <span className="hemis-assignment-meta">{item.subject_name || t('schedule.subject')}</span>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Submissions Overview */}
+        <div className="hemis-card">
+          <div className="hemis-card-header">
+            <h3 className="hemis-card-title">{t('nav.submissions')}</h3>
+            <button type="button" className="hemis-card-action" onClick={() => navigate("/app/teacher/submissions")}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+          <div className="hemis-card-body">
+            <div className="hemis-empty">{t('nav.submissions')}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

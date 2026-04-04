@@ -269,36 +269,36 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
   switch (status) {
     case "DETECTED":
       return {
-        color: "#10b981",
+        color: "var(--color-success)",
         animation: "pulse-green",
         icon: "OK",
         label: "Tasdiqlandi",
-        bgColor: "rgba(16, 185, 129, 0.1)",
+        bgColor: "rgba(var(--color-success-rgb), 0.1)",
       };
     case "NOT_DETECTED":
       return {
-        color: "#ef4444",
+        color: "var(--color-error)",
         animation: "shake-red",
         icon: "NO",
         label: "Tasdiqlandi emas",
-        bgColor: "rgba(239, 68, 68, 0.1)",
+        bgColor: "rgba(var(--color-error-rgb), 0.1)",
       };
     case "MULTIPLE":
       return {
-        color: "#f59e0b",
+        color: "var(--color-warning)",
         animation: "pulse-yellow",
         icon: "WARN",
         label: "Ko'p yuzlar",
-        bgColor: "rgba(245, 158, 11, 0.1)",
+        bgColor: "rgba(var(--color-warning-rgb), 0.1)",
       };
     case "CHECKING":
     default:
       return {
-        color: "#94a3b8",
+        color: "var(--color-text-muted)",
         animation: "spin",
         icon: "...",
         label: "Tekshirilmoqda",
-        bgColor: "rgba(148, 163, 184, 0.12)",
+        bgColor: "rgba(var(--scanner-border-rgb), 0.12)",
       };
   }
 };

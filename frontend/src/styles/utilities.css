@@ -1,23 +1,14 @@
 /* Spacing */
 .m-0 { margin: 0; }
-.mt-1 { margin-top: var(--space-1); }
-.mt-2 { margin-top: var(--space-2); }
 .mt-4 { margin-top: var(--space-4); }
 .mt-6 { margin-top: var(--space-6); }
-.mb-1 { margin-bottom: var(--space-1); }
-.mb-2 { margin-bottom: var(--space-2); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-6 { margin-bottom: var(--space-6); }
-.ml-6 { margin-left: var(--space-6); }
 
-.p-0 { padding: 0; }
-.p-1 { padding: var(--space-1); }
 .p-2 { padding: var(--space-2); }
 .p-4 { padding: var(--space-4); }
 
 /* Display */
-.d-none { display: none; }
-.d-block { display: block; }
 .d-flex { display: flex; }
 .d-grid { display: grid; }
 
@@ -25,34 +16,18 @@
 .flex-column { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
 .justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
 .items-center { align-items: center; }
-.gap-1 { gap: var(--space-1); }
 .gap-2 { gap: var(--space-2); }
 .gap-4 { gap: var(--space-4); }
 
 /* Text */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.font-bold { font-weight: 700; }
-.font-medium { font-weight: 500; }
+.font-bold { font-weight: var(--font-weight-bold); }
 
 /* Colors */
 .text-primary { color: var(--color-primary); }
 .text-secondary { color: var(--color-text-secondary); }
-.text-error { color: var(--color-error); }
-
-/* Visibility */
-@media (max-width: 767px) {
-  .hidden-mobile { display: none !important; }
-}
-@media (min-width: 768px) {
-  .hidden-desktop { display: none !important; }
-}
 
 /* Width & Height */
-.w-full { width: 100%; }
-.h-full { height: 100%; }
 .h-screen { height: 100vh; }
 
 /* Page Containers */
@@ -90,35 +65,7 @@
   grid-template-columns: repeat(6, minmax(160px, 1fr));
 }
 
-.badge-neon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  color: var(--neon-cyan);
-  background: rgba(0, 255, 255, 0.15);
-  border: 1px solid rgba(0, 255, 255, 0.4);
-}
-
-.lesson-chip {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  background: rgba(22, 27, 51, 0.7);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.lesson-chip-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-.lesson-chip-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
+/* lesson-chip and badge-neon classes are defined in index.css */
 
 @media (max-width: 1200px) {
   .schedule-week-grid,

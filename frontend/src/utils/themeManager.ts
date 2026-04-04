@@ -64,6 +64,18 @@ export function applyTheme(preset: ThemePreset): void {
   
   // LocalStorage ga saqlash / Save to localStorage
   localStorage.setItem('app-theme', preset);
+  
+  // Ant Design sinxronlash uchun event / Event for Ant Design sync
+  window.dispatchEvent(new CustomEvent('theme-changed'));
+}
+
+/**
+ * HEX rangni RGB kanal string ga aylantirish / Convert HEX to RGB channel string
+ */
+function hexToRgbString(hex: string): string | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return null;
+  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
 }
 
 /**
@@ -80,33 +92,64 @@ export function applyCustomTheme(colors: CustomThemeColors): void {
   const root = document.documentElement;
   
   // Ranglarni CSS o'zgaruvchilariga o'rnatish / Set colors to CSS variables
-  if (colors.primary) root.style.setProperty('--theme-primary', colors.primary);
-  if (colors.primaryHover) root.style.setProperty('--theme-primary-hover', colors.primaryHover);
-  if (colors.primaryActive) root.style.setProperty('--theme-primary-active', colors.primaryActive);
-  if (colors.secondary) root.style.setProperty('--theme-secondary', colors.secondary);
-  if (colors.tertiary) root.style.setProperty('--theme-tertiary', colors.tertiary);
+  if (colors.primary) {
+    root.style.setProperty('--accent', colors.primary);
+    const rgb = hexToRgbString(colors.primary);
+    if (rgb) root.style.setProperty('--accent-rgb', rgb);
+  }
+  if (colors.primaryHover) root.style.setProperty('--accent-hover', colors.primaryHover);
+  if (colors.primaryActive) root.style.setProperty('--accent-active', colors.primaryActive);
+  if (colors.secondary) {
+    root.style.setProperty('--accent-2', colors.secondary);
+    const rgb = hexToRgbString(colors.secondary);
+    if (rgb) root.style.setProperty('--accent-2-rgb', rgb);
+  }
+  if (colors.tertiary) {
+    root.style.setProperty('--accent-3', colors.tertiary);
+    const rgb = hexToRgbString(colors.tertiary);
+    if (rgb) root.style.setProperty('--accent-3-rgb', rgb);
+  }
   
-  if (colors.bgPrimary) root.style.setProperty('--theme-bg-primary', colors.bgPrimary);
-  if (colors.bgSecondary) root.style.setProperty('--theme-bg-secondary', colors.bgSecondary);
-  if (colors.bgTertiary) root.style.setProperty('--theme-bg-tertiary', colors.bgTertiary);
-  if (colors.bgElevated) root.style.setProperty('--theme-bg-elevated', colors.bgElevated);
+  if (colors.bgPrimary) root.style.setProperty('--color-background', colors.bgPrimary);
+  if (colors.bgSecondary) root.style.setProperty('--bg-elevated-2', colors.bgSecondary);
+  if (colors.bgTertiary) root.style.setProperty('--bg-elevated-3', colors.bgTertiary);
+  if (colors.bgElevated) root.style.setProperty('--color-surface', colors.bgElevated);
   
-  if (colors.borderLight) root.style.setProperty('--theme-border-light', colors.borderLight);
-  if (colors.borderDefault) root.style.setProperty('--theme-border-default', colors.borderDefault);
-  if (colors.borderStrong) root.style.setProperty('--theme-border-strong', colors.borderStrong);
+  if (colors.borderLight) root.style.setProperty('--border-subtle', colors.borderLight);
+  if (colors.borderDefault) root.style.setProperty('--color-border', colors.borderDefault);
+  if (colors.borderStrong) root.style.setProperty('--border-strong', colors.borderStrong);
   
-  if (colors.textPrimary) root.style.setProperty('--theme-text-primary', colors.textPrimary);
-  if (colors.textSecondary) root.style.setProperty('--theme-text-secondary', colors.textSecondary);
-  if (colors.textMuted) root.style.setProperty('--theme-text-muted', colors.textMuted);
-  if (colors.textDisabled) root.style.setProperty('--theme-text-disabled', colors.textDisabled);
+  if (colors.textPrimary) root.style.setProperty('--color-text-primary', colors.textPrimary);
+  if (colors.textSecondary) root.style.setProperty('--color-text-secondary', colors.textSecondary);
+  if (colors.textMuted) root.style.setProperty('--color-text-muted', colors.textMuted);
+  if (colors.textDisabled) root.style.setProperty('--color-text-disabled', colors.textDisabled);
   
-  if (colors.success) root.style.setProperty('--theme-success', colors.success);
-  if (colors.warning) root.style.setProperty('--theme-warning', colors.warning);
-  if (colors.error) root.style.setProperty('--theme-error', colors.error);
-  if (colors.info) root.style.setProperty('--theme-info', colors.info);
+  if (colors.success) {
+    root.style.setProperty('--color-success', colors.success);
+    const rgb = hexToRgbString(colors.success);
+    if (rgb) root.style.setProperty('--color-success-rgb', rgb);
+  }
+  if (colors.warning) {
+    root.style.setProperty('--color-warning', colors.warning);
+    const rgb = hexToRgbString(colors.warning);
+    if (rgb) root.style.setProperty('--color-warning-rgb', rgb);
+  }
+  if (colors.error) {
+    root.style.setProperty('--color-error', colors.error);
+    const rgb = hexToRgbString(colors.error);
+    if (rgb) root.style.setProperty('--color-error-rgb', rgb);
+  }
+  if (colors.info) {
+    root.style.setProperty('--color-info', colors.info);
+    const rgb = hexToRgbString(colors.info);
+    if (rgb) root.style.setProperty('--color-info-rgb', rgb);
+  }
   
   // LocalStorage ga saqlash / Save to localStorage
   localStorage.setItem('app-custom-theme', JSON.stringify(colors));
+  
+  // Ant Design sinxronlash uchun event / Event for Ant Design sync
+  window.dispatchEvent(new CustomEvent('theme-changed'));
 }
 
 /**
@@ -152,12 +195,14 @@ export function resetTheme(): void {
   // Inline stillarni tozalash / Clear inline styles
   const root = document.documentElement;
   const themeProps = [
-    '--theme-primary', '--theme-primary-hover', '--theme-primary-active',
-    '--theme-secondary', '--theme-tertiary',
-    '--theme-bg-primary', '--theme-bg-secondary', '--theme-bg-tertiary', '--theme-bg-elevated',
-    '--theme-border-light', '--theme-border-default', '--theme-border-strong',
-    '--theme-text-primary', '--theme-text-secondary', '--theme-text-muted', '--theme-text-disabled',
-    '--theme-success', '--theme-warning', '--theme-error', '--theme-info'
+    '--accent', '--accent-hover', '--accent-active',
+    '--accent-2', '--accent-3',
+    '--accent-rgb', '--accent-2-rgb', '--accent-3-rgb',
+    '--color-background', '--bg-elevated-2', '--bg-elevated-3', '--color-surface',
+    '--border-subtle', '--color-border', '--border-strong',
+    '--color-text-primary', '--color-text-secondary', '--color-text-muted', '--color-text-disabled',
+    '--color-success', '--color-warning', '--color-error', '--color-info',
+    '--color-success-rgb', '--color-warning-rgb', '--color-error-rgb', '--color-info-rgb'
   ];
   
   themeProps.forEach(prop => root.style.removeProperty(prop));
@@ -165,6 +210,24 @@ export function resetTheme(): void {
   // LocalStorage ni tozalash / Clear localStorage
   localStorage.removeItem('app-theme');
   localStorage.removeItem('app-custom-theme');
+  
+  // Ant Design sinxronlash uchun event / Event for Ant Design sync
+  window.dispatchEvent(new CustomEvent('theme-changed'));
+}
+
+/**
+ * CSS o'zgaruvchilardan Ant Design tokenlarini olish / Get Ant Design tokens from CSS variables
+ */
+export function getAntdThemeTokens(): { colorPrimary: string; colorBgContainer: string; siderBg: string; headerBg: string; borderRadius: number } {
+  const style = getComputedStyle(document.documentElement);
+  const get = (prop: string, fallback: string) => style.getPropertyValue(prop).trim() || fallback;
+  return {
+    colorPrimary: get('--accent', '#3B82F6'),
+    colorBgContainer: get('--color-surface', '#ffffff'),
+    siderBg: get('--color-surface', '#ffffff'),
+    headerBg: get('--color-surface', '#ffffff'),
+    borderRadius: parseInt(get('--radius-base', '8'), 10) || 8,
+  };
 }
 
 /**
@@ -227,43 +290,3 @@ export const availableThemes: { value: ThemePreset; label: string; description: 
     description: 'Minimal kulrang dizayn'
   }
 ];
-
-/**
- * Rang mos kelishini tekshirish / Check if color is valid
- */
-export function isValidColor(color: string): boolean {
-  const s = new Option().style;
-  s.color = color;
-  return s.color !== '';
-}
-
-/**
- * HEX rangni RGB ga o'zgartirish / Convert HEX to RGB
- */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null;
-}
-
-/**
- * Rangni ochroq yoki to'qroq qilish / Lighten or darken color
- */
-export function adjustColor(hex: string, percent: number): string {
-  const rgb = hexToRgb(hex);
-  if (!rgb) return hex;
-  
-  const adjust = (value: number) => {
-    const adjusted = Math.round(value + (255 - value) * (percent / 100));
-    return Math.max(0, Math.min(255, adjusted));
-  };
-  
-  const r = adjust(rgb.r);
-  const g = adjust(rgb.g);
-  const b = adjust(rgb.b);
-  
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}

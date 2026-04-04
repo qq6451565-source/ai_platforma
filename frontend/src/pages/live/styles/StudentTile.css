@@ -6,14 +6,14 @@
   min-width: 9.8rem;
   height: 11.8rem;
   border-radius: 0.82rem;
-  border: 2px solid rgba(86, 126, 197, 0.35);
-  background: rgba(7, 22, 52, 0.78);
+  border: 2px solid rgba(var(--live-border-rgb), 0.35);
+  background: rgba(var(--live-bg-rgb), 0.78);
   overflow: hidden;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.18s ease;
+  transition: border-color var(--duration-slower) var(--ease-out), box-shadow var(--duration-slower) var(--ease-out), transform var(--transition-fast);
 }
 
 .student-tile:hover {
-  border-color: rgba(162, 193, 242, 0.62);
+  border-color: rgba(var(--live-border-light-rgb), 0.62);
 }
 
 .student-tile.is-clickable {
@@ -25,38 +25,38 @@
 }
 
 .student-tile.is-stage {
-  border-color: rgba(46, 141, 255, 0.78);
-  box-shadow: 0 0 16px rgba(46, 141, 255, 0.30);
+  border-color: rgba(var(--live-blue-rgb), 0.78);
+  box-shadow: 0 0 16px rgba(var(--live-blue-rgb), 0.30);
 }
 
 /* 🟢 Yuz aniqlangan — yashil */
 .student-tile.detected {
-  border-color: rgba(17, 214, 128, 0.90);
+  border-color: rgba(var(--live-green-rgb), 0.90);
   box-shadow:
-    0 0 0 2px rgba(17, 214, 128, 0.20),
-    0 0 18px rgba(17, 214, 128, 0.35);
+    0 0 0 2px rgba(var(--live-green-rgb), 0.20),
+    0 0 18px rgba(var(--live-green-rgb), 0.35);
 }
 
 /* 🔴 Yuz aniqlanmagan — qizil */
 .student-tile.not_detected {
-  border-color: rgba(255, 68, 88, 0.95);
+  border-color: rgba(var(--live-red-rgb), 0.95);
   box-shadow:
-    0 0 0 2px rgba(255, 68, 88, 0.18),
-    0 0 18px rgba(255, 68, 88, 0.32);
+    0 0 0 2px rgba(var(--live-red-rgb), 0.18),
+    0 0 18px rgba(var(--live-red-rgb), 0.32);
 }
 
 /* 🟡 Bir nechta yuz — sariq */
 .student-tile.multiple {
-  border-color: rgba(250, 180, 40, 0.90);
+  border-color: rgba(var(--live-yellow-rgb), 0.90);
   box-shadow:
-    0 0 0 2px rgba(250, 180, 40, 0.18),
-    0 0 18px rgba(250, 180, 40, 0.30);
+    0 0 0 2px rgba(var(--live-yellow-rgb), 0.18),
+    0 0 18px rgba(var(--live-yellow-rgb), 0.30);
 }
 
 .student-video-container {
   position: relative;
   min-height: 0;
-  background: #000;
+  background: rgb(var(--color-black-rgb));
 }
 
 .video-element,
@@ -73,10 +73,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(26, 56, 112, 0.95), rgba(11, 35, 77, 0.95));
-  color: #deecff;
+  background: linear-gradient(135deg, rgba(var(--live-tile-bg-rgb), 0.95), rgba(var(--live-tile-bg2-rgb), 0.95));
+  color: var(--live-text);
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
 }
 
 .face-status-indicator {
@@ -85,15 +85,15 @@
   right: 0.38rem;
   min-width: 1.02rem;
   height: 0.78rem;
-  border-radius: 999px;
-  border: 0.125rem solid rgba(255, 255, 255, 0.26);
+  border-radius: var(--radius-full);
+  border: 0.125rem solid rgba(var(--color-white-rgb), 0.26);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.5rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  font-weight: var(--font-weight-bold);
+  color: rgb(var(--color-white-rgb));
+  text-shadow: 0 0 2px rgba(var(--color-black-rgb), 0.5);
   padding: 0 0.2rem;
 }
 
@@ -109,14 +109,14 @@
   display: grid;
   gap: 0.18rem;
   padding: 0.45rem 0.5rem;
-  background: rgba(4, 13, 33, 0.9);
-  border-top: 0.0625rem solid rgba(82, 122, 191, 0.22);
+  background: rgba(var(--live-bg-deep-rgb), 0.9);
+  border-top: 0.0625rem solid rgba(var(--live-border-rgb), 0.22);
 }
 
 .student-name {
   font-size: 0.76rem;
-  color: #e2eeff;
-  font-weight: 600;
+  color: var(--live-text);
+  font-weight: var(--font-weight-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -124,7 +124,7 @@
 
 .student-group {
   font-size: 0.65rem;
-  color: #8eb1e8;
+  color: var(--live-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -147,33 +147,33 @@
   align-items: center;
   height: 0.96rem;
   padding: 0 0.28rem;
-  border-radius: 999px;
-  border: 0.0625rem solid rgba(118, 152, 213, 0.3);
-  background: rgba(8, 23, 53, 0.88);
-  color: #c8dcff;
+  border-radius: var(--radius-full);
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.3);
+  background: rgba(var(--live-bg-rgb), 0.88);
+  color: var(--live-text-secondary);
   font-size: 0.56rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
 }
 
 .metric-chip-joined {
-  border-color: rgba(46, 141, 255, 0.46);
-  color: #d5e9ff;
+  border-color: rgba(var(--live-blue-rgb), 0.46);
+  color: var(--live-blue-text);
 }
 
 .metric-chip-face {
-  border-color: rgba(17, 214, 128, 0.42);
-  color: #bff7d8;
+  border-color: rgba(var(--live-green-rgb), 0.42);
+  color: var(--live-green-text);
 }
 
 .metric-chip-checks {
-  border-color: rgba(250, 180, 40, 0.42);
-  color: #ffe1a6;
+  border-color: rgba(var(--live-yellow-rgb), 0.42);
+  color: var(--live-yellow-text);
 }
 
 .student-attendance-note {
   font-size: 0.58rem;
-  color: #8fb5ed;
+  color: var(--live-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -186,31 +186,31 @@
   min-height: 1rem;
   width: fit-content;
   padding: 0 0.4rem;
-  border-radius: 999px;
-  border: 0.0625rem solid rgba(118, 152, 213, 0.3);
-  background: rgba(8, 23, 53, 0.88);
-  color: #d5e9ff;
+  border-radius: var(--radius-full);
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.3);
+  background: rgba(var(--live-bg-rgb), 0.88);
+  color: var(--live-blue-text);
   font-size: 0.56rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
 }
 
 .student-eligibility-badge.eligibility-eligible {
-  border-color: rgba(17, 214, 128, 0.5);
-  background: rgba(17, 214, 128, 0.14);
-  color: #bff6d7;
+  border-color: rgba(var(--live-green-rgb), 0.5);
+  background: rgba(var(--live-green-rgb), 0.14);
+  color: var(--live-green-text);
 }
 
 .student-eligibility-badge.eligibility-risk {
-  border-color: rgba(243, 164, 72, 0.5);
-  background: rgba(243, 164, 72, 0.14);
-  color: #ffdba9;
+  border-color: rgba(var(--live-orange-rgb), 0.5);
+  background: rgba(var(--live-orange-rgb), 0.14);
+  color: var(--live-orange-text);
 }
 
 .student-eligibility-badge.eligibility-blocked {
-  border-color: rgba(255, 79, 99, 0.5);
-  background: rgba(255, 79, 99, 0.14);
-  color: #ffd1d8;
+  border-color: rgba(var(--live-red-rgb), 0.5);
+  background: rgba(var(--live-red-rgb), 0.14);
+  color: var(--live-red-light);
 }
 
 .badge {
@@ -218,31 +218,31 @@
   align-items: center;
   height: 1rem;
   padding: 0 0.34rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-normal);
 }
 
 .badge.stage {
-  border: 0.0625rem solid rgba(46, 141, 255, 0.52);
-  color: #d5e8ff;
-  background: rgba(46, 141, 255, 0.16);
+  border: 0.0625rem solid rgba(var(--live-blue-rgb), 0.52);
+  color: var(--live-blue-text);
+  background: rgba(var(--live-blue-rgb), 0.16);
 }
 
 .badge.hand-raised {
-  border: 0.0625rem solid rgba(46, 141, 255, 0.64);
-  color: #deedff;
-  background: rgba(46, 141, 255, 0.2);
+  border: 0.0625rem solid rgba(var(--live-blue-rgb), 0.64);
+  color: var(--live-blue-text);
+  background: rgba(var(--live-blue-rgb), 0.2);
   width: 1rem;
   padding: 0;
   justify-content: center;
 }
 
 .badge.confidence {
-  border: 0.0625rem solid rgba(137, 169, 220, 0.44);
-  color: #c9dcff;
-  background: rgba(13, 29, 67, 0.7);
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.44);
+  color: var(--live-text-secondary);
+  background: rgba(var(--live-bg-deep-rgb), 0.7);
 }
 
 .audio-control-btn {
@@ -251,10 +251,10 @@
   bottom: 2.05rem;
   width: 1.4rem;
   height: 1.4rem;
-  border-radius: 999px;
-  border: 0.0625rem solid rgba(127, 160, 219, 0.4);
-  background: rgba(8, 24, 55, 0.78);
-  color: #d8e8ff;
+  border-radius: var(--radius-full);
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.4);
+  background: rgba(var(--live-bg-rgb), 0.78);
+  color: var(--live-blue-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -264,8 +264,8 @@
 }
 
 .audio-control-btn.enabled {
-  border-color: rgba(17, 214, 128, 0.62);
-  color: #baf9db;
+  border-color: rgba(var(--live-green-rgb), 0.62);
+  color: var(--live-green-text);
 }
 
 @media (max-width: 1023px) {

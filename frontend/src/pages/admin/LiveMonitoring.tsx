@@ -169,11 +169,11 @@ export const LiveMonitoring: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: 'var(--space-6)' }}>
       <Title level={2}>Live Face Verification Monitoring</Title>
       <Text type="secondary">{data.lesson_topic}</Text>
 
-      <Row gutter={16} style={{ marginTop: '24px' }}>
+      <Row gutter={16} style={{ marginTop: 'var(--space-6)' }}>
         <Col span={6}>
           <Card>
             <Statistic
@@ -188,7 +188,7 @@ export const LiveMonitoring: React.FC = () => {
             <Statistic
               title="Verified"
               value={data.verified_participants}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: 'var(--color-success)' }}
               prefix={<CheckCircleOutlined />}
             />
           </Card>
@@ -198,7 +198,7 @@ export const LiveMonitoring: React.FC = () => {
             <Statistic
               title="Not Verified"
               value={data.total_participants - data.verified_participants}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: 'var(--color-error)' }}
               prefix={<WarningOutlined />}
             />
           </Card>
@@ -208,7 +208,7 @@ export const LiveMonitoring: React.FC = () => {
             <Statistic
               title="Room Status"
               value={data.is_active ? 'Active' : 'Inactive'}
-              valueStyle={{ color: data.is_active ? '#3f8600' : '#cf1322' }}
+              valueStyle={{ color: data.is_active ? 'var(--color-success)' : 'var(--color-error)' }}
               prefix={<ClockCircleOutlined />}
             />
           </Card>
@@ -217,7 +217,7 @@ export const LiveMonitoring: React.FC = () => {
 
       <Card
         title="Participant Sessions"
-        style={{ marginTop: '24px' }}
+        style={{ marginTop: 'var(--space-6)' }}
         extra={
           <Space>
             <Tag color={autoRefresh ? 'green' : 'default'}>
@@ -235,7 +235,7 @@ export const LiveMonitoring: React.FC = () => {
       </Card>
 
       {data.recent_alerts && data.recent_alerts.length > 0 && (
-        <Card title="Recent Alerts" style={{ marginTop: '24px' }}>
+        <Card title="Recent Alerts" style={{ marginTop: 'var(--space-6)' }}>
           <Table
             columns={alertColumns}
             dataSource={data.recent_alerts}

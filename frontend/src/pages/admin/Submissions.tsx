@@ -5,19 +5,7 @@ import { useMemo, useState } from "react";
 import { gradeSubmission } from "../../api/submissions";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
+import { toAbsoluteUrl } from "../../api/client";
 
 const AdminSubmissionsPage = () => {
   const qc = useQueryClient();
@@ -62,7 +50,7 @@ const AdminSubmissionsPage = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 'var(--space-6)' }}>
       <Typography.Title level={4}>Yuborilgan topshiriqlar</Typography.Title>
       {!selectedSubject ? (
         isLoading ? (
@@ -70,18 +58,18 @@ const AdminSubmissionsPage = () => {
         ) : !subjectCards.length ? (
           <Typography.Text>Hali yuborilgan topshiriqlar yo'q.</Typography.Text>
         ) : (
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
             {subjectCards.map((card) => (
               <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
-                <div style={{ fontWeight: 600 }}>{card.name}</div>
-                <div style={{ opacity: 0.7, marginTop: 6 }}>{card.count} ta yuborilgan</div>
+                <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
+                <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta yuborilgan</div>
               </Card>
             ))}
           </div>
         )
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
@@ -117,7 +105,7 @@ const AdminSubmissionsPage = () => {
                         item.submitted_at ? dayjs(item.submitted_at).format("DD.MM.YYYY HH:mm") : "-"
                       }`}
                     />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                       {item.file ? (
                         <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
                           Fayl
@@ -144,7 +132,7 @@ const AdminSubmissionsPage = () => {
         okText="Saqlash"
       >
         <InputNumber
-          style={{ width: "100%", marginBottom: 12 }}
+          style={{ width: "100%", marginBottom: 'var(--space-3)' }}
           placeholder="Baho (0-100)"
           value={grade === null ? undefined : grade}
           onChange={(v) => setGrade(v ?? null)}

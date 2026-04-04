@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { AuditLog, deleteAuditLog } from "../../api/admin";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const { Text } = Typography;
 
@@ -33,6 +34,7 @@ const actionColors: Record<string, string> = {
 };
 
 const AuditLogsPage = () => {
+  usePageTitle('nav.auditLogs');
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState<"all" | "auth" | "enrollment">("all");
@@ -63,8 +65,8 @@ const AuditLogsPage = () => {
   ];
 
   return (
-    <Card title="Audit loglar" style={{ marginBottom: 16 }}>
-      <Space wrap style={{ marginBottom: 12 }}>
+    <Card title="Audit loglar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
         <Input
           placeholder="Qidirish (foydalanuvchi, action, IP)"
           value={search}

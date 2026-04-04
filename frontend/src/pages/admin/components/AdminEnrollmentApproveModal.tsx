@@ -23,7 +23,7 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
             showIcon
             message="AI avtomatik tasdiqlamadi"
             description="Admin passport va selfie preview asosida qo'lda qaror qabul qilishi kerak."
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 'var(--space-3)' }}
           />
         ) : (
           <Alert
@@ -31,7 +31,7 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
             showIcon
             message="AI tasdiqladi"
             description="Ariza approve-ready holatda. Endi rol va biriktirishni tanlang."
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 'var(--space-3)' }}
           />
         )}
 

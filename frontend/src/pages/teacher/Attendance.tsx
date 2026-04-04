@@ -10,6 +10,7 @@ import {
   markAttendance,
   type AttendanceOverrideLog,
 } from "../../api/attendance";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
 
@@ -53,6 +54,7 @@ type HistoryTarget = {
 const formatRatio = (value?: number | null) => (value == null ? "-" : `${Math.round(value * 100)}%`);
 
 const TeacherAttendancePage = () => {
+  usePageTitle('nav.attendance');
   const qc = useQueryClient();
   const { data: lessons, isLoading: loadingLessons } = useQuery({
     queryKey: ["teacher-lessons"],
@@ -307,7 +309,7 @@ const TeacherAttendancePage = () => {
             {subjectCards.map((subject) => (
               <Card key={subject.name} hoverable onClick={() => setSelectedSubject(subject.name)}>
                 <Typography.Text strong>{subject.name}</Typography.Text>
-                <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta dars</div>
+                <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta dars</div>
               </Card>
             ))}
           </div>
@@ -379,7 +381,7 @@ const TeacherAttendancePage = () => {
         okText="Saqlash"
         confirmLoading={markMut.isPending}
       >
-        <Typography.Paragraph style={{ marginBottom: 12 }}>
+        <Typography.Paragraph style={{ marginBottom: 'var(--space-3)' }}>
           {overrideDraft?.studentName} uchun davomatni{" "}
           <strong>{overrideDraft?.status === "present" ? "Bor" : "Yoq"}</strong> deb belgilaysiz.
         </Typography.Paragraph>

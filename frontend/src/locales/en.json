@@ -566,5 +566,10 @@
         }
       }
     }
+  },
+  "assignments": {
+    "deadline": "Deadline",
+    "submitted": "Submitted",
+    "pending": "Pending"
   }
 }

@@ -15,7 +15,7 @@ const AdminAttendanceOverrideModal = ({ controller }: Props) => (
     okText="Saqlash"
     confirmLoading={controller.overrideSaving}
   >
-    <Typography.Paragraph style={{ marginBottom: 12 }}>
+    <Typography.Paragraph style={{ marginBottom: 'var(--space-3)' }}>
       {controller.overrideDraft?.studentName} uchun davomatni{" "}
       <strong>{controller.overrideDraft?.status === "present" ? "Bor" : "Yoq"}</strong> deb belgilaysiz.
     </Typography.Paragraph>

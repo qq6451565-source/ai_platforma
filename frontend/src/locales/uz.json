@@ -566,5 +566,10 @@
         }
       }
     }
+  },
+  "assignments": {
+    "deadline": "Muddat",
+    "submitted": "Topshirilgan",
+    "pending": "Kutilmoqda"
   }
 }

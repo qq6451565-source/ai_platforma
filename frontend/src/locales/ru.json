@@ -566,5 +566,10 @@
         }
       }
     }
+  },
+  "assignments": {
+    "deadline": "Срок сдачи",
+    "submitted": "Сдано",
+    "pending": "Ожидается"
   }
 }

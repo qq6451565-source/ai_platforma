@@ -10,6 +10,7 @@ import AgoraRTC, {
 import { Button, Spin } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import {
   AudioOutlined,
   AudioMutedOutlined,
@@ -151,6 +152,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 
 export default function Room() {
   const { t } = useTranslation();
+  usePageTitle('nav.live');
   const navigate = useNavigate();
   const { lessonId } = useParams<{ lessonId: string }>();
   const { data: me } = useMe();
@@ -1698,12 +1700,12 @@ export default function Room() {
                 width: 360,
                 maxHeight: 220,
                 overflow: "auto",
-                background: "rgba(0,0,0,0.72)",
-                border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 8,
-                padding: 10,
-                fontSize: 12,
-                lineHeight: 1.4,
+                background: "rgba(var(--color-black-rgb),0.72)",
+                border: "1px solid rgba(var(--color-white-rgb),0.18)",
+                borderRadius: 'var(--radius-base)',
+                padding: 'var(--space-2-5)',
+                fontSize: 'var(--font-size-tiny)',
+                lineHeight: 'var(--leading-normal)',
                 pointerEvents: "auto",
               }}
             >
@@ -1726,7 +1728,7 @@ export default function Room() {
               <div>last_room_state_event: {lastRoomStateEventAt || "-"}</div>
               <div>last_status_event: {lastStatusEventAt || "-"}</div>
               <div>last_status_reason: {lastStatusReason || "-"}</div>
-              <div style={{ marginTop: 6, opacity: 0.9 }}>
+              <div style={{ marginTop: 'var(--space-1-5)', opacity: 0.9 }}>
                 last_event: {debugEvents[0] || "-"}
               </div>
             </div>

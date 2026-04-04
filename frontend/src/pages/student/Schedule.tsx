@@ -4,10 +4,12 @@ import { fetchLessons } from "../../api/lessons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import dayjs from "dayjs";
 
 const StudentSchedule = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.schedule');
   const { data: lessons, isLoading } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
@@ -86,7 +88,7 @@ const StudentSchedule = () => {
         <Skeleton active />
       ) : (
         <>
-          <Card style={{ marginBottom: 24 }}>
+          <Card style={{ marginBottom: 'var(--space-6)' }}>
             <div className="d-flex justify-between items-center flex-wrap gap-4">
               <Space size="middle">
                 <Button
@@ -164,10 +166,10 @@ const StudentSchedule = () => {
                     {isToday && (
                       <span style={{
                         padding: '2px 8px',
-                        background: 'rgba(37, 99, 235, 0.1)',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        color: '#2563eb'
+                        background: 'rgba(var(--accent-2-rgb), 0.1)',
+                        borderRadius: 'var(--radius-xs)',
+                        fontSize: 'var(--font-size-tiny)',
+                        color: 'var(--accent)'
                       }}>
                         {t('common.today')}
                       </span>
@@ -175,9 +177,9 @@ const StudentSchedule = () => {
                   </div>
                   <Typography.Text style={{
                     display: 'block',
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    marginBottom: 16
+                    fontSize: 'var(--font-size-xl)',
+                    fontWeight: 'var(--font-weight-bold)',
+                    marginBottom: 'var(--space-4)'
                   }}>
                     {day.format("DD.MM")}
                   </Typography.Text>
@@ -200,12 +202,12 @@ const StudentSchedule = () => {
                       );
                     })}
                     {dayLessons.length > 3 && (
-                      <Typography.Text style={{ fontSize: '12px' }}>
+                      <Typography.Text style={{ fontSize: 'var(--font-size-tiny)' }}>
                         +{dayLessons.length - 3} {t('schedule.moreLessons')}
                       </Typography.Text>
                     )}
                     {!dayLessons.length && (
-                      <Typography.Text style={{ fontSize: '12px' }}>
+                      <Typography.Text style={{ fontSize: 'var(--font-size-tiny)' }}>
                         {t('schedule.empty')}
                       </Typography.Text>
                     )}
@@ -252,8 +254,8 @@ const StudentSchedule = () => {
                     ]}
                   >
                     <Space direction="vertical" size={0}>
-                      <div style={{ color: '#374151' }}>{`${subjectLabel} - ${groupLabel}`}</div>
-                      <div style={{ fontSize: 12, color: "#6b7280" }}>{timeLabel}</div>
+                      <div style={{ color: 'var(--color-text-primary)' }}>{`${subjectLabel} - ${groupLabel}`}</div>
+                      <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>{timeLabel}</div>
                     </Space>
                   </List.Item>
                 );

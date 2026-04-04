@@ -4,8 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchGradebook } from "../../api/gradebook";
 import { fetchMySubmissions } from "../../api/submissions";
 import { fetchStudentTestRecords } from "../../api/studentTests";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const StudentGrades = () => {
+  usePageTitle('nav.grades');
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const { data: grades, isLoading } = useQuery({
     queryKey: ["gradebook"],
@@ -142,7 +144,7 @@ const StudentGrades = () => {
                   {item.lesson_topic || "Dars"}
                 </div>
               </div>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {typeof item.grade === "number" ? item.grade : "Baholanmagan"}
               </div>
             </List.Item>
@@ -163,7 +165,7 @@ const StudentGrades = () => {
                   {item.lesson_topic || "Dars"}
                 </div>
               </div>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {typeof item.score_percent === "number" ? `${item.score_percent}%` : "-"}
               </div>
             </List.Item>

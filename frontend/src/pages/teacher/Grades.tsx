@@ -24,8 +24,10 @@ import { fetchGroups } from "../../api/groups";
 import { fetchTeacherStudents } from "../../api/user";
 import { fetchMySubmissions, gradeSubmission } from "../../api/submissions";
 import { fetchStudentTestRecords, updateStudentTestRecord } from "../../api/studentTests";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const TeacherGradesPage = () => {
+  usePageTitle('nav.grades');
   const qc = useQueryClient();
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [groupFilter, setGroupFilter] = useState<number | null>(null);
@@ -323,7 +325,7 @@ const TeacherGradesPage = () => {
   return (
     <div className="page-shell">
       <Typography.Title level={4} className="page-title">Baholar</Typography.Title>
-      <Card title="Baholar" style={{ marginBottom: 16 }}>
+      <Card title="Baholar" style={{ marginBottom: 'var(--space-4)' }}>
       {!selectedSubject ? (
         subjectCards.length ? (
           <List
@@ -420,9 +422,9 @@ const TeacherGradesPage = () => {
       >
         {editStudent ? (
           <>
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <Typography.Text type="secondary">Talaba</Typography.Text>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {`${editStudent?.first_name || ""} ${editStudent?.last_name || ""}`.trim() ||
                   editStudent?.username ||
                   `#${editStudent?.id}`}
@@ -430,7 +432,7 @@ const TeacherGradesPage = () => {
             </div>
             <Divider orientation="left">Darslar bo'yicha</Divider>
             {lessonBuckets.length ? (
-              <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "grid", gap: 'var(--space-3)' }}>
                 {lessonBuckets.map((bucket) => (
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
                     <div className="detail-two-col">
@@ -446,7 +448,7 @@ const TeacherGradesPage = () => {
                                 hoverable
                                 onClick={() => openDetail(item, "assignment")}
                               >
-                                <div style={{ marginTop: 6, fontWeight: 600 }}>
+                                <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
                                   {typeof item.grade === "number" ? `Ball: ${item.grade}` : "Baholanmagan"}
                                 </div>
                               </Card>
@@ -468,7 +470,7 @@ const TeacherGradesPage = () => {
                                 hoverable
                                 onClick={() => openDetail(item, "test")}
                               >
-                                <div style={{ marginTop: 6, fontWeight: 600 }}>
+                                <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
                                   Ball: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
                                 </div>
                               </Card>
@@ -500,10 +502,10 @@ const TeacherGradesPage = () => {
         footer={null}
       >
         {detailItem ? (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "grid", gap: 'var(--space-2)' }}>
             <div>
               <Typography.Text type="secondary">Sarlavha</Typography.Text>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {detailType === "assignment"
                   ? detailItem.assignment_title || "Topshiriq"
                   : detailItem.test_title || "Test"}
@@ -573,7 +575,7 @@ const TeacherGradesPage = () => {
               </>
             )}
             <Divider orientation="left">Tahrirlash</Divider>
-            <div style={{ display: "grid", gap: 8 }}>
+            <div style={{ display: "grid", gap: 'var(--space-2)' }}>
               <InputNumber
                 min={0}
                 max={

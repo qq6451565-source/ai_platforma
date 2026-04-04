@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App";
 import "./index.css";
 import "./i18n";
-import { loadSavedTheme } from "./utils/themeManager";
+import { loadSavedTheme, getAntdThemeTokens } from "./utils/themeManager";
 import { validateEnvironment } from "./utils/envValidation";
 
 // Environment validation
@@ -37,20 +37,36 @@ const AppWithProviders = () => (
   </BrowserRouter>
 );
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+/**
+ * Ant Design ConfigProvider ni tema o'zgarishlariga reaktiv qiluvchi komponent
+ * Makes Ant Design ConfigProvider reactive to theme changes
+ */
+const ThemedApp: React.FC = () => {
+  const [tokens, setTokens] = useState(getAntdThemeTokens);
+
+  const syncTokens = useCallback(() => {
+    // requestAnimationFrame — CSS o'zgaruvchilari yangilanguncha kutish
+    requestAnimationFrame(() => setTokens(getAntdThemeTokens()));
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('theme-changed', syncTokens);
+    return () => window.removeEventListener('theme-changed', syncTokens);
+  }, [syncTokens]);
+
+  return (
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#2563eb",
-          colorBgContainer: "#ffffff",
-          borderRadius: 8,
+          colorPrimary: tokens.colorPrimary,
+          colorBgContainer: tokens.colorBgContainer,
+          borderRadius: tokens.borderRadius,
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         },
         components: {
           Layout: {
-            siderBg: "#ffffff",
-            headerBg: "#ffffff",
+            siderBg: tokens.siderBg,
+            headerBg: tokens.headerBg,
           },
           Menu: {
             itemBg: "transparent",
@@ -62,5 +78,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AppWithProviders />
       </QueryClientProvider>
     </ConfigProvider>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ThemedApp />
   </React.StrictMode>
 );

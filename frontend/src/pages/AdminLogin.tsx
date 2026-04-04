@@ -3,12 +3,14 @@ import { Button, Card, Form, Input, message, Typography } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { login } from "../api/auth";
 import { saveTokens, clearTokens } from "../utils/token";
 import { fetchMe } from "../api/user";
 
 const AdminLoginPage = () => {
   const { t } = useTranslation();
+  usePageTitle('adminLogin.title');
   const qc = useQueryClient();
   const [form] = Form.useForm();
 
@@ -32,7 +34,7 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", background: "#f0f2f5" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", background: "var(--bg-elevated-3)" }}>
       <div style={{ maxWidth: 420, width: "100%" }}>
         <Card
           title={<Typography.Title level={4} style={{ margin: 0 }}>{t("adminLogin.title")}</Typography.Title>}
@@ -53,7 +55,7 @@ const AdminLoginPage = () => {
             >
               <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
             </Form.Item>
-            <Form.Item style={{ marginBottom: 8 }}>
+            <Form.Item style={{ marginBottom: 'var(--space-2)' }}>
               <Button type="primary" htmlType="submit" block size="large">
                 {t("adminLogin.submit")}
               </Button>

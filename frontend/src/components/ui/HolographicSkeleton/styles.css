@@ -1,7 +1,7 @@
 /* Base Holographic Skeleton Styles */
 .holographic-skeleton-text {
   height: 1em;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   will-change: transform, opacity;
 }
 
@@ -52,7 +52,7 @@
 
 /* Table Skeleton */
 .holographic-table-skeleton {
-  background: #FFFFFF;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -100,7 +100,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3);
-  background: #FFFFFF;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   will-change: transform, opacity;

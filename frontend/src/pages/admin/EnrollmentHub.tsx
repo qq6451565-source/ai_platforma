@@ -1,12 +1,15 @@
-﻿import { useEffect, useState } from "react";
-import { Tabs } from "antd";
+﻿import { lazy, Suspense, useEffect, useState } from "react";
+import { Tabs, Spin } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import AdminEnrollment from "./Enrollment";
-import EnrollmentWindowsPage from "./EnrollmentWindows";
+import { usePageTitle } from "../../hooks/usePageTitle";
+
+const AdminEnrollment = lazy(() => import("./Enrollment"));
+const EnrollmentWindowsPage = lazy(() => import("./EnrollmentWindows"));
 
 const EnrollmentHubPage = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.enrollment');
   const location = useLocation();
   const navigate = useNavigate();
   const tabs = ["applicants", "windows"];
@@ -30,7 +33,8 @@ const EnrollmentHubPage = () => {
     navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
   };
 
-  const renderTab = (key: string, node: JSX.Element) => (activeKey === key ? node : null);
+  const renderTab = (key: string, node: JSX.Element) =>
+    activeKey === key ? <Suspense fallback={<Spin style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }} />}>{node}</Suspense> : null;
 
   return (
     <Tabs

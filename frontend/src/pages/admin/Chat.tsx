@@ -9,7 +9,7 @@ const AdminChatPage = () => {
   const { data, isLoading } = useQuery(adminQueryOptions.chatMessages());
 
   return (
-    <Card title="Guruh chati" style={{ marginBottom: 16 }}>
+    <Card title="Guruh chati" style={{ marginBottom: 'var(--space-4)' }}>
       <List
         loading={isLoading}
         dataSource={data || []}

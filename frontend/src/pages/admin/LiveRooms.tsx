@@ -19,8 +19,8 @@ const AdminLiveRoomsPage = () => {
   });
 
   return (
-    <Card title="Live xonalar" style={{ marginBottom: 16 }}>
-      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Live xonalar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="lesson_id" rules={[{ required: true, message: "Dars" }]}>
           <Select
             showSearch

@@ -33,12 +33,12 @@ export const FaceStatusIndicator: React.FC<FaceStatusIndicatorProps> = ({
   enableScanner = true,
 }) => {
   const getStatusColor = () => {
-    if (verified) return '#22c55e';
-    if (event_type === 'no_face') return '#faad14';
-    if (event_type === 'multiple_faces') return '#ff4d4f';
-    if (event_type === 'low_confidence') return '#ff4d4f';
-    if (loading) return '#00ffff';
-    return '#d9d9d9';
+    if (verified) return 'var(--color-success)';
+    if (event_type === 'no_face') return 'var(--color-warning)';
+    if (event_type === 'multiple_faces') return 'var(--color-error)';
+    if (event_type === 'low_confidence') return 'var(--color-error)';
+    if (loading) return 'var(--color-info)';
+    return 'var(--color-text-disabled)';
   };
 
   const getStatusIcon = () => {

@@ -40,7 +40,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div style={{ padding: 'var(--space-8)', textAlign: 'center' }}>
           <Result
             status="error"
             title="Something went wrong"

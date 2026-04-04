@@ -24,18 +24,8 @@ import { fetchSubjects } from "../../api/subjects";
 import { fetchGroups } from "../../api/groups";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import type { Material, MaterialResource } from "../../types/material";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
+import { toAbsoluteUrl } from "../../api/client";
+import { usePageTitle } from "../../hooks/usePageTitle";
 const isVideo = (url?: string) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
 const allowedExtensions = new Set(["doc", "docx", "xls", "xlsx", "ppt", "pptx", "mp4", "webm"]);
 const allowedExtensionsLabel = "doc, docx, xls, xlsx, ppt, pptx, mp4, webm";
@@ -52,6 +42,7 @@ const extractFiles = (list: UploadFile[]) =>
     .filter((item): item is File => item instanceof File);
 
 const TeacherMaterials = () => {
+  usePageTitle('nav.materials');
   const qc = useQueryClient();
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
@@ -182,7 +173,7 @@ const TeacherMaterials = () => {
     const files = resources.filter((r) => r.resource_type === "file" && r.file);
     if (!files.length) return "-";
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1)' }}>
         {files.map((res) => {
           const fileUrl = toAbsoluteUrl(res.file);
           const name = res.title || fileUrl.split("/").pop() || "Fayl";
@@ -199,15 +190,15 @@ const TeacherMaterials = () => {
   const renderResources = (resources: MaterialResource[]) => {
     if (!resources.length) return null;
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
         {resources.map((res) => {
           const label = res.title || res.file || res.resource_type;
           if (res.resource_type === "file" && res.file) {
             const fileUrl = toAbsoluteUrl(res.file);
             return (
-              <div key={res.id} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div key={res.id} style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                 {isVideo(fileUrl) ? (
-                  <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 6 }} />
+                  <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
                 ) : null}
                 <a href={fileUrl} target="_blank" rel="noreferrer">
                   Yuklab olish
@@ -230,11 +221,11 @@ const TeacherMaterials = () => {
           message="Sizga fan/guruh biriktirilmagan"
           description="Material qo'shish uchun admin tomonidan o'qituvchi-fan-guruh biriktirilsin."
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 'var(--space-4)' }}
         />
       ) : null}
       {filterSubject ? (
-        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 24 }}>
+        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
           <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
@@ -295,7 +286,7 @@ const TeacherMaterials = () => {
                       }}
                     >
                       <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 6, color: "#94a3b8" }}>{subject.count} ta material</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta material</div>
                     </Card>
                   </List.Item>
                 )}
@@ -373,28 +364,28 @@ const TeacherMaterials = () => {
                                 : []) as MaterialResource[];
                             return (
                               <div style={{ width: "100%" }}>
-                                <div className="kv-grid" style={{ marginBottom: 10 }}>
-                                  <span style={{ color: "#94a3b8" }}>Sarlavha</span>
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div className="kv-grid" style={{ marginBottom: 'var(--space-2-5)' }}>
+                                  <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)' }}>
                                     <strong>{item.title}</strong>
                                     <Tag color="blue">v{item.current_version || 1}</Tag>
                                   </div>
-                                  <span style={{ color: "#94a3b8" }}>Fan</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
                                   <span>{item.subject_name || `Fan #${item.subject}`}</span>
-                                  <span style={{ color: "#94a3b8" }}>O'qituvchi</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>O'qituvchi</span>
                                   <span>{item.teacher_name || "-"}</span>
-                                  <span style={{ color: "#94a3b8" }}>Guruhlar</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>Guruhlar</span>
                                   <span>{(item.group_names || []).join(", ") || "-"}</span>
-                                  <span style={{ color: "#94a3b8" }}>Fayl</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>Fayl</span>
                                   {renderFileLinks(currentResources)}
                                 </div>
                               </div>
                             );
                           })()}
                           {item.versions && item.versions.length > 1 ? (
-                            <details style={{ marginTop: 8 }}>
+                            <details style={{ marginTop: 'var(--space-2)' }}>
                               <summary>Versiyalar ({item.versions.length})</summary>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
                                 {item.versions.map((ver) => (
                                   <div key={ver.version}>
                                     <strong>v{ver.version}</strong>
@@ -474,7 +465,7 @@ const TeacherMaterials = () => {
               <Button>Fayl(lar) yuklash</Button>
             </Upload>
           </Form.Item>
-          <div style={{ fontSize: 12, color: "#6a7280" }}>
+          <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>
             Yangi fayl qo'shsangiz yangi versiya yaratiladi.
           </div>
         </Form>

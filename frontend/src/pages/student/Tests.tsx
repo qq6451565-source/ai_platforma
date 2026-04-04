@@ -6,6 +6,7 @@ import { fetchLessons } from "../../api/lessons";
 import { startTest, answerTest, finishTest, StartTestResponse } from "../../api/studentTests";
 import { startTestProctoring, verifyProctoring, presenceProctoring, finishProctoring } from "../../api/proctoring";
 import type { LessonAccessSnapshot, TestItem } from "../../types/test";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -73,6 +74,7 @@ const hasPendingAccess = (items?: TestItem[]) =>
   Boolean(items?.some((item) => item.access?.status === "pending_attendance"));
 
 const StudentTests = () => {
+  usePageTitle('nav.tests');
   const { data: tests, isLoading } = useQuery({
     queryKey: ["tests"],
     queryFn: fetchTests,
@@ -383,7 +385,7 @@ const StudentTests = () => {
               <List.Item>
                 <Card hoverable onClick={() => setSelectedSubject(card.name)}>
                   <Typography.Text strong>{card.name}</Typography.Text>
-                  <div style={{ marginTop: 6, color: "#94a3b8" }}>{card.count} ta test</div>
+                  <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{card.count} ta test</div>
                 </Card>
               </List.Item>
             )}
@@ -419,31 +421,31 @@ const StudentTests = () => {
                   >
                     <div style={{ width: "100%" }}>
                       <div className="kv-grid">
-                        <span style={{ color: "#94a3b8" }}>Sarlavha</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
                         <strong>{item.title}</strong>
-                        <span style={{ color: "#94a3b8" }}>Fan</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
                         <span>{item.subject_name || item.subject || "-"}</span>
-                        <span style={{ color: "#94a3b8" }}>Dars</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Dars</span>
                         <span>{item.lesson_topic || "-"}</span>
-                        <span style={{ color: "#94a3b8" }}>Guruh</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Guruh</span>
                         <span>{item.group_name || item.group || "-"}</span>
-                        <span style={{ color: "#94a3b8" }}>Vaqt</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Vaqt</span>
                         <span>{item.time_limit_minutes ?? "-"} min</span>
-                        <span style={{ color: "#94a3b8" }}>Umumiy ball</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Umumiy ball</span>
                         <span>{item.total_score ?? "-"}</span>
-                        <span style={{ color: "#94a3b8" }}>Holat</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Holat</span>
                         <span>
                           <Tag color={startState.color}>{startState.statusLabel}</Tag>
                         </span>
-                        <span style={{ color: "#94a3b8" }}>Sabab</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Sabab</span>
                         <span>{startState.reason}</span>
-                        <span style={{ color: "#94a3b8" }}>Davomat</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Davomat</span>
                         <span>{getAttendanceLabel(item.access)}</span>
-                        <span style={{ color: "#94a3b8" }}>Qatnashuv</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Qatnashuv</span>
                         <span>{formatRatio(item.access?.attendance_joined_ratio)}</span>
-                        <span style={{ color: "#94a3b8" }}>Face ratio</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Face ratio</span>
                         <span>{formatRatio(item.access?.attendance_face_verified_ratio)}</span>
-                        <span style={{ color: "#94a3b8" }}>Final</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Final</span>
                         <span>{item.access?.attendance_finalized ? "Ha" : "Yo'q"}</span>
                       </div>
                     </div>
@@ -482,28 +484,28 @@ const StudentTests = () => {
         ]}
       >
         {proctorSessionId && (
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 'var(--space-3)' }}>
             <div
               style={{
                 position: "relative",
                 width: 140,
                 height: 105,
-                borderRadius: 8,
+                borderRadius: 'var(--radius-base)',
                 overflow: "hidden",
                 border: `2.5px solid ${faceStatus === "DETECTED"
-                    ? "#11d680"
+                    ? "var(--color-success)"
                     : faceStatus === "NOT_DETECTED"
-                      ? "#ff4f63"
-                      : "rgba(134,166,219,0.35)"
+                      ? "var(--color-error)"
+                      : "rgba(var(--live-border-rgb),0.35)"
                   }`,
                 boxShadow:
                   faceStatus === "DETECTED"
-                    ? "0 0 8px rgba(17,214,128,0.5)"
+                    ? "0 0 8px rgba(var(--color-success-rgb),0.5)"
                     : faceStatus === "NOT_DETECTED"
-                      ? "0 0 8px rgba(255,79,99,0.5)"
+                      ? "0 0 8px rgba(var(--color-error-rgb),0.5)"
                       : "none",
                 transition: "border-color 0.3s, box-shadow 0.3s",
-                background: "#111",
+                background: "var(--color-text-primary)",
                 flexShrink: 0,
               }}
             >
@@ -519,17 +521,17 @@ const StudentTests = () => {
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  background: "rgba(0,0,0,0.62)",
+                  background: "rgba(var(--color-black-rgb),0.62)",
                   padding: "3px 6px",
                   textAlign: "center",
-                  fontSize: 11,
-                  fontWeight: 600,
+                  fontSize: 'var(--font-size-xs)',
+                  fontWeight: 'var(--font-weight-semibold)',
                   color:
                     faceStatus === "DETECTED"
-                      ? "#11d680"
+                      ? "var(--color-success)"
                       : faceStatus === "NOT_DETECTED"
-                        ? "#ff4f63"
-                        : "#86a7da",
+                        ? "var(--color-error)"
+                        : "var(--color-text-muted)",
                 }}
               >
                 {faceStatus === "DETECTED"
@@ -545,12 +547,12 @@ const StudentTests = () => {
                     top: 0,
                     left: 0,
                     right: 0,
-                    background: "rgba(0,0,0,0.52)",
+                    background: "rgba(var(--color-black-rgb),0.52)",
                     padding: "2px 6px",
                     textAlign: "center",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: faceRatio >= 0.5 ? "#11d680" : "#ff4f63",
+                    fontSize: 'var(--font-size-2xs)',
+                    fontWeight: 'var(--font-weight-bold)',
+                    color: faceRatio >= 0.5 ? "var(--color-success)" : "var(--color-error)",
                   }}
                 >
                   {Math.round(faceRatio * 100)}% • {totalChecks} tekshiruv
@@ -565,7 +567,7 @@ const StudentTests = () => {
             <Radio.Group
               onChange={(e) => setSelectedOption(e.target.value)}
               value={selectedOption || undefined}
-              style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}
+              style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}
             >
               {current.question.options.map((opt) => (
                 <Radio key={opt.id} value={opt.id}>

@@ -28,10 +28,10 @@ const UsersPage = () => {
       key: "user",
       render: (_: unknown, user: AdminUser) => (
         <Space direction="vertical" size={0}>
-          <span style={{ fontWeight: 600 }}>
+          <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
             {`${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username}
           </span>
-          <span style={{ color: "#64748b" }}>{user.username}</span>
+          <span style={{ color: "var(--color-text-secondary)" }}>{user.username}</span>
         </Space>
       ),
     },
@@ -41,7 +41,7 @@ const UsersPage = () => {
       render: (_: unknown, user: AdminUser) => (
         <Space direction="vertical" size={0}>
           <span>{user.email || "-"}</span>
-          <span style={{ color: "#64748b" }}>{user.phone || "-"}</span>
+          <span style={{ color: "var(--color-text-secondary)" }}>{user.phone || "-"}</span>
         </Space>
       ),
     },
@@ -149,14 +149,14 @@ const UsersPage = () => {
           { key: "teacher", label: `O'qituvchilar (${controller.roleCounts.teacher})` },
           { key: "student", label: `Talabalar (${controller.roleCounts.student})` },
         ]}
-        style={{ marginBottom: 12 }}
+        style={{ marginBottom: 'var(--space-3)' }}
       />
 
       <Input
         placeholder="Qidirish: login, ism, email, telefon, guruh yoki fan"
         value={controller.search}
         onChange={(event) => controller.setSearch(event.target.value)}
-        style={{ maxWidth: 360, marginBottom: 12 }}
+        style={{ maxWidth: 360, marginBottom: 'var(--space-3)' }}
       />
 
       <Table

@@ -46,8 +46,8 @@ const AdminJournalPage = () => {
   });
 
   return (
-    <Card title="Jurnal" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Jurnal" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
           <Select
             showSearch

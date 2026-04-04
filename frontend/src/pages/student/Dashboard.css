@@ -1,0 +1,526 @@
+/* ═══════════════════════════════════════════════════════════
+   HEMIS Student Dashboard – Card-based Design
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── PAGE HEADER ──────────────────────────────────────────── */
+.hemis-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hemis-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.hemis-page-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.hemis-page-date {
+  font-size: var(--font-size-mid);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── DASHBOARD GRID ──────────────────────────────────────── */
+.hemis-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+/* ── CARD ─────────────────────────────────────────────────── */
+.hemis-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: box-shadow var(--transition-base);
+}
+
+.hemis-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.hemis-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hemis-card-title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.hemis-card-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hemis-card-date {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.hemis-card-action {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--bg-elevated-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+}
+
+.hemis-card-action:hover {
+  background: var(--accent);
+  color: var(--color-surface);
+}
+
+.hemis-card-body {
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}
+
+/* ── EMPTY STATE ──────────────────────────────────────────── */
+.hemis-empty {
+  text-align: center;
+  padding: var(--space-8) 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-mid);
+}
+
+/* ── ASSIGNMENT LIST ─────────────────────────────────────── */
+.hemis-assignment-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hemis-assignment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+  gap: var(--space-3);
+}
+
+.hemis-assignment-item:last-child {
+  border-bottom: none;
+}
+
+.hemis-assignment-item:hover {
+  background: var(--bg-elevated-2);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.hemis-assignment-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  flex: 1;
+}
+
+.hemis-assignment-title {
+  font-size: var(--font-size-mid);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hemis-assignment-meta {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+}
+
+.hemis-assignment-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+/* ── BADGES ───────────────────────────────────────────────── */
+.hemis-badge {
+  display: inline-flex;
+  padding: 3px var(--space-2-5);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-tiny);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.hemis-badge-success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.hemis-badge-warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.hemis-badge-primary {
+  background: var(--accent-10);
+  color: var(--accent-hover);
+}
+
+.hemis-badge-error {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.hemis-badge-muted {
+  background: var(--bg-elevated-3);
+  color: var(--color-text-secondary);
+}
+
+/* ── CARD STAT ────────────────────────────────────────────── */
+.hemis-card-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.hemis-badge-count {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-mid);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+}
+
+.hemis-stat-label {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+}
+
+/* ── SCHEDULE LIST ────────────────────────────────────────── */
+.hemis-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hemis-schedule-item {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.hemis-schedule-item:hover {
+  border-color: var(--lesson-color, var(--color-border));
+  box-shadow: var(--shadow-sm);
+}
+
+.hemis-schedule-color {
+  width: 4px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.hemis-schedule-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  flex: 1;
+  min-width: 0;
+}
+
+.hemis-schedule-type {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hemis-schedule-teacher {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-secondary);
+}
+
+.hemis-schedule-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.hemis-live-btn {
+  align-self: center;
+  padding: var(--space-1-5) var(--space-3);
+  background: var(--color-success);
+  color: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-tiny);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.hemis-live-btn:hover {
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-glow-success);
+}
+
+/* ── GRADES LIST ──────────────────────────────────────────── */
+.hemis-grades-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hemis-grade-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.hemis-grade-item:last-child {
+  border-bottom: none;
+}
+
+.hemis-grade-item:hover {
+  background: var(--bg-elevated-2);
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.hemis-grade-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  flex: 1;
+  min-width: 0;
+}
+
+.hemis-grade-subject {
+  font-size: var(--font-size-mid);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hemis-grade-meta {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+}
+
+.hemis-grade-score {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hemis-score-good {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.hemis-score-low {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+/* ── ATTENDANCE LIST ──────────────────────────────────────── */
+.hemis-attendance-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.hemis-attendance-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.hemis-attendance-item:last-child {
+  border-bottom: none;
+}
+
+.hemis-attendance-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hemis-attendance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hemis-attendance-subject {
+  font-size: var(--font-size-mid);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.hemis-attendance-time {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+}
+
+.hemis-attendance-status {
+  font-size: var(--font-size-tiny);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN STATS GRID
+   ═══════════════════════════════════════════════════════════ */
+.hemis-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.hemis-stat-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hemis-stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.hemis-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  flex-shrink: 0;
+}
+
+.hemis-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.hemis-stat-value {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+}
+
+.hemis-stat-title {
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .hemis-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+
+  .hemis-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small tablet */
+@media (max-width: 768px) {
+  .hemis-dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .hemis-page-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .hemis-card-body {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
+  .hemis-card-header {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .hemis-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+  }
+
+  .hemis-page-title {
+    font-size: var(--font-size-sub);
+  }
+}

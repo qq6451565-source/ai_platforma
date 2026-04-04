@@ -22,10 +22,10 @@ const StudentPlacementPage = () => {
       key: "student",
       render: (_: unknown, user: AdminUser) => (
         <Space direction="vertical" size={0}>
-          <span style={{ fontWeight: 600 }}>
+          <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
             {`${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username}
           </span>
-          <span style={{ color: "#64748b" }}>{user.username}</span>
+          <span style={{ color: "var(--color-text-secondary)" }}>{user.username}</span>
         </Space>
       ),
     },

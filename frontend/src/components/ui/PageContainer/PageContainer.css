@@ -26,18 +26,18 @@
 
 .page-title {
   font-size: var(--font-size-2xl);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
   margin-bottom: var(--space-2);
-  line-height: 1.2;
+  line-height: var(--leading-tight);
 }
 
 .page-subtitle {
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   margin: 0;
-  line-height: 1.6;
+  line-height: var(--leading-loose);
 }
 
 .page-header-actions {

@@ -4,18 +4,9 @@ import { useMemo, useState } from "react";
 import { fetchMaterials } from "../../api/materials";
 import { fetchLessons } from "../../api/lessons";
 import type { MaterialResource } from "../../types/material";
+import { toAbsoluteUrl } from "../../api/client";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
 const isVideo = (url?: string | null) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
 
 const renderResources = (resources: MaterialResource[], fallbackFile?: string | null) => {
@@ -27,16 +18,16 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
   if (!items.length) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
       {items.map((res) => {
         const key = res.id ?? `${res.resource_type}-${res.url || res.file}`;
         const label = res.title || res.file || res.resource_type;
         if (res.resource_type === "file" && res.file) {
           const fileUrl = toAbsoluteUrl(res.file);
           return (
-            <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div key={key} style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
               {isVideo(fileUrl) ? (
-                <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 6 }} />
+                <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
               ) : null}
               <a href={fileUrl} target="_blank" rel="noreferrer">
                 Yuklab olish
@@ -51,6 +42,7 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
 };
 
 const StudentMaterials = () => {
+  usePageTitle('nav.materials');
   const { data: materials, isLoading } = useQuery({
     queryKey: ["materials"],
     queryFn: fetchMaterials,
@@ -89,7 +81,7 @@ const StudentMaterials = () => {
     const files = resources.filter((r) => r.resource_type === "file" && r.file);
     if (!files.length) return "-";
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1)' }}>
         {files.map((res) => {
           const fileUrl = toAbsoluteUrl(res.file);
           const name = res.title || fileUrl.split("/").pop() || "Fayl";
@@ -117,7 +109,7 @@ const StudentMaterials = () => {
               <List.Item>
                 <Card hoverable onClick={() => setActiveSubject(subject.id)}>
                   <Typography.Text strong>{subject.name}</Typography.Text>
-                  <div className="caption" style={{ marginTop: 6 }}>{subject.count} ta material</div>
+                  <div className="caption" style={{ marginTop: 'var(--space-1-5)' }}>{subject.count} ta material</div>
                 </Card>
               </List.Item>
             )}
@@ -152,9 +144,9 @@ const StudentMaterials = () => {
                             : []) as MaterialResource[];
                         return (
                           <div style={{ width: "100%" }}>
-                            <div className="kv-grid" style={{ marginBottom: 10 }}>
+                            <div className="kv-grid" style={{ marginBottom: 'var(--space-2-5)' }}>
                               <span>Sarlavha</span>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)' }}>
                                 <strong>{item.title}</strong>
                               </div>
                               <span>Fan</span>
@@ -172,9 +164,9 @@ const StudentMaterials = () => {
                         );
                       })()}
                       {item.versions && item.versions.length > 1 ? (
-                        <details style={{ marginTop: 8 }}>
+                        <details style={{ marginTop: 'var(--space-2)' }}>
                           <summary>Versiyalar ({item.versions.length})</summary>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
                             {item.versions.map((ver) => (
                               <div key={ver.version}>
                                 <strong>v{ver.version}</strong>

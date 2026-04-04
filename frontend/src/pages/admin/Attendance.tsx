@@ -43,7 +43,7 @@ const AdminAttendancePage = () => {
         controller.loadingDirections ? (
           <Empty description="Yuklanmoqda..." />
         ) : controller.directions.length ? (
-          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
             {controller.directions.map((direction) => (
               <Card key={direction.id} hoverable onClick={() => controller.selectDirection(direction)}>
                 <Typography.Text strong>{direction.name}</Typography.Text>
@@ -55,14 +55,14 @@ const AdminAttendancePage = () => {
         )
       ) : !controller.selectedSubject ? (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <Button onClick={controller.resetDirectionSelection}>Orqaga</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {controller.selectedDirection.name}
             </Typography.Title>
           </div>
           {controller.subjectCards.length ? (
-            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+            <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
               {controller.subjectCards.map((subject) => (
                 <Card key={subject.id} hoverable onClick={() => controller.selectSubject(subject)}>
                   <Typography.Text strong>{subject.name}</Typography.Text>
@@ -75,14 +75,14 @@ const AdminAttendancePage = () => {
         </>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <Button onClick={controller.clearSelectedSubject}>Orqaga</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {controller.selectedSubject.name}
             </Typography.Title>
           </div>
 
-          <Space wrap style={{ marginBottom: 12 }}>
+          <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
             <Select
               allowClear
               placeholder="Guruh"

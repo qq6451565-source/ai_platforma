@@ -21,28 +21,28 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.72rem 0.9rem;
-  border-bottom: 0.0625rem solid rgba(66, 119, 202, 0.28);
+  border-bottom: 0.0625rem solid rgba(var(--live-border-rgb), 0.28);
 }
 
 .panel-header__title {
   font-size: 0.88rem;
-  font-weight: 700;
-  color: #c8deff;
-  letter-spacing: 0.02em;
+  font-weight: var(--font-weight-bold);
+  color: var(--live-text-secondary);
+  letter-spacing: var(--tracking-wide);
 }
 
 .panel-header__count {
   min-width: 1.5rem;
   height: 1.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.76rem;
-  font-weight: 700;
-  color: #8db0e6;
-  background: rgba(46, 89, 179, 0.2);
-  border: 0.0625rem solid rgba(66, 119, 202, 0.35);
+  font-weight: var(--font-weight-bold);
+  color: var(--live-text-muted);
+  background: rgba(var(--live-blue-rgb), 0.2);
+  border: 0.0625rem solid rgba(var(--live-border-rgb), 0.35);
   padding: 0 0.38rem;
 }
 
@@ -61,8 +61,8 @@
 }
 
 .panel-body::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(100, 140, 210, 0.3);
+  border-radius: var(--radius-full);
+  background: rgba(var(--live-border-mid-rgb), 0.3);
 }
 
 .panel-empty {
@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: center;
   min-height: 8rem;
-  color: #6a90cc;
+  color: var(--live-text-dim);
   font-size: 0.84rem;
   text-align: center;
 }
@@ -83,12 +83,12 @@
   gap: 0.6rem;
   padding: 0.48rem 0.52rem;
   border-radius: 0.78rem;
-  border: 2px solid rgba(86, 126, 197, 0.28);
-  background: rgba(7, 18, 44, 0.88);
+  border: 2px solid rgba(var(--live-border-rgb), 0.28);
+  background: rgba(var(--live-bg-rgb), 0.88);
   transition:
-    border-color 0.3s ease,
-    box-shadow 0.3s ease,
-    background 0.2s ease;
+    border-color var(--transition-slow),
+    box-shadow var(--transition-slow),
+    background var(--transition-base);
 }
 
 .student-card--clickable {
@@ -96,51 +96,51 @@
 }
 
 .student-card--clickable:hover {
-  background: rgba(12, 28, 64, 0.92);
+  background: rgba(var(--live-bg-rgb), 0.92);
 }
 
 /* 🟢 Yuz aniqlandi */
 .student-card--verified {
-  border-color: #11d680;
+  border-color: var(--live-green-text);
   box-shadow:
-    0 0 0 1px rgba(17, 214, 128, 0.14),
-    0 0 12px rgba(17, 214, 128, 0.22);
-  background: rgba(7, 22, 44, 0.92);
+    0 0 0 1px rgba(var(--live-green-rgb), 0.14),
+    0 0 12px rgba(var(--live-green-rgb), 0.22);
+  background: rgba(var(--live-bg-rgb), 0.92);
 }
 
 /* 🔴 Yuz ko'rinmaydi */
 .student-card--unverified {
-  border-color: #ff4f63;
+  border-color: var(--live-red-text);
   box-shadow:
-    0 0 0 1px rgba(255, 79, 99, 0.12),
-    0 0 12px rgba(255, 79, 99, 0.2);
-  background: rgba(22, 7, 12, 0.9);
+    0 0 0 1px rgba(var(--live-red-rgb), 0.12),
+    0 0 12px rgba(var(--live-red-rgb), 0.2);
+  background: rgba(var(--live-unverified-rgb), 0.9);
   animation: pulse-red 2.5s ease-in-out infinite;
 }
 
 /* 🔵 Mikrofon ochiq / sahnadagi talaba */
 .student-card--audio {
-  border-color: #2e8dff;
+  border-color: var(--live-blue-light);
   box-shadow:
-    0 0 0 1px rgba(46, 141, 255, 0.14),
-    0 0 14px rgba(46, 141, 255, 0.28);
-  background: rgba(6, 15, 40, 0.94);
+    0 0 0 1px rgba(var(--live-blue-rgb), 0.14),
+    0 0 14px rgba(var(--live-blue-rgb), 0.28);
+  background: rgba(var(--live-bg-deep-rgb), 0.94);
   animation: pulse-blue 2s ease-in-out infinite;
 }
 
 /* ⬜ Tekshirilmoqda */
 .student-card--checking {
-  border-color: rgba(100, 130, 190, 0.38);
+  border-color: rgba(var(--live-border-mid-rgb), 0.38);
 }
 
 @keyframes pulse-red {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 79, 99, 0.12), 0 0 10px rgba(255, 79, 99, 0.18); }
-  50%       { box-shadow: 0 0 0 1px rgba(255, 79, 99, 0.2),  0 0 18px rgba(255, 79, 99, 0.32); }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(var(--live-red-rgb), 0.12), 0 0 10px rgba(var(--live-red-rgb), 0.18); }
+  50%       { box-shadow: 0 0 0 1px rgba(var(--live-red-rgb), 0.2),  0 0 18px rgba(var(--live-red-rgb), 0.32); }
 }
 
 @keyframes pulse-blue {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(46, 141, 255, 0.12), 0 0 10px rgba(46, 141, 255, 0.22); }
-  50%       { box-shadow: 0 0 0 1px rgba(46, 141, 255, 0.22), 0 0 20px rgba(46, 141, 255, 0.4); }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(var(--live-blue-rgb), 0.12), 0 0 10px rgba(var(--live-blue-rgb), 0.22); }
+  50%       { box-shadow: 0 0 0 1px rgba(var(--live-blue-rgb), 0.22), 0 0 20px rgba(var(--live-blue-rgb), 0.4); }
 }
 
 /* ─── Thumbnail (mini video yoki avatar) ───────────────────────── */
@@ -151,8 +151,8 @@
   border-radius: 0.56rem;
   overflow: hidden;
   flex-shrink: 0;
-  background: rgba(6, 18, 47, 0.92);
-  border: 0.0625rem solid rgba(108, 144, 208, 0.28);
+  background: rgba(var(--live-bg-deep-rgb), 0.92);
+  border: 0.0625rem solid rgba(var(--live-border-mid-rgb), 0.28);
 }
 
 .mini-video-element,
@@ -169,10 +169,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #dceaff;
+  color: var(--live-text);
   font-size: 1.2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, rgba(30, 58, 108, 0.95), rgba(17, 38, 78, 0.95));
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, rgba(var(--live-avatar-bg-rgb), 0.95), rgba(var(--live-avatar-bg2-rgb), 0.95));
 }
 
 /* Mikrofon dot — ko'k, pastda o'ng */
@@ -183,9 +183,9 @@
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background: #2e8dff;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 6px #2e8dff;
+  background: var(--live-blue-light);
+  border: 1.5px solid rgba(var(--color-white-rgb), 0.5);
+  box-shadow: 0 0 6px var(--live-blue-light);
   animation: mic-blink 1.2s ease-in-out infinite;
 }
 
@@ -200,8 +200,8 @@
   bottom: 0.1rem;
   right: 0.1rem;
   font-size: 0.72rem;
-  line-height: 1;
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+  line-height: var(--leading-none);
+  filter: drop-shadow(0 0 3px rgba(var(--color-black-rgb), 0.6));
 }
 
 /* ─── Talaba ma'lumoti ─────────────────────────────────────────── */
@@ -215,21 +215,21 @@
 
 .card-info__name {
   font-size: 0.82rem;
-  font-weight: 600;
-  color: #e2eeff;
+  font-weight: var(--font-weight-semibold);
+  color: var(--live-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
+  line-height: var(--leading-tight);
 }
 
 .card-info__group {
   font-size: 0.7rem;
-  color: #7a9dcc;
+  color: var(--live-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1;
+  line-height: var(--leading-none);
 }
 
 /* ─── Yuz holati badge ─────────────────────────────────────────── */
@@ -238,37 +238,37 @@
   align-items: center;
   width: fit-content;
   padding: 0.14rem 0.42rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 0.62rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   border: 0.0625rem solid transparent;
   white-space: nowrap;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--tracking-normal);
   margin-top: 0.08rem;
 }
 
 .fs-badge--green {
-  color: #7affc9;
-  border-color: rgba(17, 214, 128, 0.55);
-  background: rgba(17, 214, 128, 0.12);
+  color: var(--live-green-bright);
+  border-color: rgba(var(--live-green-rgb), 0.55);
+  background: rgba(var(--live-green-rgb), 0.12);
 }
 
 .fs-badge--red {
-  color: #ff9aaa;
-  border-color: rgba(255, 79, 99, 0.55);
-  background: rgba(255, 79, 99, 0.12);
+  color: var(--live-red-text);
+  border-color: rgba(var(--live-red-rgb), 0.55);
+  background: rgba(var(--live-red-rgb), 0.12);
 }
 
 .fs-badge--orange {
-  color: #ffd08a;
-  border-color: rgba(243, 164, 72, 0.55);
-  background: rgba(243, 164, 72, 0.12);
+  color: var(--live-orange-text);
+  border-color: rgba(var(--live-orange-rgb), 0.55);
+  background: rgba(var(--live-orange-rgb), 0.12);
 }
 
 .fs-badge--gray {
-  color: #8aabda;
-  border-color: rgba(134, 166, 219, 0.35);
-  background: rgba(134, 166, 219, 0.08);
+  color: var(--live-text-muted);
+  border-color: rgba(var(--live-border-mid-rgb), 0.35);
+  background: rgba(var(--live-border-mid-rgb), 0.08);
 }
 
 /* ─── Mic tugmasi (o'qituvchi uchun) ──────────────────────────── */
@@ -276,29 +276,29 @@
   flex-shrink: 0;
   width: 2rem;
   height: 2rem;
-  border-radius: 0.5rem;
-  border: 0.0625rem solid rgba(86, 126, 197, 0.4);
-  background: rgba(8, 22, 54, 0.8);
-  color: #8db0e6;
+  border-radius: var(--radius-base);
+  border: 0.0625rem solid rgba(var(--live-border-rgb), 0.4);
+  background: rgba(var(--live-bg-rgb), 0.8);
+  color: var(--live-text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
   padding: 0;
 }
 
 .card-mic-btn:hover {
-  border-color: rgba(130, 168, 235, 0.65);
-  background: rgba(20, 48, 100, 0.88);
+  border-color: rgba(var(--live-border-light-rgb), 0.65);
+  background: rgba(var(--live-bg-rgb), 0.88);
 }
 
 .card-mic-btn--active {
-  border-color: #2e8dff;
-  background: rgba(46, 141, 255, 0.2);
-  color: #80c8ff;
-  box-shadow: 0 0 8px rgba(46, 141, 255, 0.3);
+  border-color: var(--live-blue-light);
+  background: rgba(var(--live-blue-rgb), 0.2);
+  color: var(--live-blue-light);
+  box-shadow: 0 0 8px rgba(var(--live-blue-rgb), 0.3);
 }
 
 /* ─── Responsive ───────────────────────────────────────────────── */

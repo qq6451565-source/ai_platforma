@@ -47,7 +47,7 @@ export const StudentGridSection: React.FC<StudentGridSectionProps> = ({
         <span className="grid-title">
           {t("live.grid.students", { count: participants.filter((p) => !p.is_teacher).length })}
         </span>
-        <button className="close-btn" onClick={onClose} title={t("live.grid.hide")}>
+        <button type="button" className="close-btn" onClick={onClose} title={t("live.grid.hide")}>
           {t("common.close")}
         </button>
       </div>

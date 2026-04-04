@@ -47,14 +47,14 @@ const renderDocumentPreview = (title: string, src?: string) => (
   <Card
     size="small"
     title={title}
-    styles={{ body: { padding: 12 } }}
+    styles={{ body: { padding: 'var(--space-3)' } }}
     style={{ height: "100%" }}
   >
     {src ? (
       <Image
         src={src}
         alt={title}
-        style={{ width: "100%", borderRadius: 12, objectFit: "cover" }}
+        style={{ width: "100%", borderRadius: 'var(--radius-lg)', objectFit: "cover" }}
         preview
       />
     ) : (
@@ -81,7 +81,7 @@ const renderVerificationCard = (verification: EnrollmentVerification, index: num
         </Text>
       ) : null}
       {verification.event_summary?.length ? (
-        <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "grid", gap: 'var(--space-1-5)' }}>
           {verification.event_summary.map((line) => (
             <Text key={`${verification.created_at}-${line}`} type="secondary">
               {line}
@@ -215,17 +215,17 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
 
         {controller.blockedActionItems.length ? (
           <Card size="small" title="Amal cheklovlari">
-            <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: 'var(--space-2-5)' }}>
               {controller.blockedActionItems.map((item) => (
                 <div
                   key={item.key}
                   style={{
                     display: "grid",
-                    gap: 4,
-                    padding: 12,
-                    border: "1px solid #f0f0f0",
-                    borderRadius: 12,
-                    background: "#fafafa",
+                    gap: 'var(--space-1)',
+                    padding: 'var(--space-3)',
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 'var(--radius-lg)',
+                    background: "var(--bg-elevated-2)",
                   }}
                 >
                   <Space wrap>
@@ -288,7 +288,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
                     </Descriptions.Item>
                   </Descriptions>
                   {controller.detailSummary.event_summary?.length ? (
-                    <div style={{ display: "grid", gap: 6 }}>
+                    <div style={{ display: "grid", gap: 'var(--space-1-5)' }}>
                       {controller.detailSummary.event_summary.map((line) => (
                         <Text key={line} type="secondary">
                           {line}

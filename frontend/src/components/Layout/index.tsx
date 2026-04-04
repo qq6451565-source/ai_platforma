@@ -1,17 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd';
+import { Avatar, Dropdown } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
   LogoutOutlined,
+  BellOutlined,
+  HomeOutlined,
+  RightOutlined,
+  MenuOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../LanguageSwitcher';
 import type { MenuProps } from 'antd';
-
-const { Header, Sider, Content } = Layout;
+import './HemisLayout.css';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -21,6 +25,21 @@ interface LayoutProps {
   title: string;
 }
 
+/* ── helpers ───────────────────────────────────────────── */
+const flatItems = (items: MenuProps['items']): any[] => {
+  if (!items) return [];
+  const flat: any[] = [];
+  for (const item of items) {
+    if (!item) continue;
+    if ('children' in item && Array.isArray((item as any).children)) {
+      flat.push(...(item as any).children);
+    } else {
+      flat.push(item);
+    }
+  }
+  return flat;
+};
+
 export const ResponsiveLayout: React.FC<LayoutProps> = ({
   children,
   user,
@@ -29,7 +48,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
   title,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const { token } = theme.useToken();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -38,16 +57,11 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     ? location.pathname.replace('/app/', '')
     : '';
 
-  const defaultOpenKeys = useMemo(() => {
-    if (!items) return [];
-    const keys: string[] = [];
-    for (const item of items) {
-      if (item && 'children' in item && Array.isArray((item as any).children)) {
-        const hasActive = (item as any).children.some((child: any) => child?.key === selectedKey);
-        if (hasActive) keys.push(item.key as string);
-      }
-    }
-    return keys;
+  /* breadcrumb from route */
+  const breadcrumb = useMemo(() => {
+    const all = flatItems(items);
+    const found = all.find((i) => i?.key === selectedKey);
+    return found?.label || 'Dashboard';
   }, [items, selectedKey]);
 
   const userMenuItems: MenuProps['items'] = [
@@ -67,89 +81,189 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     },
   ];
 
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        trigger={null}
-        width={220}
-        style={{
-          background: token.colorBgContainer,
-          borderRight: `1px solid ${token.colorBorderSecondary}`,
-          overflow: 'auto',
-          height: '100vh',
-          position: 'sticky',
-          top: 0,
-          left: 0,
-        }}
-      >
-        <div style={{
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 16px',
-          fontWeight: 700,
-          fontSize: collapsed ? 18 : 16,
-          color: token.colorPrimary,
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
-          letterSpacing: '0.02em',
-        }}>
-          {collapsed ? 'U' : 'University LMS'}
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          defaultOpenKeys={defaultOpenKeys}
-          items={items}
-          style={{ border: 'none', marginTop: 8 }}
-          onClick={({ key }) => navigate(`/app/${key}`)}
-        />
-      </Sider>
+  /* render sidebar nav items */
+  const renderNavItems = (navItems: MenuProps['items'], onItemClick?: () => void) => {
+    if (!navItems) return null;
+    return navItems.map((item: any) => {
+      if (!item) return null;
+      if ('children' in item && Array.isArray(item.children)) {
+        return (
+          <div key={item.key} className="hemis-nav-group">
+            <div className="hemis-nav-group-label">
+              {item.icon && <span className="hemis-nav-icon">{item.icon}</span>}
+              {!collapsed && <span>{item.label}</span>}
+            </div>
+            {!collapsed && item.children.map((child: any) => (
+              <NavLink
+                key={child.key}
+                to={`/app/${child.key}`}
+                className={({ isActive }) => `hemis-nav-item ${isActive ? 'active' : ''}`}
+                onClick={onItemClick}
+              >
+                <span className="hemis-nav-icon">{child.icon}</span>
+                <span className="hemis-nav-label">{child.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        );
+      }
+      return (
+        <NavLink
+          key={item.key}
+          to={`/app/${item.key}`}
+          className={({ isActive }) => `hemis-nav-item ${isActive ? 'active' : ''}`}
+          onClick={onItemClick}
+        >
+          <span className="hemis-nav-icon">{item.icon}</span>
+          {!collapsed && <span className="hemis-nav-label">{item.label}</span>}
+        </NavLink>
+      );
+    });
+  };
 
-      <Layout>
-        <Header style={{
-          background: token.colorBgContainer,
-          borderBottom: `1px solid ${token.colorBorderSecondary}`,
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          height: 64,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-            />
-            <span style={{ fontWeight: 600, fontSize: 15, color: token.colorText }}>
-              {title}
-            </span>
+  /* bottom nav items (mobile) — first 5 */
+  const bottomItems = useMemo(() => flatItems(items).slice(0, 5), [items]);
+
+  return (
+    <div className={`hemis-layout ${collapsed ? 'hemis-collapsed' : ''}`}>
+      {/* ── SIDEBAR (Desktop) ───────────────────────────── */}
+      <aside className={`hemis-sidebar ${collapsed ? 'collapsed' : ''}`}>
+        <div className="hemis-sidebar-header">
+          <div className="hemis-logo" role="button" tabIndex={0} onClick={() => navigate(`/app/${user?.role}/dashboard`)}>
+            <div className="hemis-logo-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2"/>
+                <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            {!collapsed && (
+              <div className="hemis-logo-text">
+                <span className="hemis-logo-title">HEMIS</span>
+                <span className="hemis-logo-subtitle">{title}</span>
+              </div>
+            )}
+          </div>
+          <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(!collapsed)}>
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </button>
+        </div>
+
+        <nav className="hemis-sidebar-nav">
+          {renderNavItems(items)}
+        </nav>
+
+        <div className="hemis-sidebar-footer">
+          <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="topRight">
+            <div className="hemis-user-card">
+              <Avatar
+                size={36}
+                icon={<UserOutlined />}
+                className="hemis-user-avatar"
+              />
+              {!collapsed && (
+                <div className="hemis-user-info">
+                  <span className="hemis-user-name">
+                    {user?.first_name} {user?.last_name}
+                  </span>
+                  <span className="hemis-user-role">{title}</span>
+                </div>
+              )}
+            </div>
+          </Dropdown>
+        </div>
+      </aside>
+
+      {/* ── MAIN AREA ───────────────────────────────────── */}
+      <div className="hemis-main">
+        {/* ── HEADER ─────────────────────────────────────── */}
+        <header className="hemis-header">
+          <div className="hemis-header-left">
+            {/* Mobile hamburger */}
+            <button type="button" className="hemis-mobile-toggle" onClick={() => setMobileOpen(true)}>
+              <MenuOutlined />
+            </button>
+            <nav className="hemis-breadcrumb">
+              <HomeOutlined className="hemis-breadcrumb-home" />
+              <RightOutlined className="hemis-breadcrumb-sep" />
+              <span className="hemis-breadcrumb-current">{breadcrumb}</span>
+            </nav>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="hemis-header-right">
             <LanguageSwitcher />
+            <button type="button" className="hemis-notification-btn">
+              <BellOutlined />
+            </button>
             <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Avatar icon={<UserOutlined />} style={{ backgroundColor: token.colorPrimary }} />
-                <span style={{ fontSize: 14, color: token.colorText }}>
+              <div className="hemis-header-user">
+                <Avatar
+                  size={32}
+                  icon={<UserOutlined />}
+                  className="hemis-user-avatar"
+                />
+                <span className="hemis-header-username">
                   {user?.first_name || user?.username}
                 </span>
               </div>
             </Dropdown>
           </div>
-        </Header>
+        </header>
 
-        <Content style={{ padding: 24, overflow: 'auto' }}>
+        {/* ── CONTENT ────────────────────────────────────── */}
+        <main className="hemis-content">
           {children}
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+
+      {/* ── MOBILE OVERLAY SIDEBAR ──────────────────────── */}
+      {mobileOpen && (
+        <div className="hemis-mobile-overlay" onClick={() => setMobileOpen(false)}>
+          <aside className="hemis-mobile-sidebar" onClick={(e) => e.stopPropagation()}>
+            <div className="hemis-sidebar-header">
+              <div className="hemis-logo" role="button" tabIndex={0} onClick={() => { navigate(`/app/${user?.role}/dashboard`); setMobileOpen(false); }}>
+                <div className="hemis-logo-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="hemis-logo-text">
+                  <span className="hemis-logo-title">HEMIS</span>
+                  <span className="hemis-logo-subtitle">{title}</span>
+                </div>
+              </div>
+              <button type="button" className="hemis-collapse-btn" onClick={() => setMobileOpen(false)}>
+                <CloseOutlined />
+              </button>
+            </div>
+
+            <nav className="hemis-sidebar-nav">
+              {renderNavItems(items, () => setMobileOpen(false))}
+            </nav>
+
+            <div className="hemis-sidebar-footer">
+              <button type="button" className="hemis-logout-btn" onClick={() => { onLogout(); setMobileOpen(false); }}>
+                <LogoutOutlined />
+                <span>{t('common.logout')}</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ── BOTTOM NAV (Mobile) ─────────────────────────── */}
+      <nav className="hemis-bottom-nav">
+        {bottomItems.map((item: any) => (
+          <NavLink
+            key={item.key}
+            to={`/app/${item.key}`}
+            className={({ isActive }) => `hemis-bottom-item ${isActive ? 'active' : ''}`}
+          >
+            <span className="hemis-bottom-icon">{item.icon}</span>
+            <span className="hemis-bottom-label">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </div>
   );
 };

@@ -55,9 +55,9 @@
 .stat-card-title {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wider);
 }
 
 .stat-card-icon {
@@ -69,7 +69,7 @@
   border-radius: var(--radius-md);
   background: var(--accent-10);
   color: var(--accent);
-  font-size: 18px;
+  font-size: var(--font-size-sub);
 }
 
 .stat-card-success .stat-card-icon {
@@ -89,10 +89,10 @@
 
 .stat-card-value {
   font-size: var(--font-size-3xl);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
-  line-height: 1;
+  line-height: var(--leading-none);
 }
 
 .stat-card-trend {
@@ -100,7 +100,7 @@
   align-items: center;
   gap: var(--space-1);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .stat-card-trend.positive {
@@ -112,7 +112,7 @@
 }
 
 .stat-card-trend-icon {
-  font-size: 16px;
+  font-size: var(--font-size-norm);
 }
 
 @media (max-width: 640px) {

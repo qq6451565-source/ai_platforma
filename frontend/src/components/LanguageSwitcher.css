@@ -3,7 +3,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: #FFFFFF;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -22,7 +22,7 @@
 }
 
 .current-code {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
 }
@@ -55,7 +55,7 @@
   backdrop-filter: blur(10px) !important;
   border: 1px solid var(--color-border) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: var(--shadow-xl) !important;
 }
 
 .ant-dropdown-menu-item {
@@ -71,5 +71,5 @@
 .ant-dropdown-menu-item-selected {
   background: var(--accent-10) !important;
   color: var(--accent) !important;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }

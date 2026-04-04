@@ -25,8 +25,8 @@ const SubjectsPage = () => {
   });
 
   return (
-    <Card title="Fanlar" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Fanlar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
           <Input />
         </Form.Item>
@@ -76,9 +76,9 @@ const SubjectsPage = () => {
             </Popconfirm>,
           ]}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
             <strong>{s.name}</strong>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 'var(--space-1-5)' }}>
               {(s.direction_names && s.direction_names.length
                 ? s.direction_names
                 : (s.directions || []).map((id) => directionMap.get(id) || `Yo'nalish #${id}`)

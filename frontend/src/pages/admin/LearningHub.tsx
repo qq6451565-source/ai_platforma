@@ -1,17 +1,20 @@
-﻿import { useEffect, useState } from "react";
-import { Tabs } from "antd";
+﻿import { lazy, Suspense, useEffect, useState } from "react";
+import { Tabs, Spin } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import AdminLessons from "./Lessons";
-import AdminMaterials from "./Materials";
-import AdminAssignments from "./Assignments";
-import AdminSubmissions from "./Submissions";
-import AdminTests from "./Tests";
-import AdminAttendance from "./Attendance";
-import AdminGradebook from "./Gradebook";
+import { usePageTitle } from "../../hooks/usePageTitle";
+
+const AdminLessons = lazy(() => import("./Lessons"));
+const AdminMaterials = lazy(() => import("./Materials"));
+const AdminAssignments = lazy(() => import("./Assignments"));
+const AdminSubmissions = lazy(() => import("./Submissions"));
+const AdminTests = lazy(() => import("./Tests"));
+const AdminAttendance = lazy(() => import("./Attendance"));
+const AdminGradebook = lazy(() => import("./Gradebook"));
 
 const LearningHubPage = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.learning');
   const location = useLocation();
   const navigate = useNavigate();
   const sections = ["lessons", "materials", "assignments", "submissions", "tests", "attendance", "gradebook"];
@@ -40,7 +43,8 @@ const LearningHubPage = () => {
     navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
   };
 
-  const renderTab = (key: string, node: JSX.Element) => (activeKey === key ? node : null);
+  const renderTab = (key: string, node: JSX.Element) =>
+    activeKey === key ? <Suspense fallback={<Spin style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }} />}>{node}</Suspense> : null;
 
   return (
     <Tabs

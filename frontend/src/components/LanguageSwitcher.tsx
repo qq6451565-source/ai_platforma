@@ -9,7 +9,7 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '8px' }}>
+    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
       <Button
         type={i18n.language === 'uz' ? 'primary' : 'default'}
         onClick={() => changeLanguage('uz')}

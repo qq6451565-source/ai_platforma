@@ -10,7 +10,7 @@ const AdminProctoringPage = () => {
   const { data: events, isLoading: eventsLoading } = useQuery(adminQueryOptions.proctorEvents());
 
   return (
-    <Card title="Proktor (Proctoring)" style={{ marginBottom: 16 }}>
+    <Card title="Proktor (Proctoring)" style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {

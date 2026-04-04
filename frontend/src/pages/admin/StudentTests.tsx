@@ -10,7 +10,7 @@ const AdminStudentTestsPage = () => {
   const { data: answers, isLoading: answersLoading } = useQuery(adminQueryOptions.studentAnswers());
 
   return (
-    <Card title="Student testlari" style={{ marginBottom: 16 }}>
+    <Card title="Student testlari" style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {

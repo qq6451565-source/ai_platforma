@@ -6,21 +6,11 @@ import { fetchAllSubmissions, gradeSubmission } from "../../api/submissions";
 import { fetchTeacherSubjects } from "../../api/teacherSubjects";
 import { fetchSubjects } from "../../api/subjects";
 import { fetchGroups } from "../../api/groups";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
+import { toAbsoluteUrl } from "../../api/client";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const TeacherSubmissions = () => {
+  usePageTitle('nav.submissions');
   const qc = useQueryClient();
   const { data: subs, isLoading } = useQuery({
     queryKey: ["submissions"],
@@ -142,8 +132,8 @@ const TeacherSubmissions = () => {
                   setSelectedGroupId(null);
                 }}
               >
-                <div style={{ fontWeight: 600 }}>{card.name}</div>
-                <div style={{ opacity: 0.7, marginTop: 6 }}>{card.count} ta yuborilgan</div>
+                <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
+                <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta yuborilgan</div>
               </Card>
             ))}
           </div>
@@ -179,8 +169,8 @@ const TeacherSubmissions = () => {
               <div className="card-grid">
                 {groupCards.map((card) => (
                   <Card key={card.id} hoverable onClick={() => setSelectedGroupId(card.id)}>
-                    <div style={{ fontWeight: 600 }}>{card.name}</div>
-                    <div style={{ opacity: 0.7, marginTop: 6 }}>{card.count} ta yuborilgan</div>
+                    <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
+                    <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta yuborilgan</div>
                   </Card>
                 ))}
               </div>
@@ -214,7 +204,7 @@ const TeacherSubmissions = () => {
                         item.submitted_at ? dayjs(item.submitted_at).format("DD.MM.YYYY HH:mm") : "-"
                       }`}
                     />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                       {item.file ? (
                         <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
                           Fayl
@@ -241,7 +231,7 @@ const TeacherSubmissions = () => {
         okText="Saqlash"
       >
         <InputNumber
-          style={{ width: "100%", marginBottom: 12 }}
+          style={{ width: "100%", marginBottom: 'var(--space-3)' }}
           placeholder="Baho (0-100)"
           value={grade === null ? undefined : grade}
           onChange={(v) => setGrade(v ?? null)}

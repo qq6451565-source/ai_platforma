@@ -1,14 +1,17 @@
-﻿import { useEffect, useState } from "react";
-import { Tabs } from "antd";
+﻿import { lazy, Suspense, useEffect, useState } from "react";
+import { Tabs, Spin } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import AdminDirections from "./Directions";
-import AdminSubjects from "./Subjects";
-import AdminTeacherSubjects from "./TeacherSubjects";
-import AdminGroups from "./Groups";
+import { usePageTitle } from "../../hooks/usePageTitle";
+
+const AdminDirections = lazy(() => import("./Directions"));
+const AdminSubjects = lazy(() => import("./Subjects"));
+const AdminTeacherSubjects = lazy(() => import("./TeacherSubjects"));
+const AdminGroups = lazy(() => import("./Groups"));
 
 const UniversityHubPage = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.university');
   const location = useLocation();
   const navigate = useNavigate();
   const sections = ["directions", "subjects", "teacher-subjects", "groups"];
@@ -32,7 +35,8 @@ const UniversityHubPage = () => {
     navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
   };
 
-  const renderTab = (key: string, node: JSX.Element) => (activeKey === key ? node : null);
+  const renderTab = (key: string, node: JSX.Element) =>
+    activeKey === key ? <Suspense fallback={<Spin style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '40vh' }} />}>{node}</Suspense> : null;
 
   return (
     <Tabs

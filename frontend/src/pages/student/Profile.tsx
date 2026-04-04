@@ -9,11 +9,13 @@ import {
   getPendingCredentials,
   type PendingCredentials,
 } from "../../utils/pendingCredentials";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const AI_AUTO_RETRY_LIMIT = 3;
 const AI_AUTO_RETRY_DELAY_MS = 90_000;
 
 const StudentProfile = () => {
+  usePageTitle('nav.profile');
   const qc = useQueryClient();
   const { data: user } = useMe();
 
@@ -200,7 +202,7 @@ const StudentProfile = () => {
           <Form form={profileForm} layout="vertical" onFinish={onSaveProfile}>
             <div
               className="d-grid"
-              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}
+              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "var(--space-4)" }}
             >
             <Form.Item label="Ism" name="first_name">
                 <Input />
@@ -261,7 +263,7 @@ const StudentProfile = () => {
         <Alert
           type="warning"
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 'var(--space-4)' }}
           message="Arizangiz qabul qilindi"
           description="Admin tasdiqlaguncha hisob kutish rejimida. Hozircha faqat profil sahifasi faol."
         />
@@ -271,24 +273,24 @@ const StudentProfile = () => {
         <Alert
           type={aiCheckType}
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 'var(--space-4)' }}
           message={aiChecking ? "AI tekshiruv..." : "AI tekshiruv holati"}
           description={aiCheckMessage}
         />
       )}
 
       {isPendingStudent && pendingCredentials && (
-        <Card style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 8, fontWeight: 600 }}>Kirish ma'lumotlari</div>
-          <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
+        <Card style={{ marginBottom: 'var(--space-4)' }}>
+          <div style={{ marginBottom: 'var(--space-2)', fontWeight: 'var(--font-weight-semibold)' }}>Kirish ma'lumotlari</div>
+          <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-3)" }}>
             <div><strong>Username:</strong> {pendingCredentials.username}</div>
             <div><strong>Parol:</strong> {pendingCredentials.password}</div>
           </div>
         </Card>
       )}
 
-      <Card style={{ marginBottom: 16 }}>
-        <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
+      <Card style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--space-3)" }}>
           <div><strong>Login:</strong> {user?.username || "-"}</div>
           <div><strong>Holat:</strong> {profileStatusText}</div>
           <div><strong>Rol:</strong> {user?.role || "-"}</div>

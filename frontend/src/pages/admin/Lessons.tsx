@@ -185,8 +185,8 @@ const AdminLessonsPage = () => {
   };
 
   return (
-    <Card title="Dars jadvali" style={{ marginBottom: 16 }} loading={isLoading}>
-      <Space size={12} wrap style={{ marginBottom: 12 }}>
+    <Card title="Dars jadvali" style={{ marginBottom: 'var(--space-4)' }} loading={isLoading}>
+      <Space size={12} wrap style={{ marginBottom: 'var(--space-3)' }}>
         <Select
           allowClear
           placeholder="Fan bo'yicha filter"
@@ -384,7 +384,7 @@ const AdminLessonsPage = () => {
               >
                 <Space direction="vertical" size={0}>
                   <div>{`${subjectLabel} - ${groupLabel}`}</div>
-                  <div style={{ fontSize: 12, color: "#6a7280" }}>{timeLabel}</div>
+                  <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>{timeLabel}</div>
                 </Space>
               </List.Item>
             );

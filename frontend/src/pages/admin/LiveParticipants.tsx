@@ -23,7 +23,7 @@ const LiveParticipantsPage = () => {
   });
 
   return (
-    <Card title="Live qatnashuvchilar" style={{ marginBottom: 16 }}>
+    <Card title="Live qatnashuvchilar" style={{ marginBottom: 'var(--space-4)' }}>
       <Table
         rowKey="id"
         loading={isLoading}

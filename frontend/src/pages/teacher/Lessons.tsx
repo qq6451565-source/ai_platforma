@@ -4,10 +4,12 @@ import { fetchLessons } from "../../api/lessons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../../hooks/usePageTitle";
 import dayjs from "dayjs";
 
 const TeacherLessons = () => {
   const { t } = useTranslation();
+  usePageTitle('nav.lessons');
   const { data: lessons } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
@@ -79,7 +81,7 @@ const TeacherLessons = () => {
   return (
     <div className="page-shell page-container animate-fade-in">
       <h1 className="page-title mb-6">{t('schedule.title')}</h1>
-      <Card style={{ marginBottom: 24 }}>
+      <Card style={{ marginBottom: 'var(--space-6)' }}>
         <div className="d-flex justify-between items-center flex-wrap gap-4">
           <div>
             <div className="text-secondary body-sm">{viewMode === "week" ? t('common.week') : t('common.month')}</div>
@@ -227,7 +229,7 @@ const TeacherLessons = () => {
               >
                 <Space direction="vertical" size={0}>
                   <div>{`${subjectLabel} - ${groupLabel}`}</div>
-                  <div style={{ fontSize: 12, color: "#6b7280" }}>{timeLabel}</div>
+                  <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>{timeLabel}</div>
                 </Space>
               </List.Item>
             );

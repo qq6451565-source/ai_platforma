@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchLessons } from "../../api/lessons";
 import { createLiveRoom } from "../../api/live";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const TeacherLive = () => {
+  usePageTitle('nav.live');
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: lessons, isLoading } = useQuery({

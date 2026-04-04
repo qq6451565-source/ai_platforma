@@ -2,7 +2,7 @@
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #0a0b1e 0%, #2e1a47 100%);
+  background: linear-gradient(135deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 100%);
 }
 
 .aurora-bg {
@@ -19,7 +19,7 @@
   position: absolute;
   width: 200%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.3;
   animation: aurora-drift 15s infinite linear;
 }
@@ -32,7 +32,7 @@
 
 .aurora-line-2 {
   top: 50%;
-  background: linear-gradient(90deg, transparent, var(--neon-magenta), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-2), transparent);
   animation-duration: 18s;
   animation-delay: -5s;
   filter: blur(3px);
@@ -63,17 +63,17 @@
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem 2rem 0;
+  padding: var(--space-8) var(--space-8) 0;
 }
 
 .landing-logo {
   font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  font-weight: var(--font-weight-extrabold);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .landing-content {
@@ -82,7 +82,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4rem 2rem;
+  padding: var(--space-16) var(--space-8);
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -108,7 +108,7 @@
   width: 300px;
   height: 300px;
   margin: 0 auto 3rem;
-  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.3));
+  filter: drop-shadow(0 0 30px var(--accent-glow));
   animation: float 6s ease-in-out infinite;
 }
 
@@ -224,18 +224,18 @@
 }
 
 .hero-title {
-  font-size: 4rem;
-  font-weight: 800;
-  margin-bottom: 1.5rem;
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-extrabold);
+  margin-bottom: var(--space-6);
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  color: var(--neon-text);
-  line-height: 1.8;
-  margin-bottom: 3rem;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  line-height: var(--leading-wide);
+  margin-bottom: 6rem;
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
@@ -244,7 +244,7 @@
 
 .cta-buttons {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-6);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -252,17 +252,17 @@
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  gap: var(--space-8);
   width: 100%;
   max-width: 1200px;
 }
 
 .feature-card {
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
   animation: fadeInUp 1s ease-out;
   animation-fill-mode: both;
-  padding: 2.5rem 2rem;
+  padding: var(--space-10) var(--space-8);
 }
 
 .feature-card:nth-child(1) {
@@ -282,29 +282,29 @@
 }
 
 .feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.5));
+  font-size: var(--font-size-4xl);
+  margin-bottom: var(--space-4);
+  filter: drop-shadow(0 0 10px var(--accent-glow));
 }
 
 .feature-card h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, var(--neon-cyan) 0%, var(--neon-magenta) 100%);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-4);
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .feature-card p {
-  line-height: 1.6;
-  font-size: 1rem;
+  line-height: var(--leading-loose);
+  font-size: var(--font-size-norm);
 }
 
 @media (max-width: 768px) {
   .landing-content {
-    padding: 2rem 1rem;
+    padding: var(--space-8) var(--space-4);
   }
 
   .hero-title {
@@ -312,29 +312,29 @@
   }
 
   .hero-subtitle {
-    font-size: 1rem;
-    margin-bottom: 2rem;
+    font-size: var(--font-size-norm);
+    margin-bottom: var(--space-8);
   }
 
   .holographic-illustration {
     width: 200px;
     height: 200px;
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-8);
   }
 
   .cta-buttons {
     flex-direction: column;
     align-items: stretch;
-    gap: 1rem;
+    gap: var(--space-4);
   }
 
   .features-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: var(--space-6);
   }
 
   .feature-card {
-    padding: 2rem 1.5rem;
+    padding: var(--space-8) var(--space-6);
   }
 }
 
@@ -352,6 +352,6 @@
   }
 
   .feature-card h3 {
-    font-size: 1.25rem;
+    font-size: var(--font-size-lg);
   }
 }

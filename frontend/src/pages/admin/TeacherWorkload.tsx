@@ -24,10 +24,10 @@ const TeacherWorkloadPage = () => {
       key: "teacher",
       render: (_: unknown, teacher: AdminUser) => (
         <Space direction="vertical" size={0}>
-          <span style={{ fontWeight: 600 }}>
+          <span style={{ fontWeight: 'var(--font-weight-semibold)' }}>
             {`${teacher.first_name || ""} ${teacher.last_name || ""}`.trim() || teacher.username}
           </span>
-          <span style={{ color: "#64748b" }}>{teacher.username}</span>
+          <span style={{ color: "var(--color-text-secondary)" }}>{teacher.username}</span>
         </Space>
       ),
     },

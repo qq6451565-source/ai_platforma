@@ -22,7 +22,7 @@ const AdminEnrollmentReopenModal = ({ controller }: Props) => (
           showIcon
           message="Ariza qayta review bosqichiga o'tadi"
           description="Holat pending bo'ladi. Shundan keyin admin arizani tahrirlashi, AI qayta tekshirishi yoki qayta tasdiqlashi mumkin."
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 'var(--space-3)' }}
         />
         <Form.Item
           name="reopen_reason"

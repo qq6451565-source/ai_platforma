@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button, Card } from "antd";
 import LanguageSwitcher from "../components/LanguageSwitcher";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../hooks/usePageTitle";
 import "./Landing.css";
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  usePageTitle();
 
   return (
     <div className="landing-page">
@@ -22,9 +24,9 @@ const Landing: React.FC = () => {
             <svg viewBox="0 0 200 200" className="holographic-svg">
               <defs>
                 <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#00ffff" />
-                  <stop offset="50%" stopColor="#ff00ff" />
-                  <stop offset="100%" stopColor="#00ffff" />
+                  <stop offset="0%" stopColor="var(--svg-gradient-start)" />
+                  <stop offset="50%" stopColor="var(--svg-gradient-end)" />
+                  <stop offset="100%" stopColor="var(--svg-gradient-start)" />
                 </linearGradient>
                 <filter id="glow">
                   <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -43,19 +45,19 @@ const Landing: React.FC = () => {
 
               <circle cx="100" cy="100" r="15" fill="url(#neonGradient)" filter="url(#glow)" className="core-sphere" />
 
-              <line x1="100" y1="40" x2="100" y2="25" stroke="#00ffff" strokeWidth="2" filter="url(#glow)" className="connector connector-1" />
-              <line x1="130" y1="75" x2="145" y2="60" stroke="#ff00ff" strokeWidth="2" filter="url(#glow)" className="connector connector-2" />
-              <line x1="130" y1="125" x2="145" y2="140" stroke="#00ffff" strokeWidth="2" filter="url(#glow)" className="connector connector-3" />
-              <line x1="100" y1="160" x2="100" y2="175" stroke="#ff00ff" strokeWidth="2" filter="url(#glow)" className="connector connector-4" />
-              <line x1="70" y1="125" x2="55" y2="140" stroke="#00ffff" strokeWidth="2" filter="url(#glow)" className="connector connector-5" />
-              <line x1="70" y1="75" x2="55" y2="60" stroke="#ff00ff" strokeWidth="2" filter="url(#glow)" className="connector connector-6" />
+              <line x1="100" y1="40" x2="100" y2="25" stroke="var(--svg-gradient-start)" strokeWidth="2" filter="url(#glow)" className="connector connector-1" />
+              <line x1="130" y1="75" x2="145" y2="60" stroke="var(--svg-gradient-end)" strokeWidth="2" filter="url(#glow)" className="connector connector-2" />
+              <line x1="130" y1="125" x2="145" y2="140" stroke="var(--svg-gradient-start)" strokeWidth="2" filter="url(#glow)" className="connector connector-3" />
+              <line x1="100" y1="160" x2="100" y2="175" stroke="var(--svg-gradient-end)" strokeWidth="2" filter="url(#glow)" className="connector connector-4" />
+              <line x1="70" y1="125" x2="55" y2="140" stroke="var(--svg-gradient-start)" strokeWidth="2" filter="url(#glow)" className="connector connector-5" />
+              <line x1="70" y1="75" x2="55" y2="60" stroke="var(--svg-gradient-end)" strokeWidth="2" filter="url(#glow)" className="connector connector-6" />
 
-              <circle cx="100" cy="25" r="3" fill="#00ffff" filter="url(#glow)" className="dot-pulse dot-1" />
-              <circle cx="145" cy="60" r="3" fill="#ff00ff" filter="url(#glow)" className="dot-pulse dot-2" />
-              <circle cx="145" cy="140" r="3" fill="#00ffff" filter="url(#glow)" className="dot-pulse dot-3" />
-              <circle cx="100" cy="175" r="3" fill="#ff00ff" filter="url(#glow)" className="dot-pulse dot-4" />
-              <circle cx="55" cy="140" r="3" fill="#00ffff" filter="url(#glow)" className="dot-pulse dot-5" />
-              <circle cx="55" cy="60" r="3" fill="#ff00ff" filter="url(#glow)" className="dot-pulse dot-6" />
+              <circle cx="100" cy="25" r="3" fill="var(--svg-gradient-start)" filter="url(#glow)" className="dot-pulse dot-1" />
+              <circle cx="145" cy="60" r="3" fill="var(--svg-gradient-end)" filter="url(#glow)" className="dot-pulse dot-2" />
+              <circle cx="145" cy="140" r="3" fill="var(--svg-gradient-start)" filter="url(#glow)" className="dot-pulse dot-3" />
+              <circle cx="100" cy="175" r="3" fill="var(--svg-gradient-end)" filter="url(#glow)" className="dot-pulse dot-4" />
+              <circle cx="55" cy="140" r="3" fill="var(--svg-gradient-start)" filter="url(#glow)" className="dot-pulse dot-5" />
+              <circle cx="55" cy="60" r="3" fill="var(--svg-gradient-end)" filter="url(#glow)" className="dot-pulse dot-6" />
             </svg>
           </div>
 

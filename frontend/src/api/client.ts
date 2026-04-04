@@ -2,10 +2,19 @@ import axios from "axios";
 import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from "../utils/token";
 
 // VITE_API_BASE is primary; keep backward compatibility with VITE_API_BASE_URL.
-const baseURL =
+export const baseURL =
   import.meta.env.VITE_API_BASE ||
   import.meta.env.VITE_API_BASE_URL ||
   "http://127.0.0.1:8000";
+
+/** Convert a relative media path to an absolute URL. */
+export const toAbsoluteUrl = (url?: string | null): string => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/media/")) return `${baseURL}${url}`;
+  if (url.startsWith("/")) return `${baseURL}${url}`;
+  return `${baseURL}/media/${url}`;
+};
 
 const api = axios.create({ baseURL });
 

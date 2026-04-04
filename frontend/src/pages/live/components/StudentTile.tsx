@@ -159,9 +159,9 @@ export const StudentTile: React.FC<StudentTileProps> = ({
           }
         >
           {isAudioEnabled ? (
-            <AudioOutlined style={{ fontSize: "12px" }} />
+            <AudioOutlined style={{ fontSize: "var(--font-size-tiny)" }} />
           ) : (
-            <AudioMutedOutlined style={{ fontSize: "12px" }} />
+            <AudioMutedOutlined style={{ fontSize: "var(--font-size-tiny)" }} />
           )}
         </button>
       )}

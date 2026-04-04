@@ -85,7 +85,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         {title && (
           <div className="bottom-sheet-header">
             <h3 className="bottom-sheet-title">{title}</h3>
-            <button className="bottom-sheet-close" onClick={onClose}>
+            <button type="button" className="bottom-sheet-close" onClick={onClose}>
               ×
             </button>
           </div>

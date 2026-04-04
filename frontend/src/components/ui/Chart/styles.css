@@ -4,7 +4,7 @@
 
 .chart-title {
   font-size: var(--font-size-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-4);
 }
@@ -48,7 +48,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   white-space: nowrap;
 }
@@ -93,9 +93,9 @@
 
 .chart-donut-total {
   font-size: var(--font-size-2xl);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  line-height: 1;
+  line-height: var(--leading-none);
 }
 
 .chart-donut-label {
@@ -140,6 +140,6 @@
 
 .chart-legend-value {
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }

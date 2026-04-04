@@ -74,7 +74,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="dropdown-trigger" onClick={handleTrigger}>
+      <div className="dropdown-trigger" role="button" tabIndex={0} onClick={handleTrigger}>
         {children}
       </div>
       {isOpen && (

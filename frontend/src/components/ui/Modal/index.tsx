@@ -34,7 +34,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           {title && <h3 className="modal-title">{title}</h3>}
-          <button className="modal-close" onClick={onClose}>
+          <button type="button" className="modal-close" onClick={onClose}>
             &times;
           </button>
         </div>

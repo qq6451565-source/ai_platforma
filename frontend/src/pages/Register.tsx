@@ -9,6 +9,7 @@ import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { usePageTitle } from "../hooks/usePageTitle";
 import api from "../api/client";
 import { login, registerFinalize, registerStart } from "../api/auth";
 import { fetchMe } from "../api/user";
@@ -175,6 +176,7 @@ const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve
 
 const RegisterPage = () => {
   const { t } = useTranslation();
+  usePageTitle('register.title');
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -758,7 +760,7 @@ const RegisterPage = () => {
           <Steps
             current={currentStep}
             items={stepTitles.map((title) => ({ title }))}
-            style={{ marginBottom: 24 }}
+            style={{ marginBottom: 'var(--space-6)' }}
           />
 
           {/* ── Step 0: Personal details ─────────────────────── */}

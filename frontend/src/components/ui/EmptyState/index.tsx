@@ -19,8 +19,8 @@ const Illustrations: Record<string, React.ReactNode> = {
         <path d="M45 45h40M45 55h40M45 65h40M45 75h20" stroke="url(#noDataGradient)" strokeWidth="2" strokeLinecap="round"/>
         <defs>
           <linearGradient id="noDataGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00ffff"/>
-            <stop offset="100%" stopColor="#ff00ff"/>
+            <stop offset="0%" stopColor="var(--svg-gradient-start)"/>
+            <stop offset="100%" stopColor="var(--svg-gradient-end)"/>
           </linearGradient>
         </defs>
       </svg>
@@ -36,8 +36,8 @@ const Illustrations: Record<string, React.ReactNode> = {
         <line x1="58" y1="42" x2="42" y2="58" stroke="url(#noResultsGradient)" strokeWidth="2" strokeLinecap="round"/>
         <defs>
           <linearGradient id="noResultsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00ffff"/>
-            <stop offset="100%" stopColor="#ff00ff"/>
+            <stop offset="0%" stopColor="var(--svg-gradient-start)"/>
+            <stop offset="100%" stopColor="var(--svg-gradient-end)"/>
           </linearGradient>
         </defs>
       </svg>
@@ -52,8 +52,8 @@ const Illustrations: Record<string, React.ReactNode> = {
         <circle cx="60" cy="50" r="3" fill="url(#noNotifGradient)"/>
         <defs>
           <linearGradient id="noNotifGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00ffff"/>
-            <stop offset="100%" stopColor="#ff00ff"/>
+            <stop offset="0%" stopColor="var(--svg-gradient-start)"/>
+            <stop offset="100%" stopColor="var(--svg-gradient-end)"/>
           </linearGradient>
         </defs>
       </svg>
@@ -67,8 +67,8 @@ const Illustrations: Record<string, React.ReactNode> = {
         <circle cx="60" cy="60" r="5" fill="url(#noConnGradient)"/>
         <defs>
           <linearGradient id="noConnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#00ffff"/>
-            <stop offset="100%" stopColor="#ff00ff"/>
+            <stop offset="0%" stopColor="var(--svg-gradient-start)"/>
+            <stop offset="100%" stopColor="var(--svg-gradient-end)"/>
           </linearGradient>
         </defs>
       </svg>

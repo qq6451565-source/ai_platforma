@@ -8,21 +8,10 @@ import { fetchLessons } from "../../api/lessons";
 import { fetchMySubmissions, submitAssignment } from "../../api/submissions";
 import type { Assignment } from "../../types/assignment";
 import type { LessonAccessSnapshot } from "../../types/test";
+import { toAbsoluteUrl } from "../../api/client";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const PENDING_ACCESS_POLL_MS = 10000;
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
 
 const extractFile = (list: UploadFile[]) => {
   const item = list[0];
@@ -83,6 +72,7 @@ const hasPendingAccess = (items?: Assignment[]) =>
   Boolean(items?.some((item) => item.access?.status === "pending_attendance"));
 
 const StudentAssignments = () => {
+  usePageTitle('nav.assignments');
   const qc = useQueryClient();
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["assignments"],
@@ -167,8 +157,8 @@ const StudentAssignments = () => {
           <div className="card-grid">
             {subjectCards.map((card) => (
               <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
-                <div style={{ fontWeight: 600 }}>{card.name}</div>
-                <div style={{ opacity: 0.7, marginTop: 6 }}>{card.count} ta topshiriq</div>
+                <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
+                <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta topshiriq</div>
               </Card>
             ))}
           </div>
@@ -215,7 +205,7 @@ const StudentAssignments = () => {
                         "DD.MM.YYYY HH:mm"
                       )}`}
                     />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                       <span>
                         <Tag color={uploadState.color}>{uploadState.statusLabel}</Tag>
                       </span>

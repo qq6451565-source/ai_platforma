@@ -13,31 +13,31 @@
 .avatar-xs {
   width: 24px;
   height: 24px;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 
 .avatar-sm {
   width: 32px;
   height: 32px;
-  font-size: 12px;
+  font-size: var(--font-size-tiny);
 }
 
 .avatar-md {
   width: 40px;
   height: 40px;
-  font-size: 14px;
+  font-size: var(--font-size-mid);
 }
 
 .avatar-lg {
   width: 56px;
   height: 56px;
-  font-size: 18px;
+  font-size: var(--font-size-sub);
 }
 
 .avatar-xl {
   width: 80px;
   height: 80px;
-  font-size: 24px;
+  font-size: var(--font-size-xl);
 }
 
 .avatar-image {
@@ -47,7 +47,7 @@
 }
 
 .avatar-initials {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   -webkit-background-clip: text;

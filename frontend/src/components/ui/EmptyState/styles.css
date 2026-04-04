@@ -38,10 +38,10 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(0, 255, 255, 0.3) 50%,
+    var(--accent-30) 50%,
     transparent 100%
   );
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 10px var(--accent-30);
   pointer-events: none;
 }
 
@@ -65,13 +65,13 @@
 }
 
 .empty-state-illustration svg {
-  filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.3));
+  filter: drop-shadow(0 0 20px var(--accent-30));
   transition: filter var(--transition-base);
   will-change: filter;
 }
 
 .empty-state-illustration:hover svg {
-  filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.5));
+  filter: drop-shadow(0 0 30px var(--accent-50));
 }
 
 /* Neon glow on illustration paths */
@@ -91,8 +91,8 @@
   inset: -10px;
   background: radial-gradient(
     circle,
-    rgba(0, 255, 255, 0.1) 0%,
-    rgba(255, 0, 255, 0.05) 50%,
+    var(--accent-10) 0%,
+    var(--accent-3-glow) 50%,
     transparent 70%
   );
   animation: auroraGlow 4s ease-in-out infinite;
@@ -102,12 +102,12 @@
 
 .empty-state-title {
   font-size: var(--font-size-xl);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
   position: relative;
   z-index: 1;
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  text-shadow: 0 0 20px var(--accent-20);
   will-change: transform, opacity;
 }
 
@@ -118,7 +118,7 @@
   margin-bottom: var(--space-6);
   position: relative;
   z-index: 1;
-  line-height: 1.6;
+  line-height: var(--leading-loose);
   will-change: transform, opacity;
 }
 

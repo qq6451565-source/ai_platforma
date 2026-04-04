@@ -7,7 +7,7 @@ const AdminAnalyticsPage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 24 }}>
+      <div style={{ padding: 'var(--space-6)' }}>
         <Spin />
       </div>
     );
@@ -29,7 +29,7 @@ const AdminAnalyticsPage = () => {
           <Statistic title="Adminlar" value={data?.users?.admins || 0} />
         </Col>
       </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 'var(--space-4)' }}>
         <Col xs={24} md={6}>
           <Statistic title="Guruhlar" value={data?.groups || 0} />
         </Col>
@@ -43,7 +43,7 @@ const AdminAnalyticsPage = () => {
           <Statistic title="Topshiriqlar (jami)" value={data?.assignments_total || 0} />
         </Col>
       </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 'var(--space-4)' }}>
         <Col xs={24} md={6}>
           <Statistic title="Bugungi darslar" value={data?.today?.lessons || 0} />
         </Col>

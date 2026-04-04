@@ -130,7 +130,7 @@ const EnrollmentPage = () => {
   ];
 
   return (
-    <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 16 }}>
+    <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 'var(--space-4)' }}>
       <Table
         rowKey="id"
         loading={controller.isLoading}

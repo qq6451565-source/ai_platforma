@@ -66,8 +66,8 @@ const EnrollmentDocumentsPage = () => {
   });
 
   return (
-    <Card title="Ariza hujjatlari" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Ariza hujjatlari" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="applicant" label="Arizachi" rules={[{ required: true }]}>
           <Select options={applicantOptions} placeholder="Arizachi tanlang" />
         </Form.Item>

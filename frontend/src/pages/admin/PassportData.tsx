@@ -102,8 +102,8 @@ const PassportDataPage = () => {
   };
 
   return (
-    <Card title="Pasport ma'lumotlari" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 16 }}>
+    <Card title="Pasport ma'lumotlari" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-4)' }}>
         <Form.Item name="user" label="Foydalanuvchi" rules={[{ required: true }]}>
           <Select options={userOptions} placeholder="Foydalanuvchi tanlang" />
         </Form.Item>

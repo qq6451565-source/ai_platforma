@@ -49,7 +49,7 @@ const EnrollmentWindowsPage = () => {
           type="warning"
           showIcon
           message="Bir nechta yozuv topildi. Birinchi yozuv asosiy holat sifatida ishlatiladi."
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: 'var(--space-3)' }}
         />
       ) : null}
       <Space size="large">

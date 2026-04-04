@@ -37,7 +37,7 @@ export const NotificationPanel: React.FC<NotificationProps> = ({
           )}
         </h3>
         {unreadCount > 0 && (
-          <button className="notification-mark-all" onClick={onMarkAllRead}>
+          <button type="button" className="notification-mark-all" onClick={onMarkAllRead}>
             Mark all read
           </button>
         )}

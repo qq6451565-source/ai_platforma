@@ -22,19 +22,7 @@ import { createAssignment, deleteAssignment, updateAssignment } from "../../api/
 import type { Assignment } from "../../types/assignment";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://127.0.0.1:8000";
-
-const toAbsoluteUrl = (url?: string | null) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  if (url.startsWith("/media/")) return `${API_BASE}${url}`;
-  if (url.startsWith("/")) return `${API_BASE}${url}`;
-  return `${API_BASE}/media/${url}`;
-};
+import { toAbsoluteUrl } from "../../api/client";
 
 const extractFile = (list: UploadFile[]) => {
   const item = list[0];
@@ -129,20 +117,20 @@ const AdminAssignmentsPage = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 'var(--space-6)' }}>
       <Typography.Title level={4}>Topshiriqlar</Typography.Title>
       {!selectedSubject ? (
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           {subjectCards.map((card) => (
             <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
-              <div style={{ fontWeight: 600 }}>{card.name}</div>
-              <div style={{ opacity: 0.7, marginTop: 6 }}>{card.count} ta topshiriq</div>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
+              <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta topshiriq</div>
             </Card>
           ))}
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
@@ -153,10 +141,10 @@ const AdminAssignmentsPage = () => {
               message="Bu fan uchun darslar yo'q"
               description="Topshiriq yaratish uchun avval dars jadvalda bo'lishi kerak."
               showIcon
-              style={{ marginBottom: 16 }}
+              style={{ marginBottom: 'var(--space-4)' }}
             />
           ) : null}
-          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 24 }}>
+          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
             <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
               <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
             </Form.Item>

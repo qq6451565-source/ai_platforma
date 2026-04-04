@@ -1,288 +1,321 @@
 /* ═══════════════════════════════════════════════════════════════
    TAYYOR MAVZULAR / THEME PRESETS
-   Tayyor dizayn mavzulari - faqat birini tanlang
-   Ready-made design themes - just choose one
+   variables.css dagi o'zgaruvchilarni qayta belgilaydi.
+   Overrides variables.css tokens per theme class.
    ═══════════════════════════════════════════════════════════════ */
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 1: PROFESSIONAL WHITE (Hozirgi)
-   Toza, professional oq dizayn
+   MAVZU 1: PROFESSIONAL WHITE (Default — variables.css bilan bir xil)
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-professional-white {
-  --theme-primary:           #3B82F6;
-  --theme-primary-hover:     #2563EB;
-  --theme-primary-active:    #1D4ED8;
-  --theme-secondary:         #6366F1;
-  --theme-tertiary:          #8B5CF6;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #F8FAFC;
-  --theme-bg-tertiary:       #F1F5F9;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #F1F5F9;
-  --theme-border-default:    #E2E8F0;
-  --theme-border-strong:     #CBD5E1;
-  
-  --theme-text-primary:      #0F172A;
-  --theme-text-secondary:    #475569;
-  --theme-text-muted:        #94A3B8;
-  --theme-text-disabled:     #CBD5E1;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #3B82F6;
+  --accent-hover:          #2563EB;
+  --accent-active:         #1D4ED8;
+  --accent-2:              #6366F1;
+  --accent-3:              #8B5CF6;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #F8FAFC;
+  --bg-elevated-3:         #F1F5F9;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #F1F5F9;
+  --color-border:          #E2E8F0;
+  --border-strong:         #CBD5E1;
+
+  --color-text-primary:    #0F172A;
+  --color-text-secondary:  #475569;
+  --color-text-muted:      #94A3B8;
+  --color-text-disabled:   #CBD5E1;
+
+  --color-success:         #10B981;
+  --color-warning:         #F59E0B;
+  --color-error:           #EF4444;
+  --color-info:            #06B6D4;
+
+  /* RGB channels — default bilan bir xil */
+  --accent-rgb:            59, 130, 246;
+  --accent-2-rgb:          99, 102, 241;
+  --accent-3-rgb:          139, 92, 246;
+  --color-success-rgb:     16, 185, 129;
+  --color-warning-rgb:     245, 158, 11;
+  --color-error-rgb:       239, 68, 68;
+  --color-info-rgb:        6, 182, 212;
+  --svg-gradient-start:    #3B82F6;
+  --svg-gradient-end:      #8B5CF6;
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 2: MODERN DARK
-   Zamonaviy qora dizayn
+   MAVZU 2: MODERN DARK — Zamonaviy qora dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-modern-dark {
-  --theme-primary:           #60A5FA;
-  --theme-primary-hover:     #93C5FD;
-  --theme-primary-active:    #3B82F6;
-  --theme-secondary:         #818CF8;
-  --theme-tertiary:          #A78BFA;
-  
-  --theme-bg-primary:        #0F172A;
-  --theme-bg-secondary:      #1E293B;
-  --theme-bg-tertiary:       #334155;
-  --theme-bg-elevated:       #1E293B;
-  
-  --theme-border-light:      rgba(255, 255, 255, 0.05);
-  --theme-border-default:    rgba(255, 255, 255, 0.10);
-  --theme-border-strong:     rgba(255, 255, 255, 0.20);
-  
-  --theme-text-primary:      #F1F5F9;
-  --theme-text-secondary:    #CBD5E1;
-  --theme-text-muted:        #94A3B8;
-  --theme-text-disabled:     #64748B;
-  
-  --theme-success:           #34D399;
-  --theme-warning:           #FBBF24;
-  --theme-error:             #F87171;
-  --theme-info:              #22D3EE;
+  --accent:                #60A5FA;
+  --accent-hover:          #93C5FD;
+  --accent-active:         #3B82F6;
+  --accent-2:              #818CF8;
+  --accent-3:              #A78BFA;
+
+  --color-background:      #0F172A;
+  --bg-elevated-1:         #1E293B;
+  --bg-elevated-2:         #1E293B;
+  --bg-elevated-3:         #334155;
+  --color-surface:         #1E293B;
+
+  --border-subtle:         rgba(var(--color-white-rgb), 0.05);
+  --color-border:          rgba(var(--color-white-rgb), 0.10);
+  --border-strong:         rgba(var(--color-white-rgb), 0.20);
+
+  --color-text-primary:    #F1F5F9;
+  --color-text-secondary:  #CBD5E1;
+  --color-text-muted:      #94A3B8;
+  --color-text-disabled:   #64748B;
+
+  --color-success:         #34D399;
+  --color-warning:         #FBBF24;
+  --color-error:           #F87171;
+  --color-info:            #22D3EE;
+
+  --color-success-subtle:  rgba(var(--color-success-rgb), 0.12);
+  --color-warning-subtle:  rgba(var(--color-warning-rgb), 0.12);
+  --color-error-subtle:    rgba(var(--color-error-rgb), 0.12);
+  --color-info-subtle:     rgba(var(--color-info-rgb), 0.12);
+
+  --color-secondary:       #94A3B8;
+
+  /* RGB channels */
+  --accent-rgb:            96, 165, 250;
+  --accent-2-rgb:          129, 140, 248;
+  --accent-3-rgb:          167, 139, 250;
+  --color-success-rgb:     52, 211, 153;
+  --color-warning-rgb:     251, 191, 36;
+  --color-error-rgb:       248, 113, 113;
+  --color-info-rgb:        34, 211, 238;
+  --color-shadow-rgb:      0, 0, 0;
+  --svg-gradient-start:    #60A5FA;
+  --svg-gradient-end:      #A78BFA;
+  --color-text-on-primary:  #0F172A;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  --gradient-secondary:    linear-gradient(135deg, var(--bg-elevated-2) 0%, var(--color-background) 100%);
+  --gradient-ambient:      radial-gradient(ellipse at top, var(--bg-elevated-2) 0%, var(--color-background) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 3: OCEAN BLUE
-   Okean ko'k dizayn
+   MAVZU 3: OCEAN BLUE — Okean ko'k dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-ocean-blue {
-  --theme-primary:           #0EA5E9;
-  --theme-primary-hover:     #0284C7;
-  --theme-primary-active:    #0369A1;
-  --theme-secondary:         #06B6D4;
-  --theme-tertiary:          #3B82F6;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #F0F9FF;
-  --theme-bg-tertiary:       #E0F2FE;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #E0F2FE;
-  --theme-border-default:    #BAE6FD;
-  --theme-border-strong:     #7DD3FC;
-  
-  --theme-text-primary:      #0C4A6E;
-  --theme-text-secondary:    #075985;
-  --theme-text-muted:        #0369A1;
-  --theme-text-disabled:     #BAE6FD;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #0EA5E9;
+  --accent-hover:          #0284C7;
+  --accent-active:         #0369A1;
+  --accent-2:              #06B6D4;
+  --accent-3:              #3B82F6;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #F0F9FF;
+  --bg-elevated-3:         #E0F2FE;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #E0F2FE;
+  --color-border:          #BAE6FD;
+  --border-strong:         #7DD3FC;
+
+  --color-text-primary:    #0C4A6E;
+  --color-text-secondary:  #075985;
+  --color-text-muted:      #0369A1;
+  --color-text-disabled:   #BAE6FD;
+
+  /* RGB channels */
+  --accent-rgb:            14, 165, 233;
+  --accent-2-rgb:          6, 182, 212;
+  --accent-3-rgb:          59, 130, 246;
+  --svg-gradient-start:    #0EA5E9;
+  --svg-gradient-end:      #3B82F6;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 4: SUNSET ORANGE
-   Quyosh botishi to'q sariq dizayn
+   MAVZU 4: SUNSET ORANGE — Quyosh botishi to'q sariq
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-sunset-orange {
-  --theme-primary:           #F97316;
-  --theme-primary-hover:     #EA580C;
-  --theme-primary-active:    #C2410C;
-  --theme-secondary:         #FB923C;
-  --theme-tertiary:          #FDBA74;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #FFF7ED;
-  --theme-bg-tertiary:       #FFEDD5;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #FFEDD5;
-  --theme-border-default:    #FED7AA;
-  --theme-border-strong:     #FDBA74;
-  
-  --theme-text-primary:      #431407;
-  --theme-text-secondary:    #7C2D12;
-  --theme-text-muted:        #C2410C;
-  --theme-text-disabled:     #FED7AA;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #F97316;
+  --accent-hover:          #EA580C;
+  --accent-active:         #C2410C;
+  --accent-2:              #FB923C;
+  --accent-3:              #FDBA74;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #FFF7ED;
+  --bg-elevated-3:         #FFEDD5;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #FFEDD5;
+  --color-border:          #FED7AA;
+  --border-strong:         #FDBA74;
+
+  --color-text-primary:    #431407;
+  --color-text-secondary:  #7C2D12;
+  --color-text-muted:      #C2410C;
+  --color-text-disabled:   #FED7AA;
+
+  /* RGB channels */
+  --accent-rgb:            249, 115, 22;
+  --accent-2-rgb:          251, 146, 60;
+  --accent-3-rgb:          253, 186, 116;
+  --svg-gradient-start:    #F97316;
+  --svg-gradient-end:      #FDBA74;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 5: FOREST GREEN
-   O'rmon yashil dizayn
+   MAVZU 5: FOREST GREEN — O'rmon yashil dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-forest-green {
-  --theme-primary:           #059669;
-  --theme-primary-hover:     #047857;
-  --theme-primary-active:    #065F46;
-  --theme-secondary:         #10B981;
-  --theme-tertiary:          #34D399;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #F0FDF4;
-  --theme-bg-tertiary:       #DCFCE7;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #DCFCE7;
-  --theme-border-default:    #BBF7D0;
-  --theme-border-strong:     #86EFAC;
-  
-  --theme-text-primary:      #052E16;
-  --theme-text-secondary:    #14532D;
-  --theme-text-muted:        #166534;
-  --theme-text-disabled:     #BBF7D0;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #059669;
+  --accent-hover:          #047857;
+  --accent-active:         #065F46;
+  --accent-2:              #10B981;
+  --accent-3:              #34D399;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #F0FDF4;
+  --bg-elevated-3:         #DCFCE7;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #DCFCE7;
+  --color-border:          #BBF7D0;
+  --border-strong:         #86EFAC;
+
+  --color-text-primary:    #052E16;
+  --color-text-secondary:  #14532D;
+  --color-text-muted:      #166534;
+  --color-text-disabled:   #BBF7D0;
+
+  /* RGB channels */
+  --accent-rgb:            5, 150, 105;
+  --accent-2-rgb:          16, 185, 129;
+  --accent-3-rgb:          52, 211, 153;
+  --svg-gradient-start:    #059669;
+  --svg-gradient-end:      #34D399;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 6: ROYAL PURPLE
-   Qirollik binafsha dizayn
+   MAVZU 6: ROYAL PURPLE — Qirollik binafsha dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-royal-purple {
-  --theme-primary:           #7C3AED;
-  --theme-primary-hover:     #6D28D9;
-  --theme-primary-active:    #5B21B6;
-  --theme-secondary:         #8B5CF6;
-  --theme-tertiary:          #A78BFA;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #FAF5FF;
-  --theme-bg-tertiary:       #F3E8FF;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #F3E8FF;
-  --theme-border-default:    #E9D5FF;
-  --theme-border-strong:     #D8B4FE;
-  
-  --theme-text-primary:      #2E1065;
-  --theme-text-secondary:    #4C1D95;
-  --theme-text-muted:        #6D28D9;
-  --theme-text-disabled:     #E9D5FF;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #7C3AED;
+  --accent-hover:          #6D28D9;
+  --accent-active:         #5B21B6;
+  --accent-2:              #8B5CF6;
+  --accent-3:              #A78BFA;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #FAF5FF;
+  --bg-elevated-3:         #F3E8FF;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #F3E8FF;
+  --color-border:          #E9D5FF;
+  --border-strong:         #D8B4FE;
+
+  --color-text-primary:    #2E1065;
+  --color-text-secondary:  #4C1D95;
+  --color-text-muted:      #6D28D9;
+  --color-text-disabled:   #E9D5FF;
+
+  /* RGB channels */
+  --accent-rgb:            124, 58, 237;
+  --accent-2-rgb:          139, 92, 246;
+  --accent-3-rgb:          167, 139, 250;
+  --svg-gradient-start:    #7C3AED;
+  --svg-gradient-end:      #A78BFA;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 7: ROSE PINK
-   Atirgul pushti dizayn
+   MAVZU 7: ROSE PINK — Atirgul pushti dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-rose-pink {
-  --theme-primary:           #E11D48;
-  --theme-primary-hover:     #BE123C;
-  --theme-primary-active:    #9F1239;
-  --theme-secondary:         #F43F5E;
-  --theme-tertiary:          #FB7185;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #FFF1F2;
-  --theme-bg-tertiary:       #FFE4E6;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #FFE4E6;
-  --theme-border-default:    #FECDD3;
-  --theme-border-strong:     #FDA4AF;
-  
-  --theme-text-primary:      #4C0519;
-  --theme-text-secondary:    #881337;
-  --theme-text-muted:        #BE123C;
-  --theme-text-disabled:     #FECDD3;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #E11D48;
+  --accent-hover:          #BE123C;
+  --accent-active:         #9F1239;
+  --accent-2:              #F43F5E;
+  --accent-3:              #FB7185;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #FFF1F2;
+  --bg-elevated-3:         #FFE4E6;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #FFE4E6;
+  --color-border:          #FECDD3;
+  --border-strong:         #FDA4AF;
+
+  --color-text-primary:    #4C0519;
+  --color-text-secondary:  #881337;
+  --color-text-muted:      #BE123C;
+  --color-text-disabled:   #FECDD3;
+
+  /* RGB channels */
+  --accent-rgb:            225, 29, 72;
+  --accent-2-rgb:          244, 63, 94;
+  --accent-3-rgb:          251, 113, 133;
+  --svg-gradient-start:    #E11D48;
+  --svg-gradient-end:      #FB7185;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
 
 
 /* ═══════════════════════════════════════════════════════════════
-   MAVZU 8: MINIMAL GRAY
-   Minimal kulrang dizayn
+   MAVZU 8: MINIMAL GRAY — Minimal kulrang dizayn
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-minimal-gray {
-  --theme-primary:           #475569;
-  --theme-primary-hover:     #334155;
-  --theme-primary-active:    #1E293B;
-  --theme-secondary:         #64748B;
-  --theme-tertiary:          #94A3B8;
-  
-  --theme-bg-primary:        #FFFFFF;
-  --theme-bg-secondary:      #F8FAFC;
-  --theme-bg-tertiary:       #F1F5F9;
-  --theme-bg-elevated:       #FFFFFF;
-  
-  --theme-border-light:      #F1F5F9;
-  --theme-border-default:    #E2E8F0;
-  --theme-border-strong:     #CBD5E1;
-  
-  --theme-text-primary:      #0F172A;
-  --theme-text-secondary:    #334155;
-  --theme-text-muted:        #64748B;
-  --theme-text-disabled:     #CBD5E1;
-  
-  --theme-success:           #10B981;
-  --theme-warning:           #F59E0B;
-  --theme-error:             #EF4444;
-  --theme-info:              #06B6D4;
+  --accent:                #475569;
+  --accent-hover:          #334155;
+  --accent-active:         #1E293B;
+  --accent-2:              #64748B;
+  --accent-3:              #94A3B8;
+
+  --color-background:      #FFFFFF;
+  --bg-elevated-2:         #F8FAFC;
+  --bg-elevated-3:         #F1F5F9;
+  --color-surface:         #FFFFFF;
+
+  --border-subtle:         #F1F5F9;
+  --color-border:          #E2E8F0;
+  --border-strong:         #CBD5E1;
+
+  --color-text-primary:    #0F172A;
+  --color-text-secondary:  #334155;
+  --color-text-muted:      #64748B;
+  --color-text-disabled:   #CBD5E1;
+
+  /* RGB channels */
+  --accent-rgb:            71, 85, 105;
+  --accent-2-rgb:          100, 116, 139;
+  --accent-3-rgb:          148, 163, 184;
+  --svg-gradient-start:    #475569;
+  --svg-gradient-end:      #94A3B8;
+
+  --gradient-primary:      linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
 }
-
-
-/* ═══════════════════════════════════════════════════════════════
-   QANDAY ISHLATISH / HOW TO USE
-   ═══════════════════════════════════════════════════════════════
-   
-   1. global.css fayliga qo'shing:
-      @import './theme-presets.css';
-   
-   2. HTML ga class qo'shing:
-      <html class="theme-ocean-blue">
-      
-   3. Yoki JavaScript bilan o'zgartiring:
-      document.documentElement.className = 'theme-forest-green';
-   
-   4. Yoki React da:
-      <html className="theme-royal-purple">
-      
-   ═══════════════════════════════════════════════════════════════ */

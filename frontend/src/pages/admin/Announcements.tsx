@@ -30,8 +30,8 @@ const AdminAnnouncementsPage = () => {
       .catch(() => message.error("O'chirishda xato"));
 
   return (
-    <Card title="E'lonlar" style={{ marginBottom: 16 }}>
-      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="E'lonlar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="title" label="Sarlavha" rules={[{ required: true, message: "Sarlavha kerak" }]}>
           <Input />
         </Form.Item>

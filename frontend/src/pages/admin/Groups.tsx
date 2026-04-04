@@ -38,8 +38,8 @@ const GroupsPage = () => {
       .catch(() => message.error("O'chirishda xato"));
 
   return (
-    <Card title="Guruhlar" style={{ marginBottom: 16 }}>
-      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 12 }}>
+    <Card title="Guruhlar" style={{ marginBottom: 'var(--space-4)' }}>
+      <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name">
           <Input placeholder="Guruh nomi (ixtiyoriy)" />
         </Form.Item>

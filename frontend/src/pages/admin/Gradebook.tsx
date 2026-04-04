@@ -331,7 +331,7 @@ const AdminGradebookPage = () => {
   );
 
   return (
-    <Card title="Baholar" style={{ marginBottom: 16 }}>
+    <Card title="Baholar" style={{ marginBottom: 'var(--space-4)' }}>
       {!selectedDirection ? (
         directionsLoading ? (
           <Skeleton active />
@@ -343,7 +343,7 @@ const AdminGradebookPage = () => {
               <List.Item>
                 <Card hoverable onClick={() => setSelectedDirection(dir)}>
                   <Typography.Text strong>{dir.name}</Typography.Text>
-                  <div style={{ marginTop: 6, color: "#94a3b8" }}>
+                  <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>
                     {dir.language?.toUpperCase() || "LANG"} - {dir.degree || "bachelor"}
                   </div>
                 </Card>
@@ -355,7 +355,7 @@ const AdminGradebookPage = () => {
         )
       ) : !selectedSubject ? (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <Button
               onClick={() => {
                 setSelectedDirection(null);
@@ -386,14 +386,14 @@ const AdminGradebookPage = () => {
         </>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {selectedSubject.name}
             </Typography.Title>
           </div>
 
-          <Space wrap style={{ marginBottom: 12 }}>
+          <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
             <Select
               allowClear
               placeholder="Guruh"
@@ -462,9 +462,9 @@ const AdminGradebookPage = () => {
       >
         {editStudent ? (
           <>
-            <div style={{ marginBottom: 12 }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <Typography.Text type="secondary">Talaba</Typography.Text>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {`${editStudent.first_name || ""} ${editStudent.last_name || ""}`.trim() ||
                   editStudent.username ||
                   `#${editStudent.id}`}
@@ -472,10 +472,10 @@ const AdminGradebookPage = () => {
             </div>
             <Divider orientation="left">Darslar bo'yicha</Divider>
             {lessonBuckets.length ? (
-              <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "grid", gap: 'var(--space-3)' }}>
                 {lessonBuckets.map((bucket) => (
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 'var(--space-3)' }}>
                       <div>
                         <Typography.Text type="secondary">Topshiriqlar</Typography.Text>
                         {bucket.submissions.length ? (
@@ -483,8 +483,8 @@ const AdminGradebookPage = () => {
                             style={{
                               display: "grid",
                               gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                              gap: 8,
-                              marginTop: 8,
+                              gap: 'var(--space-2)',
+                              marginTop: 'var(--space-2)',
                             }}
                           >
                             {bucket.submissions.map((item: any) => (
@@ -495,7 +495,7 @@ const AdminGradebookPage = () => {
                                 hoverable
                                 onClick={() => openDetail(item, "assignment")}
                               >
-                                <div style={{ marginTop: 6, fontWeight: 600 }}>
+                                <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
                                   {typeof item.grade === "number" ? `Ball: ${item.grade}` : "Baholanmagan"}
                                 </div>
                               </Card>
@@ -512,8 +512,8 @@ const AdminGradebookPage = () => {
                             style={{
                               display: "grid",
                               gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                              gap: 8,
-                              marginTop: 8,
+                              gap: 'var(--space-2)',
+                              marginTop: 'var(--space-2)',
                             }}
                           >
                             {bucket.tests.map((item: any) => (
@@ -524,7 +524,7 @@ const AdminGradebookPage = () => {
                                 hoverable
                                 onClick={() => openDetail(item, "test")}
                               >
-                                <div style={{ marginTop: 6, fontWeight: 600 }}>
+                                <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
                                   Ball: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
                                 </div>
                               </Card>
@@ -556,10 +556,10 @@ const AdminGradebookPage = () => {
         footer={null}
       >
         {detailItem ? (
-          <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ display: "grid", gap: 'var(--space-2)' }}>
             <div>
               <Typography.Text type="secondary">Sarlavha</Typography.Text>
-              <div style={{ fontWeight: 600 }}>
+              <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {detailType === "assignment"
                   ? detailItem.assignment_title || "Topshiriq"
                   : detailItem.test_title || "Test"}
@@ -629,7 +629,7 @@ const AdminGradebookPage = () => {
               </>
             )}
             <Divider orientation="left">Tahrirlash</Divider>
-            <div style={{ display: "grid", gap: 8 }}>
+            <div style={{ display: "grid", gap: 'var(--space-2)' }}>
               <InputNumber
                 min={0}
                 max={

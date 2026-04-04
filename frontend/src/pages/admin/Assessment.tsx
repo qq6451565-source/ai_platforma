@@ -86,7 +86,7 @@ const AdminAssessmentPage = () => {
   });
 
   return (
-    <Card title="Imtihon va nazorat (Assessment)" style={{ marginBottom: 16 }}>
+    <Card title="Imtihon va nazorat (Assessment)" style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {
@@ -94,7 +94,7 @@ const AdminAssessmentPage = () => {
             label: "Exam turlari",
             children: (
               <>
-                <Form layout="inline" onFinish={typeMut.mutate} style={{ marginBottom: 12 }}>
+                <Form layout="inline" onFinish={typeMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
                   <Form.Item name="name" rules={[{ required: true, message: "Nomi" }]}>
                     <Input placeholder="Masalan: midterm" />
                   </Form.Item>
@@ -134,7 +134,7 @@ const AdminAssessmentPage = () => {
             label: "Examlar",
             children: (
               <>
-                <Form layout="vertical" onFinish={examMut.mutate} style={{ marginBottom: 12 }}>
+                <Form layout="vertical" onFinish={examMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
                   <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
                     <Select
                       showSearch

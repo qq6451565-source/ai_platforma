@@ -61,7 +61,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {toast.type === 'info' && 'ℹ'}
             </div>
             <div className="toast-message">{toast.message}</div>
-            <button className="toast-close" onClick={() => removeToast(toast.id)}>
+            <button type="button" className="toast-close" onClick={() => removeToast(toast.id)}>
               ×
             </button>
           </div>
