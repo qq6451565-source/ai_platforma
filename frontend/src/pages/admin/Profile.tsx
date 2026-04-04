@@ -4,9 +4,11 @@ import { useState } from "react";
 import { updateProfile, changePassword } from "../../api/profile";
 import { useMe } from "../../hooks/useMe";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const AdminProfile = () => {
   usePageTitle('nav.profile');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: user } = useMe();
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -73,13 +75,13 @@ const AdminProfile = () => {
               }}
               onFinish={onSaveProfile}
             >
-              <Form.Item label="Ism" name="first_name">
+              <Form.Item label="Ism" name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Familiya" name="last_name">
+              <Form.Item label="Familiya" name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Email" name="email">
+              <Form.Item label="Email" name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
                 <Input type="email" />
               </Form.Item>
               <Form.Item label="Telefon" name="phone">
@@ -97,14 +99,14 @@ const AdminProfile = () => {
               <Form.Item
                 label="Eski parol"
                 name="old_password"
-                rules={[{ required: true, message: "Eski parolni kiriting" }]}
+                rules={[{ required: true, message: t('profile.oldPasswordRequired') }]}
               >
                 <Input type="password" />
               </Form.Item>
               <Form.Item
                 label="Yangi parol"
                 name="new_password"
-                rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
+                rules={[{ required: true, message: t('profile.newPasswordRequired') }, { min: 8, message: t('profile.newPasswordMin') }]}
               >
                 <Input type="password" />
               </Form.Item>

@@ -104,7 +104,9 @@
     "adminLogin": "Sign in as admin",
     "adminSeparateLogin": "Please use the dedicated admin login page",
     "username": "Username",
-    "usernamePlaceholder": "username"
+    "usernamePlaceholder": "username",
+    "usernameRequired": "Enter username",
+    "passwordRequired": "Enter password"
   },
   "layout": {
     "welcome": "Welcome",
@@ -571,5 +573,18 @@
     "deadline": "Deadline",
     "submitted": "Submitted",
     "pending": "Pending"
+  },
+  "profile": {
+    "firstNameRequired": "Enter first name",
+    "lastNameRequired": "Enter last name",
+    "emailInvalid": "Invalid email",
+    "oldPasswordRequired": "Enter current password",
+    "newPasswordRequired": "Enter new password",
+    "newPasswordMin": "At least 8 characters",
+    "confirmPasswordRequired": "Confirm password",
+    "confirmPasswordMismatch": "Passwords do not match",
+    "passwordCopied": "Password copied",
+    "copyPassword": "Copy",
+    "credentials": "Login credentials"
   }
 }

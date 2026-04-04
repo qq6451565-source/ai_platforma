@@ -10,12 +10,14 @@ import {
   type PendingCredentials,
 } from "../../utils/pendingCredentials";
 import { usePageTitle } from "../../hooks/usePageTitle";
+import { useTranslation } from "react-i18next";
 
 const AI_AUTO_RETRY_LIMIT = 3;
 const AI_AUTO_RETRY_DELAY_MS = 90_000;
 
 const StudentProfile = () => {
   usePageTitle('nav.profile');
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: user } = useMe();
 
@@ -204,13 +206,13 @@ const StudentProfile = () => {
               className="d-grid"
               style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "var(--space-4)" }}
             >
-            <Form.Item label="Ism" name="first_name">
+            <Form.Item label="Ism" name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Familiya" name="last_name">
+              <Form.Item label="Familiya" name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Email" name="email">
+              <Form.Item label="Email" name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
                 <Input type="email" />
               </Form.Item>
               <Form.Item label="Telefon" name="phone">
@@ -234,14 +236,14 @@ const StudentProfile = () => {
               <Form.Item
                 label="Eski parol"
                 name="old_password"
-                rules={[{ required: true, message: "Eski parolni kiriting" }]}
+                rules={[{ required: true, message: t('profile.oldPasswordRequired') }]}
               >
                 <Input.Password />
               </Form.Item>
               <Form.Item
                 label="Yangi parol"
                 name="new_password"
-                rules={[{ required: true, message: "Yangi parolni kiriting", min: 6 }]}
+                rules={[{ required: true, message: t('profile.newPasswordRequired') }, { min: 8, message: t('profile.newPasswordMin') }]}
               >
                 <Input.Password />
               </Form.Item>
@@ -284,7 +286,19 @@ const StudentProfile = () => {
           <div style={{ marginBottom: 'var(--space-2)', fontWeight: 'var(--font-weight-semibold)' }}>Kirish ma'lumotlari</div>
           <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-3)" }}>
             <div><strong>Username:</strong> {pendingCredentials.username}</div>
-            <div><strong>Parol:</strong> {pendingCredentials.password}</div>
+            <div>
+              <strong>Parol:</strong> {"•".repeat(8)}{" "}
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  navigator.clipboard.writeText(pendingCredentials.password);
+                  message.success("Parol nusxalandi");
+                }}
+              >
+                Nusxalash
+              </Button>
+            </div>
           </div>
         </Card>
       )}

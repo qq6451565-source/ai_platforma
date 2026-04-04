@@ -138,7 +138,7 @@ const EnrollmentDocumentsPage = () => {
       />
 
       <Modal open={!!preview} onCancel={() => setPreview(null)} footer={null} title="Rasm">
-        {preview ? <img src={preview} alt="preview" style={{ width: "100%" }} /> : null}
+        {preview ? <img src={preview} alt="preview" style={{ width: "100%" }} loading="lazy" /> : null}
       </Modal>
     </Card>
   );

@@ -54,14 +54,14 @@ const LoginPage = () => {
             <Form.Item
               name="username"
               label={t("auth.username")}
-              rules={[{ required: true, message: t("auth.loginError") }]}
+              rules={[{ required: true, message: t("auth.usernameRequired") }]}
             >
               <Input prefix={<UserOutlined />} placeholder={t("auth.usernamePlaceholder")} size="large" />
             </Form.Item>
             <Form.Item
               name="password"
               label={t("auth.password")}
-              rules={[{ required: true, message: t("auth.loginError") }]}
+              rules={[{ required: true, message: t("auth.passwordRequired") }]}
             >
               <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
             </Form.Item>

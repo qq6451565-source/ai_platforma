@@ -31,7 +31,7 @@ export default defineConfig({
   esbuild: {
     // Strip console.debug & console.info from production builds
     drop: process.env.NODE_ENV === "production" ? ["debugger"] : [],
-    pure: process.env.NODE_ENV === "production" ? ["console.debug", "console.info"] : [],
+    pure: process.env.NODE_ENV === "production" ? ["console.debug", "console.info", "console.log", "console.warn"] : [],
   },
   build: {
     reportCompressedSize: false,

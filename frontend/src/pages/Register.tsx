@@ -843,7 +843,7 @@ const RegisterPage = () => {
 
               {passportPreview && (
                 <div className="preview-card">
-                  <img src={passportPreview} alt="passport preview" />
+                  <img src={passportPreview} alt="passport preview" loading="lazy" />
                 </div>
               )}
 

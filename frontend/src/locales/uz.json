@@ -104,7 +104,9 @@
     "adminLogin": "Admin sifatida kirish",
     "adminSeparateLogin": "Admin uchun alohida kirish sahifasidan foydalaning",
     "username": "Username",
-    "usernamePlaceholder": "username"
+    "usernamePlaceholder": "username",
+    "usernameRequired": "Username kiriting",
+    "passwordRequired": "Parolni kiriting"
   },
   "layout": {
     "welcome": "Xush kelibsiz",
@@ -571,5 +573,18 @@
     "deadline": "Muddat",
     "submitted": "Topshirilgan",
     "pending": "Kutilmoqda"
+  },
+  "profile": {
+    "firstNameRequired": "Ismni kiriting",
+    "lastNameRequired": "Familiyani kiriting",
+    "emailInvalid": "Email noto'g'ri",
+    "oldPasswordRequired": "Eski parolni kiriting",
+    "newPasswordRequired": "Yangi parolni kiriting",
+    "newPasswordMin": "Kamida 8 belgi bo'lishi kerak",
+    "confirmPasswordRequired": "Parolni tasdiqlang",
+    "confirmPasswordMismatch": "Parollar mos kelmaydi",
+    "passwordCopied": "Parol nusxalandi",
+    "copyPassword": "Nusxalash",
+    "credentials": "Kirish ma'lumotlari"
   }
 }

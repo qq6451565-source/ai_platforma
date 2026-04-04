@@ -104,7 +104,9 @@
     "adminLogin": "Войти как администратор",
     "adminSeparateLogin": "Используйте отдельную страницу входа для администратора",
     "username": "??? ????????????",
-    "usernamePlaceholder": "username"
+    "usernamePlaceholder": "username",
+    "usernameRequired": "Введите имя пользователя",
+    "passwordRequired": "Введите пароль"
   },
   "layout": {
     "welcome": "Добро пожаловать",
@@ -571,5 +573,18 @@
     "deadline": "Срок сдачи",
     "submitted": "Сдано",
     "pending": "Ожидается"
+  },
+  "profile": {
+    "firstNameRequired": "Введите имя",
+    "lastNameRequired": "Введите фамилию",
+    "emailInvalid": "Неверный email",
+    "oldPasswordRequired": "Введите текущий пароль",
+    "newPasswordRequired": "Введите новый пароль",
+    "newPasswordMin": "Минимум 8 символов",
+    "confirmPasswordRequired": "Подтвердите пароль",
+    "confirmPasswordMismatch": "Пароли не совпадают",
+    "passwordCopied": "Пароль скопирован",
+    "copyPassword": "Копировать",
+    "credentials": "Данные для входа"
   }
 }

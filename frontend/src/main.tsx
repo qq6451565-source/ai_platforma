@@ -9,19 +9,21 @@ import App from "./App";
 import "./index.css";
 import "./i18n";
 import { loadSavedTheme, getAntdThemeTokens } from "./utils/themeManager";
-import { validateEnvironment } from "./utils/envValidation";
-
-// Environment validation
-try {
-  validateEnvironment();
-} catch (error) {
-  console.error("Environment validation failed:", error);
-}
+import "./utils/envValidation";
 
 // Saqlangan temani yuklash / Load saved theme
 loadSavedTheme();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 

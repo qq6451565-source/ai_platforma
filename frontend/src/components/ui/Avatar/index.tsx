@@ -29,7 +29,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   return (
     <div className={`avatar avatar-${size} ${className}`}>
       {src ? (
-        <img src={src} alt={alt || name || 'Avatar'} className="avatar-image" />
+        <img src={src} alt={alt || name || 'Avatar'} className="avatar-image" loading="lazy" />
       ) : name ? (
         <div className="avatar-initials">{getInitials(name)}</div>
       ) : (
