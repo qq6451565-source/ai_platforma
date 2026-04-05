@@ -1503,8 +1503,8 @@ export default function Room() {
   const stageGroupLabel = useMemo(() => {
     if (!stageParticipant) return "";
     const group = resolveStudentGroup(stageParticipant);
-    if (group && group !== "Guruh belgilanmagan") return group;
-    return stageParticipant.is_teacher ? "O'qituvchi" : "Talaba";
+    if (group && group !== i18next.t('liveUtils.groupNotAssigned')) return group;
+    return stageParticipant.is_teacher ? t('liveRoom.teacher') : t('liveRoom.student');
   }, [stageParticipant]);
 
   return (
@@ -1529,16 +1529,16 @@ export default function Room() {
               <span className="face-status-dot" />
               <span className="face-status-label">
                 {faceWsUnavailable
-                  ? "AI xizmati mavjud emas"
+                  ? t('liveRoom.aiUnavailable')
                   : !faceConnected
-                  ? "Ulanmoqda..."
+                  ? t('liveRoom.connecting')
                   : localFaceStatus === "DETECTED"
-                  ? "Yuz aniqlandi ✓"
+                  ? t('liveRoom.faceDetected')
                   : localFaceStatus === "NOT_DETECTED"
-                  ? "Yuz aniqlanmadi"
+                  ? t('liveRoom.faceNotDetected')
                   : localFaceStatus === "MULTIPLE"
-                  ? "Ko'p yuz"
-                  : "Tekshirilmoqda..."}
+                  ? t('liveRoom.faceMultiple')
+                  : t('liveRoom.faceChecking')}
               </span>
             </div>
           )}
@@ -1615,7 +1615,7 @@ export default function Room() {
           />
         </div>
 
-        {isDemoMode && <div className="room-mode-pill">Demo rejim</div>}
+        {isDemoMode && <div className="room-mode-pill">{t('liveRoom.demoMode')}</div>}
       </header>
 
       {/* summary-bar olib tashlandi */}
@@ -1626,7 +1626,7 @@ export default function Room() {
 
       {!state.error && !state.loading && !state.connected && (
         <div className="room-alert room-alert-warning">
-          Signal ulanishi mavjud emas. Ulanish qayta tiklanmoqda.
+          {t('liveRoom.connectionLost')}
         </div>
       )}
 
@@ -1680,7 +1680,7 @@ export default function Room() {
                 <div className="stage-face-status">
                   <div
                     className={`face-badge face-badge-${stageFaceStatus.toLowerCase()}`}
-                    title={`Yuz holati: ${stageFaceStatus}`}
+                    title={t('liveRoom.faceStatus', { status: stageFaceStatus })}
                   >
                     {stageFaceStatusDisplay?.label}
                   </div>

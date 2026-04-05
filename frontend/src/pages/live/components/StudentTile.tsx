@@ -154,8 +154,8 @@ export const StudentTile: React.FC<StudentTileProps> = ({
           }}
           title={
             isAudioEnabled
-              ? "Hozir markazda gapiryapti"
-              : "Gapirish uchun markazga chiqarish"
+              ? t('liveTile.speakingOnStage')
+              : t('liveTile.putOnStageToSpeak')
           }
         >
           {isAudioEnabled ? (

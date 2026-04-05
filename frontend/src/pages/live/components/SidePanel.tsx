@@ -66,20 +66,21 @@ const SidebarMiniVideo: React.FC<{
 
 // ─── Yuz holati belgisi ──────────────────────────────────────────────────────
 const FaceStatusBadge: React.FC<{ faceStatus: string; statusReason?: string }> = ({ faceStatus, statusReason }) => {
+  const { t } = useTranslation();
   if (faceStatus === "DETECTED") {
-    return <span className="fs-badge fs-badge--green">✓ Aniqlandi</span>;
+    return <span className="fs-badge fs-badge--green">✓ {t('liveSidePanel.faceDetected')}</span>;
   }
   if (faceStatus === "MULTIPLE") {
-    return <span className="fs-badge fs-badge--orange">⚠ Ko'p yuz</span>;
+    return <span className="fs-badge fs-badge--orange">⚠ {t('liveSidePanel.faceMultiple')}</span>;
   }
   if (faceStatus === "NOT_DETECTED") {
     // AI xizmati ishlamayotgan bo'lsa, aniqroq xabar
     if (statusReason === "ai_error" || statusReason === "error") {
-      return <span className="fs-badge fs-badge--gray">⚡ AI mavjud emas</span>;
+      return <span className="fs-badge fs-badge--gray">⚡ {t('liveSidePanel.aiUnavailable')}</span>;
     }
-    return <span className="fs-badge fs-badge--red">✕ Aniqlanmadi</span>;
+    return <span className="fs-badge fs-badge--red">✕ {t('liveSidePanel.faceNotDetected')}</span>;
   }
-  return <span className="fs-badge fs-badge--gray">… Tekshirilyapti</span>;
+  return <span className="fs-badge fs-badge--gray">… {t('liveSidePanel.faceChecking')}</span>;
 };
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -99,7 +100,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     <aside className="side-panel">
       {/* ─── Header ─────────────────────────────────────────────────── */}
       <div className="panel-header">
-        <span className="panel-header__title">Talabalar</span>
+        <span className="panel-header__title">{t('liveSidePanel.students')}</span>
         <span className="panel-header__count">{students.length}</span>
       </div>
 
@@ -148,10 +149,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                     studentName={student.user_name}
                   />
                   {/* Audio indikator — ko'k dot */}
-                  {isAudioEnabled && <span className="card-thumb__mic" title="Mikrofon ochiq" />}
+                  {isAudioEnabled && <span className="card-thumb__mic" title={t('liveSidePanel.micOn')} />}
                   {/* Qo'l ko'tarish */}
                   {isHandRaised && !isAudioEnabled && (
-                    <span className="card-thumb__hand" title="Qo'l ko'tardi">✋</span>
+                    <span className="card-thumb__hand" title={t('liveSidePanel.handRaised')}>✋</span>
                   )}
                 </div>
 
@@ -172,7 +173,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                       e.stopPropagation();
                       onStudentAudioToggle(student.user_id);
                     }}
-                    title={isAudioEnabled ? "Markazda" : "Sahngaga chiqarish"}
+                    title={isAudioEnabled ? t('liveSidePanel.onStage') : t('liveSidePanel.putOnStage')}
                   >
                     {isAudioEnabled ? "🔊" : "🎤"}
                   </button>

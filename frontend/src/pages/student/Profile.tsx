@@ -62,8 +62,8 @@ const StudentProfile = () => {
   }, [user]);
 
   const profileStatusText = useMemo(() => {
-    return isPendingStudent ? "Kutilmoqda" : "Faol";
-  }, [isPendingStudent]);
+    return isPendingStudent ? t('studentProfilePage.pending') : t('studentProfilePage.activeStatus');
+  }, [isPendingStudent, t]);
 
   const runAiCheck = useCallback(
     (mode: "initial" | "retry") => {
@@ -82,15 +82,15 @@ const StudentProfile = () => {
       setAiCheckType("info");
       setAiCheckMessage(
         mode === "initial"
-          ? "AI tekshiruv avtomatik ishga tushirildi..."
-          : "AI tekshiruv qayta urinilmoqda...",
+          ? t('studentProfilePage.aiCheckAutoStarted')
+          : t('studentProfilePage.aiCheckRetrying'),
       );
 
       runProfileAiVerification()
         .then((result) => {
           if (result.verified) {
             setAiCheckType("success");
-            setAiCheckMessage(result.detail || "AI tekshiruv muvaffaqiyatli yakunlandi.");
+            setAiCheckMessage(result.detail || t('studentProfilePage.aiCheckSuccess'));
             return;
           }
 
@@ -101,7 +101,7 @@ const StudentProfile = () => {
 
           if (unavailable) {
             setAiCheckType("warning");
-            setAiCheckMessage(unavailable.detail || result.detail || "AI xizmati vaqtincha mavjud emas.");
+            setAiCheckMessage(unavailable.detail || result.detail || t('studentProfilePage.aiServiceUnavailable'));
             aiCheckRetryCountRef.current += 1;
             queueRetry();
             return;
@@ -109,19 +109,19 @@ const StudentProfile = () => {
 
           if (result.action === "cooldown") {
             setAiCheckType("info");
-            setAiCheckMessage(result.detail || "AI tekshiruv cooldown holatida.");
+            setAiCheckMessage(result.detail || t('studentProfilePage.aiCheckCooldown'));
             aiCheckRetryCountRef.current += 1;
             queueRetry();
             return;
           }
 
           setAiCheckType("info");
-          setAiCheckMessage(result.detail || "AI tekshiruv yakunlandi, admin tekshiruvi davom etadi.");
+          setAiCheckMessage(result.detail || t('studentProfilePage.aiCheckDone'));
         })
         .catch((err: unknown) => {
           const detail = axios.isAxiosError(err)
-            ? (err.response?.data?.detail || err.response?.data?.error || "AI tekshiruvni ishga tushirib bo'lmadi. Keyinroq qayta urinib ko'ring.")
-            : "AI tekshiruvni ishga tushirib bo'lmadi. Keyinroq qayta urinib ko'ring.";
+            ? (err.response?.data?.detail || err.response?.data?.error || t('studentProfilePage.aiCheckError'))
+            : t('studentProfilePage.aiCheckError');
           setAiCheckType("error");
           setAiCheckMessage(detail);
           aiCheckRetryCountRef.current += 1;
@@ -156,11 +156,11 @@ const StudentProfile = () => {
     setLoadingProfile(true);
     try {
       await updateProfile({ ...values, face_image: file });
-      message.success("Profil yangilandi");
+      message.success(t('studentProfilePage.profileUpdated'));
       setFile(undefined);
       await qc.invalidateQueries({ queryKey: ["me"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setLoadingProfile(false);
     }
@@ -170,10 +170,10 @@ const StudentProfile = () => {
     setLoadingPass(true);
     try {
       await changePassword(values);
-      message.success("Parol yangilandi");
+      message.success(t('studentProfilePage.passwordUpdated'));
       passForm.resetFields();
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setLoadingPass(false);
     }
@@ -182,7 +182,7 @@ const StudentProfile = () => {
   const items = [
     {
       key: "profile",
-      label: "Shaxsiy ma'lumotlar",
+      label: t('studentProfilePage.personalInfo'),
       children: (
         <Card>
           <div className="d-flex items-center mb-6 gap-4">
@@ -197,7 +197,7 @@ const StudentProfile = () => {
               maxCount={1}
               showUploadList={false}
             >
-              <Button size="small">Rasm yuklash</Button>
+              <Button size="small">{t('studentProfilePage.uploadPhoto')}</Button>
             </Upload>
             {file && <span className="caption">{file.name}</span>}
           </div>
@@ -207,21 +207,21 @@ const StudentProfile = () => {
               className="d-grid"
               style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "var(--space-4)" }}
             >
-            <Form.Item label="Ism" name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
+            <Form.Item label={t('studentProfilePage.firstName')} name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Familiya" name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
+              <Form.Item label={t('studentProfilePage.lastName')} name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Email" name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
+              <Form.Item label={t('studentProfilePage.email')} name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
                 <Input type="email" />
               </Form.Item>
-              <Form.Item label="Telefon" name="phone">
+              <Form.Item label={t('studentProfilePage.phone')} name="phone">
                 <Input />
               </Form.Item>
             </div>
             <div className="mt-4">
-              <Button type="primary" htmlType="submit" loading={loadingProfile}>Saqlash</Button>
+              <Button type="primary" htmlType="submit" loading={loadingProfile}>{t('common.save')}</Button>
             </div>
           </Form>
         </Card>
@@ -229,27 +229,27 @@ const StudentProfile = () => {
     },
     {
       key: "security",
-      label: "Xavfsizlik",
+      label: t('studentProfilePage.security'),
       children: (
         <div style={{ maxWidth: "500px", width: "100%" }}>
           <Card>
             <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
               <Form.Item
-                label="Eski parol"
+                label={t('studentProfilePage.oldPassword')}
                 name="old_password"
                 rules={[{ required: true, message: t('profile.oldPasswordRequired') }]}
               >
                 <Input.Password />
               </Form.Item>
               <Form.Item
-                label="Yangi parol"
+                label={t('studentProfilePage.newPassword')}
                 name="new_password"
                 rules={[{ required: true, message: t('profile.newPasswordRequired') }, { min: 8, message: t('profile.newPasswordMin') }]}
               >
                 <Input.Password />
               </Form.Item>
               <div className="mt-4">
-              <Button type="primary" htmlType="submit" loading={loadingPass}>Parolni yangilash</Button>
+              <Button type="primary" htmlType="submit" loading={loadingPass}>{t('studentProfilePage.updatePassword')}</Button>
               </div>
             </Form>
           </Card>
@@ -260,15 +260,15 @@ const StudentProfile = () => {
 
   return (
     <div className="page-container animate-fade-in">
-      <h1 className="mb-6">Profil sozlamalari</h1>
+      <h1 className="mb-6">{t('studentProfilePage.pageTitle')}</h1>
 
       {isPendingStudent && (
         <Alert
           type="warning"
           showIcon
           style={{ marginBottom: 'var(--space-4)' }}
-          message="Arizangiz qabul qilindi"
-          description="Admin tasdiqlaguncha hisob kutish rejimida. Hozircha faqat profil sahifasi faol."
+          message={t('studentProfilePage.applicationAccepted')}
+          description={t('studentProfilePage.applicationPendingDesc')}
         />
       )}
 
@@ -277,27 +277,27 @@ const StudentProfile = () => {
           type={aiCheckType}
           showIcon
           style={{ marginBottom: 'var(--space-4)' }}
-          message={aiChecking ? "AI tekshiruv..." : "AI tekshiruv holati"}
+          message={aiChecking ? t('studentProfilePage.aiCheckRunning') : t('studentProfilePage.aiCheckStatus')}
           description={aiCheckMessage}
         />
       )}
 
       {isPendingStudent && pendingCredentials && (
         <Card style={{ marginBottom: 'var(--space-4)' }}>
-          <div style={{ marginBottom: 'var(--space-2)', fontWeight: 'var(--font-weight-semibold)' }}>Kirish ma'lumotlari</div>
+          <div style={{ marginBottom: 'var(--space-2)', fontWeight: 'var(--font-weight-semibold)' }}>{t('studentProfilePage.loginCredentials')}</div>
           <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "var(--space-3)" }}>
             <div><strong>Username:</strong> {pendingCredentials.username}</div>
             <div>
-              <strong>Parol:</strong> {"•".repeat(8)}{" "}
+              <strong>{t('studentProfilePage.newPassword')}:</strong> {"•".repeat(8)}{" "}
               <Button
                 type="link"
                 size="small"
                 onClick={() => {
                   navigator.clipboard.writeText(pendingCredentials.password);
-                  message.success("Parol nusxalandi");
+                  message.success(t('studentProfilePage.passwordCopied'));
                 }}
               >
-                Nusxalash
+                {t('studentProfilePage.copyBtn')}
               </Button>
             </div>
           </div>
@@ -306,10 +306,10 @@ const StudentProfile = () => {
 
       <Card style={{ marginBottom: 'var(--space-4)' }}>
         <div className="d-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "var(--space-3)" }}>
-          <div><strong>Login:</strong> {user?.username || "-"}</div>
-          <div><strong>Holat:</strong> {profileStatusText}</div>
-          <div><strong>Rol:</strong> {user?.role || "-"}</div>
-          <div><strong>Guruh:</strong> {user?.group ? String(user.group) : "Birikmagan"}</div>
+          <div><strong>{t('studentProfilePage.loginLabel')}:</strong> {user?.username || "-"}</div>
+          <div><strong>{t('studentProfilePage.statusLabel')}:</strong> {profileStatusText}</div>
+          <div><strong>{t('studentProfilePage.roleLabel')}:</strong> {user?.role || "-"}</div>
+          <div><strong>{t('studentProfilePage.groupLabel')}:</strong> {user?.group ? String(user.group) : t('studentProfilePage.notAssigned')}</div>
         </div>
       </Card>
 

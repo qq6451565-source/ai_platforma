@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Select, Button, ColorPicker, Space, Typography, Card, message } from 'antd';
 import { BgColorsOutlined, ReloadOutlined } from '@ant-design/icons';
 import { 
@@ -22,6 +23,7 @@ import './ThemeSwitcher.css';
 const { Title, Text } = Typography;
 
 export const ThemeSwitcher: React.FC = () => {
+  const { t } = useTranslation();
   const [currentTheme, setCurrentTheme] = useState<ThemePreset | 'default' | 'custom'>(getCurrentTheme());
   const [primaryColor, setPrimaryColor] = useState(() => 
     getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3B82F6'
@@ -35,21 +37,21 @@ export const ThemeSwitcher: React.FC = () => {
   const handleThemeChange = (value: ThemePreset) => {
     applyTheme(value);
     setCurrentTheme(value);
-    message.success(`Tema o'zgartirildi: ${availableThemes.find(t => t.value === value)?.label}`);
+    message.success(t('themeSwitcher.themeChanged', { name: availableThemes.find(th => th.value === value)?.label }));
   };
 
   const handleColorChange = (color: any) => {
     const hexColor = color.toHexString();
     setPrimaryColor(hexColor);
     applyCustomTheme({ primary: hexColor });
-    message.success('Maxsus rang qo\'llandi');
+    message.success(t('themeSwitcher.customColorApplied'));
   };
 
   const handleReset = () => {
     resetTheme();
     setCurrentTheme('default');
     setPrimaryColor(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3B82F6');
-    message.success('Tema tiklandi');
+    message.success(t('themeSwitcher.themeReset'));
   };
 
   return (
@@ -57,20 +59,20 @@ export const ThemeSwitcher: React.FC = () => {
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div>
           <Title level={4}>
-            <BgColorsOutlined /> Dizayn Sozlamalari
+            <BgColorsOutlined /> {t('themeSwitcher.designSettings')}
           </Title>
           <Text type="secondary">
-            Ilovaning ranglarini va dizaynini o'zgartiring
+            {t('themeSwitcher.designDescription')}
           </Text>
         </div>
 
         <div>
-          <Text strong>Tayyor Mavzular:</Text>
+          <Text strong>{t('themeSwitcher.readyThemes')}</Text>
           <Select
             value={currentTheme === 'default' || currentTheme === 'custom' ? undefined : currentTheme}
             onChange={handleThemeChange}
             style={{ width: '100%', marginTop: 'var(--space-2)' }}
-            placeholder="Tema tanlang"
+            placeholder={t('themeSwitcher.selectTheme')}
             options={availableThemes.map(theme => ({
               value: theme.value,
               label: (
@@ -86,7 +88,7 @@ export const ThemeSwitcher: React.FC = () => {
         </div>
 
         <div>
-          <Text strong>Maxsus Rang:</Text>
+          <Text strong>{t('themeSwitcher.customColor')}</Text>
           <div style={{ marginTop: 'var(--space-2)' }}>
             <ColorPicker
               value={primaryColor}
@@ -97,7 +99,7 @@ export const ThemeSwitcher: React.FC = () => {
             />
           </div>
           <Text type="secondary" style={{ fontSize: 'var(--font-size-tiny)', marginTop: 'var(--space-1)', display: 'block' }}>
-            Asosiy rangni tanlang va ilova avtomatik mos ranglarni yaratadi
+            {t('themeSwitcher.customColorDescription')}
           </Text>
         </div>
 
@@ -106,7 +108,7 @@ export const ThemeSwitcher: React.FC = () => {
           onClick={handleReset}
           block
         >
-          Standart Holatga Qaytarish
+          {t('themeSwitcher.resetToDefault')}
         </Button>
       </Space>
     </Card>

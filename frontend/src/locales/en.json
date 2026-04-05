@@ -1624,5 +1624,64 @@
     "testsCount": "{{count}} tests",
     "deleted": "Deleted",
     "deleteConfirm": "Delete?"
+  },
+  "liveUtils": {
+    "groupNotAssigned": "Group not assigned",
+    "metricJoined": "Join",
+    "metricFace": "Face",
+    "metricChecks": "Chk",
+    "attendancePresent": "Live: present",
+    "attendanceAbsent": "Live: absent",
+    "attendancePending": "Live: pending",
+    "attendanceNotCollected": "Attendance not yet collected.",
+    "groupHandRaised": "Hand raised",
+    "groupVerified": "Verified",
+    "groupFailed": "Not verified",
+    "groupPending": "Pending",
+    "faceDetected": "Verified",
+    "faceNotDetected": "Not verified",
+    "faceMultiple": "Multiple faces",
+    "faceChecking": "Checking"
+  },
+  "liveSidePanel": {
+    "faceDetected": "Detected",
+    "faceMultiple": "Multiple faces",
+    "aiUnavailable": "AI unavailable",
+    "faceNotDetected": "Not detected",
+    "faceChecking": "Checking",
+    "students": "Students",
+    "micOn": "Microphone on",
+    "handRaised": "Hand raised",
+    "onStage": "On stage",
+    "putOnStage": "Put on stage"
+  },
+  "liveTile": {
+    "speakingOnStage": "Currently speaking on stage",
+    "putOnStageToSpeak": "Put on stage to speak"
+  },
+  "liveRoom": {
+    "aiUnavailable": "AI service unavailable",
+    "connecting": "Connecting...",
+    "faceDetected": "Face detected ✓",
+    "faceNotDetected": "Face not detected",
+    "faceMultiple": "Multiple faces",
+    "faceChecking": "Checking...",
+    "demoMode": "Demo mode",
+    "connectionLost": "Signal connection unavailable. Reconnecting.",
+    "faceStatus": "Face status: {{status}}",
+    "teacher": "Teacher",
+    "student": "Student"
+  },
+  "themeSwitcher": {
+    "themeChanged": "Theme changed: {{name}}",
+    "customColorApplied": "Custom color applied",
+    "themeReset": "Theme reset",
+    "designSettings": "Design Settings",
+    "designDescription": "Change the colors and design of the application",
+    "readyThemes": "Ready Themes:",
+    "selectTheme": "Select theme",
+    "customColor": "Custom Color:",
+    "customColorDescription": "Choose a primary color and the app will automatically create matching colors",
+    "resetToDefault": "Reset to Default"
   }
 }

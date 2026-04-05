@@ -1624,5 +1624,64 @@
     "testsCount": "{{count}} тестов",
     "deleted": "Удалено",
     "deleteConfirm": "Удалить?"
+  },
+  "liveUtils": {
+    "groupNotAssigned": "Группа не назначена",
+    "metricJoined": "Уч",
+    "metricFace": "Лицо",
+    "metricChecks": "Пров",
+    "attendancePresent": "Live: присутствует",
+    "attendanceAbsent": "Live: отсутствует",
+    "attendancePending": "Live: ожидает",
+    "attendanceNotCollected": "Посещаемость ещё не собрана.",
+    "groupHandRaised": "Поднявшие руку",
+    "groupVerified": "Подтверждённые",
+    "groupFailed": "Не подтверждённые",
+    "groupPending": "Ожидающие",
+    "faceDetected": "Подтверждено",
+    "faceNotDetected": "Не подтверждено",
+    "faceMultiple": "Несколько лиц",
+    "faceChecking": "Проверка"
+  },
+  "liveSidePanel": {
+    "faceDetected": "Обнаружено",
+    "faceMultiple": "Несколько лиц",
+    "aiUnavailable": "AI недоступен",
+    "faceNotDetected": "Не обнаружено",
+    "faceChecking": "Проверка",
+    "students": "Студенты",
+    "micOn": "Микрофон включён",
+    "handRaised": "Поднял руку",
+    "onStage": "На сцене",
+    "putOnStage": "Вывести на сцену"
+  },
+  "liveTile": {
+    "speakingOnStage": "Сейчас говорит на сцене",
+    "putOnStageToSpeak": "Вывести на сцену для выступления"
+  },
+  "liveRoom": {
+    "aiUnavailable": "AI сервис недоступен",
+    "connecting": "Подключение...",
+    "faceDetected": "Лицо обнаружено ✓",
+    "faceNotDetected": "Лицо не обнаружено",
+    "faceMultiple": "Несколько лиц",
+    "faceChecking": "Проверка...",
+    "demoMode": "Демо режим",
+    "connectionLost": "Сигнальное соединение недоступно. Переподключение.",
+    "faceStatus": "Статус лица: {{status}}",
+    "teacher": "Преподаватель",
+    "student": "Студент"
+  },
+  "themeSwitcher": {
+    "themeChanged": "Тема изменена: {{name}}",
+    "customColorApplied": "Пользовательский цвет применён",
+    "themeReset": "Тема сброшена",
+    "designSettings": "Настройки дизайна",
+    "designDescription": "Измените цвета и дизайн приложения",
+    "readyThemes": "Готовые темы:",
+    "selectTheme": "Выберите тему",
+    "customColor": "Пользовательский цвет:",
+    "customColorDescription": "Выберите основной цвет, и приложение автоматически создаст подходящие цвета",
+    "resetToDefault": "Сбросить к стандартным"
   }
 }

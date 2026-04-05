@@ -1624,5 +1624,64 @@
     "testsCount": "{{count}} ta test",
     "deleted": "O'chirildi",
     "deleteConfirm": "O'chirish?"
+  },
+  "liveUtils": {
+    "groupNotAssigned": "Guruh belgilanmagan",
+    "metricJoined": "Qat",
+    "metricFace": "Face",
+    "metricChecks": "Tek",
+    "attendancePresent": "Live: bor",
+    "attendanceAbsent": "Live: yo'q",
+    "attendancePending": "Live: kutilmoqda",
+    "attendanceNotCollected": "Davomat hali yig'ilmagan.",
+    "groupHandRaised": "Qol ko'targanlar",
+    "groupVerified": "Tasdiqlangan",
+    "groupFailed": "Tasdiqlanmagan",
+    "groupPending": "Kutilmoqda",
+    "faceDetected": "Tasdiqlandi",
+    "faceNotDetected": "Tasdiqlandi emas",
+    "faceMultiple": "Ko'p yuzlar",
+    "faceChecking": "Tekshirilmoqda"
+  },
+  "liveSidePanel": {
+    "faceDetected": "Aniqlandi",
+    "faceMultiple": "Ko'p yuz",
+    "aiUnavailable": "AI mavjud emas",
+    "faceNotDetected": "Aniqlanmadi",
+    "faceChecking": "Tekshirilyapti",
+    "students": "Talabalar",
+    "micOn": "Mikrofon ochiq",
+    "handRaised": "Qo'l ko'tardi",
+    "onStage": "Markazda",
+    "putOnStage": "Sahngaga chiqarish"
+  },
+  "liveTile": {
+    "speakingOnStage": "Hozir markazda gapiryapti",
+    "putOnStageToSpeak": "Gapirish uchun markazga chiqarish"
+  },
+  "liveRoom": {
+    "aiUnavailable": "AI xizmati mavjud emas",
+    "connecting": "Ulanmoqda...",
+    "faceDetected": "Yuz aniqlandi ✓",
+    "faceNotDetected": "Yuz aniqlanmadi",
+    "faceMultiple": "Ko'p yuz",
+    "faceChecking": "Tekshirilmoqda...",
+    "demoMode": "Demo rejim",
+    "connectionLost": "Signal ulanishi mavjud emas. Ulanish qayta tiklanmoqda.",
+    "faceStatus": "Yuz holati: {{status}}",
+    "teacher": "O'qituvchi",
+    "student": "Talaba"
+  },
+  "themeSwitcher": {
+    "themeChanged": "Tema o'zgartirildi: {{name}}",
+    "customColorApplied": "Maxsus rang qo'llandi",
+    "themeReset": "Tema tiklandi",
+    "designSettings": "Dizayn Sozlamalari",
+    "designDescription": "Ilovaning ranglarini va dizaynini o'zgartiring",
+    "readyThemes": "Tayyor Mavzular:",
+    "selectTheme": "Tema tanlang",
+    "customColor": "Maxsus Rang:",
+    "customColorDescription": "Asosiy rangni tanlang va ilova avtomatik mos ranglarni yaratadi",
+    "resetToDefault": "Standart Holatga Qaytarish"
   }
 }

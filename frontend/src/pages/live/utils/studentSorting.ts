@@ -2,6 +2,7 @@
  * Student sorting utilities for live session.
  * Priority: hand raised -> verified -> not verified -> pending.
  */
+import i18next from "../../../i18n";
 
 export type FaceDetectionStatus = "DETECTED" | "NOT_DETECTED" | "MULTIPLE" | "CHECKING";
 export type StudentTier = "hand_raised" | "verified" | "failed" | "pending";
@@ -86,7 +87,7 @@ export const resolveStudentGroup = (student: Student): string => {
     return student.role as string;
   }
 
-  return "Guruh belgilanmagan";
+  return i18next.t('liveUtils.groupNotAssigned');
 };
 
 export const resolveVisualStatus = (
@@ -137,13 +138,13 @@ export const getStudentMetricChips = (status?: StudentStatus): StudentMetricChip
       : null;
 
   if (joinedRatio && hasJoinedProgress) {
-    chips.push({ key: "joined", label: "Qat", value: joinedRatio });
+    chips.push({ key: "joined", label: i18next.t('liveUtils.metricJoined'), value: joinedRatio });
   }
   if (successRate && hasFaceChecks) {
-    chips.push({ key: "face", label: "Face", value: successRate });
+    chips.push({ key: "face", label: i18next.t('liveUtils.metricFace'), value: successRate });
   }
   if (samples) {
-    chips.push({ key: "checks", label: "Tek", value: samples });
+    chips.push({ key: "checks", label: i18next.t('liveUtils.metricChecks'), value: samples });
   }
 
   return chips;
@@ -157,9 +158,9 @@ export const getStudentMetricsSummary = (status?: StudentStatus): string => {
 
 export const getStudentAttendanceNote = (status?: StudentStatus): string => {
   if (!status) return "";
-  if (status.attendanceStatus === "present") return "Live: bor";
-  if (status.attendanceStatus === "absent") return "Live: yo'q";
-  if ((status.attendanceSamples ?? 0) > 0) return "Live: kutilmoqda";
+  if (status.attendanceStatus === "present") return i18next.t('liveUtils.attendancePresent');
+  if (status.attendanceStatus === "absent") return i18next.t('liveUtils.attendanceAbsent');
+  if ((status.attendanceSamples ?? 0) > 0) return i18next.t('liveUtils.attendancePending');
   return "";
 };
 
@@ -167,7 +168,7 @@ export const getStudentEligibilityBadge = (
   status?: StudentStatus
 ): StudentEligibilityBadge | null => {
   const tone = status?.eligibilityStatus ?? "blocked";
-  const reason = status?.eligibilityReason || "Davomat hali yig'ilmagan.";
+  const reason = status?.eligibilityReason || i18next.t('liveUtils.attendanceNotCollected');
 
   if (tone === "eligible") {
     return {
@@ -251,10 +252,10 @@ export const getGroupedStudents = (
   });
 
   const groupMeta: Array<Pick<StudentGroup, "key" | "group" | "icon">> = [
-    { key: "hand_raised", group: "Qol ko'targanlar", icon: "HR" },
-    { key: "verified", group: "Tasdiqlangan", icon: "OK" },
-    { key: "failed", group: "Tasdiqlanmagan", icon: "NO" },
-    { key: "pending", group: "Kutilmoqda", icon: "..." },
+    { key: "hand_raised", group: i18next.t('liveUtils.groupHandRaised'), icon: "HR" },
+    { key: "verified", group: i18next.t('liveUtils.groupVerified'), icon: "OK" },
+    { key: "failed", group: i18next.t('liveUtils.groupFailed'), icon: "NO" },
+    { key: "pending", group: i18next.t('liveUtils.groupPending'), icon: "..." },
   ];
 
   return groupMeta
@@ -272,7 +273,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
         color: "var(--color-success)",
         animation: "pulse-green",
         icon: "OK",
-        label: "Tasdiqlandi",
+        label: i18next.t('liveUtils.faceDetected'),
         bgColor: "rgba(var(--color-success-rgb), 0.1)",
       };
     case "NOT_DETECTED":
@@ -280,7 +281,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
         color: "var(--color-error)",
         animation: "shake-red",
         icon: "NO",
-        label: "Tasdiqlandi emas",
+        label: i18next.t('liveUtils.faceNotDetected'),
         bgColor: "rgba(var(--color-error-rgb), 0.1)",
       };
     case "MULTIPLE":
@@ -288,7 +289,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
         color: "var(--color-warning)",
         animation: "pulse-yellow",
         icon: "WARN",
-        label: "Ko'p yuzlar",
+        label: i18next.t('liveUtils.faceMultiple'),
         bgColor: "rgba(var(--color-warning-rgb), 0.1)",
       };
     case "CHECKING":
@@ -297,7 +298,7 @@ export const getFaceStatusDisplay = (status: FaceDetectionStatus) => {
         color: "var(--color-text-muted)",
         animation: "spin",
         icon: "...",
-        label: "Tekshirilmoqda",
+        label: i18next.t('liveUtils.faceChecking'),
         bgColor: "rgba(var(--scanner-border-rgb), 0.12)",
       };
   }
