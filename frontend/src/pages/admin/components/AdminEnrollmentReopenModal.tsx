@@ -1,4 +1,5 @@
 import { Alert, Form, Input, Modal } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminEnrollmentController } from "../hooks/useAdminEnrollmentController";
 
@@ -6,9 +7,11 @@ type Props = {
   controller: AdminEnrollmentController;
 };
 
-const AdminEnrollmentReopenModal = ({ controller }: Props) => (
+const AdminEnrollmentReopenModal = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title="Arizani qayta ochish"
+    title={t('adminReopenModal.title')}
     open={controller.reopenOpen}
     onCancel={controller.closeReopen}
     onOk={() => controller.reopenForm.submit()}
@@ -20,23 +23,24 @@ const AdminEnrollmentReopenModal = ({ controller }: Props) => (
         <Alert
           type="info"
           showIcon
-          message="Ariza qayta review bosqichiga o'tadi"
-          description="Holat pending bo'ladi. Shundan keyin admin arizani tahrirlashi, AI qayta tekshirishi yoki qayta tasdiqlashi mumkin."
+          message={t('adminReopenModal.alertMessage')}
+          description={t('adminReopenModal.alertDescription')}
           style={{ marginBottom: 'var(--space-3)' }}
         />
         <Form.Item
           name="reopen_reason"
-          label="Qayta ochish sababi"
-          rules={[{ required: true, message: "Qayta ochish sababini yozing" }]}
+          label={t('adminReopenModal.reasonLabel')}
+          rules={[{ required: true, message: t('adminReopenModal.reasonRequired') }]}
         >
           <Input.TextArea
             rows={4}
-            placeholder="Masalan: foydalanuvchi yangi selfie yuklashi kerak yoki review qayta o'tkaziladi."
+            placeholder={t('adminReopenModal.reasonPlaceholder')}
           />
         </Form.Item>
       </Form>
     ) : null}
   </Modal>
-);
+  );
+};
 
 export default AdminEnrollmentReopenModal;

@@ -9,6 +9,7 @@ import {
   Tabs,
   Tag,
 } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import { AdminUser } from "../../api/admin";
 import AdminPassportModal from "./components/AdminPassportModal";
@@ -20,11 +21,12 @@ import AdminUserProfileDrawer from "./components/AdminUserProfileDrawer";
 import { useAdminUsersController } from "./hooks/useAdminUsersController";
 
 const UsersPage = () => {
+  const { t } = useTranslation();
   const controller = useAdminUsersController();
 
   const columns = [
     {
-      title: "Foydalanuvchi",
+      title: t('adminUsers.user'),
       key: "user",
       render: (_: unknown, user: AdminUser) => (
         <Space direction="vertical" size={0}>
@@ -36,7 +38,7 @@ const UsersPage = () => {
       ),
     },
     {
-      title: "Aloqa",
+      title: t('adminUsers.contact'),
       key: "contact",
       render: (_: unknown, user: AdminUser) => (
         <Space direction="vertical" size={0}>
@@ -46,7 +48,7 @@ const UsersPage = () => {
       ),
     },
     {
-      title: "Rol",
+      title: t('adminUsers.role'),
       key: "role",
       render: (_: unknown, user: AdminUser) => (
         <Select
@@ -57,26 +59,26 @@ const UsersPage = () => {
             controller.changeRole(user.id, role as "student" | "teacher" | "admin")
           }
           options={[
-            { value: "student", label: "Talaba" },
-            { value: "teacher", label: "O'qituvchi" },
-            { value: "admin", label: "Admin" },
+            { value: "student", label: t('adminUsers.student') },
+            { value: "teacher", label: t('adminUsers.teacher') },
+            { value: "admin", label: t('adminUsers.admin') },
           ]}
         />
       ),
     },
     {
-      title: "Academic holat",
+      title: t('adminUsers.academicStatus'),
       key: "academic",
       render: (_: unknown, user: AdminUser) => {
         if (user.role === "student") {
           const profile = controller.profileByUser.get(user.id);
-          if (!profile) return <Tag color="red">Profil yo'q</Tag>;
+          if (!profile) return <Tag color="red">{t('adminUsers.noProfile')}</Tag>;
           return (
             <Space wrap>
               <Tag color={profile.group ? "green" : "gold"}>
                 {profile.group
-                  ? controller.groupMap.get(profile.group) || "Guruh biriktirilgan"
-                  : "Guruh tanlanmagan"}
+                  ? controller.groupMap.get(profile.group) || t('adminUsers.groupAssigned')
+                  : t('adminUsers.groupNotSelected')}
               </Tag>
               <Tag>{profile.status || "active"}</Tag>
             </Space>
@@ -86,23 +88,23 @@ const UsersPage = () => {
         if (user.role === "teacher") {
           const assignmentCount = (controller.assignmentsByTeacher.get(user.id) || []).length;
           return assignmentCount ? (
-            <Tag color="blue">{assignmentCount} ta mapping</Tag>
+            <Tag color="blue">{t('adminUsers.mappingCount', { count: assignmentCount })}</Tag>
           ) : (
-            <Tag color="gold">Workload yo'q</Tag>
+            <Tag color="gold">{t('adminUsers.noWorkload')}</Tag>
           );
         }
 
-        return <Tag>System admin</Tag>;
+        return <Tag>{t('adminUsers.systemAdmin')}</Tag>;
       },
     },
     {
       title: "Status",
       key: "status",
       render: (_: unknown, user: AdminUser) =>
-        user.is_active ? <Tag color="green">faol</Tag> : <Tag color="red">blok</Tag>,
+        user.is_active ? <Tag color="green">{t('adminUsers.active')}</Tag> : <Tag color="red">{t('adminUsers.blocked')}</Tag>,
     },
     {
-      title: "Amallar",
+      title: t('adminUsers.actions'),
       key: "actions",
       render: (_: unknown, user: AdminUser) => (
         <Space>
@@ -113,9 +115,9 @@ const UsersPage = () => {
               controller.openProfile(user);
             }}
           >
-            Tahrirlash
+            {t('adminUsers.editBtn')}
           </Button>
-          <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => controller.removeUser(user.id)}>
+          <Popconfirm title={t('adminUsers.confirmDeleteUser')} onConfirm={() => controller.removeUser(user.id)}>
             <Button
               size="small"
               danger
@@ -123,7 +125,7 @@ const UsersPage = () => {
                 event.stopPropagation();
               }}
             >
-              O'chirish
+              {t('adminUsers.deleteBtn')}
             </Button>
           </Popconfirm>
         </Space>
@@ -133,10 +135,10 @@ const UsersPage = () => {
 
   return (
     <Card
-      title="Foydalanuvchilar"
+      title={t('adminUsers.pageTitle')}
       extra={
         <Button type="primary" onClick={controller.openCreate}>
-          Yangi foydalanuvchi
+          {t('adminUsers.newUser')}
         </Button>
       }
     >
@@ -144,16 +146,16 @@ const UsersPage = () => {
         activeKey={controller.roleFilter || "all"}
         onChange={controller.setRoleFromTab}
         items={[
-          { key: "all", label: `Barchasi (${controller.roleCounts.all})` },
-          { key: "admin", label: `Adminlar (${controller.roleCounts.admin})` },
-          { key: "teacher", label: `O'qituvchilar (${controller.roleCounts.teacher})` },
-          { key: "student", label: `Talabalar (${controller.roleCounts.student})` },
+          { key: "all", label: t('adminUsers.allTab', { count: controller.roleCounts.all }) },
+          { key: "admin", label: t('adminUsers.adminsTab', { count: controller.roleCounts.admin }) },
+          { key: "teacher", label: t('adminUsers.teachersTab', { count: controller.roleCounts.teacher }) },
+          { key: "student", label: t('adminUsers.studentsTab', { count: controller.roleCounts.student }) },
         ]}
         style={{ marginBottom: 'var(--space-3)' }}
       />
 
       <Input
-        placeholder="Qidirish: login, ism, email, telefon, guruh yoki fan"
+        placeholder={t('adminUsers.searchPlaceholder')}
         value={controller.search}
         onChange={(event) => controller.setSearch(event.target.value)}
         style={{ maxWidth: 360, marginBottom: 'var(--space-3)' }}

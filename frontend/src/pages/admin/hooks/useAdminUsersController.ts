@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, message } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 import {
   AdminUser,
@@ -49,6 +50,7 @@ import {
 import { updateAdminHubSearch } from "../utils/workflowRouting";
 
 export const useAdminUsersController = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -152,46 +154,46 @@ export const useAdminUsersController = () => {
     mutationFn: ({ id, role }: { id: number; role: "student" | "teacher" | "admin" }) =>
       setUserRole(id, role),
     onSuccess: async (_response, variables) => {
-      message.success("Rol yangilandi");
+      message.success(t('adminUsers.roleUpdated'));
       if (selectedUser?.id === variables.id) {
         setSelectedUser((current) => (current ? { ...current, role: variables.role } : current));
       }
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.roleChange);
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["detail"], "Rolni yangilashda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail"], t('adminUsers.roleUpdateError'))),
   });
 
   const createMutation = useMutation({
     mutationFn: (payload: Record<string, unknown>) => createAdminUser(payload),
     onSuccess: async () => {
-      message.success("Foydalanuvchi qo'shildi");
+      message.success(t('adminUsers.userCreated'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.usersOnly);
       setModalOpen(false);
       form.resetFields();
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], "Foydalanuvchi qo'shishda xato")),
+      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], t('adminUsers.userCreateError'))),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
       updateAdminUser(id, payload),
     onSuccess: async () => {
-      message.success("Foydalanuvchi yangilandi");
+      message.success(t('adminUsers.userUpdated'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.usersOnly);
       setModalOpen(false);
       setEditing(null);
       form.resetFields();
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], "Yangilashda xato")),
+      message.error(getAdminApiErrorMessage(error, ["username", "email", "detail"], t('adminUsers.userUpdateError'))),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteAdminUser(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.userDirectory);
       if (selectedUser) {
         setDrawerOpen(false);
@@ -199,7 +201,7 @@ export const useAdminUsersController = () => {
       }
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["detail"], "O'chirishda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail"], t('common.deleteError'))),
   });
 
   const placementMutation = useMutation({
@@ -216,13 +218,13 @@ export const useAdminUsersController = () => {
       };
     }) => assignStudentPlacement(userId, payload),
     onSuccess: async () => {
-      message.success("Talaba placement saqlandi");
+      message.success(t('adminUsers.placementSaved'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.studentPlacement);
       setPlacementModalOpen(false);
       placementForm.resetFields();
     },
     onError: (error: any) =>
-      message.error(getAdminApiErrorMessage(error, ["group_id", "group"], "Placementni saqlashda xato")),
+      message.error(getAdminApiErrorMessage(error, ["group_id", "group"], t('adminUsers.placementSaveError'))),
   });
 
   const workloadSaveMutation = useMutation({
@@ -248,7 +250,7 @@ export const useAdminUsersController = () => {
       });
     },
     onSuccess: async () => {
-      message.success("Teacher workload saqlandi");
+      message.success(t('adminUsers.workloadSaved'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
       setWorkloadModalOpen(false);
       setEditingWorkloadAssignment(null);
@@ -256,18 +258,18 @@ export const useAdminUsersController = () => {
     },
     onError: (error: any) =>
       message.error(
-        getAdminApiErrorMessage(error, ["groups", "group_ids", "non_field_errors"], "Teacher workloadni saqlashda xato"),
+        getAdminApiErrorMessage(error, ["groups", "group_ids", "non_field_errors"], t('adminUsers.workloadSaveError')),
       ),
   });
 
   const workloadDeleteMutation = useMutation({
     mutationFn: (id: number) => deleteTeacherSubject(id),
     onSuccess: async () => {
-      message.success("Workload o'chirildi");
+      message.success(t('adminUsers.workloadDeleted'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
     },
     onError: (error: any) =>
-      message.error(getAdminApiErrorMessage(error, ["detail"], "Workloadni o'chirishda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail"], t('adminUsers.workloadDeleteError'))),
   });
 
   const filteredUsers = useMemo(
@@ -416,7 +418,7 @@ export const useAdminUsersController = () => {
     try {
       const values = await passportForm.validateFields();
       if (!selectedPassport && (!passportFrontFile || !passportBackFile)) {
-        message.warning("Passport rasm(lar)i kerak: old va orqa tomoni");
+        message.warning(t('adminUsers.passportImagesRequired'));
         return;
       }
 
@@ -439,7 +441,7 @@ export const useAdminUsersController = () => {
         await createPassportData(payload);
       }
 
-      message.success("Passport ma'lumotlari saqlandi");
+      message.success(t('adminUsers.passportSaved'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.passportsOnly);
       setPassportModalOpen(false);
     } catch (error: any) {
@@ -448,7 +450,7 @@ export const useAdminUsersController = () => {
           getAdminApiErrorMessage(
             error,
             ["passport_series", "passport_number", "detail"],
-            "Passport ma'lumotlarini saqlashda xato",
+            t('adminUsers.passportSaveError'),
           ),
         );
       }
@@ -458,7 +460,7 @@ export const useAdminUsersController = () => {
   const deletePassport = async () => {
     if (!selectedPassport?.id) return;
     await deletePassportData(selectedPassport.id);
-    message.success("Passport ma'lumotlari o'chirildi");
+    message.success(t('adminUsers.passportDeleted'));
     await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.passportsOnly);
   };
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, message } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 import { AdminUser, assignStudentPlacement, fetchUsers } from "../../../api/admin";
 import {
@@ -25,6 +26,7 @@ import {
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useStudentPlacementController = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -57,7 +59,7 @@ export const useStudentPlacementController = () => {
       };
     }) => assignStudentPlacement(userId, payload),
     onSuccess: async () => {
-      message.success("Talaba placement saqlandi");
+      message.success(t('adminPlacement.saved'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.studentPlacement);
       navigate(
         { pathname: location.pathname, search: clearRequestedUserIdSearch(location.search) },
@@ -69,7 +71,7 @@ export const useStudentPlacementController = () => {
     },
     onError: (error: any) => {
       message.error(
-        getAdminApiErrorMessage(error, ["group_id", "group"], "Placementni saqlashda xato"),
+        getAdminApiErrorMessage(error, ["group_id", "group"], t('adminPlacement.saveError')),
       );
     },
   });

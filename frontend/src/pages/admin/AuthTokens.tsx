@@ -21,30 +21,30 @@ const AuthTokensPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: { user: number }) => createAuthToken(vals),
     onSuccess: async () => {
-      message.success("Token yaratildi");
+      message.success(t('adminAuth.tokenCreated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authTokens });
     },
-    onError: () => message.error("Token yaratishda xato"),
+    onError: () => message.error(t('adminAuth.tokenCreateError')),
   });
 
   const deleteMut = useMutation({
     mutationFn: (key: string) => deleteAuthToken(key),
     onSuccess: async () => {
-      message.success("Token o'chirildi");
+      message.success(t('adminAuth.tokenDeleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authTokens });
     },
     onError: () => message.error(t('common.deleteError')),
   });
 
   return (
-    <Card title="API tokenlar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminAuth.apiTokens')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="user" rules={[{ required: true }]}>
-          <Select placeholder="Foydalanuvchi" style={{ width: 240 }} options={userOptions} />
+          <Select placeholder={t('adminAuth.user')} style={{ width: 240 }} options={userOptions} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-            Token yaratish
+            {t('adminAuth.createToken')}
           </Button>
         </Form.Item>
       </Form>
@@ -55,17 +55,17 @@ const AuthTokensPage = () => {
         dataSource={tokens || []}
         pagination={{ pageSize: 10 }}
         columns={[
-          { title: "Token", dataIndex: "key" },
-          { title: "Foydalanuvchi", dataIndex: "user_username", render: (v: string) => v || "-" },
+          { title: t('adminAuth.token'), dataIndex: "key" },
+          { title: t('adminAuth.user'), dataIndex: "user_username", render: (v: string) => v || "-" },
           {
-            title: "Yaratilgan",
+            title: t('adminAuth.created'),
             dataIndex: "created",
             render: (v: string) => (v ? dayjs(v).format("YYYY-MM-DD HH:mm") : "-"),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: AuthToken) => (
-              <Popconfirm title="Tokenni o'chirasizmi?" onConfirm={() => deleteMut.mutate(r.key)}>
+              <Popconfirm title={t('adminAuth.confirmDeleteToken')} onConfirm={() => deleteMut.mutate(r.key)}>
                 <Button size="small" danger>
                   {t('common.delete')}
                 </Button>

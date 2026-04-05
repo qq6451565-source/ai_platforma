@@ -23,8 +23,10 @@ import { deleteTest, updateTest, uploadTest, fetchTest } from "../../api/tests";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 import { getApiError } from "../../utils/getApiError";
+import { useTranslation } from 'react-i18next';
 
 const AdminTestsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: tests, isLoading } = useQuery(adminQueryOptions.tests());
   const { data: lessons } = useQuery(adminQueryOptions.lessons());
@@ -68,12 +70,12 @@ const AdminTestsPage = () => {
   const onFinish = async (values: any) => {
     const file = fileList[0]?.originFileObj as File | undefined;
     if (!file) {
-      message.error("Word faylni yuklang (.doc yoki .docx).");
+      message.error(t('adminTests.wordFileRequired'));
       return;
     }
     const lower = file.name.toLowerCase();
     if (!lower.endsWith(".doc") && !lower.endsWith(".docx")) {
-      message.error("Faqat .doc yoki .docx fayl qabul qilinadi.");
+      message.error(t('adminTests.wordFileOnly'));
       return;
     }
 
@@ -87,12 +89,12 @@ const AdminTestsPage = () => {
         total_score: values.total_score,
         is_active: values.is_active,
       });
-      message.success("Test Word fayldan yaratildi");
+      message.success(t('adminTests.created'));
       form.resetFields();
       setFileList([]);
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }
@@ -105,7 +107,7 @@ const AdminTestsPage = () => {
       const data = await fetchTest(id);
       setViewItem(data);
     } catch {
-      message.error("Testni yuklab bo'lmadi");
+      message.error(t('adminTests.loadError'));
       setViewOpen(false);
     } finally {
       setViewLoading(false);
@@ -114,7 +116,7 @@ const AdminTestsPage = () => {
 
   return (
     <div style={{ padding: 'var(--space-6)' }}>
-      <Typography.Title level={4}>Dars testlari</Typography.Title>
+      <Typography.Title level={4}>{t('adminTests.pageTitle')}</Typography.Title>
       {selectedSubject ? (
         <Form
           form={form}
@@ -123,33 +125,33 @@ const AdminTestsPage = () => {
           style={{ maxWidth: 520, marginBottom: 'var(--space-6)' }}
           initialValues={{ is_active: true, time_limit_minutes: 20, total_score: 100 }}
         >
-          <Form.Item name="title" label="Sarlavha">
+          <Form.Item name="title" label={t('adminTests.title')}>
             <Input />
           </Form.Item>
-          <Form.Item name="lesson" label="Dars" rules={[{ required: true, message: "Dars tanlang" }]}>
+          <Form.Item name="lesson" label={t('adminTests.lesson')} rules={[{ required: true, message: t('adminTests.lessonRequired') }]}>
             <Select
               showSearch
-              placeholder="Dars"
+              placeholder={t('adminTests.lesson')}
               options={filteredLessons.map((l) => ({
                 value: l.id,
-                label: `${l.topic || "Dars"} | ${l.group_name || `Guruh #${l.group}`}`,
+                label: `${l.topic || t('adminTests.lesson')} | ${l.group_name || `${t('form.group')} #${l.group}`}`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="time_limit_minutes" label="Vaqt (min)">
+          <Form.Item name="time_limit_minutes" label={t('adminTests.time')}>
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
             name="total_score"
-            label="Umumiy ball"
-            rules={[{ required: true, message: "Umumiy ball kiriting" }]}
+            label={t('adminTests.totalScore')}
+            rules={[{ required: true, message: t('adminTests.totalScoreRequired') }]}
           >
             <InputNumber style={{ width: "100%" }} min={1} />
           </Form.Item>
-          <Form.Item name="is_active" label="Active" valuePropName="checked">
+          <Form.Item name="is_active" label={t('adminTests.isActive')} valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item label="Test fayli (.doc/.docx)" required>
+          <Form.Item label={t('adminTests.testFile')} required>
             <Upload
               accept=".doc,.docx"
               beforeUpload={() => false}
@@ -157,15 +159,15 @@ const AdminTestsPage = () => {
               maxCount={1}
               onChange={({ fileList: next }) => setFileList(next.slice(-1))}
             >
-              <Button>Fayl tanlash</Button>
+              <Button>{t('adminTests.selectFile')}</Button>
             </Upload>
             <Typography.Text type="secondary">
-              Har savolda 4 ta variant bo'lishi kerak, to'g'ri javob * bilan belgilanadi.
+              {t('adminTests.testFileHint')}
             </Typography.Text>
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={submitting}>
-              Yaratish
+              {t('common.create')}
             </Button>
           </Form.Item>
         </Form>
@@ -191,18 +193,18 @@ const AdminTestsPage = () => {
                       }}
                     >
                   <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta test</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{t('adminTests.testCount', { count: subject.count })}</div>
                     </Card>
                   </List.Item>
                 )}
               />
             ) : (
-              <Empty description="Ma'lumot yo'q" />
+              <Empty description={t('common.noData')} />
             )
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+                <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
                 <Typography.Title level={5} style={{ margin: 0 }}>
                   {selectedSubject}
                 </Typography.Title>
@@ -215,7 +217,7 @@ const AdminTestsPage = () => {
                     <List.Item
                       actions={[
                         <Button key="view" type="link" onClick={() => openView(item.id)}>
-                          Ko'rish
+                          {t('common.view')}
                         </Button>,
                         <Button
                           key="edit"
@@ -233,23 +235,23 @@ const AdminTestsPage = () => {
                             setEditOpen(true);
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
                         <Popconfirm
                           key="delete"
-                          title="O'chirish?"
+                          title={t('common.confirmDelete')}
                           onConfirm={async () => {
                             try {
                               await deleteTest(item.id);
-                              message.success("O'chirildi");
+                              message.success(t('common.deleted'));
                               await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
                             } catch {
-                              message.error("O'chirishda xato");
+                              message.error(t('common.deleteError'));
                             }
                           }}
                         >
                           <Button danger type="link">
-                            O'chirish
+                            {t('common.delete')}
                           </Button>
                         </Popconfirm>,
                       ]}
@@ -263,19 +265,19 @@ const AdminTestsPage = () => {
                             columnGap: 12,
                           }}
                         >
-                          <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.title')}</span>
                           <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
-                          <span style={{ color: "var(--color-text-muted)" }}>Dars</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.lesson')}</span>
                           <span>{item.lesson_topic || item.lesson || "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Guruh</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('form.group')}</span>
                           <span>{item.group_name || item.group || "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Vaqt</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.time')}</span>
                           <span>{item.time_limit_minutes ?? "-"} min</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Umumiy ball</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.totalScore')}</span>
                           <span>{item.total_score ?? "-"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Holat</span>
-                          <span>{item.is_active ? "Active" : "Inactive"}</span>
-                          <span style={{ color: "var(--color-text-muted)" }}>Yaratilgan</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.status')}</span>
+                          <span>{item.is_active ? t('adminTests.isActive') : "Inactive"}</span>
+                          <span style={{ color: "var(--color-text-muted)" }}>{t('adminTests.createdAt')}</span>
                           <span>{item.created_at ? dayjs(item.created_at).format("YYYY-MM-DD HH:mm") : "-"}</span>
                         </div>
                       </div>
@@ -283,7 +285,7 @@ const AdminTestsPage = () => {
                   )}
                 />
               ) : (
-                <Empty description="Ma'lumot yo'q" />
+                <Empty description={t('common.noData')} />
               )}
             </>
           )}
@@ -291,7 +293,7 @@ const AdminTestsPage = () => {
       )}
 
       <Modal
-        title="Testni tahrirlash"
+        title={t('adminTests.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -307,11 +309,11 @@ const AdminTestsPage = () => {
               total_score: vals.total_score,
               is_active: vals.is_active,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.tests });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, t('common.error')));
           } finally {
             setEditLoading(false);
           }
@@ -319,40 +321,40 @@ const AdminTestsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('adminTests.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="description" label="Izoh">
+          <Form.Item name="description" label={t('adminTests.description')}>
             <Input.TextArea rows={2} />
           </Form.Item>
-          <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
+          <Form.Item name="lesson" label={t('adminTests.lesson')} rules={[{ required: true }]}>
             <Select
               showSearch
-              placeholder="Dars"
+              placeholder={t('adminTests.lesson')}
               options={(selectedSubject ? filteredLessons : lessons || []).map((l) => ({
                 value: l.id,
-                label: `${l.topic} | ${l.group_name || `Guruh #${l.group}`} | ${l.subject_name || ""}`,
+                label: `${l.topic} | ${l.group_name || `${t('form.group')} #${l.group}`} | ${l.subject_name || ""}`,
               }))}
             />
           </Form.Item>
-          <Form.Item name="time_limit_minutes" label="Vaqt (min)">
+          <Form.Item name="time_limit_minutes" label={t('adminTests.time')}>
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
             name="total_score"
-            label="Umumiy ball"
-            rules={[{ required: true, message: "Umumiy ball kiriting" }]}
+            label={t('adminTests.totalScore')}
+            rules={[{ required: true, message: t('adminTests.totalScoreRequired') }]}
           >
             <InputNumber style={{ width: "100%" }} min={1} />
           </Form.Item>
-          <Form.Item name="is_active" label="Active" valuePropName="checked">
+          <Form.Item name="is_active" label={t('adminTests.isActive')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Testni ko'rish"
+        title={t('adminTests.viewTitle')}
         open={viewOpen}
         onCancel={() => setViewOpen(false)}
         footer={null}
@@ -363,7 +365,7 @@ const AdminTestsPage = () => {
         ) : viewItem ? (
           <div>
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Typography.Text type="secondary">Sarlavha: </Typography.Text>
+              <Typography.Text type="secondary">{t('adminTests.title')}: </Typography.Text>
               <Typography.Text strong>{viewItem.title}</Typography.Text>
             </div>
             {viewItem.questions?.length ? (
@@ -396,11 +398,11 @@ const AdminTestsPage = () => {
                 )}
               />
             ) : (
-              <Empty description="Savollar topilmadi" />
+              <Empty description={t('adminTests.noQuestions')} />
             )}
           </div>
         ) : (
-          <Empty description="Ma'lumot yo'q" />
+          <Empty description={t('common.noData')} />
         )}
       </Modal>
     </div>

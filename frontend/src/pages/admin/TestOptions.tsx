@@ -32,7 +32,7 @@ const TestOptionsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createTestOption(vals),
     onSuccess: async () => {
-      message.success("Variant qo'shildi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
     onError: () => message.error(t('common.saveError')),
@@ -41,18 +41,18 @@ const TestOptionsPage = () => {
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: any }) => updateTestOption(id, payload),
     onSuccess: async () => {
-      message.success("Variant yangilandi");
+      message.success(t('common.updated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
       setEditOpen(false);
       setEditing(null);
     },
-    onError: () => message.error("Yangilashda xato"),
+    onError: () => message.error(t('common.error')),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteTestOption(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.testOptions });
     },
     onError: () => message.error(t('common.deleteError')),
@@ -69,15 +69,15 @@ const TestOptionsPage = () => {
   };
 
   return (
-    <Card title="Test variantlari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminTestOptions.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="question" label="Savol" rules={[{ required: true }]}>
-          <Select options={questionOptions} placeholder="Savol tanlang" />
+        <Form.Item name="question" label={t('adminTestQuestions.question')} rules={[{ required: true }]}>
+          <Select options={questionOptions} placeholder={t('adminTestOptions.selectQuestion')} />
         </Form.Item>
-        <Form.Item name="text" label="Variant matni" rules={[{ required: true }]}>
+        <Form.Item name="text" label={t('adminTestOptions.optionText')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="is_correct" label="To'g'ri javob" valuePropName="checked">
+        <Form.Item name="is_correct" label={t('adminTestOptions.isCorrect')} valuePropName="checked">
           <Switch />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
@@ -92,18 +92,18 @@ const TestOptionsPage = () => {
         pagination={{ pageSize: 10 }}
         columns={[
           {
-            title: "Savol",
+            title: t('adminTestQuestions.question'),
             dataIndex: "question",
             render: (v: number) => questionOptions.find((q) => q.value === v)?.label || v,
           },
-          { title: "Matn", dataIndex: "text" },
+          { title: t('adminTestOptions.text'), dataIndex: "text" },
           {
-            title: "To'g'ri",
+            title: t('adminTestOptions.isCorrect'),
             dataIndex: "is_correct",
-            render: (v: boolean) => (v ? "ha" : "yo'q"),
+            render: (v: boolean) => (v ? t('common.yes') : t('common.no')),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: any) => (
               <Space>
                 <Button size="small" onClick={() => openEdit(r)}>
@@ -121,20 +121,20 @@ const TestOptionsPage = () => {
       />
 
       <Modal
-        title="Variantni tahrirlash"
+        title={t('adminTestOptions.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
         confirmLoading={updateMut.isPending}
       >
         <Form layout="vertical" form={editForm} onFinish={(vals) => updateMut.mutate({ id: editing.id, payload: vals })}>
-          <Form.Item name="question" label="Savol" rules={[{ required: true }]}>
+          <Form.Item name="question" label={t('adminTestQuestions.question')} rules={[{ required: true }]}>
             <Select options={questionOptions} />
           </Form.Item>
-          <Form.Item name="text" label="Variant matni" rules={[{ required: true }]}>
+          <Form.Item name="text" label={t('adminTestOptions.optionText')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="is_correct" label="To'g'ri javob" valuePropName="checked">
+          <Form.Item name="is_correct" label={t('adminTestOptions.isCorrect')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>

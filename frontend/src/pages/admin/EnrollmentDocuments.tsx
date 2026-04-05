@@ -51,7 +51,7 @@ const EnrollmentDocumentsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createEnrollmentDocument(buildFormData(vals)),
     onSuccess: async () => {
-      message.success("Hujjat qo'shildi");
+      message.success(t('adminEnrollment.documentAdded'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
       createForm.resetFields();
     },
@@ -61,24 +61,24 @@ const EnrollmentDocumentsPage = () => {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteEnrollmentDocument(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentDocuments });
     },
     onError: () => message.error(t('common.deleteError')),
   });
 
   return (
-    <Card title="Ariza hujjatlari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminEnrollment.documents')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="applicant" label="Arizachi" rules={[{ required: true }]}>
-          <Select options={applicantOptions} placeholder="Arizachi tanlang" />
+        <Form.Item name="applicant" label={t('adminEnrollment.applicant')} rules={[{ required: true }]}>
+          <Select options={applicantOptions} placeholder={t('adminEnrollment.selectApplicant')} />
         </Form.Item>
         <Form.Item
           name="passport_front"
-          label="Pasport oldi"
+          label={t('adminEnrollment.passportFront')}
           valuePropName="fileList"
           getValueFromEvent={normFile}
-          rules={[{ required: true, message: "Pasport oldi kerak" }]}
+          rules={[{ required: true, message: t('adminEnrollment.passportFrontRequired') }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
             <Button>{t('common.upload')}</Button>
@@ -86,10 +86,10 @@ const EnrollmentDocumentsPage = () => {
         </Form.Item>
         <Form.Item
           name="face_image"
-          label="Yuz rasmi"
+          label={t('adminEnrollment.faceImage')}
           valuePropName="fileList"
           getValueFromEvent={normFile}
-          rules={[{ required: true, message: "Yuz rasmi kerak" }]}
+          rules={[{ required: true, message: t('adminEnrollment.faceImageRequired') }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
             <Button>{t('common.upload')}</Button>
@@ -107,27 +107,27 @@ const EnrollmentDocumentsPage = () => {
         pagination={{ pageSize: 10 }}
         columns={[
           {
-            title: "Arizachi",
+            title: t('adminEnrollment.applicant'),
             dataIndex: "applicant",
             render: (v: number) => applicantOptions.find((a) => a.value === v)?.label || v,
           },
           {
-            title: "Pasport oldi",
+            title: t('adminEnrollment.passportFront'),
             dataIndex: "passport_front",
             render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
-            title: "Pasport orqasi",
+            title: t('adminEnrollment.passportBack'),
             dataIndex: "passport_back",
             render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
-            title: "Yuz rasmi",
+            title: t('adminEnrollment.faceImage'),
             dataIndex: "face_image",
             render: (v: string) => (v ? <Button size="small" onClick={() => setPreview(v)}>{t('common.view')}</Button> : "-"),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: any) => (
               <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                 <Button size="small" danger>
@@ -139,7 +139,7 @@ const EnrollmentDocumentsPage = () => {
         ]}
       />
 
-      <Modal open={!!preview} onCancel={() => setPreview(null)} footer={null} title="Rasm">
+      <Modal open={!!preview} onCancel={() => setPreview(null)} footer={null} title={t('adminEnrollment.image')}>
         {preview ? <img src={preview} alt="preview" style={{ width: "100%" }} loading="lazy" /> : null}
       </Modal>
     </Card>

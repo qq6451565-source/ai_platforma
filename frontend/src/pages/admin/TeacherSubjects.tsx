@@ -29,19 +29,19 @@ const TeacherSubjectsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createTeacherSubject(vals),
     onSuccess: async () => {
-      message.success("Bog'lanish qo'shildi");
+      message.success(t('adminTeacherSubjects.added'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.teacherSubjects });
     },
     onError: () => message.error(t('common.error')),
   });
 
   return (
-    <Card title="O'qituvchi - Fan - Guruh" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminTeacherSubjects.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+        <Form.Item name="teacher" label={t('adminTeacherSubjects.teacher')} rules={[{ required: true }]}>
           <Select
             showSearch
-            placeholder="O'qituvchi"
+            placeholder={t('adminTeacherSubjects.teacherPlaceholder')}
             options={(teachers || []).map((t) => ({ value: t.id, label: t.username }))}
           />
         </Form.Item>
@@ -52,11 +52,11 @@ const TeacherSubjectsPage = () => {
             options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
           />
         </Form.Item>
-        <Form.Item name="groups" label="Guruhlar">
+        <Form.Item name="groups" label={t('adminTeacherSubjects.groups')}>
           <Select
             mode="multiple"
             allowClear
-            placeholder="Guruhlar"
+            placeholder={t('adminTeacherSubjects.groupsPlaceholder')}
             options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
           />
         </Form.Item>
@@ -101,7 +101,7 @@ const TeacherSubjectsPage = () => {
             ]}
           >
             {teacherMap.get(it.teacher) || `Teacher #${it.teacher}`} |{" "}
-            {subjectMap.get(it.subject) || `Fan #${it.subject}`} | Guruhlar:{" "}
+            {subjectMap.get(it.subject) || `${t('form.subject')} #${it.subject}`} | {t('adminTeacherSubjects.groups')}:{" "}
             {(it.groups || [])
               .map((gid) => groupMap.get(gid) || `#${gid}`)
               .join(", ")}
@@ -110,7 +110,7 @@ const TeacherSubjectsPage = () => {
       />
 
       <Modal
-        title="Bog'lanishni tahrirlash"
+        title={t('adminTeacherSubjects.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -131,7 +131,7 @@ const TeacherSubjectsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+          <Form.Item name="teacher" label={t('adminTeacherSubjects.teacher')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(teachers || []).map((t) => ({ value: t.id, label: t.username }))}
@@ -143,7 +143,7 @@ const TeacherSubjectsPage = () => {
               options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
             />
           </Form.Item>
-          <Form.Item name="groups" label="Guruhlar">
+          <Form.Item name="groups" label={t('adminTeacherSubjects.groups')}>
             <Select
               mode="multiple"
               allowClear

@@ -20,22 +20,22 @@ const SubjectsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createSubject(vals),
     onSuccess: async () => {
-      message.success("Fan qo'shildi");
+      message.success(t('adminSubjects.added'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.subjects });
     },
-    onError: () => message.error("Fan qo'shishda xato"),
+    onError: () => message.error(t('adminSubjects.addError')),
   });
 
   return (
-    <Card title="Fanlar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminSubjects.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>
+        <Form.Item name="directions" label={t('adminSubjects.directions')} rules={[{ required: true }]}>
           <Select
             mode="multiple"
-            placeholder="Yo'nalish tanlang"
+            placeholder={t('adminSubjects.selectDirection')}
             options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
           />
         </Form.Item>
@@ -94,7 +94,7 @@ const SubjectsPage = () => {
     />
 
       <Modal
-        title="Fanni tahrirlash"
+        title={t('adminSubjects.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -118,10 +118,10 @@ const SubjectsPage = () => {
           <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="directions" label="Yo'nalishlar" rules={[{ required: true }]}>
+          <Form.Item name="directions" label={t('adminSubjects.directions')} rules={[{ required: true }]}>
             <Select
               mode="multiple"
-              placeholder="Yo'nalish tanlang"
+              placeholder={t('adminSubjects.selectDirection')}
               options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
             />
           </Form.Item>

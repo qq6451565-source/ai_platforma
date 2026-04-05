@@ -1,6 +1,7 @@
 import { Button, Form, Input, Modal, Upload } from "antd";
 import type { FormInstance } from "antd/es/form";
 import { UploadOutlined } from "@ant-design/icons";
+import { useTranslation } from 'react-i18next';
 
 import type { PassportData } from "../../../api/admin";
 
@@ -24,28 +25,30 @@ const AdminPassportModal = ({
   onFrontFileChange,
   onBackFileChange,
   onSelfieFileChange,
-}: AdminPassportModalProps) => (
+}: AdminPassportModalProps) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title="Passport ma'lumotlarini tahrirlash"
+    title={t('adminPassport.editTitle')}
     open={open}
     onCancel={onCancel}
     onOk={onSave}
     destroyOnClose
   >
     <Form layout="vertical" form={form}>
-      <Form.Item name="passport_series" label="Seriya" rules={[{ required: true }]}>
+      <Form.Item name="passport_series" label={t('adminPassport.series')} rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item name="passport_number" label="Raqam" rules={[{ required: true }]}>
+      <Form.Item name="passport_number" label={t('adminPassport.number')} rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item name="birth_date" label="Tug'ilgan sana">
+      <Form.Item name="birth_date" label={t('adminPassport.birthDate')}>
         <Input type="date" />
       </Form.Item>
-      <Form.Item name="extracted_fullname" label="OCR ism-familiya">
+      <Form.Item name="extracted_fullname" label={t('adminPassport.ocrFullname')}>
         <Input />
       </Form.Item>
-      <Form.Item label="Passport old tomoni">
+      <Form.Item label={t('adminPassport.frontSide')}>
         <Upload
           beforeUpload={() => false}
           maxCount={1}
@@ -54,17 +57,17 @@ const AdminPassportModal = ({
             onFrontFileChange(file || null);
           }}
         >
-          <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
+          <Button icon={<UploadOutlined />}>{t('adminPassport.selectNewImage')}</Button>
         </Upload>
         {passport?.front_image ? (
           <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.front_image} target="_blank" rel="noreferrer">
-              Hozirgi rasm
+              {t('adminPassport.currentImage')}
             </a>
           </div>
         ) : null}
       </Form.Item>
-      <Form.Item label="Passport orqa tomoni">
+      <Form.Item label={t('adminPassport.backSide')}>
         <Upload
           beforeUpload={() => false}
           maxCount={1}
@@ -73,17 +76,17 @@ const AdminPassportModal = ({
             onBackFileChange(file || null);
           }}
         >
-          <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
+          <Button icon={<UploadOutlined />}>{t('adminPassport.selectNewImage')}</Button>
         </Upload>
         {passport?.back_image ? (
           <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.back_image} target="_blank" rel="noreferrer">
-              Hozirgi rasm
+              {t('adminPassport.currentImage')}
             </a>
           </div>
         ) : null}
       </Form.Item>
-      <Form.Item label="Selfi">
+      <Form.Item label={t('adminPassport.selfie')}>
         <Upload
           beforeUpload={() => false}
           maxCount={1}
@@ -92,18 +95,19 @@ const AdminPassportModal = ({
             onSelfieFileChange(file || null);
           }}
         >
-          <Button icon={<UploadOutlined />}>Yangi rasm tanlash</Button>
+          <Button icon={<UploadOutlined />}>{t('adminPassport.selectNewImage')}</Button>
         </Upload>
         {passport?.selfie_image ? (
           <div style={{ marginTop: 'var(--space-2)' }}>
             <a href={passport.selfie_image} target="_blank" rel="noreferrer">
-              Hozirgi rasm
+              {t('adminPassport.currentImage')}
             </a>
           </div>
         ) : null}
       </Form.Item>
     </Form>
   </Modal>
-);
+  );
+};
 
 export default AdminPassportModal;

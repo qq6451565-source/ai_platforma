@@ -18,20 +18,20 @@ const DirectionsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: { name: string; language?: string }) => createDirection(vals),
     onSuccess: async () => {
-      message.success("Yo'nalish qo'shildi");
+      message.success(t('adminDirections.added'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.directions });
     },
-    onError: () => message.error("Yo'nalish qo'shishda xato"),
+    onError: () => message.error(t('adminDirections.addError')),
   });
 
   return (
-    <Card title="Yo'nalishlar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminDirections.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name" rules={[{ required: true, message: t('form.name') }]}>
-          <Input placeholder="Yo'nalish nomi" />
+          <Input placeholder={t('adminDirections.namePlaceholder')} />
         </Form.Item>
         <Form.Item name="language">
-          <Input placeholder="Til (uz/en)" />
+          <Input placeholder={t('adminDirections.languagePlaceholder')} />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={createMut.isPending}>
@@ -77,7 +77,7 @@ const DirectionsPage = () => {
       />
 
       <Modal
-        title="Yo'nalishni tahrirlash"
+        title={t('adminDirections.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -101,7 +101,7 @@ const DirectionsPage = () => {
           <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="language" label="Til">
+          <Form.Item name="language" label={t('adminDirections.languageLabel')}>
             <Input />
           </Form.Item>
         </Form>

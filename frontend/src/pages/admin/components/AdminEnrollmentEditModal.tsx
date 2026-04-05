@@ -1,4 +1,5 @@
 import { Form, Input, Modal, Select } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminEnrollmentController } from "../hooks/useAdminEnrollmentController";
 
@@ -6,9 +7,11 @@ type Props = {
   controller: AdminEnrollmentController;
 };
 
-const AdminEnrollmentEditModal = ({ controller }: Props) => (
+const AdminEnrollmentEditModal = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title="Arizani tahrirlash"
+    title={t('adminEditModal.title')}
     open={controller.editOpen}
     onCancel={controller.closeEdit}
     onOk={() => controller.editForm.submit()}
@@ -17,25 +20,26 @@ const AdminEnrollmentEditModal = ({ controller }: Props) => (
   >
     {controller.selectedApplicant ? (
       <Form layout="vertical" form={controller.editForm} onFinish={controller.submitEdit}>
-        <Form.Item name="full_name" label="F.I.Sh" rules={[{ required: true }]}>
+        <Form.Item name="full_name" label={t('form.fullName')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="phone" label="Telefon">
+        <Form.Item name="phone" label={t('form.phone')}>
           <Input />
         </Form.Item>
-        <Form.Item name="email" label="Email">
+        <Form.Item name="email" label={t('form.email')}>
           <Input />
         </Form.Item>
-        <Form.Item name="direction_choice" label="Yo'nalish">
+        <Form.Item name="direction_choice" label={t('form.direction')}>
           <Select
             allowClear
             options={controller.directions.map((direction) => ({ value: direction.id, label: direction.name }))}
-            placeholder="Yo'nalish tanlang"
+            placeholder={t('adminEditModal.selectDirection')}
           />
         </Form.Item>
       </Form>
     ) : null}
   </Modal>
-);
+  );
+};
 
 export default AdminEnrollmentEditModal;

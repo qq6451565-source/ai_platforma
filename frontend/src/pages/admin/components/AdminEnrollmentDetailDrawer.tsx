@@ -15,6 +15,8 @@ import {
   Tooltip,
   Typography,
 } from "antd";
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 import type { AuditLog, EnrollmentDetailItem, EnrollmentVerification } from "../../../api/admin";
 import type { AdminEnrollmentController } from "../hooks/useAdminEnrollmentController";
@@ -43,7 +45,7 @@ const withTooltip = (reason: string | null | undefined, node: ReactNode) =>
     node
   );
 
-const renderDocumentPreview = (title: string, src?: string) => (
+const renderDocumentPreview = (title: string, src?: string, t?: TFunction) => (
   <Card
     size="small"
     title={title}
@@ -58,21 +60,21 @@ const renderDocumentPreview = (title: string, src?: string) => (
         preview
       />
     ) : (
-      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={`${title} mavjud emas`} />
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t ? t('adminEnrollmentDetail.notAvailable', { title }) : `${title} mavjud emas`} />
     )}
   </Card>
 );
 
-const renderVerificationCard = (verification: EnrollmentVerification, index: number) => (
+const renderVerificationCard = (verification: EnrollmentVerification, index: number, t?: TFunction) => (
   <Card key={`${verification.created_at || "verification"}-${index}`} size="small">
     <Space direction="vertical" size={10} style={{ width: "100%" }}>
       <Space wrap>
         <Tag color={verification.color}>{verification.label}</Tag>
-        <Text>Ishonch: {formatEnrollmentConfidence(verification.confidence)}</Text>
+        <Text>{t ? t('adminEnrollmentDetail.confidence') : 'Ishonch'}: {formatEnrollmentConfidence(verification.confidence)}</Text>
         <Text type="secondary">
           {formatEnrollmentDateTime(verification.checked_at || verification.created_at)}
         </Text>
-        {verification.face_embedding_ready ? <Tag color="cyan">Face baza saqlandi</Tag> : null}
+        {verification.face_embedding_ready ? <Tag color="cyan">{t ? t('adminEnrollmentDetail.faceBaseReady') : 'Face baza saqlandi'}</Tag> : null}
       </Space>
       <Text>{verification.message}</Text>
       {verification.reason ? (
@@ -93,7 +95,7 @@ const renderVerificationCard = (verification: EnrollmentVerification, index: num
   </Card>
 );
 
-const renderAuditCard = (entry: AuditLog, index: number) => (
+const renderAuditCard = (entry: AuditLog, index: number, t?: TFunction) => (
   <Card key={`${entry.id}-${index}`} size="small">
     <Space direction="vertical" size={8} style={{ width: "100%" }}>
       <Space wrap>
@@ -103,24 +105,26 @@ const renderAuditCard = (entry: AuditLog, index: number) => (
         <Text>{entry.user_username || "-"}</Text>
         <Text type="secondary">{formatEnrollmentDateTime(entry.created_at)}</Text>
       </Space>
-      {entry.extra?.manual_override_reason ? <Text>Override sababi: {entry.extra.manual_override_reason}</Text> : null}
-      {entry.extra?.reject_reason ? <Text>Rad etish sababi: {entry.extra.reject_reason}</Text> : null}
-      {entry.extra?.reopen_reason ? <Text>Qayta ochish sababi: {entry.extra.reopen_reason}</Text> : null}
+      {entry.extra?.manual_override_reason ? <Text>{t ? t('adminEnrollmentDetail.overrideReason') : 'Override sababi'}: {entry.extra.manual_override_reason}</Text> : null}
+      {entry.extra?.reject_reason ? <Text>{t ? t('adminEnrollmentDetail.rejectReason') : 'Rad etish sababi'}: {entry.extra.reject_reason}</Text> : null}
+      {entry.extra?.reopen_reason ? <Text>{t ? t('adminEnrollmentDetail.reopenReason') : 'Qayta ochish sababi'}: {entry.extra.reopen_reason}</Text> : null}
       {typeof entry.extra?.ai_confidence === "number" ? (
-        <Text type="secondary">AI ishonchi: {entry.extra.ai_confidence.toFixed(3)}</Text>
+        <Text type="secondary">{t ? t('adminEnrollmentDetail.aiConfidence') : 'AI ishonchi'}: {entry.extra.ai_confidence.toFixed(3)}</Text>
       ) : null}
       {typeof entry.extra?.confidence === "number" ? (
-        <Text type="secondary">Qayta tekshiruv ishonchi: {entry.extra.confidence.toFixed(3)}</Text>
+        <Text type="secondary">{t ? t('adminEnrollmentDetail.reverifyConfidence') : 'Qayta tekshiruv ishonchi'}: {entry.extra.confidence.toFixed(3)}</Text>
       ) : null}
     </Space>
   </Card>
 );
 
-const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
+const AdminEnrollmentDetailDrawer = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Drawer
     open={controller.detailOpen}
     width={920}
-    title="Ariza review"
+    title={t('adminEnrollmentDetail.reviewTitle')}
     onClose={controller.closeDetail}
     extra={
       controller.currentApplicant ? (
@@ -131,7 +135,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               disabled={!controller.currentActions.can_edit}
               onClick={() => controller.openEdit(controller.currentApplicant!)}
             >
-              Tahrirlash
+              {t('common.edit')}
             </Button>,
           )}
           {withTooltip(
@@ -141,7 +145,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               disabled={!controller.currentActions.can_approve}
               onClick={() => controller.openApprove(controller.currentApplicant!)}
             >
-              Tasdiqlash
+              {t('adminEnrollmentDetail.approve')}
             </Button>,
           )}
           {withTooltip(
@@ -152,7 +156,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               onClick={() => controller.openReject(controller.currentApplicant!)}
               loading={controller.rejecting && controller.selectedApplicant?.id === controller.currentApplicant.id}
             >
-              Rad etish
+              {t('adminEnrollmentDetail.reject')}
             </Button>,
           )}
           {controller.currentActions.can_reopen ? (
@@ -161,7 +165,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               loading={controller.reopening && controller.selectedApplicant?.id === controller.currentApplicant.id}
               onClick={() => controller.openReopen(controller.currentApplicant!)}
             >
-              Qayta ochish
+              {t('adminEnrollmentDetail.reopen')}
             </Button>
           ) : null}
         </Space>
@@ -176,7 +180,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
           <Space direction="vertical" size={10} style={{ width: "100%" }}>
             <Space wrap align="center">
               <Title level={4} style={{ margin: 0 }}>
-                {controller.currentApplicant.full_name || `Ariza #${controller.currentApplicant.id}`}
+                {controller.currentApplicant.full_name || t('adminEnrollmentDetail.applicationId', { id: controller.currentApplicant.id })}
               </Title>
               {(() => {
                 const meta = getEnrollmentStatusMeta(controller.currentApplicant?.status);
@@ -187,25 +191,25 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               ) : null}
             </Space>
             <Descriptions size="small" column={2}>
-              <Descriptions.Item label="Telefon">{controller.currentApplicant.phone || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Email">{controller.currentApplicant.email || "-"}</Descriptions.Item>
-              <Descriptions.Item label="Yo'nalish">
+              <Descriptions.Item label={t('form.phone')}>{controller.currentApplicant.phone || "-"}</Descriptions.Item>
+              <Descriptions.Item label={t('form.email')}>{controller.currentApplicant.email || "-"}</Descriptions.Item>
+              <Descriptions.Item label={t('form.direction')}>
                 {controller.currentApplicant.direction_name ||
                   (controller.currentApplicant.direction_choice
                     ? controller.directionMap.get(controller.currentApplicant.direction_choice) ||
                       controller.currentApplicant.direction_choice
                     : "-")}
               </Descriptions.Item>
-              <Descriptions.Item label="Yuborilgan">
+              <Descriptions.Item label={t('adminEnrollmentDetail.submitted')}>
                 {formatEnrollmentDateTime(controller.currentApplicant.created_at)}
               </Descriptions.Item>
               {"approved_at" in controller.currentApplicant ? (
-                <Descriptions.Item label="Tasdiqlangan vaqt">
+                <Descriptions.Item label={t('adminEnrollmentDetail.approvedAt')}>
                   {formatEnrollmentDateTime(controller.currentApplicant.approved_at)}
                 </Descriptions.Item>
               ) : null}
               {"approved_by_name" in controller.currentApplicant ? (
-                <Descriptions.Item label="Tasdiqlagan admin">
+                <Descriptions.Item label={t('adminEnrollmentDetail.approvedByAdmin')}>
                   {controller.currentApplicant.approved_by_name || "-"}
                 </Descriptions.Item>
               ) : null}
@@ -214,7 +218,7 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
         </Card>
 
         {controller.blockedActionItems.length ? (
-          <Card size="small" title="Amal cheklovlari">
+          <Card size="small" title={t('adminEnrollmentDetail.actionLimits')}>
             <div style={{ display: "grid", gap: 'var(--space-2-5)' }}>
               {controller.blockedActionItems.map((item) => (
                 <div
@@ -244,10 +248,12 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
               {renderDocumentPreview(
                 "Passport preview",
                 (controller.currentApplicant as EnrollmentDetailItem).documents?.passport_front,
+                t,
               )}
               {renderDocumentPreview(
                 "Selfie preview",
                 (controller.currentApplicant as EnrollmentDetailItem).documents?.face_image,
+                t,
               )}
             </Space>
           </Col>
@@ -277,13 +283,13 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
                     }
                   />
                   <Descriptions size="small" column={1}>
-                    <Descriptions.Item label="Ishonch">
+                    <Descriptions.Item label={t('adminEnrollmentDetail.confidence')}>
                       {formatEnrollmentConfidence(controller.detailSummary.confidence)}
                     </Descriptions.Item>
                     <Descriptions.Item label="Threshold">
                       {controller.detailSummary.threshold ?? "-"}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Oxirgi tekshiruv">
+                    <Descriptions.Item label={t('adminEnrollmentDetail.lastCheck')}>
                       {formatEnrollmentDateTime(controller.detailSummary.checked_at)}
                     </Descriptions.Item>
                   </Descriptions>
@@ -303,41 +309,42 @@ const AdminEnrollmentDetailDrawer = ({ controller }: Props) => (
                       loading={controller.reverifying && controller.selectedApplicant?.id === controller.currentApplicant.id}
                       onClick={() => void controller.reverifyApplicant(controller.currentApplicant!)}
                     >
-                      AI qayta tekshir
+                      {t('adminEnrollmentDetail.aiReverify')}
                     </Button>,
                   )}
                 </Space>
               ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="AI summary topilmadi" />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('adminEnrollmentDetail.noAiSummary')} />
               )}
             </Card>
           </Col>
         </Row>
 
-        <Card size="small" title="Tekshiruvlar tarixi">
+        <Card size="small" title={t('adminEnrollmentDetail.verificationHistory')}>
           {controller.detailHistory.length ? (
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
-              {controller.detailHistory.map(renderVerificationCard)}
+              {controller.detailHistory.map((v, i) => renderVerificationCard(v, i, t))}
             </Space>
           ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tekshiruv tarixi yo'q" />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('adminEnrollmentDetail.noVerificationHistory')} />
           )}
         </Card>
 
-        <Card size="small" title="Qarorlar tarixi">
+        <Card size="small" title={t('adminEnrollmentDetail.decisionHistory')}>
           {controller.applicantAuditLoading && !controller.decisionHistory.length ? (
             <Skeleton active paragraph={{ rows: 4 }} />
           ) : controller.decisionHistory.length ? (
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
-              {controller.decisionHistory.map(renderAuditCard)}
+              {controller.decisionHistory.map((e, i) => renderAuditCard(e, i, t))}
             </Space>
           ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Qarorlar tarixi yo'q" />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('adminEnrollmentDetail.noDecisionHistory')} />
           )}
         </Card>
       </Space>
     ) : null}
   </Drawer>
-);
+  );
+};
 
 export default AdminEnrollmentDetailDrawer;

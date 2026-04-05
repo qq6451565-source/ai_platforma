@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, Form, Select, InputNumber, Button, List, Empty, Popconfirm, Modal, message } from "antd";
 import {
   createStudentProfile,
@@ -10,6 +11,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminProfilesPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: studentProfiles } = useQuery(adminQueryOptions.studentProfiles());
   const { data: directions } = useQuery(adminQueryOptions.directions());
@@ -29,16 +31,16 @@ const AdminProfilesPage = () => {
   const createStudentMut = useMutation({
     mutationFn: (vals: any) => createStudentProfile(vals),
     onSuccess: async () => {
-      message.success("Talaba profili qo'shildi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles });
     },
-    onError: () => message.error("Xatolik"),
+    onError: () => message.error(t('common.error')),
   });
 
   return (
-    <Card title="Talaba profillari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminProfiles.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createStudentMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="user" label="Talaba" rules={[{ required: true }]}>
+        <Form.Item name="user" label={t('roles.student')} rules={[{ required: true }]}>
           <Select
             showSearch
             options={(students || []).map((s) => ({
@@ -47,16 +49,16 @@ const AdminProfilesPage = () => {
             }))}
           />
         </Form.Item>
-        <Form.Item name="direction" label="Yo'nalish" rules={[{ required: true }]}>
+        <Form.Item name="direction" label={t('adminEnrollment.direction')} rules={[{ required: true }]}>
           <Select showSearch options={(directions || []).map((d) => ({ value: d.id, label: d.name }))} />
         </Form.Item>
-        <Form.Item name="group" label="Guruh">
+        <Form.Item name="group" label={t('form.group')}>
           <Select showSearch options={(groups || []).map((g) => ({ value: g.id, label: g.name }))} />
         </Form.Item>
-        <Form.Item name="admission_year" label="Qabul yili" rules={[{ required: true }]}>
+        <Form.Item name="admission_year" label={t('adminProfiles.admissionYear')} rules={[{ required: true }]}>
           <InputNumber min={2000} max={2100} style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+        <Form.Item name="status" label={t('common.status')} rules={[{ required: true }]}>
           <Select
             options={[
               { value: "active", label: "Active" },
@@ -67,13 +69,13 @@ const AdminProfilesPage = () => {
           />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createStudentMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
       <List
         dataSource={studentProfiles || []}
-        locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('common.noData')} /> }}
         renderItem={(p) => (
           <List.Item
             actions={[
@@ -90,10 +92,10 @@ const AdminProfilesPage = () => {
                   });
                 }}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>,
               <Popconfirm
-                title="O'chirish?"
+                title={t('common.confirmDelete')}
                 onConfirm={() =>
                   deleteStudentProfile(p.id).then(() =>
                     qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles })
@@ -101,7 +103,7 @@ const AdminProfilesPage = () => {
                 }
               >
                 <Button danger type="link">
-                  O'chirish
+                  {t('common.delete')}
                 </Button>
               </Popconfirm>,
             ]}
@@ -114,7 +116,7 @@ const AdminProfilesPage = () => {
       />
 
       <Modal
-        title="Talaba profilini tahrirlash"
+        title={t('adminProfiles.editTitle')}
         open={!!editStudent}
         onCancel={() => setEditStudent(null)}
         onOk={async () => {
@@ -123,11 +125,11 @@ const AdminProfilesPage = () => {
           try {
             const vals = await studentForm.validateFields();
             await updateStudentProfile(editStudent.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditStudent(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentProfiles });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setLoadingStudent(false);
           }
@@ -135,7 +137,7 @@ const AdminProfilesPage = () => {
         confirmLoading={loadingStudent}
       >
         <Form layout="vertical" form={studentForm}>
-          <Form.Item name="user" label="Talaba" rules={[{ required: true }]}>
+          <Form.Item name="user" label={t('roles.student')} rules={[{ required: true }]}>
             <Select
               options={(students || []).map((s) => ({
                 value: s.id,
@@ -143,16 +145,16 @@ const AdminProfilesPage = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="direction" label="Yo'nalish" rules={[{ required: true }]}>
+          <Form.Item name="direction" label={t('adminEnrollment.direction')} rules={[{ required: true }]}>
             <Select options={(directions || []).map((d) => ({ value: d.id, label: d.name }))} />
           </Form.Item>
-          <Form.Item name="group" label="Guruh">
+          <Form.Item name="group" label={t('form.group')}>
             <Select options={(groups || []).map((g) => ({ value: g.id, label: g.name }))} />
           </Form.Item>
-          <Form.Item name="admission_year" label="Qabul yili" rules={[{ required: true }]}>
+          <Form.Item name="admission_year" label={t('adminProfiles.admissionYear')} rules={[{ required: true }]}>
             <InputNumber min={2000} max={2100} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+          <Form.Item name="status" label={t('common.status')} rules={[{ required: true }]}>
             <Select
               options={[
                 { value: "active", label: "Active" },

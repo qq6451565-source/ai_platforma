@@ -25,30 +25,30 @@ const GroupsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: Partial<AdminGroup>) => createGroupAdmin(vals),
     onSuccess: async () => {
-      message.success("Guruh qo'shildi");
+      message.success(t('adminGroups.added'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
     },
-    onError: () => message.error("Guruh qo'shishda xato"),
+    onError: () => message.error(t('adminGroups.addError')),
   });
 
   const remove = (id: number) =>
     deleteGroupAdmin(id)
       .then(() => {
-        message.success("O'chirildi");
+        message.success(t('common.deleted'));
         qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.groups });
       })
       .catch(() => message.error(t('common.deleteError')));
 
   return (
-    <Card title="Guruhlar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminGroups.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
         <Form.Item name="name">
-          <Input placeholder="Guruh nomi (ixtiyoriy)" />
+          <Input placeholder={t('adminGroups.groupNamePlaceholder')} />
         </Form.Item>
-        <Form.Item name="direction" rules={[{ required: true, message: "Yo'nalish" }]}>
+        <Form.Item name="direction" rules={[{ required: true, message: t('adminGroups.directionRequired') }]}>
           <Select
             allowClear
-            placeholder="Yo'nalish"
+            placeholder={t('adminGroups.direction')}
             style={{ width: 160 }}
             options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
           />
@@ -56,7 +56,7 @@ const GroupsPage = () => {
         <Form.Item name="language">
           <Select
             style={{ width: 120 }}
-            placeholder="Til (avto)"
+            placeholder={t('adminGroups.languagePlaceholder')}
             options={[
               { value: "uz", label: "uz" },
               { value: "ru", label: "ru" },
@@ -64,13 +64,13 @@ const GroupsPage = () => {
             ]}
           />
         </Form.Item>
-        <Form.Item name="level" rules={[{ required: true, message: "Bosqich" }]}>
+        <Form.Item name="level" rules={[{ required: true, message: t('adminGroups.levelRequired') }]}>
           <Select
-            placeholder="Bosqich"
+            placeholder={t('adminGroups.level')}
             style={{ width: 120 }}
             options={Array.from({ length: 10 }, (_, i) => ({
               value: i + 1,
-              label: `${i + 1}-bosqich`,
+              label: t('adminGroups.levelLabel', { n: i + 1 }),
             }))}
           />
         </Form.Item>
@@ -107,7 +107,7 @@ const GroupsPage = () => {
                 title={t('common.confirmDelete')}
                 onConfirm={() => {
                   if (g.id == null) {
-                    message.error("Guruh ID topilmadi");
+                    message.error(t('adminGroups.groupIdNotFound'));
                     return;
                   }
                   remove(g.id);
@@ -123,13 +123,13 @@ const GroupsPage = () => {
             {g.direction != null
               ? directionMap.get(g.direction) || `Yo'nalish #${g.direction}`
               : "Yo'nalish -"}{" "}
-            | {g.level}-bosqich {g.language ? `| ${g.language}` : ""}
+            | {t('adminGroups.levelLabel', { n: g.level })} {g.language ? `| ${g.language}` : ""}
           </List.Item>
         )}
       />
 
       <Modal
-        title="Guruhni tahrirlash"
+        title={t('adminGroups.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -150,19 +150,19 @@ const GroupsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="name" label="Guruh nomi">
-            <Input placeholder="Guruh nomi (ixtiyoriy)" />
+          <Form.Item name="name" label={t('adminGroups.groupName')}>
+            <Input placeholder={t('adminGroups.groupNamePlaceholder')} />
           </Form.Item>
-          <Form.Item name="direction" label="Yo'nalish" rules={[{ required: true }]}>
+          <Form.Item name="direction" label={t('adminGroups.direction')} rules={[{ required: true }]}>
             <Select
               allowClear
-              placeholder="Yo'nalish"
+              placeholder={t('adminGroups.direction')}
               options={(directions || []).map((d) => ({ value: d.id, label: d.name }))}
             />
           </Form.Item>
-          <Form.Item name="language" label="Til">
+          <Form.Item name="language" label={t('adminGroups.language')}>
             <Select
-              placeholder="Til (avto)"
+              placeholder={t('adminGroups.languagePlaceholder')}
               options={[
                 { value: "uz", label: "uz" },
                 { value: "ru", label: "ru" },
@@ -170,11 +170,11 @@ const GroupsPage = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item name="level" label="Bosqich" rules={[{ required: true }]}>
+          <Form.Item name="level" label={t('adminGroups.level')} rules={[{ required: true }]}>
             <Select
               options={Array.from({ length: 10 }, (_, i) => ({
                 value: i + 1,
-                label: `${i + 1}-bosqich`,
+                label: t('adminGroups.levelLabel', { n: i + 1 }),
               }))}
             />
           </Form.Item>

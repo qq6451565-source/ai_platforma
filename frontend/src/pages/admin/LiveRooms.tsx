@@ -14,25 +14,25 @@ const AdminLiveRoomsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createLiveRoom(vals.lesson_id),
     onSuccess: async () => {
-      message.success("Live xonasi yaratildi");
+      message.success(t('adminLive.roomCreated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
     },
     onError: () => message.error(t('common.error')),
   });
 
   return (
-    <Card title="Live xonalar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminLive.rooms')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="inline" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-        <Form.Item name="lesson_id" rules={[{ required: true, message: "Dars" }]}>
+        <Form.Item name="lesson_id" rules={[{ required: true, message: t('adminLive.lesson') }]}>
           <Select
             showSearch
-            placeholder="Dars tanlang"
+            placeholder={t('adminLive.selectLesson')}
             style={{ width: 240 }}
-            options={(lessons || []).map((l) => ({ value: l.id, label: l.topic || `Dars #${l.id}` }))}
+            options={(lessons || []).map((l) => ({ value: l.id, label: l.topic || t('adminLive.lessonNumber', { id: l.id }) }))}
           />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Yaratish
+          {t('common.add')}
         </Button>
       </Form>
 
@@ -48,7 +48,7 @@ const AdminLiveRoomsPage = () => {
                 onConfirm={() =>
                   deleteLiveRoom(r.id)
                     .then(() => {
-                      message.success("O'chirildi");
+                      message.success(t('common.deleted'));
                       qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveRooms });
                     })
                     .catch(() => message.error(t('common.error')))
@@ -58,7 +58,7 @@ const AdminLiveRoomsPage = () => {
               </Popconfirm>,
             ]}
           >
-            {r.lesson_topic || `Dars #${r.lesson}`} | {r.room_name} | {r.is_active ? "Active" : "Inactive"}
+            {r.lesson_topic || t('adminLive.lessonNumber', { id: r.lesson })} | {r.room_name} | {r.is_active ? "Active" : "Inactive"}
           </List.Item>
         )}
       />

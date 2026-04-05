@@ -1,4 +1,5 @@
 import { Button, Card, Empty, Popconfirm, Space, Table, Tag, Typography } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { EnrollmentItem } from "../../api/admin";
 import AdminEnrollmentApproveModal from "./components/AdminEnrollmentApproveModal";
@@ -16,37 +17,38 @@ import {
 const { Text } = Typography;
 
 const EnrollmentPage = () => {
+  const { t } = useTranslation();
   const controller = useAdminEnrollmentController();
 
   const columns = [
     {
-      title: "Arizachi",
+      title: t('adminEnrollment.applicant'),
       dataIndex: "full_name",
       render: (_: unknown, row: EnrollmentItem) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{row.full_name || `Ariza #${row.id}`}</Text>
+          <Text strong>{row.full_name || t('adminEnrollment.applicationId', { id: row.id })}</Text>
           <Text type="secondary">{row.phone || "-"}</Text>
         </Space>
       ),
     },
     {
-      title: "Yo'nalish",
+      title: t('adminEnrollment.direction'),
       dataIndex: "direction_name",
       render: (_: unknown, row: EnrollmentItem) =>
         row.direction_name ||
         (row.direction_choice ? controller.directionMap.get(row.direction_choice) || "-" : "-"),
     },
     {
-      title: "AI verdict",
+      title: t('adminEnrollment.aiVerdict'),
       render: (_: unknown, row: EnrollmentItem) => (
         <Space direction="vertical" size={2}>
           <Tag color={row.ai_summary.color}>{row.ai_summary.label}</Tag>
-          <Text type="secondary">Ishonch: {formatEnrollmentConfidence(row.ai_summary.confidence)}</Text>
+          <Text type="secondary">{t('adminEnrollment.confidence')}: {formatEnrollmentConfidence(row.ai_summary.confidence)}</Text>
         </Space>
       ),
     },
     {
-      title: "Holat",
+      title: t('adminEnrollment.statusCol'),
       dataIndex: "status",
       render: (value: string) => {
         const meta = getEnrollmentStatusMeta(value);
@@ -54,19 +56,19 @@ const EnrollmentPage = () => {
       },
     },
     {
-      title: "Yuborilgan",
+      title: t('adminEnrollment.sentAt'),
       dataIndex: "created_at",
       render: (value: string) => formatEnrollmentDateTime(value),
     },
     {
-      title: "Amallar",
+      title: t('adminEnrollment.actionsCol'),
       render: (_: unknown, row: EnrollmentItem) => {
         const actions = row.allowed_actions;
         const reasons = row.action_reasons || {};
         return (
           <Space wrap>
             <Button size="small" onClick={() => controller.openDetails(row)}>
-              Ko'rish
+              {t('adminEnrollment.viewBtn')}
             </Button>
             <Button
               size="small"
@@ -74,7 +76,7 @@ const EnrollmentPage = () => {
               title={reasons.can_edit || undefined}
               onClick={() => controller.openEdit(row)}
             >
-              Tahrirlash
+              {t('adminEnrollment.editBtn')}
             </Button>
             <Button
               size="small"
@@ -84,7 +86,7 @@ const EnrollmentPage = () => {
               loading={controller.approving && controller.selectedApplicant?.id === row.id}
               onClick={() => controller.openApprove(row)}
             >
-              Tasdiqlash
+              {t('adminEnrollment.approveBtn')}
             </Button>
             <Button
               size="small"
@@ -94,7 +96,7 @@ const EnrollmentPage = () => {
               loading={controller.rejecting && controller.selectedApplicant?.id === row.id}
               onClick={() => controller.openReject(row)}
             >
-              Rad etish
+              {t('adminEnrollment.rejectBtn')}
             </Button>
             {actions.can_reopen ? (
               <Button
@@ -103,24 +105,24 @@ const EnrollmentPage = () => {
                 loading={controller.reopening && controller.selectedApplicant?.id === row.id}
                 onClick={() => controller.openReopen(row)}
               >
-                Qayta ochish
+                {t('adminEnrollment.reopenBtn')}
               </Button>
             ) : null}
             {actions.can_delete ? (
               <Popconfirm
-                title="Arizani o'chirishni xohlaysizmi?"
-                okText="Ha"
-                cancelText="Yo'q"
+                title={t('adminEnrollment.confirmDeleteApplication')}
+                okText={t('common.yes')}
+                cancelText={t('common.no')}
                 okButtonProps={{ loading: controller.deletePending && controller.deleteId === row.id }}
                 onConfirm={() => controller.removeApplicant(row)}
               >
                 <Button size="small" danger disabled={controller.deletePending && controller.deleteId === row.id}>
-                  O'chirish
+                  {t('adminEnrollment.deleteBtn')}
                 </Button>
               </Popconfirm>
             ) : (
               <Button size="small" danger disabled title={reasons.can_delete || undefined}>
-                O'chirish
+                {t('adminEnrollment.deleteBtn')}
               </Button>
             )}
           </Space>
@@ -130,13 +132,13 @@ const EnrollmentPage = () => {
   ];
 
   return (
-    <Card title="Ro'yxatdan o'tish arizalari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminEnrollment.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Table
         rowKey="id"
         loading={controller.isLoading}
         dataSource={controller.applicants}
         pagination={{ pageSize: 10 }}
-        locale={{ emptyText: <Empty description="Arizalar yo'q" /> }}
+        locale={{ emptyText: <Empty description={t('adminEnrollment.noApplications')} /> }}
         columns={columns}
       />
 

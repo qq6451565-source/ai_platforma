@@ -1,4 +1,5 @@
 import { Button, Card, Descriptions, Drawer, Popconfirm, Space, Tag } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type {
   AdminUser,
@@ -38,34 +39,36 @@ const AdminUserProfileDrawer = ({
   subjectMap,
   teacherAssignments,
   user,
-}: AdminUserProfileDrawerProps) => (
-  <Drawer title="Foydalanuvchi profili" open={open} onClose={onClose} width={460}>
+}: AdminUserProfileDrawerProps) => {
+  const { t } = useTranslation();
+  return (
+  <Drawer title={t('adminUserProfile.title')} open={open} onClose={onClose} width={460}>
     {user ? (
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <Space wrap>
           <Button size="small" onClick={onEditUser}>
-            Asosiy ma'lumotlarni tahrirlash
+            {t('adminUserProfile.editBasicInfo')}
           </Button>
         </Space>
 
         <Descriptions size="small" column={1} bordered>
-          <Descriptions.Item label="Login">{user.username}</Descriptions.Item>
-          <Descriptions.Item label="Ism">{user.first_name || "-"}</Descriptions.Item>
-          <Descriptions.Item label="Familiya">{user.last_name || "-"}</Descriptions.Item>
-          <Descriptions.Item label="Email">{user.email || "-"}</Descriptions.Item>
-          <Descriptions.Item label="Telefon">{user.phone || "-"}</Descriptions.Item>
-          <Descriptions.Item label="Guruh">
+          <Descriptions.Item label={t('form.login')}>{user.username}</Descriptions.Item>
+          <Descriptions.Item label={t('form.firstName')}>{user.first_name || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t('form.lastName')}>{user.last_name || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t('form.email')}>{user.email || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t('form.phone')}>{user.phone || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t('form.group')}>
             {user.group ? groupMap.get(user.group) || "-" : "-"}
           </Descriptions.Item>
-          <Descriptions.Item label="Rol">
+          <Descriptions.Item label={t('form.role')}>
             {user.role === "student"
-              ? "Talaba"
+              ? t('form.student')
               : user.role === "teacher"
-                ? "O'qituvchi"
-                : "Admin"}
+                ? t('form.teacher')
+                : t('form.admin')}
           </Descriptions.Item>
-          <Descriptions.Item label="Status">
-            {user.is_active ? "Faol" : "Bloklangan"}
+          <Descriptions.Item label={t('form.status')}>
+            {user.is_active ? t('adminUserProfile.active') : t('adminUserProfile.blocked')}
           </Descriptions.Item>
         </Descriptions>
 
@@ -79,25 +82,25 @@ const AdminUserProfileDrawer = ({
                 type="primary"
                 onClick={() => onOpenWorkflow("student-placement", user.id)}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>
             }
           >
             {studentProfile ? (
               <Descriptions size="small" column={1} bordered>
-                <Descriptions.Item label="Yo'nalish">
+                <Descriptions.Item label={t('form.direction')}>
                   {studentProfile.direction ? directionMap.get(studentProfile.direction) || "-" : "-"}
                 </Descriptions.Item>
-                <Descriptions.Item label="Guruh">
+                <Descriptions.Item label={t('form.group')}>
                   {studentProfile.group ? groupMap.get(studentProfile.group) || "-" : "-"}
                 </Descriptions.Item>
-                <Descriptions.Item label="Qabul yili">
+                <Descriptions.Item label={t('form.admissionYear')}>
                   {studentProfile.admission_year || "-"}
                 </Descriptions.Item>
                 <Descriptions.Item label="Status">{studentProfile.status || "-"}</Descriptions.Item>
               </Descriptions>
             ) : (
-              <div>Student profile hali yaratilmagan yoki placement berilmagan.</div>
+              <div>{t('adminUserProfile.noStudentProfile')}</div>
             )}
           </Card>
         ) : null}
@@ -105,14 +108,14 @@ const AdminUserProfileDrawer = ({
         {user.role === "teacher" ? (
           <Card
             size="small"
-            title="Teacher Workload"
+            title={t('adminUserProfile.teacherWorkload')}
             extra={
               <Button
                 size="small"
                 type="primary"
                 onClick={() => onOpenWorkflow("teacher-workload", user.id)}
               >
-                Tahrirlash
+                {t('common.edit')}
               </Button>
             }
           >
@@ -120,10 +123,10 @@ const AdminUserProfileDrawer = ({
               <Space direction="vertical" size="small" style={{ width: "100%" }}>
                 {teacherAssignments.map((assignment) => (
                   <Descriptions key={assignment.id} size="small" column={1} bordered>
-                    <Descriptions.Item label="Fan">
-                      {subjectMap.get(assignment.subject) || `Fan #${assignment.subject}`}
+                    <Descriptions.Item label={t('form.subject')}>
+                      {subjectMap.get(assignment.subject) || `${t('form.subject')} #${assignment.subject}`}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Guruhlar">
+                    <Descriptions.Item label={t('form.groups')}>
                       {assignment.groups?.length ? (
                         <Space wrap>
                           {assignment.groups.map((groupId) => (
@@ -138,26 +141,26 @@ const AdminUserProfileDrawer = ({
                 ))}
               </Space>
             ) : (
-              <div>Teacher uchun hali workload biriktirilmagan.</div>
+              <div>{t('adminUserProfile.noTeacherWorkload')}</div>
             )}
           </Card>
         ) : null}
 
         <Card
           size="small"
-          title="Passport ma'lumotlari"
+          title={t('adminUserProfile.passportData')}
           extra={
             <Space>
               <Button size="small" onClick={onOpenPassportEditor}>
-                {passport ? "Tahrirlash" : "Yaratish"}
+                {passport ? t('common.edit') : t('adminUserProfile.create')}
               </Button>
               {passport ? (
                 <Popconfirm
-                  title="Passport ma'lumotlarini o'chirishni tasdiqlaysizmi?"
+                  title={t('adminUserProfile.confirmDeletePassport')}
                   onConfirm={onDeletePassport}
                 >
                   <Button size="small" danger>
-                    O'chirish
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               ) : null}
@@ -166,36 +169,36 @@ const AdminUserProfileDrawer = ({
         >
           {passport ? (
             <Descriptions size="small" column={1} bordered>
-              <Descriptions.Item label="Seriya">{passport.passport_series}</Descriptions.Item>
-              <Descriptions.Item label="Raqam">{passport.passport_number}</Descriptions.Item>
-              <Descriptions.Item label="Tug'ilgan sana">
+              <Descriptions.Item label={t('adminPassport.series')}>{passport.passport_series}</Descriptions.Item>
+              <Descriptions.Item label={t('adminPassport.number')}>{passport.passport_number}</Descriptions.Item>
+              <Descriptions.Item label={t('adminPassport.birthDate')}>
                 {passport.birth_date || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="OCR ism-familiya">
+              <Descriptions.Item label={t('adminPassport.ocrFullname')}>
                 {passport.extracted_fullname || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Old tomoni">
+              <Descriptions.Item label={t('adminPassport.frontSide')}>
                 {passport.front_image ? (
                   <a href={passport.front_image} target="_blank" rel="noreferrer">
-                    Ko'rish
+                    {t('common.view')}
                   </a>
                 ) : (
                   "-"
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Orqa tomoni">
+              <Descriptions.Item label={t('adminPassport.backSide')}>
                 {passport.back_image ? (
                   <a href={passport.back_image} target="_blank" rel="noreferrer">
-                    Ko'rish
+                    {t('common.view')}
                   </a>
                 ) : (
                   "-"
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="Selfi">
+              <Descriptions.Item label={t('adminPassport.selfie')}>
                 {passport.selfie_image ? (
                   <a href={passport.selfie_image} target="_blank" rel="noreferrer">
-                    Ko'rish
+                    {t('common.view')}
                   </a>
                 ) : (
                   "-"
@@ -203,12 +206,13 @@ const AdminUserProfileDrawer = ({
               </Descriptions.Item>
             </Descriptions>
           ) : (
-            <div>Passport ma'lumotlari yo'q.</div>
+            <div>{t('adminUserProfile.noPassportData')}</div>
           )}
         </Card>
       </Space>
     ) : null}
   </Drawer>
-);
+  );
+};
 
 export default AdminUserProfileDrawer;

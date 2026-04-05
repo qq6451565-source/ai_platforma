@@ -1,5 +1,6 @@
 import { Form, Input, Modal, Select } from "antd";
 import type { FormInstance } from "antd/es/form";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminGroup, AdminUser, Subject, TeacherSubject } from "../../../api/admin";
 
@@ -30,9 +31,11 @@ const AdminTeacherWorkloadModal = ({
   subjects,
   onCancel,
   onSubmit,
-}: AdminTeacherWorkloadModalProps) => (
+}: AdminTeacherWorkloadModalProps) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title={editingAssignment ? "Workloadni tahrirlash" : "Teacher Workload yaratish"}
+    title={editingAssignment ? t('adminTeacherWorkloadModal.editTitle') : t('adminTeacherWorkloadModal.createTitle')}
     open={open}
     onCancel={onCancel}
     onOk={() => form.submit()}
@@ -41,7 +44,7 @@ const AdminTeacherWorkloadModal = ({
   >
     {selectedTeacher ? (
       <Form layout="vertical" form={form} onFinish={onSubmit}>
-        <Form.Item label="O'qituvchi">
+        <Form.Item label={t('form.teacher')}>
           <Input
             disabled
             value={`${selectedTeacher.first_name || ""} ${selectedTeacher.last_name || ""}`.trim() || selectedTeacher.username}
@@ -49,7 +52,7 @@ const AdminTeacherWorkloadModal = ({
         </Form.Item>
         {editingAssignment ? (
           <>
-            <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+            <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
               <Select
                 showSearch
                 options={subjects.map((subject) => ({
@@ -58,7 +61,7 @@ const AdminTeacherWorkloadModal = ({
                 }))}
               />
             </Form.Item>
-            <Form.Item name="groups" label="Guruhlar">
+            <Form.Item name="groups" label={t('form.groups')}>
               <Select
                 mode="multiple"
                 options={availableGroups.map((group) => ({
@@ -70,7 +73,7 @@ const AdminTeacherWorkloadModal = ({
           </>
         ) : (
           <>
-            <Form.Item name="subject_id" label="Fan" rules={[{ required: true }]}>
+            <Form.Item name="subject_id" label={t('form.subject')} rules={[{ required: true }]}>
               <Select
                 showSearch
                 options={subjects.map((subject) => ({
@@ -79,7 +82,7 @@ const AdminTeacherWorkloadModal = ({
                 }))}
               />
             </Form.Item>
-            <Form.Item name="group_ids" label="Guruhlar">
+            <Form.Item name="group_ids" label={t('form.groups')}>
               <Select
                 mode="multiple"
                 options={availableGroups.map((group) => ({
@@ -93,6 +96,7 @@ const AdminTeacherWorkloadModal = ({
       </Form>
     ) : null}
   </Modal>
-);
+  );
+};
 
 export default AdminTeacherWorkloadModal;

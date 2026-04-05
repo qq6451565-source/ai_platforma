@@ -50,7 +50,7 @@ const AdminLessonsPage = () => {
   const editGroupOptions = (groups || [])
     .filter((g) => (editTeacherSubject ? editGroupIds.includes(g.id) : false))
     .map((g) => ({ value: g.id, label: g.name }));
-  const weekdayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
+  const weekdayNames = t('adminLessons.weekdays', { returnObjects: true }) as string[];
 
   const buildTopic = (teacherSubjectId: number, startTime?: dayjs.Dayjs | null) => {
     const meta = teacherSubjectMap.get(teacherSubjectId);
@@ -73,13 +73,13 @@ const AdminLessonsPage = () => {
       });
     },
     onSuccess: async () => {
-      message.success("Dars qo'shildi");
+      message.success(t('adminLessons.lessonAdded'));
       createForm.resetFields();
       setCreateTeacherSubject(null);
       setCreateOpen(false);
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessons });
     },
-    onError: () => message.error("Dars qo'shishda xato"),
+    onError: () => message.error(t('adminLessons.lessonAddError')),
   });
 
   const filteredLessons = (lessons || []).filter((lesson) => {
@@ -138,15 +138,15 @@ const AdminLessonsPage = () => {
   const confirmDelete = (lesson: any) => {
     if (!lesson) return;
     Modal.confirm({
-      title: "Darsni o'chirish?",
-      content: "Bu amalni ortga qaytarib bo'lmaydi.",
+      title: t('adminLessons.confirmDeleteLesson'),
+      content: t('adminLessons.confirmDeleteDesc'),
       okText: t('common.delete'),
       okType: "danger",
       cancelText: t('common.cancel'),
       onOk: async () => {
         try {
           await deleteLessonAdmin(lesson.id);
-          message.success("O'chirildi");
+          message.success(t('common.deleted'));
           if (editItem?.id === lesson.id) {
             setEditOpen(false);
             setEditTeacherSubject(null);
@@ -187,11 +187,11 @@ const AdminLessonsPage = () => {
   };
 
   return (
-    <Card title="Dars jadvali" style={{ marginBottom: 'var(--space-4)' }} loading={isLoading}>
+    <Card title={t('adminLessons.pageTitle')} style={{ marginBottom: 'var(--space-4)' }} loading={isLoading}>
       <Space size={12} wrap style={{ marginBottom: 'var(--space-3)' }}>
         <Select
           allowClear
-          placeholder="Fan bo'yicha filter"
+          placeholder={t('adminLessons.subjectFilter')}
           style={{ minWidth: 220 }}
           value={filterSubject ?? undefined}
           onChange={(value) => setFilterSubject(value ?? null)}
@@ -199,7 +199,7 @@ const AdminLessonsPage = () => {
         />
         <Select
           allowClear
-          placeholder="Guruh bo'yicha filter"
+          placeholder={t('adminLessons.groupFilter')}
           style={{ minWidth: 220 }}
           value={filterGroup ?? undefined}
           onChange={(value) => setFilterGroup(value ?? null)}
@@ -211,7 +211,7 @@ const AdminLessonsPage = () => {
             setFilterGroup(null);
           }}
         >
-          Tozalash
+          {t('adminLessons.clearFilters')}
         </Button>
       </Space>
       <div className="lesson-calendar">
@@ -219,7 +219,7 @@ const AdminLessonsPage = () => {
           <div className="lesson-week">
             <div className="lesson-week__header">
               <div>
-                <div className="lesson-week__title">{viewMode === "week" ? "Hafta" : "Oy"}</div>
+                <div className="lesson-week__title">{viewMode === "week" ? t('adminLessons.weekView') : t('adminLessons.monthView')}</div>
                 <div className="lesson-week__range">{viewMode === "week" ? weekLabel : monthLabel}</div>
               </div>
               <div className="lesson-week__controls">
@@ -242,24 +242,24 @@ const AdminLessonsPage = () => {
                   {">"}
                 </Button>
                 <Button size="small" onClick={() => setSelectedDate(dayjs())}>
-                  Bugun
+                  {t('adminLessons.todayBtn')}
                 </Button>
                 <Button
                   size="small"
                   type={viewMode === "week" ? "primary" : "default"}
                   onClick={() => setViewMode("week")}
                 >
-                  Hafta
+                  {t('adminLessons.weekView')}
                 </Button>
                 <Button
                   size="small"
                   type={viewMode === "month" ? "primary" : "default"}
                   onClick={() => setViewMode("month")}
                 >
-                  Oy
+                  {t('adminLessons.monthView')}
                 </Button>
                 <Button size="small" type="primary" onClick={() => openCreateForDate(selectedDate)}>
-                  Dars qo'shish
+                  {t('adminLessons.addLesson')}
                 </Button>
               </div>
             </div>
@@ -320,7 +320,7 @@ const AdminLessonsPage = () => {
                             </button>
                           );
                         })}
-                        {!dayLessons.length && <div className="lesson-week__empty">Bo'sh</div>}
+                        {!dayLessons.length && <div className="lesson-week__empty">{t('adminLessons.emptyDay')}</div>}
                       </div>
                     </div>
                   );
@@ -332,13 +332,13 @@ const AdminLessonsPage = () => {
       </div>
 
       <Modal
-        title={`Kundagi darslar: ${selectedDate.format("DD.MM.YYYY")}`}
+        title={t('adminLessons.dayTitle', { date: selectedDate.format("DD.MM.YYYY") })}
         open={dayOpen}
         onCancel={() => setDayOpen(false)}
         styles={{ body: { maxHeight: 460, overflowY: "auto" } }}
         footer={[
           <Button key="close" onClick={() => setDayOpen(false)}>
-            Yopish
+            {t('adminLessons.closeBtn')}
           </Button>,
           <Button
             key="add"
@@ -348,13 +348,13 @@ const AdminLessonsPage = () => {
               openCreateForDate(selectedDate);
             }}
           >
-            Dars qo'shish
+            {t('adminLessons.addLesson')}
           </Button>,
         ]}
       >
         <List
           dataSource={selectedLessons}
-          locale={{ emptyText: "Bu kunda dars yo'q" }}
+          locale={{ emptyText: t('adminLessons.noLessonsForDay') }}
           renderItem={(item) => {
             const meta = teacherSubjectMap.get(item.teacher_subject);
             const subjectLabel =
@@ -395,7 +395,7 @@ const AdminLessonsPage = () => {
       </Modal>
 
       <Modal
-        title="Dars jadvali qo'shish"
+        title={t('adminLessons.createTitle')}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={async () => {
@@ -409,10 +409,10 @@ const AdminLessonsPage = () => {
         confirmLoading={createMut.isPending}
       >
         <Form form={createForm} layout="vertical">
-          <Form.Item name="teacher_subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="teacher_subject" label={t('adminLessons.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
-              placeholder="Fan tanlang"
+              placeholder={t('adminLessons.selectSubject')}
               options={(teacherSubjects || []).map((ts) => ({
                 value: ts.id,
                 label: teacherSubjectLabel.get(ts.id) || `#${ts.id}`,
@@ -429,9 +429,9 @@ const AdminLessonsPage = () => {
           </Form.Item>
           <Form.Item
             name="start_time"
-            label="Boshlanish"
+            label={t('adminLessons.startTime')}
             rules={[{ required: true }]}
-            extra="Tugash vaqti avtomatik 1.5 soat qo'shiladi"
+            extra={t('adminLessons.startTimeExtra')}
           >
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
@@ -439,7 +439,7 @@ const AdminLessonsPage = () => {
       </Modal>
 
       <Modal
-        title="Darsni tahrirlash"
+        title={t('adminLessons.editTitle')}
         open={editOpen}
         onCancel={() => {
           setEditOpen(false);
@@ -466,10 +466,10 @@ const AdminLessonsPage = () => {
         ]}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="teacher_subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="teacher_subject" label={t('adminLessons.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
-              placeholder="Fan tanlang"
+              placeholder={t('adminLessons.selectSubject')}
               options={(teacherSubjects || []).map((ts) => ({
                 value: ts.id,
                 label: teacherSubjectLabel.get(ts.id) || `#${ts.id}`,
@@ -486,9 +486,9 @@ const AdminLessonsPage = () => {
           </Form.Item>
           <Form.Item
             name="start_time"
-            label="Boshlanish"
+            label={t('adminLessons.startTime')}
             rules={[{ required: true }]}
-            extra="Tugash vaqti avtomatik 1.5 soat qo'shiladi"
+            extra={t('adminLessons.startTimeExtra')}
           >
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>

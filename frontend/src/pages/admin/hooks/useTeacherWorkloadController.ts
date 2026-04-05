@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, message } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 import {
   AdminUser,
@@ -32,6 +33,7 @@ import {
 import { clearRequestedUserIdSearch, getRequestedUserId } from "../utils/workflowRouting";
 
 export const useTeacherWorkloadController = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -80,7 +82,7 @@ export const useTeacherWorkloadController = () => {
       });
     },
     onSuccess: async () => {
-      message.success("Teacher workload saqlandi");
+      message.success(t('adminWorkload.saved'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherWorkload);
       setModalOpen(false);
       setEditingAssignment(null);
@@ -91,7 +93,7 @@ export const useTeacherWorkloadController = () => {
         getAdminApiErrorMessage(
           error,
           ["groups", "group_ids", "non_field_errors"],
-          "Teacher workloadni saqlashda xato",
+          t('adminWorkload.saveError'),
         ),
       );
     },
@@ -100,11 +102,11 @@ export const useTeacherWorkloadController = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteTeacherSubject(id),
     onSuccess: async () => {
-      message.success("Biriktirish o'chirildi");
+      message.success(t('adminWorkload.assignmentDeleted'));
       await invalidateAdminQueries(qc, ADMIN_INVALIDATION_GROUPS.teacherSubjectsOnly);
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["detail"], "Biriktirishni o'chirishda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail"], t('adminWorkload.assignmentDeleteError'))),
   });
 
   const subjectMap = useMemo(() => buildSubjectEntityMap(subjects || []), [subjects]);

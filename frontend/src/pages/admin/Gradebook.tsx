@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Select,
@@ -23,6 +24,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminGradebookPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: entries, isLoading } = useQuery(adminQueryOptions.gradebook());
   const { data: subjects } = useQuery(adminQueryOptions.subjects());
@@ -191,11 +193,11 @@ const AdminGradebookPage = () => {
     };
 
     (currentSubmissions || []).forEach((item) => {
-      const lesson = item.lesson_topic || "Dars";
+      const lesson = item.lesson_topic || t('form.lesson');
       addBucket(lesson).submissions.push(item);
     });
     (currentTests || []).forEach((item) => {
-      const lesson = item.lesson_topic || "Dars";
+      const lesson = item.lesson_topic || t('form.lesson');
       addBucket(lesson).tests.push(item);
     });
 
@@ -252,12 +254,12 @@ const AdminGradebookPage = () => {
         });
         await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.studentTests });
       }
-      message.success("Yangilandi");
+      message.success(t('common.updated'));
       setDetailOpen(false);
       setDetailItem(null);
       setDetailType(null);
     } catch (err) {
-      message.error("Xatolik");
+      message.error(t('common.error'));
     } finally {
       setDetailSaving(false);
     }
@@ -308,10 +310,10 @@ const AdminGradebookPage = () => {
 
   const tableColumns = useMemo(
     () => [
-      { title: "Talaba", dataIndex: "student_name", key: "student_name" },
-      { title: "Guruh", dataIndex: "group_name", key: "group_name" },
+      { title: t('roles.student'), dataIndex: "student_name", key: "student_name" },
+      { title: t('form.group'), dataIndex: "group_name", key: "group_name" },
       {
-        title: "Topshiriq",
+        title: t('nav.assignments'),
         dataIndex: "assignment_score",
         key: "assignment_score",
         render: (_: any, record: any) =>
@@ -320,18 +322,18 @@ const AdminGradebookPage = () => {
             : record.assignment_score,
       },
       {
-        title: "Test",
+        title: t('studentTests.test'),
         dataIndex: "midterm_score",
         key: "midterm_score",
         render: (_: any, record: any) =>
           record.test_count ? `${record.midterm_score} (${record.test_count})` : record.midterm_score,
       },
     ],
-    []
+    [t]
   );
 
   return (
-    <Card title="Baholar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('nav.grades')} style={{ marginBottom: 'var(--space-4)' }}>
       {!selectedDirection ? (
         directionsLoading ? (
           <Skeleton active />
@@ -351,7 +353,7 @@ const AdminGradebookPage = () => {
             )}
           />
         ) : (
-          <Empty description="Yo'nalishlar yo'q" />
+          <Empty description={t('adminAttendance.noDirections')} />
         )
       ) : !selectedSubject ? (
         <>
@@ -362,7 +364,7 @@ const AdminGradebookPage = () => {
                 setSelectedSubject(null);
               }}
             >
-              Orqaga
+              {t('common.back')}
             </Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {selectedDirection.name}
@@ -381,13 +383,13 @@ const AdminGradebookPage = () => {
               )}
             />
           ) : (
-            <Empty description="Fanlar yo'q" />
+            <Empty description={t('adminAttendance.noSubjects')} />
           )}
         </>
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Title level={5} style={{ margin: 0 }}>
               {selectedSubject.name}
             </Typography.Title>
@@ -396,7 +398,7 @@ const AdminGradebookPage = () => {
           <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
             <Select
               allowClear
-              placeholder="Guruh"
+              placeholder={t('form.group')}
               style={{ width: 200 }}
               value={groupFilter ?? undefined}
               onChange={(v) => setGroupFilter(v ?? null)}
@@ -404,7 +406,7 @@ const AdminGradebookPage = () => {
             />
             <Select
               allowClear
-              placeholder="Til"
+              placeholder={t('adminSchedule.language')}
               style={{ width: 140 }}
               value={languageFilter ?? undefined}
               onChange={(v) => setLanguageFilter(v ?? null)}
@@ -416,7 +418,7 @@ const AdminGradebookPage = () => {
             />
             <Select
               allowClear
-              placeholder="Bosqich"
+              placeholder={t('adminGroups.level')}
               style={{ width: 140 }}
               value={levelFilter ?? undefined}
               onChange={(v) => setLevelFilter(v ?? null)}
@@ -426,7 +428,7 @@ const AdminGradebookPage = () => {
               }))}
             />
             <Input
-              placeholder="Qidirish"
+              placeholder={t('common.search')}
               style={{ width: 220 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -447,13 +449,13 @@ const AdminGradebookPage = () => {
               })}
             />
           ) : (
-            <Empty description="Ma'lumot yo'q" />
+            <Empty description={t('common.noData')} />
           )}
         </>
       )}
 
       <Modal
-        title="Talaba baholari"
+        title={t('adminGradebook.studentGrades')}
         open={!!editStudent}
         onCancel={() => {
           setEditStudent(null);
@@ -463,7 +465,7 @@ const AdminGradebookPage = () => {
         {editStudent ? (
           <>
             <div style={{ marginBottom: 'var(--space-3)' }}>
-              <Typography.Text type="secondary">Talaba</Typography.Text>
+              <Typography.Text type="secondary">{t('roles.student')}</Typography.Text>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {`${editStudent.first_name || ""} ${editStudent.last_name || ""}`.trim() ||
                   editStudent.username ||
@@ -477,7 +479,7 @@ const AdminGradebookPage = () => {
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 'var(--space-3)' }}>
                       <div>
-                        <Typography.Text type="secondary">Topshiriqlar</Typography.Text>
+                        <Typography.Text type="secondary">{t('adminAssignments.pageTitle')}</Typography.Text>
                         {bucket.submissions.length ? (
                           <div
                             style={{
@@ -491,22 +493,22 @@ const AdminGradebookPage = () => {
                               <Card
                                 key={item.id}
                                 size="small"
-                                title={item.assignment_title || "Topshiriq"}
+                                title={item.assignment_title || t('nav.assignments')}
                                 hoverable
                                 onClick={() => openDetail(item, "assignment")}
                               >
                                 <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  {typeof item.grade === "number" ? `Ball: ${item.grade}` : "Baholanmagan"}
+                                  {typeof item.grade === "number" ? `${t('form.score')}: ${item.grade}` : t('adminSubmissions.notGraded')}
                                 </div>
                               </Card>
                             ))}
                           </div>
                         ) : (
-                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Topshiriq yo'q" />
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('common.noData')} />
                         )}
                       </div>
                       <div>
-                        <Typography.Text type="secondary">Testlar</Typography.Text>
+                        <Typography.Text type="secondary">{t('nav.tests')}</Typography.Text>
                         {bucket.tests.length ? (
                           <div
                             style={{
@@ -520,18 +522,18 @@ const AdminGradebookPage = () => {
                               <Card
                                 key={item.id}
                                 size="small"
-                                title={item.test_title || "Test"}
+                                title={item.test_title || t('studentTests.test')}
                                 hoverable
                                 onClick={() => openDetail(item, "test")}
                               >
                                 <div style={{ marginTop: 'var(--space-1-5)', fontWeight: 'var(--font-weight-semibold)' }}>
-                                  Ball: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
+                                  {t('form.score')}: {formatScore(getTestScore(item))} / {formatScore(getTestTotal(item))}
                                 </div>
                               </Card>
                             ))}
                           </div>
                         ) : (
-                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Test yo'q" />
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('common.noData')} />
                         )}
                       </div>
                     </div>
@@ -539,14 +541,14 @@ const AdminGradebookPage = () => {
                 ))}
               </div>
             ) : (
-              <Empty description="Darslar bo'yicha ma'lumot yo'q" />
+              <Empty description={t('common.noData')} />
             )}
           </>
         ) : null}
       </Modal>
 
       <Modal
-        title={detailType === "assignment" ? "Topshiriq tafsilotlari" : "Test tafsilotlari"}
+        title={detailType === "assignment" ? t('adminGradebook.assignmentDetails') : t('adminGradebook.testDetails')}
         open={detailOpen}
         onCancel={() => {
           setDetailOpen(false);
@@ -558,53 +560,53 @@ const AdminGradebookPage = () => {
         {detailItem ? (
           <div style={{ display: "grid", gap: 'var(--space-2)' }}>
             <div>
-              <Typography.Text type="secondary">Sarlavha</Typography.Text>
+              <Typography.Text type="secondary">{t('adminAssignments.title')}</Typography.Text>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>
                 {detailType === "assignment"
-                  ? detailItem.assignment_title || "Topshiriq"
-                  : detailItem.test_title || "Test"}
+                  ? detailItem.assignment_title || t('nav.assignments')
+                  : detailItem.test_title || t('studentTests.test')}
               </div>
             </div>
             <div>
-              <Typography.Text type="secondary">Dars</Typography.Text>
-              <div>{detailItem.lesson_topic || "Dars"}</div>
+              <Typography.Text type="secondary">{t('form.lesson')}</Typography.Text>
+              <div>{detailItem.lesson_topic || t('form.lesson')}</div>
             </div>
             <div>
-              <Typography.Text type="secondary">Fan</Typography.Text>
+              <Typography.Text type="secondary">{t('form.subject')}</Typography.Text>
               <div>{detailItem.subject_name || "-"}</div>
             </div>
             <div>
-              <Typography.Text type="secondary">Guruh</Typography.Text>
+              <Typography.Text type="secondary">{t('form.group')}</Typography.Text>
               <div>{detailItem.group_name || "-"}</div>
             </div>
             {detailType === "assignment" ? (
               <>
                 <div>
-                  <Typography.Text type="secondary">Topshirilgan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('adminSubmissions.submittedAt')}</Typography.Text>
                   <div>{formatDate(detailItem.submitted_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Baho</Typography.Text>
-                  <div>{typeof detailItem.grade === "number" ? detailItem.grade : "Baholanmagan"}</div>
+                  <Typography.Text type="secondary">{t('studentAssignments.grade')}</Typography.Text>
+                  <div>{typeof detailItem.grade === "number" ? detailItem.grade : t('adminSubmissions.notGraded')}</div>
                 </div>
                 {detailItem.comment ? (
                   <div>
-                    <Typography.Text type="secondary">Izoh</Typography.Text>
+                    <Typography.Text type="secondary">{t('adminSubmissions.commentPlaceholder')}</Typography.Text>
                     <div>{detailItem.comment}</div>
                   </div>
                 ) : null}
                 {detailItem.teacher_comment ? (
                   <div>
-                    <Typography.Text type="secondary">O'qituvchi izohi</Typography.Text>
+                    <Typography.Text type="secondary">{t('adminGradebook.teacherComment')}</Typography.Text>
                     <div>{detailItem.teacher_comment}</div>
                   </div>
                 ) : null}
                 {detailItem.file ? (
                   <div>
-                    <Typography.Text type="secondary">Fayl</Typography.Text>
+                    <Typography.Text type="secondary">{t('common.fileUpload')}</Typography.Text>
                     <div>
                       <a href={detailItem.file} target="_blank" rel="noreferrer">
-                        Yuklab olish
+                        {t('common.download')}
                       </a>
                     </div>
                   </div>
@@ -613,22 +615,22 @@ const AdminGradebookPage = () => {
             ) : (
               <>
                 <div>
-                  <Typography.Text type="secondary">Boshlagan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('adminAssessment.startTime')}</Typography.Text>
                   <div>{formatDate(detailItem.started_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Yakunlangan vaqt</Typography.Text>
+                  <Typography.Text type="secondary">{t('adminAssessment.endTime')}</Typography.Text>
                   <div>{formatDate(detailItem.finished_at)}</div>
                 </div>
                 <div>
-                  <Typography.Text type="secondary">Ball</Typography.Text>
+                  <Typography.Text type="secondary">{t('form.score')}</Typography.Text>
                   <div>
                     {formatScore(getTestScore(detailItem))} / {formatScore(getTestTotal(detailItem))}
                   </div>
                 </div>
               </>
             )}
-            <Divider orientation="left">Tahrirlash</Divider>
+            <Divider orientation="left">{t('common.edit')}</Divider>
             <div style={{ display: "grid", gap: 'var(--space-2)' }}>
               <InputNumber
                 min={0}
@@ -641,23 +643,23 @@ const AdminGradebookPage = () => {
                 style={{ width: "100%" }}
                 value={detailScore ?? undefined}
                 onChange={(val) => setDetailScore(typeof val === "number" ? val : null)}
-                placeholder={detailType === "assignment" ? "Ball" : "Natija (%)"}
+                placeholder={detailType === "assignment" ? t('form.score') : t('adminGradebook.resultPercent')}
               />
               {detailType === "assignment" ? (
                 <Input.TextArea
                   rows={3}
                   value={detailComment}
                   onChange={(e) => setDetailComment(e.target.value)}
-                  placeholder="O'qituvchi izohi"
+                  placeholder={t('adminGradebook.teacherComment')}
                 />
               ) : null}
               <Button type="primary" loading={detailSaving} onClick={saveDetail}>
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>
         ) : (
-          <Empty description="Ma'lumot yo'q" />
+          <Empty description={t('common.noData')} />
         )}
       </Modal>
     </Card>

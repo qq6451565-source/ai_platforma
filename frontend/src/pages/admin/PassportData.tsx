@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Button,
@@ -42,6 +43,7 @@ const buildFormData = (values: any) => {
 };
 
 const PassportDataPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(adminQueryOptions.passports());
   const { data: users } = useQuery(adminQueryOptions.users());
@@ -54,31 +56,31 @@ const PassportDataPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createPassportData(buildFormData(vals)),
     onSuccess: async () => {
-      message.success("Pasport ma'lumotlari qo'shildi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
       createForm.resetFields();
     },
-    onError: () => message.error("Saqlashda xato"),
+    onError: () => message.error(t('common.saveError')),
   });
 
   const updateMut = useMutation({
     mutationFn: ({ id, vals }: { id: number; vals: any }) => updatePassportData(id, buildFormData(vals)),
     onSuccess: async () => {
-      message.success("Yangilandi");
+      message.success(t('common.updated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
       setEditOpen(false);
       setEditing(null);
     },
-    onError: () => message.error("Yangilashda xato"),
+    onError: () => message.error(t('common.error')),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deletePassportData(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.passports });
     },
-    onError: () => message.error("O'chirishda xato"),
+    onError: () => message.error(t('common.deleteError')),
   });
 
   const userOptions = useMemo(
@@ -102,54 +104,54 @@ const PassportDataPage = () => {
   };
 
   return (
-    <Card title="Pasport ma'lumotlari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminPassport.title')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" form={createForm} onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-4)' }}>
-        <Form.Item name="user" label="Foydalanuvchi" rules={[{ required: true }]}>
-          <Select options={userOptions} placeholder="Foydalanuvchi tanlang" />
+        <Form.Item name="user" label={t('adminUsers.user')} rules={[{ required: true }]}>
+          <Select options={userOptions} placeholder={t('adminPassport.selectUser')} />
         </Form.Item>
         <Space style={{ display: "flex" }}>
-          <Form.Item name="passport_series" label="Seriya" rules={[{ required: true }]} style={{ flex: 1 }}>
+          <Form.Item name="passport_series" label={t('adminPassport.series')} rules={[{ required: true }]} style={{ flex: 1 }}>
             <Input />
           </Form.Item>
-          <Form.Item name="passport_number" label="Raqam" rules={[{ required: true }]} style={{ flex: 1 }}>
+          <Form.Item name="passport_number" label={t('adminPassport.number')} rules={[{ required: true }]} style={{ flex: 1 }}>
             <Input />
           </Form.Item>
         </Space>
-        <Form.Item name="birth_date" label="Tug'ilgan sana">
+        <Form.Item name="birth_date" label={t('adminPassport.birthDate')}>
           <DatePicker style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="extracted_fullname" label="OCR ism-sharif">
+        <Form.Item name="extracted_fullname" label={t('adminPassport.ocrFullname')}>
           <Input />
         </Form.Item>
         <Form.Item
           name="front_image"
-          label="Pasport oldi"
+          label={t('adminPassport.frontImage')}
           valuePropName="fileList"
           getValueFromEvent={normFile}
-          rules={[{ required: true, message: "Pasport oldi kerak" }]}
+          rules={[{ required: true, message: t('adminPassport.frontRequired') }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
+            <Button>{t('common.upload')}</Button>
           </Upload>
         </Form.Item>
         <Form.Item
           name="back_image"
-          label="Pasport orqasi"
+          label={t('adminPassport.backImage')}
           valuePropName="fileList"
           getValueFromEvent={normFile}
-          rules={[{ required: true, message: "Pasport orqasi kerak" }]}
+          rules={[{ required: true, message: t('adminPassport.backRequired') }]}
         >
           <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
+            <Button>{t('common.upload')}</Button>
           </Upload>
         </Form.Item>
-        <Form.Item name="selfie_image" label="Selfi" valuePropName="fileList" getValueFromEvent={normFile}>
+        <Form.Item name="selfie_image" label={t('adminPassport.selfie')} valuePropName="fileList" getValueFromEvent={normFile}>
           <Upload beforeUpload={() => false} maxCount={1}>
-            <Button>Yuklash</Button>
+            <Button>{t('common.upload')}</Button>
           </Upload>
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
-          Qo'shish
+          {t('common.add')}
         </Button>
       </Form>
 
@@ -160,43 +162,43 @@ const PassportDataPage = () => {
         pagination={{ pageSize: 10 }}
         columns={[
           {
-            title: "Foydalanuvchi",
+            title: t('adminUsers.user'),
             dataIndex: "user_username",
             render: (v: string) => v || "-",
           },
-          { title: "Seriya", dataIndex: "passport_series" },
-          { title: "Raqam", dataIndex: "passport_number" },
+          { title: t('adminPassport.series'), dataIndex: "passport_series" },
+          { title: t('adminPassport.number'), dataIndex: "passport_number" },
           {
-            title: "Tug'ilgan sana",
+            title: t('adminPassport.birthDate'),
             dataIndex: "birth_date",
             render: (v: string) => (v ? dayjs(v).format("YYYY-MM-DD") : "-"),
           },
-          { title: "OCR ism-sharif", dataIndex: "extracted_fullname", render: (v: string) => v || "-" },
+          { title: t('adminPassport.ocrFullname'), dataIndex: "extracted_fullname", render: (v: string) => v || "-" },
           {
-            title: "Old rasm",
+            title: t('adminPassport.frontImage'),
             dataIndex: "front_image",
-            render: (v: string) => (v ? <a href={v}>Ko'rish</a> : "-"),
+            render: (v: string) => (v ? <a href={v}>{t('common.view')}</a> : "-"),
           },
           {
-            title: "Orqa rasm",
+            title: t('adminPassport.backImage'),
             dataIndex: "back_image",
-            render: (v: string) => (v ? <a href={v}>Ko'rish</a> : "-"),
+            render: (v: string) => (v ? <a href={v}>{t('common.view')}</a> : "-"),
           },
           {
-            title: "Selfi",
+            title: t('adminPassport.selfie'),
             dataIndex: "selfie_image",
-            render: (v: string) => (v ? <a href={v}>Ko'rish</a> : "-"),
+            render: (v: string) => (v ? <a href={v}>{t('common.view')}</a> : "-"),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: any) => (
               <Space>
                 <Button size="small" onClick={() => openEdit(r)}>
-                  Tahrirlash
+                  {t('common.edit')}
                 </Button>
-                <Popconfirm title="O'chirishni tasdiqlaysizmi?" onConfirm={() => deleteMut.mutate(r.id)}>
+                <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                   <Button danger size="small">
-                    O'chirish
+                    {t('common.delete')}
                   </Button>
                 </Popconfirm>
               </Space>
@@ -206,7 +208,7 @@ const PassportDataPage = () => {
       />
 
       <Modal
-        title="Pasportni tahrirlash"
+        title={t('adminPassport.title')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
@@ -220,36 +222,36 @@ const PassportDataPage = () => {
             updateMut.mutate({ id: editing.id, vals });
           }}
         >
-          <Form.Item name="user" label="Foydalanuvchi" rules={[{ required: true }]}>
+          <Form.Item name="user" label={t('adminUsers.user')} rules={[{ required: true }]}>
             <Select options={userOptions} />
           </Form.Item>
           <Space style={{ display: "flex" }}>
-            <Form.Item name="passport_series" label="Seriya" rules={[{ required: true }]} style={{ flex: 1 }}>
+            <Form.Item name="passport_series" label={t('adminPassport.series')} rules={[{ required: true }]} style={{ flex: 1 }}>
               <Input />
             </Form.Item>
-            <Form.Item name="passport_number" label="Raqam" rules={[{ required: true }]} style={{ flex: 1 }}>
+            <Form.Item name="passport_number" label={t('adminPassport.number')} rules={[{ required: true }]} style={{ flex: 1 }}>
               <Input />
             </Form.Item>
           </Space>
-          <Form.Item name="birth_date" label="Tug'ilgan sana">
+          <Form.Item name="birth_date" label={t('adminPassport.birthDate')}>
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="extracted_fullname" label="OCR ism-sharif">
+          <Form.Item name="extracted_fullname" label={t('adminPassport.ocrFullname')}>
             <Input />
           </Form.Item>
-          <Form.Item name="front_image" label="Pasport oldi" valuePropName="fileList" getValueFromEvent={normFile}>
+          <Form.Item name="front_image" label={t('adminPassport.frontImage')} valuePropName="fileList" getValueFromEvent={normFile}>
             <Upload beforeUpload={() => false} maxCount={1}>
-              <Button>Yuklash</Button>
+              <Button>{t('common.upload')}</Button>
             </Upload>
           </Form.Item>
-          <Form.Item name="back_image" label="Pasport orqasi" valuePropName="fileList" getValueFromEvent={normFile}>
+          <Form.Item name="back_image" label={t('adminPassport.backImage')} valuePropName="fileList" getValueFromEvent={normFile}>
             <Upload beforeUpload={() => false} maxCount={1}>
-              <Button>Yuklash</Button>
+              <Button>{t('common.upload')}</Button>
             </Upload>
           </Form.Item>
-          <Form.Item name="selfie_image" label="Selfi" valuePropName="fileList" getValueFromEvent={normFile}>
+          <Form.Item name="selfie_image" label={t('adminPassport.selfie')} valuePropName="fileList" getValueFromEvent={normFile}>
             <Upload beforeUpload={() => false} maxCount={1}>
-              <Button>Yuklash</Button>
+              <Button>{t('common.upload')}</Button>
             </Upload>
           </Form.Item>
         </Form>

@@ -23,11 +23,11 @@ const AdminProfile = () => {
     setLoadingProfile(true);
     try {
       await updateProfile({ ...values, face_image: file });
-      message.success("Profil yangilandi");
+      message.success(t('adminProfile.profileUpdated'));
       setFile(undefined);
       await qc.invalidateQueries({ queryKey: ["me"] });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setLoadingProfile(false);
     }
@@ -37,10 +37,10 @@ const AdminProfile = () => {
     setLoadingPass(true);
     try {
       await changePassword(values);
-      message.success("Parol yangilandi");
+      message.success(t('adminProfile.passwordUpdated'));
       passForm.resetFields();
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setLoadingPass(false);
     }
@@ -50,7 +50,7 @@ const AdminProfile = () => {
     <div style={{ padding: 'var(--space-6)' }}>
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
-          <Card title="Profil ma'lumotlari">
+          <Card title={t('adminProfile.profileInfo')}>
             <div style={{ display: "flex", alignItems: "center", marginBottom: 'var(--space-4)', gap: 'var(--space-3)' }}>
               <Avatar size={64} src={user?.face_image || undefined}>
                 {user?.first_name?.[0]}
@@ -62,7 +62,7 @@ const AdminProfile = () => {
                 }}
                 maxCount={1}
               >
-                <Button size="small">Yangi rasm</Button>
+                <Button size="small">{t('adminProfile.newPhoto')}</Button>
               </Upload>
             </div>
             <Form
@@ -76,43 +76,43 @@ const AdminProfile = () => {
               }}
               onFinish={onSaveProfile}
             >
-              <Form.Item label="Ism" name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
+              <Form.Item label={t('adminProfile.firstName')} name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Familiya" name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
+              <Form.Item label={t('adminProfile.lastName')} name="last_name" rules={[{ required: true, message: t('profile.lastNameRequired') }]}>
                 <Input />
               </Form.Item>
-              <Form.Item label="Email" name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
+              <Form.Item label={t('adminProfile.email')} name="email" rules={[{ type: 'email', message: t('profile.emailInvalid') }]}>
                 <Input type="email" />
               </Form.Item>
-              <Form.Item label="Telefon" name="phone">
+              <Form.Item label={t('adminProfile.phone')} name="phone">
                 <Input />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loadingProfile}>Saqlash</Button>
+                <Button type="primary" htmlType="submit" loading={loadingProfile}>{t('common.save')}</Button>
               </Form.Item>
             </Form>
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card title="Parolni almashtirish">
+          <Card title={t('adminProfile.changePassword')}>
             <Form form={passForm} layout="vertical" onFinish={onChangePassword}>
               <Form.Item
-                label="Eski parol"
+                label={t('adminProfile.oldPassword')}
                 name="old_password"
                 rules={[{ required: true, message: t('profile.oldPasswordRequired') }]}
               >
                 <Input type="password" />
               </Form.Item>
               <Form.Item
-                label="Yangi parol"
+                label={t('adminProfile.newPassword')}
                 name="new_password"
                 rules={[{ required: true, message: t('profile.newPasswordRequired') }, { min: 8, message: t('profile.newPasswordMin') }]}
               >
                 <Input type="password" />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loadingPass}>Almashtirish</Button>
+                <Button type="primary" htmlType="submit" loading={loadingPass}>{t('adminProfile.changeButton')}</Button>
               </Form.Item>
             </Form>
           </Card>

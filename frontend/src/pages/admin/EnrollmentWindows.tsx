@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Card, Space, Switch, Tag, message } from "antd";
 import {
@@ -9,6 +10,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const EnrollmentWindowsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data, isLoading } = useQuery(adminQueryOptions.enrollmentWindows());
 
@@ -18,20 +20,20 @@ const EnrollmentWindowsPage = () => {
   const createMut = useMutation({
     mutationFn: (is_active: boolean) => createEnrollmentWindow({ is_active }),
     onSuccess: async () => {
-      message.success("Saqlandi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentWindows });
     },
-    onError: () => message.error("Saqlashda xato"),
+    onError: () => message.error(t('common.saveError')),
   });
 
   const updateMut = useMutation({
     mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) =>
       updateEnrollmentWindow(id, { is_active }),
     onSuccess: async () => {
-      message.success("Yangilandi");
+      message.success(t('common.updated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.enrollmentWindows });
     },
-    onError: () => message.error("Yangilashda xato"),
+    onError: () => message.error(t('common.updateError')),
   });
 
   const onToggle = (checked: boolean) => {
@@ -43,31 +45,31 @@ const EnrollmentWindowsPage = () => {
   };
 
   return (
-    <Card title="Ro'yxatdan o'tish" loading={isLoading}>
+    <Card title={t('adminEnrollment.registration')} loading={isLoading}>
       {hasMultiple ? (
         <Alert
           type="warning"
           showIcon
-          message="Bir nechta yozuv topildi. Birinchi yozuv asosiy holat sifatida ishlatiladi."
+          message={t('adminEnrollment.multipleRecordsWarning')}
           style={{ marginBottom: 'var(--space-3)' }}
         />
       ) : null}
       <Space size="large">
         <Tag color={currentWindow?.is_active ? "green" : "red"}>
-          {currentWindow?.is_active ? "Ochiq" : "Yopiq"}
+          {currentWindow?.is_active ? t('adminEnrollment.open') : t('adminEnrollment.closed')}
         </Tag>
         <Switch
           checked={!!currentWindow?.is_active}
           onChange={onToggle}
           loading={createMut.isPending || updateMut.isPending}
-          checkedChildren="Ochiq"
-          unCheckedChildren="Yopiq"
+          checkedChildren={t('adminEnrollment.open')}
+          unCheckedChildren={t('adminEnrollment.closed')}
         />
         <Button onClick={() => onToggle(false)} disabled={!currentWindow?.is_active}>
-          Yopish
+          {t('adminEnrollment.close')}
         </Button>
         <Button type="primary" onClick={() => onToggle(true)} disabled={!!currentWindow?.is_active}>
-          Ochish
+          {t('adminEnrollment.openAction')}
         </Button>
       </Space>
     </Card>

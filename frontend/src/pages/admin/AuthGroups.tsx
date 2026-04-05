@@ -33,7 +33,7 @@ const AuthGroupsPage = () => {
   const createMut = useMutation({
     mutationFn: (vals: any) => createAuthGroup(vals),
     onSuccess: async () => {
-      message.success("Guruh qo'shildi");
+      message.success(t('adminAuth.groupAdded'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
     onError: () => message.error(t('common.saveError')),
@@ -42,18 +42,18 @@ const AuthGroupsPage = () => {
   const updateMut = useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Partial<AuthGroup> }) => updateAuthGroup(id, payload),
     onSuccess: async () => {
-      message.success("Guruh yangilandi");
+      message.success(t('common.updated'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
       setEditOpen(false);
       setEditing(null);
     },
-    onError: () => message.error("Yangilashda xato"),
+    onError: () => message.error(t('common.updateError')),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteAuthGroup(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.authGroups });
     },
     onError: () => message.error(t('common.deleteError')),
@@ -66,13 +66,13 @@ const AuthGroupsPage = () => {
   };
 
   return (
-    <Card title="Auth guruhlari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminAuth.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Form layout="vertical" onFinish={createMut.mutate} style={{ marginBottom: 'var(--space-4)' }}>
         <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="permissions" label="Ruxsatlar">
-          <Select mode="multiple" options={permOptions} placeholder="Ruxsatlarni tanlang" />
+        <Form.Item name="permissions" label={t('adminAuth.permissions')}>
+          <Select mode="multiple" options={permOptions} placeholder={t('adminAuth.selectPermissions')} />
         </Form.Item>
         <Button type="primary" htmlType="submit" loading={createMut.isPending}>
           {t('common.add')}
@@ -87,12 +87,12 @@ const AuthGroupsPage = () => {
         columns={[
           { title: t('form.name'), dataIndex: "name" },
           {
-            title: "Ruxsatlar",
+            title: t('adminAuth.permissions'),
             dataIndex: "permissions",
-            render: (v: number[]) => (v?.length ? `${v.length} ta` : "0"),
+            render: (v: number[]) => (v?.length ? `${v.length}` : "0"),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: AuthGroup) => (
               <Space>
                 <Button size="small" onClick={() => openEdit(r)}>
@@ -110,7 +110,7 @@ const AuthGroupsPage = () => {
       />
 
       <Modal
-        title="Auth guruhni tahrirlash"
+        title={t('adminAuth.editGroup')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
@@ -127,7 +127,7 @@ const AuthGroupsPage = () => {
           <Form.Item name="name" label={t('form.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="permissions" label="Ruxsatlar">
+          <Form.Item name="permissions" label={t('adminAuth.permissions')}>
             <Select mode="multiple" options={permOptions} />
           </Form.Item>
         </Form>

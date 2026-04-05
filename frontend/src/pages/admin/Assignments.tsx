@@ -14,6 +14,7 @@ import {
   Popconfirm,
   Empty,
 } from "antd";
+import { useTranslation } from 'react-i18next';
 import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -33,6 +34,7 @@ const extractFile = (list: UploadFile[]) => {
 
 const AdminAssignmentsPage = () => {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const { data: assignments, isLoading } = useQuery(adminQueryOptions.assignments());
   const { data: lessons } = useQuery(adminQueryOptions.lessons());
   const { data: subjects } = useQuery(adminQueryOptions.subjects());
@@ -72,7 +74,7 @@ const AdminAssignmentsPage = () => {
     () =>
       subjectLessons.map((l) => ({
         value: l.id,
-        label: `${l.topic} | ${l.group_name || "Guruh"} | ${dayjs(l.start_time).format("DD.MM HH:mm")}`,
+        label: `${l.topic} | ${l.group_name || t('form.group')} | ${dayjs(l.start_time).format("DD.MM HH:mm")}`,
       })),
     [subjectLessons]
   );
@@ -81,11 +83,11 @@ const AdminAssignmentsPage = () => {
 
   const onFinish = async (values: any) => {
     if (!selectedSubject) {
-      message.warning("Avval fan tanlang.");
+      message.warning(t('adminAssignments.selectSubjectFirst'));
       return;
     }
     if (!values.lesson) {
-      message.warning("Dars majburiy.");
+      message.warning(t('adminAssignments.lessonRequired'));
       return;
     }
     setSubmitting(true);
@@ -95,12 +97,12 @@ const AdminAssignmentsPage = () => {
         title: values.title,
         file: extractFile(fileList),
       });
-      message.success("Topshiriq yaratildi");
+      message.success(t('adminAssignments.created'));
       setFileList([]);
       form.resetFields();
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
     } catch (err: unknown) {
-      message.error(getApiError(err, "Xatolik"));
+      message.error(getApiError(err, t('common.error')));
     } finally {
       setSubmitting(false);
     }
@@ -119,55 +121,55 @@ const AdminAssignmentsPage = () => {
 
   return (
     <div style={{ padding: 'var(--space-6)' }}>
-      <Typography.Title level={4}>Topshiriqlar</Typography.Title>
+      <Typography.Title level={4}>{t('adminAssignments.pageTitle')}</Typography.Title>
       {!selectedSubject ? (
         <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           {subjectCards.map((card) => (
             <Card key={card.name} hoverable onClick={() => setSelectedSubject(card.name)}>
               <div style={{ fontWeight: 'var(--font-weight-semibold)' }}>{card.name}</div>
-              <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{card.count} ta topshiriq</div>
+              <div style={{ opacity: 0.7, marginTop: 'var(--space-1-5)' }}>{t('adminAssignments.taskCount', { count: card.count })}</div>
             </Card>
           ))}
         </div>
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-            <Button onClick={() => setSelectedSubject(null)}>Orqaga</Button>
+            <Button onClick={() => setSelectedSubject(null)}>{t('common.back')}</Button>
             <Typography.Text strong>{selectedSubject}</Typography.Text>
           </div>
 
           {!subjectLessons.length ? (
             <Alert
               type="info"
-              message="Bu fan uchun darslar yo'q"
-              description="Topshiriq yaratish uchun avval dars jadvalda bo'lishi kerak."
+              message={t('adminAssignments.noLessonsForSubject')}
+              description={t('adminAssignments.noLessonsDesc')}
               showIcon
               style={{ marginBottom: 'var(--space-4)' }}
             />
           ) : null}
           <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
-            <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
-              <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
+            <Form.Item name="lesson" label={t('adminAssignments.lesson')} rules={[{ required: true }]}>
+              <Select showSearch placeholder={t('adminAssignments.selectLesson')} options={lessonOptions} />
             </Form.Item>
-            <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+            <Form.Item name="title" label={t('adminAssignments.title')} rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Topshirish sanasi">
-              <Input value={lessonDeadlineText(selectedLessonId)} disabled placeholder="Dars tanlang" />
+            <Form.Item label={t('adminAssignments.deadline')}>
+              <Input value={lessonDeadlineText(selectedLessonId)} disabled placeholder={t('adminAssignments.selectLessonFirst')} />
             </Form.Item>
-            <Form.Item label="Fayl (ixtiyoriy)">
+            <Form.Item label={t('adminAssignments.fileOptional')}>
               <Upload
                 maxCount={1}
                 fileList={fileList}
                 beforeUpload={() => false}
                 onChange={({ fileList: next }) => setFileList(next)}
               >
-                <Button>Fayl yuklash</Button>
+                <Button>{t('adminAssignments.fileLink')}</Button>
               </Upload>
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit" loading={submitting}>
-                Yaratish
+                {t('common.create')}
               </Button>
             </Form.Item>
           </Form>
@@ -175,7 +177,7 @@ const AdminAssignmentsPage = () => {
           {isLoading ? (
             <Skeleton active />
           ) : !filteredAssignments.length ? (
-            <Empty description="Topshiriqlar yo'q" />
+            <Empty description={t('adminAssignments.noAssignments')} />
           ) : (
             <List
               dataSource={filteredAssignments}
@@ -196,23 +198,23 @@ const AdminAssignmentsPage = () => {
                         setEditOpen(true);
                       }}
                     >
-                      Tahrirlash
+                      {t('common.edit')}
                     </Button>,
                     <Popconfirm
                       key="delete"
-                      title="O'chirish?"
+                      title={t('common.confirmDelete')}
                       onConfirm={async () => {
                         try {
                           await deleteAssignment(item.id);
-                          message.success("O'chirildi");
+                          message.success(t('common.deleted'));
                           await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
                         } catch {
-                          message.error("O'chirishda xato");
+                          message.error(t('adminAssignments.deleteError'));
                         }
                       }}
                     >
                       <Button danger type="link">
-                        O'chirish
+                        {t('common.delete')}
                       </Button>
                     </Popconfirm>,
                   ]}
@@ -225,7 +227,7 @@ const AdminAssignmentsPage = () => {
                   />
                   {item.file ? (
                     <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                      Fayl
+                      {t('adminAssignments.fileLink')}
                     </a>
                   ) : (
                     <span>-</span>
@@ -238,7 +240,7 @@ const AdminAssignmentsPage = () => {
       )}
 
       <Modal
-        title="Topshiriqni tahrirlash"
+        title={t('adminAssignments.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -251,11 +253,11 @@ const AdminAssignmentsPage = () => {
               title: vals.title,
               file: extractFile(editFileList),
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.assignments });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, "Xatolik"));
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(getApiError(err, t('common.error')));
           } finally {
             setEditLoading(false);
           }
@@ -263,23 +265,23 @@ const AdminAssignmentsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="lesson" label="Dars" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Darsni tanlang" options={lessonOptions} />
+          <Form.Item name="lesson" label={t('adminAssignments.lesson')} rules={[{ required: true }]}>
+            <Select showSearch placeholder={t('adminAssignments.selectLesson')} options={lessonOptions} />
           </Form.Item>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('adminAssignments.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="Topshirish sanasi">
+          <Form.Item label={t('adminAssignments.deadline')}>
             <Input value={lessonDeadlineText(editLessonId)} disabled />
           </Form.Item>
-          <Form.Item label="Fayl (ixtiyoriy)">
+          <Form.Item label={t('adminAssignments.fileOptional')}>
             <Upload
               maxCount={1}
               fileList={editFileList}
               beforeUpload={() => false}
               onChange={({ fileList: next }) => setEditFileList(next)}
             >
-              <Button>Yangi fayl</Button>
+              <Button>{t('adminAssignments.newFile')}</Button>
             </Upload>
           </Form.Item>
         </Form>

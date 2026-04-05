@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { Direction } from "../../../api/admin";
 import { markAttendance } from "../../../api/attendance";
@@ -28,6 +29,7 @@ import {
 } from "../utils/adminWorkflowMutations";
 
 export const useAdminAttendanceController = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
 
   const { data: directions, isLoading: loadingDirections } = useQuery(adminQueryOptions.directions());
@@ -141,7 +143,7 @@ export const useAdminAttendanceController = () => {
     mutationFn: (payload: { student: number; lesson: number; status: "present" | "absent"; reason: string }) =>
       markAttendance(payload),
     onSuccess: async () => {
-      message.success("Davomat override qilindi.");
+      message.success(t('adminAttendance.overrideSuccess'));
       setOverrideDraft(null);
       setOverrideReason("");
       await invalidateAdminQueries(qc, [
@@ -151,7 +153,7 @@ export const useAdminAttendanceController = () => {
     },
     onError: (error) =>
       message.error(
-        getAdminApiErrorMessage(error, ["reason", "detail"], "Override saqlanmadi."),
+        getAdminApiErrorMessage(error, ["reason", "detail"], t('adminAttendance.overrideError')),
       ),
   });
 
@@ -205,7 +207,7 @@ export const useAdminAttendanceController = () => {
     if (!overrideDraft) return;
     const reason = overrideReason.trim();
     if (reason.length < 5) {
-      message.warning("Override uchun kamida 5 ta belgi sabab yozing.");
+      message.warning(t('adminAttendance.overrideReasonMinLength'));
       return;
     }
     markMutation.mutate({ ...overrideDraft, reason });

@@ -10,18 +10,6 @@ import { usePageTitle } from "../../hooks/usePageTitle";
 
 const { Text } = Typography;
 
-const actionLabels: Record<string, string> = {
-  login_success: "Kirish muvaffaqiyatli",
-  login_failed: "Kirish xatolik",
-  logout: "Chiqish",
-  role_changed: "Rol o'zgardi",
-  enrollment_approved: "Ariza tasdiqlandi",
-  enrollment_override_approved: "Qo'lda tasdiqlab approve qilindi",
-  enrollment_rejected: "Ariza rad etildi",
-  enrollment_reopened: "Ariza qayta ochildi",
-  enrollment_reverified: "AI qayta tekshirildi",
-};
-
 const actionColors: Record<string, string> = {
   login_success: "green",
   login_failed: "red",
@@ -38,6 +26,18 @@ const AuditLogsPage = () => {
   usePageTitle('nav.auditLogs');
   const { t } = useTranslation();
   const qc = useQueryClient();
+
+  const actionLabels: Record<string, string> = {
+    login_success: t('adminAudit.loginSuccess'),
+    login_failed: t('adminAudit.loginFailed'),
+    logout: t('adminAudit.logout'),
+    role_changed: t('adminAudit.roleChanged'),
+    enrollment_approved: t('adminAudit.enrollmentApproved'),
+    enrollment_override_approved: t('adminAudit.enrollmentOverrideApproved'),
+    enrollment_rejected: t('adminAudit.enrollmentRejected'),
+    enrollment_reopened: t('adminAudit.enrollmentReopened'),
+    enrollment_reverified: t('adminAudit.enrollmentReverified'),
+  };
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState<"all" | "auth" | "enrollment">("all");
   const [action, setAction] = useState("all");
@@ -47,14 +47,14 @@ const AuditLogsPage = () => {
   const delMut = useMutation({
     mutationFn: (id: number) => deleteAuditLog(id),
     onSuccess: async () => {
-      message.success("Audit log o'chirildi");
+      message.success(t('adminAudit.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.auditLogs(domain, action, search) });
     },
     onError: () => message.error(t('common.deleteError')),
   });
 
   const actionOptions = [
-    { value: "all", label: "Barcha actionlar" },
+    { value: "all", label: t('adminAudit.allActions') },
     { value: "login_success", label: actionLabels.login_success },
     { value: "login_failed", label: actionLabels.login_failed },
     { value: "logout", label: actionLabels.logout },
@@ -67,10 +67,10 @@ const AuditLogsPage = () => {
   ];
 
   return (
-    <Card title="Audit loglar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminAudit.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
         <Input
-          placeholder="Qidirish (foydalanuvchi, action, IP)"
+          placeholder={t('adminAudit.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: 280 }}
@@ -84,7 +84,7 @@ const AuditLogsPage = () => {
           }}
           style={{ width: 180 }}
           options={[
-            { value: "all", label: "Barcha domainlar" },
+            { value: "all", label: t('adminAudit.allDomains') },
             { value: "auth", label: "Auth" },
             { value: "enrollment", label: "Enrollment" },
           ]}
@@ -108,14 +108,14 @@ const AuditLogsPage = () => {
         pagination={{ pageSize: 10 }}
         columns={[
           {
-            title: "Harakat",
+            title: t('adminAudit.action'),
             dataIndex: "action",
             render: (value: string) => (
               <Tag color={actionColors[value] || "blue"}>{actionLabels[value] || value}</Tag>
             ),
           },
           {
-            title: "Foydalanuvchi",
+            title: t('adminAudit.user'),
             dataIndex: "user_username",
             render: (_: string, row: AuditLog) => (
               <Space direction="vertical" size={0}>
@@ -125,18 +125,18 @@ const AuditLogsPage = () => {
             ),
           },
           {
-            title: "Obyekt",
+            title: t('adminAudit.object'),
             render: (_: unknown, row: AuditLog) => (
               <Space direction="vertical" size={0}>
                 <Text>{row.extra?.applicant_name || "-"}</Text>
                 <Text type="secondary">
-                  {row.extra?.applicant_id ? `Applicant #${row.extra.applicant_id}` : "-"}
+                  {row.extra?.applicant_id ? t('adminAudit.applicantId', { id: row.extra.applicant_id }) : "-"}
                 </Text>
               </Space>
             ),
           },
           {
-            title: "Sabab",
+            title: t('adminAudit.reason'),
             render: (_: unknown, row: AuditLog) =>
               row.extra?.manual_override_reason || row.extra?.reject_reason || row.extra?.reopen_reason ? (
                 <Text>{row.extra?.manual_override_reason || row.extra?.reject_reason || row.extra?.reopen_reason}</Text>
@@ -145,32 +145,32 @@ const AuditLogsPage = () => {
               ),
           },
           {
-            title: "Natija",
+            title: t('adminAudit.result'),
             render: (_: unknown, row: AuditLog) => (
               <Space direction="vertical" size={0}>
                 <Text>
                   {typeof row.extra?.ai_verified === "boolean"
                     ? row.extra.ai_verified
-                      ? "AI verified"
-                      : "AI verified emas"
+                      ? t('adminAudit.aiVerified')
+                      : t('adminAudit.aiNotVerified')
                     : row.extra?.verified === true
-                      ? "Qayta tekshiruv o'tdi"
+                      ? t('adminAudit.reVerifyPassed')
                       : row.extra?.verified === false
-                        ? "Qayta tekshiruv o'tmadi"
+                        ? t('adminAudit.reVerifyFailed')
                         : "-"}
                 </Text>
                 <Text type="secondary">
                   {typeof row.extra?.ai_confidence === "number"
-                    ? `Ishonch: ${row.extra.ai_confidence.toFixed(3)}`
+                    ? t('adminAudit.confidenceLabel', { value: row.extra.ai_confidence.toFixed(3) })
                     : typeof row.extra?.confidence === "number"
-                      ? `Ishonch: ${row.extra.confidence.toFixed(3)}`
+                      ? t('adminAudit.confidenceLabel', { value: row.extra.confidence.toFixed(3) })
                       : row.extra?.approved_role || "-"}
                 </Text>
               </Space>
             ),
           },
           {
-            title: "IP / vaqt",
+            title: t('adminAudit.ipTime'),
             render: (_: unknown, row: AuditLog) => (
               <Space direction="vertical" size={0}>
                 <Text>{row.ip_address || "-"}</Text>

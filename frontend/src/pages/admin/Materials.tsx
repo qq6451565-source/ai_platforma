@@ -23,6 +23,7 @@ import type { Material, MaterialResource } from "../../types/material";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 import { toAbsoluteUrl } from "../../api/client";
+import { useTranslation } from 'react-i18next';
 const allowedExtensions = new Set(["doc", "docx", "xls", "xlsx", "ppt", "pptx", "mp4", "webm"]);
 const allowedExtensionsLabel = "doc, docx, xls, xlsx, ppt, pptx, mp4, webm";
 const acceptExtensions = Array.from(allowedExtensions)
@@ -72,6 +73,7 @@ const renderResources = (resources: MaterialResource[], fallbackFile?: string | 
 };
 
 const AdminMaterialsPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: materials, isLoading } = useQuery(adminQueryOptions.materials());
   const { data: subjects } = useQuery(adminQueryOptions.subjects());
@@ -95,9 +97,9 @@ const AdminMaterialsPage = () => {
   const [editSubject, setEditSubject] = useState<number | null>(null);
 
   const getErrorMessage = (err: unknown) => {
-    if (!axios.isAxiosError(err)) return "Xatolik";
+    if (!axios.isAxiosError(err)) return t('common.error');
     const data = err.response?.data;
-    if (!data) return "Xatolik";
+    if (!data) return t('common.error');
     if (typeof data === "string") return data;
     if (data.detail) return data.detail;
     if (Array.isArray(data)) return data.join(" ");
@@ -107,7 +109,7 @@ const AdminMaterialsPage = () => {
       if (Array.isArray(msg)) return `${field}: ${msg.join(" ")}`;
       return `${field}: ${msg}`;
     }
-    return "Xatolik";
+    return t('common.error');
   };
 
   const teacherMap = useMemo(() => {
@@ -189,7 +191,7 @@ const AdminMaterialsPage = () => {
   const onFinish = async (values: any) => {
     const files = extractFiles(fileList);
     if (!files.length) {
-      message.warning("Fayl majburiy.");
+      message.warning(t('adminMaterials.fileRequired'));
       return;
     }
     setSubmitting(true);
@@ -201,7 +203,7 @@ const AdminMaterialsPage = () => {
         teacher: values.teacher || undefined,
         files,
       });
-      message.success("Material qo'shildi");
+      message.success(t('adminMaterials.added'));
       form.resetFields();
       setSelectedTeacher(null);
       setSelectedSubject(null);
@@ -233,16 +235,16 @@ const AdminMaterialsPage = () => {
   };
 
   return (
-    <Card title="Materiallar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminMaterials.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       {filterSubject ? (
         <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 680, marginBottom: 'var(--space-4)' }}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('adminMaterials.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item label="Fan">
-            <Input value={subjectCards.find((s) => s.id === filterSubject)?.name || "Fan"} disabled />
+          <Form.Item label={t('adminMaterials.subject')}>
+            <Input value={subjectCards.find((s) => s.id === filterSubject)?.name || t('adminMaterials.subject')} disabled />
           </Form.Item>
-          <Form.Item name="teacher" label="O'qituvchi (ixtiyoriy)">
+          <Form.Item name="teacher" label={t('adminMaterials.teacherOptional')}>
             <Select
               allowClear
               showSearch
@@ -254,16 +256,16 @@ const AdminMaterialsPage = () => {
               }}
             />
           </Form.Item>
-          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
-            <Select mode="multiple" showSearch options={groupOptions} placeholder="Bir yoki bir nechta guruh tanlang" />
+          <Form.Item name="groups" label={t('adminMaterials.groups')} rules={[{ required: true }]}>
+            <Select mode="multiple" showSearch options={groupOptions} placeholder={t('adminMaterials.selectGroups')} />
           </Form.Item>
-          <Form.Item label="Fayllar">
+          <Form.Item label={t('adminMaterials.files')}>
             <Upload
               multiple
               fileList={fileList}
               beforeUpload={(f) => {
                 if (!isAllowedFile(f)) {
-                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  message.error(t('adminMaterials.allowedFormats', { formats: allowedExtensionsLabel }));
                   return Upload.LIST_IGNORE;
                 }
                 return false;
@@ -271,11 +273,11 @@ const AdminMaterialsPage = () => {
               onChange={({ fileList: nextList }) => setFileList(nextList)}
               accept={acceptExtensions}
             >
-              <Button>Fayl(lar) yuklash</Button>
+              <Button>{t('common.filesUpload')}</Button>
             </Upload>
           </Form.Item>
           <Button type="primary" htmlType="submit" loading={submitting}>
-            Qo'shish
+            {t('common.add')}
           </Button>
         </Form>
       ) : null}
@@ -301,13 +303,13 @@ const AdminMaterialsPage = () => {
                       }}
                     >
                       <Typography.Text strong>{subject.name}</Typography.Text>
-                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{subject.count} ta material</div>
+                      <div style={{ marginTop: 'var(--space-1-5)', color: "var(--color-text-muted)" }}>{t('adminMaterials.materialCount', { count: subject.count })}</div>
                     </Card>
                   </List.Item>
                 )}
               />
             ) : (
-              <Empty description="Ma'lumot yo'q" />
+              <Empty description={t('common.noData')} />
             )
           ) : (
             (() => {
@@ -323,7 +325,7 @@ const AdminMaterialsPage = () => {
                         setSelectedTeacher(null);
                       }}
                     >
-                      Orqaga
+                      {t('common.back')}
                     </Button>
                     <Typography.Title level={5} style={{ margin: 0 }}>
                       {subjectName}
@@ -333,7 +335,7 @@ const AdminMaterialsPage = () => {
                     <List
                       dataSource={filtered}
                       pagination={{ pageSize: 6 }}
-                      locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+                      locale={{ emptyText: <Empty description={t('common.noData')} /> }}
                       renderItem={(m) => (
                         <List.Item
                           actions={[
@@ -354,19 +356,19 @@ const AdminMaterialsPage = () => {
                                 setEditOpen(true);
                               }}
                             >
-                              Tahrirlash
+                              {t('common.edit')}
                             </Button>,
                             <Popconfirm
                               key="delete"
-                              title="O'chirish?"
+                              title={t('common.confirmDelete')}
                               onConfirm={() =>
                                 deleteMaterial(m.id)
                                   .then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials }))
-                                  .catch(() => message.error("O'chirishda xato"))
+                                  .catch(() => message.error(t('common.deleteError')))
                               }
                             >
                               <Button danger type="link">
-                                O'chirish
+                                {t('common.delete')}
                               </Button>
                             </Popconfirm>,
                           ]}
@@ -388,18 +390,18 @@ const AdminMaterialsPage = () => {
                                     marginBottom: 'var(--space-2-5)',
                                   }}
                                 >
-                                  <span style={{ color: "var(--color-text-muted)" }}>Sarlavha</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('adminMaterials.title')}</span>
                                   <div style={{ display: "flex", alignItems: "center", gap: 'var(--space-2)' }}>
                                     <strong>{m.title}</strong>
                                     <Tag color="blue">v{m.current_version || 1}</Tag>
                                   </div>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Fan</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('adminMaterials.subject')}</span>
                                   <span>{m.subject_name || `Fan #${m.subject}`}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>O'qituvchi</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('adminMaterials.teacher')}</span>
                                   <span>{m.teacher_name || "-"}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Guruhlar</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('adminMaterials.groups')}</span>
                                   <span>{(m.group_names || []).join(", ") || "-"}</span>
-                                  <span style={{ color: "var(--color-text-muted)" }}>Fayl</span>
+                                  <span style={{ color: "var(--color-text-muted)" }}>{t('adminSubmissions.fileLink')}</span>
                                   {renderFileLinks(currentResources)}
                                 </div>
                               </div>
@@ -407,7 +409,7 @@ const AdminMaterialsPage = () => {
                           })()}
                           {m.versions && m.versions.length > 1 ? (
                             <details style={{ marginTop: 'var(--space-2)' }}>
-                              <summary>Versiyalar ({m.versions.length})</summary>
+                              <summary>{t('adminMaterials.versions', { count: m.versions.length })}</summary>
                               <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
                                 {m.versions.map((ver) => (
                                   <div key={ver.version}>
@@ -422,7 +424,7 @@ const AdminMaterialsPage = () => {
                       )}
                     />
                   ) : (
-                    <Empty description="Ma'lumot yo'q" />
+                    <Empty description={t('common.noData')} />
                   )}
                 </>
               );
@@ -432,7 +434,7 @@ const AdminMaterialsPage = () => {
       )}
 
       <Modal
-        title="Materialni tahrirlash"
+        title={t('adminMaterials.editTitle')}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={async () => {
@@ -448,7 +450,7 @@ const AdminMaterialsPage = () => {
               teacher: vals.teacher || undefined,
               files,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditOpen(false);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.materials });
           } catch (err: unknown) {
@@ -460,10 +462,10 @@ const AdminMaterialsPage = () => {
         confirmLoading={editLoading}
       >
         <Form layout="vertical" form={editForm}>
-          <Form.Item name="title" label="Sarlavha" rules={[{ required: true }]}>
+          <Form.Item name="title" label={t('adminMaterials.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="teacher" label="O'qituvchi (ixtiyoriy)">
+          <Form.Item name="teacher" label={t('adminMaterials.teacherOptional')}>
             <Select
               allowClear
               showSearch
@@ -476,7 +478,7 @@ const AdminMaterialsPage = () => {
               }}
             />
           </Form.Item>
-          <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="subject" label={t('adminMaterials.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={editSubjectOptions}
@@ -486,16 +488,16 @@ const AdminMaterialsPage = () => {
               }}
             />
           </Form.Item>
-          <Form.Item name="groups" label="Guruhlar" rules={[{ required: true }]}>
+          <Form.Item name="groups" label={t('adminMaterials.groups')} rules={[{ required: true }]}>
             <Select mode="multiple" showSearch options={editGroupOptions} />
           </Form.Item>
-          <Form.Item label="Yangi fayl(lar)">
+          <Form.Item label={t('adminMaterials.newFiles')}>
             <Upload
               multiple
               fileList={editFileList}
               beforeUpload={(f) => {
                 if (!isAllowedFile(f)) {
-                  message.error(`Ruxsat etilgan formatlar: ${allowedExtensionsLabel}`);
+                  message.error(t('adminMaterials.allowedFormats', { formats: allowedExtensionsLabel }));
                   return Upload.LIST_IGNORE;
                 }
                 return false;
@@ -503,11 +505,11 @@ const AdminMaterialsPage = () => {
               onChange={({ fileList: nextList }) => setEditFileList(nextList)}
               accept={acceptExtensions}
             >
-              <Button>Fayl(lar) yuklash</Button>
+              <Button>{t('common.filesUpload')}</Button>
             </Upload>
           </Form.Item>
           <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>
-            Yangi fayl qo'shsangiz yangi versiya yaratiladi.
+            {t('adminMaterials.newVersionNote')}
           </div>
         </Form>
       </Modal>

@@ -1,4 +1,5 @@
 import { Empty, Modal, Table } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { AttendanceOverrideLog } from "../../../api/attendance";
 import type { AdminAttendanceController } from "../hooks/useAdminAttendanceController";
@@ -7,18 +8,20 @@ type Props = {
   controller: AdminAttendanceController;
 };
 
-const AdminAttendanceHistoryModal = ({ controller }: Props) => (
+const AdminAttendanceHistoryModal = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title={`Override tarixi${controller.historyTarget ? `: ${controller.historyTarget.studentName}` : ""}`}
+    title={`${t('adminAttendanceHistory.title')}${controller.historyTarget ? `: ${controller.historyTarget.studentName}` : ""}`}
     open={!!controller.historyTarget}
     onCancel={controller.closeHistory}
     footer={null}
     width={760}
   >
     {controller.loadingOverrideHistory ? (
-      <Empty description="Yuklanmoqda..." />
+      <Empty description={t('adminAttendanceHistory.loading')} />
     ) : !controller.overrideHistory.length ? (
-      <Empty description="Override tarixi yo'q" />
+      <Empty description={t('adminAttendanceHistory.noHistory')} />
     ) : (
       <Table<AttendanceOverrideLog>
         rowKey="id"
@@ -26,7 +29,7 @@ const AdminAttendanceHistoryModal = ({ controller }: Props) => (
         dataSource={controller.overrideHistory}
         columns={[
           {
-            title: "Vaqt",
+            title: t('adminAttendanceHistory.time'),
             dataIndex: "created_at",
             key: "created_at",
             render: (value: string | undefined) => (value ? new Date(value).toLocaleString() : "-"),
@@ -51,6 +54,7 @@ const AdminAttendanceHistoryModal = ({ controller }: Props) => (
       />
     )}
   </Modal>
-);
+  );
+};
 
 export default AdminAttendanceHistoryModal;

@@ -18,43 +18,43 @@ const LiveParticipantsPage = () => {
   const deleteMut = useMutation({
     mutationFn: (id: number) => deleteLiveParticipant(id),
     onSuccess: async () => {
-      message.success("O'chirildi");
+      message.success(t('common.deleted'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.liveParticipants });
     },
     onError: () => message.error(t('common.deleteError')),
   });
 
   return (
-    <Card title="Live qatnashuvchilar" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminLive.participants')} style={{ marginBottom: 'var(--space-4)' }}>
       <Table
         rowKey="id"
         loading={isLoading}
         dataSource={participants || []}
         pagination={{ pageSize: 10 }}
         columns={[
-          { title: "Foydalanuvchi", dataIndex: "user_name", render: (v: string) => v || "-" },
+          { title: t('adminLive.user'), dataIndex: "user_name", render: (v: string) => v || "-" },
           {
-            title: "Xona",
+            title: t('adminLive.room'),
             dataIndex: "room",
             render: (v: number) => roomMap.get(v) || v,
           },
           {
-            title: "Rol",
+            title: t('adminLive.role'),
             dataIndex: "is_teacher",
             render: (v: boolean) => (v ? <Tag color="geekblue">teacher</Tag> : <Tag color="green">student</Tag>),
           },
           {
-            title: "Kirdi",
+            title: t('adminLive.joinedAt'),
             dataIndex: "joined_at",
             render: (v: string) => (v ? dayjs(v).format("YYYY-MM-DD HH:mm") : "-"),
           },
           {
-            title: "Chiqdi",
+            title: t('adminLive.leftAt'),
             dataIndex: "left_at",
             render: (v: string) => (v ? dayjs(v).format("YYYY-MM-DD HH:mm") : "-"),
           },
           {
-            title: "Amallar",
+            title: t('common.actions'),
             render: (_: unknown, r: any) => (
               <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteMut.mutate(r.id)}>
                 <Button size="small" danger>

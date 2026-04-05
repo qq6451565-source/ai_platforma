@@ -1,4 +1,5 @@
 import { Empty, Modal, Select, Table, Tag } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminAttendanceController } from "../hooks/useAdminAttendanceController";
 import { formatAttendanceRatio, type AbsentLesson } from "../utils/adminAttendance";
@@ -7,15 +8,17 @@ type Props = {
   controller: AdminAttendanceController;
 };
 
-const AdminAttendanceDetailsModal = ({ controller }: Props) => (
+const AdminAttendanceDetailsModal = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title="Davomat tafsilotlari"
+    title={t('adminAttendanceDetails.title')}
     open={!!controller.selectedStudent}
     onCancel={controller.closeStudentDetails}
     footer={null}
   >
     {controller.selectedStudent && controller.selectedStudent.absentLessons.length === 0 ? (
-      <Empty description="Qoldirilgan dars yo'q" />
+      <Empty description={t('adminAttendanceDetails.noAbsent')} />
     ) : (
       <Table
         rowKey={(row) => `${row.lessonId}-${row.status}`}
@@ -28,12 +31,12 @@ const AdminAttendanceDetailsModal = ({ controller }: Props) => (
             key: "topic",
           },
           {
-            title: "Fan/Guruh",
+            title: t('adminAttendanceDetails.subjectGroup'),
             key: "subject",
             render: (_: unknown, row: AbsentLesson) => `${row.subject} / ${row.group}`,
           },
           {
-            title: "Vaqt",
+            title: t('adminAttendanceDetails.time'),
             dataIndex: "startTime",
             key: "startTime",
             render: (value: string | undefined) => (value ? new Date(value).toLocaleString() : "-"),
@@ -55,8 +58,8 @@ const AdminAttendanceDetailsModal = ({ controller }: Props) => (
                   });
                 }}
                 options={[
-                  { value: "present", label: "Bor" },
-                  { value: "absent", label: "Yoq" },
+                  { value: "present", label: t('adminAttendanceDetails.present') },
+                  { value: "absent", label: t('adminAttendanceDetails.absent') },
                 ]}
               />
             ),
@@ -65,7 +68,7 @@ const AdminAttendanceDetailsModal = ({ controller }: Props) => (
             title: "Final",
             key: "finalized",
             render: (_: unknown, row: AbsentLesson) => (
-              <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? "Yakunlangan" : "Jarayonda"}</Tag>
+              <Tag color={row.finalized ? "green" : "gold"}>{row.finalized ? t('adminAttendanceDetails.finalized') : t('adminAttendanceDetails.inProgress')}</Tag>
             ),
           },
           {
@@ -75,7 +78,7 @@ const AdminAttendanceDetailsModal = ({ controller }: Props) => (
               row.manualOverride ? (
                 <Tag
                   color="blue"
-                  title={`${row.overrideReason || "Sabab yo'q"}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
+                  title={`${row.overrideReason || t('adminAttendanceDetails.noReason')}${row.overriddenByName ? ` | ${row.overriddenByName}` : ""}${
                     row.overriddenAt ? ` | ${new Date(row.overriddenAt).toLocaleString()}` : ""
                   }`}
                   style={{ cursor: "pointer" }}
@@ -108,6 +111,7 @@ const AdminAttendanceDetailsModal = ({ controller }: Props) => (
       />
     )}
   </Modal>
-);
+  );
+};
 
 export default AdminAttendanceDetailsModal;

@@ -29,8 +29,10 @@ import {
 } from "../../api/admin";
 import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
+import { useTranslation } from 'react-i18next';
 
 const AdminAssessmentPage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: examTypes } = useQuery(adminQueryOptions.examTypes());
   const { data: exams } = useQuery(adminQueryOptions.exams());
@@ -59,10 +61,10 @@ const AdminAssessmentPage = () => {
   const typeMut = useMutation({
     mutationFn: (vals: any) => createExamType(vals),
     onSuccess: async () => {
-      message.success("Exam type qo'shildi");
+      message.success(t('adminAssessment.examTypeAdded'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes });
     },
-    onError: () => message.error("Exam type qo'shishda xato"),
+    onError: () => message.error(t('adminAssessment.examTypeAddError')),
   });
 
   const examMut = useMutation({
@@ -79,50 +81,50 @@ const AdminAssessmentPage = () => {
         proctoring_required: vals.proctoring_required,
       }),
     onSuccess: async () => {
-      message.success("Exam qo'shildi");
+      message.success(t('adminAssessment.examAdded'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams });
     },
-    onError: () => message.error("Exam qo'shishda xato"),
+    onError: () => message.error(t('adminAssessment.examAddError')),
   });
 
   return (
-    <Card title="Imtihon va nazorat (Assessment)" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminAssessment.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {
             key: "types",
-            label: "Exam turlari",
+            label: t('adminAssessment.examTypes'),
             children: (
               <>
                 <Form layout="inline" onFinish={typeMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-                  <Form.Item name="name" rules={[{ required: true, message: "Nomi" }]}>
-                    <Input placeholder="Masalan: midterm" />
+                  <Form.Item name="name" rules={[{ required: true, message: t('adminAssessment.nameRequired') }]}>
+                    <Input placeholder={t('adminAssessment.namePlaceholder')} />
                   </Form.Item>
                   <Button type="primary" htmlType="submit" loading={typeMut.isPending}>
-                    Qo'shish
+                    {t('common.add')}
                   </Button>
                 </Form>
                 <List
                   dataSource={examTypes || []}
-                  locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
-                  renderItem={(t) => (
+                  locale={{ emptyText: <Empty description={t('common.noData')} /> }}
+                  renderItem={(t_item) => (
                     <List.Item
                       actions={[
                         <Button
                           type="link"
                           onClick={() => {
-                            setEditType(t);
-                            typeForm.setFieldsValue({ name: t.name });
+                            setEditType(t_item);
+                            typeForm.setFieldsValue({ name: t_item.name });
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExamType(t.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes }))}>
-                          <Button danger type="link">O'chirish</Button>
+                        <Popconfirm title={t('adminAssessment.confirmDelete')} onConfirm={() => deleteExamType(t_item.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes }))}>
+                          <Button danger type="link">{t('common.delete')}</Button>
                         </Popconfirm>,
                       ]}
                     >
-                      {t.name}
+                      {t_item.name}
                     </List.Item>
                   )}
                 />
@@ -131,23 +133,23 @@ const AdminAssessmentPage = () => {
           },
           {
             key: "exams",
-            label: "Examlar",
+            label: t('adminAssessment.exams'),
             children: (
               <>
                 <Form layout="vertical" onFinish={examMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-                  <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+                  <Form.Item name="subject" label={t('adminAssessment.subject')} rules={[{ required: true }]}>
                     <Select
                       showSearch
                       options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
+                  <Form.Item name="group" label={t('adminAssessment.group')} rules={[{ required: true }]}>
                     <Select
                       showSearch
                       options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+                  <Form.Item name="teacher" label={t('adminAssessment.teacher')} rules={[{ required: true }]}>
                     <Select
                       showSearch
                       options={(teachers || []).map((t) => ({
@@ -156,39 +158,39 @@ const AdminAssessmentPage = () => {
                       }))}
                     />
                   </Form.Item>
-                  <Form.Item name="exam_type" label="Exam turi" rules={[{ required: true }]}>
+                  <Form.Item name="exam_type" label={t('adminAssessment.examType')} rules={[{ required: true }]}>
                     <Select
                       showSearch
-                      options={(examTypes || []).map((t) => ({ value: t.id, label: t.name }))}
+                      options={(examTypes || []).map((t_item) => ({ value: t_item.id, label: t_item.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="duration_minutes" label="Davomiyligi (min)" rules={[{ required: true }]}>
+                  <Form.Item name="duration_minutes" label={t('adminAssessment.duration')} rules={[{ required: true }]}>
                     <InputNumber min={1} style={{ width: "100%" }} />
                   </Form.Item>
-                  <Form.Item name="attempts" label="Urinishlar soni" rules={[{ required: true }]}>
+                  <Form.Item name="attempts" label={t('adminAssessment.attemptsCount')} rules={[{ required: true }]}>
                     <InputNumber min={1} style={{ width: "100%" }} />
                   </Form.Item>
-                  <Form.Item name="starts_at" label="Boshlanish vaqti">
+                  <Form.Item name="starts_at" label={t('adminAssessment.startTime')}>
                     <DatePicker showTime style={{ width: "100%" }} />
                   </Form.Item>
-                  <Form.Item name="ends_at" label="Tugash vaqti">
+                  <Form.Item name="ends_at" label={t('adminAssessment.endTime')}>
                     <DatePicker showTime style={{ width: "100%" }} />
                   </Form.Item>
                   <Form.Item
                     name="proctoring_required"
-                    label="Proktor talab qilinsin"
+                    label={t('adminAssessment.proctoringRequired')}
                     valuePropName="checked"
                     initialValue={true}
                   >
                     <Switch defaultChecked />
                   </Form.Item>
                   <Button type="primary" htmlType="submit" loading={examMut.isPending}>
-                    Qo'shish
+                    {t('common.add')}
                   </Button>
                 </Form>
                 <List
                   dataSource={exams || []}
-                  locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+                  locale={{ emptyText: <Empty description={t('common.noData')} /> }}
                   renderItem={(e) => (
                     <List.Item
                       actions={[
@@ -209,14 +211,14 @@ const AdminAssessmentPage = () => {
                             });
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteExam(e.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams }))}>
-                          <Button danger type="link">O'chirish</Button>
+                        <Popconfirm title={t('adminAssessment.confirmDelete')} onConfirm={() => deleteExam(e.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams }))}>
+                          <Button danger type="link">{t('common.delete')}</Button>
                         </Popconfirm>,
                       ]}
                     >
-                      {subjectMap.get(e.subject) || `Fan #${e.subject}`} | {groupMap.get(e.group) || `Guruh #${e.group}`} |{" "}
+                      {subjectMap.get(e.subject) || `${t('adminAssessment.subject')} #${e.subject}`} | {groupMap.get(e.group) || `${t('adminAssessment.group')} #${e.group}`} |{" "}
                       {examTypeMap.get(e.exam_type) || `Type #${e.exam_type}`}
                     </List.Item>
                   )}
@@ -226,11 +228,11 @@ const AdminAssessmentPage = () => {
           },
           {
             key: "attempts",
-            label: "Urinishlar (Attempts)",
+            label: t('adminAssessment.attempts'),
             children: (
               <List
                 dataSource={attempts || []}
-                locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+                locale={{ emptyText: <Empty description={t('common.noData')} /> }}
                 renderItem={(a) => (
                   <List.Item
                     actions={[
@@ -245,10 +247,10 @@ const AdminAssessmentPage = () => {
                           });
                         }}
                       >
-                        Tahrirlash
+                        {t('common.edit')}
                       </Button>,
-                      <Popconfirm title="O'chirish?" onConfirm={() => deleteExamAttempt(a.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts }))}>
-                        <Button danger type="link">O'chirish</Button>
+                      <Popconfirm title={t('adminAssessment.confirmDelete')} onConfirm={() => deleteExamAttempt(a.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts }))}>
+                        <Button danger type="link">{t('common.delete')}</Button>
                       </Popconfirm>,
                     ]}
                   >
@@ -262,7 +264,7 @@ const AdminAssessmentPage = () => {
       />
 
       <Modal
-        title="Exam turini tahrirlash"
+        title={t('adminAssessment.editExamType')}
         open={!!editType}
         onCancel={() => setEditType(null)}
         onOk={async () => {
@@ -271,11 +273,11 @@ const AdminAssessmentPage = () => {
           try {
             const vals = await typeForm.validateFields();
             await updateExamType(editType.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditType(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examTypes });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setLoadingType(false);
           }
@@ -283,14 +285,14 @@ const AdminAssessmentPage = () => {
         confirmLoading={loadingType}
       >
         <Form layout="vertical" form={typeForm}>
-          <Form.Item name="name" label="Nomi" rules={[{ required: true }]}>
+          <Form.Item name="name" label={t('adminAssessment.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Examni tahrirlash"
+        title={t('adminAssessment.editExam')}
         open={!!editExam}
         onCancel={() => setEditExam(null)}
         onOk={async () => {
@@ -309,11 +311,11 @@ const AdminAssessmentPage = () => {
               ends_at: vals.ends_at?.toISOString(),
               proctoring_required: vals.proctoring_required,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditExam(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.exams });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setLoadingExam(false);
           }
@@ -321,13 +323,13 @@ const AdminAssessmentPage = () => {
         confirmLoading={loadingExam}
       >
         <Form layout="vertical" form={examForm}>
-          <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="subject" label={t('adminAssessment.subject')} rules={[{ required: true }]}>
             <Select options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))} />
           </Form.Item>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
+          <Form.Item name="group" label={t('adminAssessment.group')} rules={[{ required: true }]}>
             <Select options={(groups || []).map((g) => ({ value: g.id, label: g.name }))} />
           </Form.Item>
-          <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+          <Form.Item name="teacher" label={t('adminAssessment.teacher')} rules={[{ required: true }]}>
             <Select
               options={(teachers || []).map((t) => ({
                 value: t.id,
@@ -335,29 +337,29 @@ const AdminAssessmentPage = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="exam_type" label="Exam turi" rules={[{ required: true }]}>
+          <Form.Item name="exam_type" label={t('adminAssessment.examType')} rules={[{ required: true }]}>
             <Select options={(examTypes || []).map((t) => ({ value: t.id, label: t.name }))} />
           </Form.Item>
-          <Form.Item name="duration_minutes" label="Davomiyligi (min)" rules={[{ required: true }]}>
+          <Form.Item name="duration_minutes" label={t('adminAssessment.duration')} rules={[{ required: true }]}>
             <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="attempts" label="Urinishlar soni" rules={[{ required: true }]}>
+          <Form.Item name="attempts" label={t('adminAssessment.attemptsCount')} rules={[{ required: true }]}>
             <InputNumber min={1} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="starts_at" label="Boshlanish vaqti">
+          <Form.Item name="starts_at" label={t('adminAssessment.startTime')}>
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="ends_at" label="Tugash vaqti">
+          <Form.Item name="ends_at" label={t('adminAssessment.endTime')}>
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="proctoring_required" label="Proktor talab qilinsin" valuePropName="checked">
+          <Form.Item name="proctoring_required" label={t('adminAssessment.proctoringRequired')} valuePropName="checked">
             <Switch />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Attemptni tahrirlash"
+        title={t('adminAssessment.editAttempt')}
         open={!!editAttempt}
         onCancel={() => setEditAttempt(null)}
         onOk={async () => {
@@ -370,11 +372,11 @@ const AdminAssessmentPage = () => {
               status: vals.status,
               finished_at: vals.finished_at?.toISOString(),
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditAttempt(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.examAttempts });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setLoadingAttempt(false);
           }
@@ -382,7 +384,7 @@ const AdminAssessmentPage = () => {
         confirmLoading={loadingAttempt}
       >
         <Form layout="vertical" form={attemptForm}>
-          <Form.Item name="score_percent" label="Ball (%)">
+          <Form.Item name="score_percent" label={t('adminAssessment.score')}>
             <InputNumber min={0} max={100} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item name="status" label="Status" rules={[{ required: true }]}>
@@ -394,7 +396,7 @@ const AdminAssessmentPage = () => {
               ]}
             />
           </Form.Item>
-          <Form.Item name="finished_at" label="Tugash vaqti">
+          <Form.Item name="finished_at" label={t('adminAssessment.finishedAt')}>
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
         </Form>

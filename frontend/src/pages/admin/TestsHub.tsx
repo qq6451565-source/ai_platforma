@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Tabs } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import AdminTests from "./Tests";
@@ -7,6 +8,7 @@ import AdminTestOptions from "./TestOptions";
 import AdminStudentTests from "./StudentTests";
 
 const TestsHubPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const tabs = ["tests", "questions", "options", "student-tests"];
@@ -38,10 +40,10 @@ const TestsHubPage = () => {
       onChange={onChange}
       destroyInactiveTabPane
       items={[
-        { key: "tests", label: "Testlar", children: renderTab("tests", <AdminTests />) },
-        { key: "questions", label: "Savollar", children: renderTab("questions", <AdminTestQuestions />) },
-        { key: "options", label: "Variantlar", children: renderTab("options", <AdminTestOptions />) },
-        { key: "student-tests", label: "Student testlari", children: renderTab("student-tests", <AdminStudentTests />) },
+        { key: "tests", label: t('adminTests.tests'), children: renderTab("tests", <AdminTests />) },
+        { key: "questions", label: t('adminTests.questions'), children: renderTab("questions", <AdminTestQuestions />) },
+        { key: "options", label: t('adminTests.options'), children: renderTab("options", <AdminTestOptions />) },
+        { key: "student-tests", label: t('adminTests.studentTests'), children: renderTab("student-tests", <AdminStudentTests />) },
       ]}
     />
   );

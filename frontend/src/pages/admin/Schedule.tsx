@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Form,
@@ -27,6 +28,7 @@ import { adminQueryOptions } from "./utils/adminQueryOptions";
 import { ADMIN_QUERY_KEYS } from "./utils/adminWorkflowMutations";
 
 const AdminSchedulePage = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { data: timetables, isLoading: ttLoading } = useQuery(adminQueryOptions.timetables());
   const { data: slots, isLoading: slotLoading } = useQuery(adminQueryOptions.lessonSlots());
@@ -44,10 +46,10 @@ const AdminSchedulePage = () => {
   const createTimetableMut = useMutation({
     mutationFn: (vals: any) => createTimetableAdmin(vals),
     onSuccess: async () => {
-      message.success("Jadval qo'shildi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables });
     },
-    onError: () => message.error("Jadval qo'shishda xato"),
+    onError: () => message.error(t('common.error')),
   });
 
   const createSlotMut = useMutation({
@@ -62,10 +64,10 @@ const AdminSchedulePage = () => {
         mode: vals.mode,
       }),
     onSuccess: async () => {
-      message.success("Dars oynasi qo'shildi");
+      message.success(t('common.saved'));
       await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots });
     },
-    onError: () => message.error("Dars oynasi qo'shishda xato"),
+    onError: () => message.error(t('common.error')),
   });
 
   const groupMap = new Map((groups || []).map((g) => [g.id, g.name]));
@@ -76,26 +78,26 @@ const AdminSchedulePage = () => {
   );
 
   return (
-    <Card title="Jadval va dars oynalari" style={{ marginBottom: 'var(--space-4)' }}>
+    <Card title={t('adminSchedule.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       <Tabs
         items={[
           {
             key: "timetables",
-            label: "Jadval (Timetable)",
+            label: t('adminSchedule.timetable'),
             children: (
               <>
                 <Form layout="inline" onFinish={createTimetableMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-                  <Form.Item name="group" rules={[{ required: true, message: "Guruh" }]}>
+                  <Form.Item name="group" rules={[{ required: true, message: t('form.group') }]}>
                     <Select
                       showSearch
-                      placeholder="Guruh"
+                      placeholder={t('form.group')}
                       style={{ width: 200 }}
                       options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
                     />
                   </Form.Item>
                   <Form.Item>
                     <Button type="primary" htmlType="submit" loading={createTimetableMut.isPending}>
-                      Qo'shish
+                      {t('common.add')}
                     </Button>
                   </Form.Item>
                 </Form>
@@ -103,25 +105,25 @@ const AdminSchedulePage = () => {
                 <List
                   loading={ttLoading}
                   dataSource={timetables || []}
-                  locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
-                  renderItem={(t) => (
+                  locale={{ emptyText: <Empty description={t('common.noData')} /> }}
+                  renderItem={(tt) => (
                     <List.Item
                       actions={[
                         <Button
                           type="link"
                           onClick={() => {
-                            setEditTimetable(t);
-                            ttForm.setFieldsValue({ group: t.group });
+                            setEditTimetable(tt);
+                            ttForm.setFieldsValue({ group: tt.group });
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteTimetableAdmin(t.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables }))}>
-                          <Button danger type="link">O'chirish</Button>
+                        <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteTimetableAdmin(tt.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables }))}>
+                          <Button danger type="link">{t('common.delete')}</Button>
                         </Popconfirm>,
                       ]} 
                     >
-                      {groupMap.get(t.group) || `Guruh #${t.group}`}
+                      {groupMap.get(tt.group) || `${t('form.group')} #${tt.group}`}
                     </List.Item>
                   )}
                 />
@@ -130,47 +132,47 @@ const AdminSchedulePage = () => {
           },
           {
             key: "slots",
-            label: "Dars oynalari (Lesson slots)",
+            label: t('adminSchedule.lessonSlots'),
             children: (
               <>
                 <Form layout="vertical" onFinish={createSlotMut.mutate} style={{ marginBottom: 'var(--space-3)' }}>
-                  <Form.Item name="timetable" label="Jadval" rules={[{ required: true }]}>
+                  <Form.Item name="timetable" label={t('adminSchedule.timetable')} rules={[{ required: true }]}>
                     <Select
                       showSearch
-                      placeholder="Jadval tanlang"
+                      placeholder={t('adminSchedule.selectTimetable')}
                       options={(timetables || []).map((t) => ({
                         value: t.id,
                         label: `${groupMap.get(t.group) || t.group}`,
                       }))}
                     />
                   </Form.Item>
-                  <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+                  <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
                     <Select
                       showSearch
-                      placeholder="Fan tanlang"
+                      placeholder={t('adminSubjects.selectDirection')}
                       options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
                     />
                   </Form.Item>
-                  <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+                  <Form.Item name="teacher" label={t('adminTeacherSubjects.teacher')} rules={[{ required: true }]}>
                     <Select
                       showSearch
-                      placeholder="O'qituvchi"
+                      placeholder={t('adminTeacherSubjects.teacher')}
                       options={(teachers || []).map((t) => ({
                         value: t.id,
                         label: `${t.first_name} ${t.last_name}`.trim() || t.username,
                       }))}
                     />
                   </Form.Item>
-                  <Form.Item name="start_time" label="Boshlanish vaqti" rules={[{ required: true }]}>
+                  <Form.Item name="start_time" label={t('adminAssessment.startTime')} rules={[{ required: true }]}>
                     <DatePicker showTime style={{ width: "100%" }} />
                   </Form.Item>
-                  <Form.Item name="end_time" label="Tugash vaqti" rules={[{ required: true }]}>
+                  <Form.Item name="end_time" label={t('adminAssessment.endTime')} rules={[{ required: true }]}>
                     <DatePicker showTime style={{ width: "100%" }} />
                   </Form.Item>
-                  <Form.Item name="room" label="Xona">
-                    <Input placeholder="Auditoriya" />
+                  <Form.Item name="room" label={t('adminSchedule.room')}>
+                    <Input placeholder={t('adminSchedule.classroom')} />
                   </Form.Item>
-                  <Form.Item name="mode" label="Format" rules={[{ required: true }]}>
+                  <Form.Item name="mode" label={t('adminSchedule.format')} rules={[{ required: true }]}>
                     <Select
                       options={[
                         { value: "offline", label: "Offline" },
@@ -179,14 +181,14 @@ const AdminSchedulePage = () => {
                     />
                   </Form.Item>
                   <Button type="primary" htmlType="submit" loading={createSlotMut.isPending}>
-                    Qo'shish
+                    {t('common.add')}
                   </Button>
                 </Form>
 
                 <List
                   loading={slotLoading}
                   dataSource={slots || []}
-                  locale={{ emptyText: <Empty description="Ma'lumot yo'q" /> }}
+                  locale={{ emptyText: <Empty description={t('common.noData')} /> }}
                   renderItem={(s) => (
                     <List.Item
                       actions={[
@@ -205,10 +207,10 @@ const AdminSchedulePage = () => {
                             });
                           }}
                         >
-                          Tahrirlash
+                          {t('common.edit')}
                         </Button>,
-                        <Popconfirm title="O'chirish?" onConfirm={() => deleteLessonSlotAdmin(s.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots }))}>
-                          <Button danger type="link">O'chirish</Button>
+                        <Popconfirm title={t('common.confirmDelete')} onConfirm={() => deleteLessonSlotAdmin(s.id).then(() => qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots }))}>
+                          <Button danger type="link">{t('common.delete')}</Button>
                         </Popconfirm>,
                       ]}
                     >
@@ -224,7 +226,7 @@ const AdminSchedulePage = () => {
       />
 
       <Modal
-        title="Jadvalni tahrirlash"
+        title={t('adminSchedule.editTimetable')}
         open={!!editTimetable}
         onCancel={() => setEditTimetable(null)}
         onOk={async () => {
@@ -233,11 +235,11 @@ const AdminSchedulePage = () => {
           try {
             const vals = await ttForm.validateFields();
             await updateTimetableAdmin(editTimetable.id, vals);
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditTimetable(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.timetables });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setTtLoadingEdit(false);
           }
@@ -245,7 +247,7 @@ const AdminSchedulePage = () => {
         confirmLoading={ttLoadingEdit}
       >
         <Form layout="vertical" form={ttForm}>
-          <Form.Item name="group" label="Guruh" rules={[{ required: true }]}>
+          <Form.Item name="group" label={t('form.group')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
@@ -255,7 +257,7 @@ const AdminSchedulePage = () => {
       </Modal>
 
       <Modal
-        title="Dars oynasini tahrirlash"
+        title={t('adminSchedule.editSlot')}
         open={!!editSlot}
         onCancel={() => setEditSlot(null)}
         onOk={async () => {
@@ -272,11 +274,11 @@ const AdminSchedulePage = () => {
               room: vals.room,
               mode: vals.mode,
             });
-            message.success("Yangilandi");
+            message.success(t('common.updated'));
             setEditSlot(null);
             await qc.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.lessonSlots });
           } catch (err: unknown) {
-            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error("Xatolik");
+            if (!(typeof err === 'object' && err !== null && 'errorFields' in err)) message.error(t('common.error'));
           } finally {
             setSlotLoadingEdit(false);
           }
@@ -284,7 +286,7 @@ const AdminSchedulePage = () => {
         confirmLoading={slotLoadingEdit}
       >
         <Form layout="vertical" form={slotForm}>
-          <Form.Item name="timetable" label="Jadval" rules={[{ required: true }]}>
+          <Form.Item name="timetable" label={t('adminSchedule.timetable')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(timetables || []).map((t) => ({
@@ -293,13 +295,13 @@ const AdminSchedulePage = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="subject" label="Fan" rules={[{ required: true }]}>
+          <Form.Item name="subject" label={t('form.subject')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
             />
           </Form.Item>
-          <Form.Item name="teacher" label="O'qituvchi" rules={[{ required: true }]}>
+          <Form.Item name="teacher" label={t('adminTeacherSubjects.teacher')} rules={[{ required: true }]}>
             <Select
               showSearch
               options={(teachers || []).map((t) => ({
@@ -308,16 +310,16 @@ const AdminSchedulePage = () => {
               }))}
             />
           </Form.Item>
-          <Form.Item name="start_time" label="Boshlanish vaqti" rules={[{ required: true }]}>
+          <Form.Item name="start_time" label={t('adminAssessment.startTime')} rules={[{ required: true }]}>
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="end_time" label="Tugash vaqti" rules={[{ required: true }]}>
+          <Form.Item name="end_time" label={t('adminAssessment.endTime')} rules={[{ required: true }]}>
             <DatePicker showTime style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="room" label="Xona">
+          <Form.Item name="room" label={t('adminSchedule.room')}>
             <Input />
           </Form.Item>
-          <Form.Item name="mode" label="Format" rules={[{ required: true }]}>
+          <Form.Item name="mode" label={t('adminSchedule.format')} rules={[{ required: true }]}>
             <Select
               options={[
                 { value: "offline", label: "Offline" },

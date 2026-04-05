@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Form, message } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { EnrollmentDetailItem, EnrollmentItem } from "../../../api/admin";
 import {
@@ -50,6 +51,7 @@ type EditValues = {
 };
 
 export const useAdminEnrollmentController = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [detailOpen, setDetailOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
@@ -104,7 +106,7 @@ export const useAdminEnrollmentController = () => {
 
   const openApprove = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_approve) {
-      message.warning(getEnrollmentActionReason(item, "can_approve", "Bu ariza uchun tasdiqlash yopilgan."));
+      message.warning(getEnrollmentActionReason(item, "can_approve", t('adminEnrollment.approveBlocked')));
       return;
     }
     setSelectedApplicant(item);
@@ -123,7 +125,7 @@ export const useAdminEnrollmentController = () => {
 
   const openReject = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_reject) {
-      message.warning(getEnrollmentActionReason(item, "can_reject", "Bu ariza uchun rad etish yopilgan."));
+      message.warning(getEnrollmentActionReason(item, "can_reject", t('adminEnrollment.rejectBlocked')));
       return;
     }
     setSelectedApplicant(item);
@@ -137,7 +139,7 @@ export const useAdminEnrollmentController = () => {
 
   const openEdit = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_edit) {
-      message.warning(getEnrollmentActionReason(item, "can_edit", "Bu ariza uchun tahrirlash yopilgan."));
+      message.warning(getEnrollmentActionReason(item, "can_edit", t('adminEnrollment.editBlocked')));
       return;
     }
     setSelectedApplicant(item);
@@ -154,7 +156,7 @@ export const useAdminEnrollmentController = () => {
 
   const openReopen = (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_reopen) {
-      message.warning(getEnrollmentActionReason(item, "can_reopen", "Bu ariza uchun qayta ochish yopilgan."));
+      message.warning(getEnrollmentActionReason(item, "can_reopen", t('adminEnrollment.reopenBlocked')));
       return;
     }
     setSelectedApplicant(item);
@@ -177,7 +179,7 @@ export const useAdminEnrollmentController = () => {
       manual_override_reason?: string;
     }) => approveEnrollment(payload.id, payload),
     onSuccess: async (_response, payload) => {
-      message.success("Ariza tasdiqlandi");
+      message.success(t('adminEnrollment.approved'));
       await invalidateEnrollment(payload.id);
       setApproveOpen(false);
       approveForm.resetFields();
@@ -187,7 +189,7 @@ export const useAdminEnrollmentController = () => {
         getAdminApiErrorMessage(
           error,
           ["group_id", "subject_id", "manual_override_reason", "detail"],
-          "Tasdiqlashda xato",
+          t('adminEnrollment.approveError'),
         ),
       ),
   });
@@ -196,14 +198,14 @@ export const useAdminEnrollmentController = () => {
     mutationFn: (payload: { id: number; reject_reason: string }) =>
       rejectEnrollment(payload.id, { reject_reason: payload.reject_reason }),
     onSuccess: async (_response, payload) => {
-      message.success("Ariza rad etildi");
+      message.success(t('adminEnrollment.rejected'));
       await invalidateEnrollment(payload.id);
       setRejectOpen(false);
       rejectForm.resetFields();
     },
     onError: (error) =>
       message.error(
-        getAdminApiErrorMessage(error, ["reject_reason", "detail"], "Rad etishda xato"),
+        getAdminApiErrorMessage(error, ["reject_reason", "detail"], t('adminEnrollment.rejectError')),
       ),
   });
 
@@ -211,14 +213,14 @@ export const useAdminEnrollmentController = () => {
     mutationFn: (payload: { id: number; reopen_reason: string }) =>
       reopenEnrollment(payload.id, { reopen_reason: payload.reopen_reason }),
     onSuccess: async (_response, payload) => {
-      message.success("Ariza qayta ochildi");
+      message.success(t('adminEnrollment.reopened'));
       await invalidateEnrollment(payload.id);
       setReopenOpen(false);
       reopenForm.resetFields();
     },
     onError: (error) =>
       message.error(
-        getAdminApiErrorMessage(error, ["reopen_reason", "detail"], "Qayta ochishda xato"),
+        getAdminApiErrorMessage(error, ["reopen_reason", "detail"], t('adminEnrollment.reopenError')),
       ),
   });
 
@@ -231,20 +233,20 @@ export const useAdminEnrollmentController = () => {
       data: { full_name?: string; phone?: string; email?: string; direction_choice?: number | null };
     }) => updateEnrollmentApplicant(id, data),
     onSuccess: async (_response, payload) => {
-      message.success("Ariza yangilandi");
+      message.success(t('adminEnrollment.updated'));
       await invalidateEnrollment(payload.id);
       setEditOpen(false);
       editForm.resetFields();
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["full_name", "detail"], "Tahrirlashda xato")),
+      message.error(getAdminApiErrorMessage(error, ["full_name", "detail"], t('adminEnrollment.editError'))),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteEnrollmentApplicant(id),
     onMutate: (id) => setDeleteId(id),
     onSuccess: async (_response, id) => {
-      message.success("Ariza o'chirildi");
+      message.success(t('adminEnrollment.deleted'));
       await invalidateEnrollment(id);
       if (detailApplicantId === id) {
         closeDetail();
@@ -254,18 +256,18 @@ export const useAdminEnrollmentController = () => {
       }
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["detail"], "O'chirishda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail"], t('adminEnrollment.deleteError'))),
     onSettled: () => setDeleteId(null),
   });
 
   const reverifyMutation = useMutation({
     mutationFn: (id: number) => reverifyEnrollment(id),
     onSuccess: async (_response, id) => {
-      message.success("AI qayta tekshirildi");
+      message.success(t('adminEnrollment.reverified'));
       await invalidateEnrollment(id);
     },
     onError: (error) =>
-      message.error(getAdminApiErrorMessage(error, ["detail", "error"], "AI tekshiruvda xato")),
+      message.error(getAdminApiErrorMessage(error, ["detail", "error"], t('adminEnrollment.reverifyError'))),
   });
 
   const submitReject = async (values: RejectValues) => {
@@ -286,7 +288,7 @@ export const useAdminEnrollmentController = () => {
 
   const removeApplicant = async (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_delete) {
-      message.warning(getEnrollmentActionReason(item, "can_delete", "Bu ariza uchun o'chirish yopilgan."));
+      message.warning(getEnrollmentActionReason(item, "can_delete", t('adminEnrollment.deleteBlocked')));
       return;
     }
     setSelectedApplicant(item);
@@ -296,7 +298,7 @@ export const useAdminEnrollmentController = () => {
   const reverifyApplicant = async (item: EnrollmentItem | EnrollmentDetailItem) => {
     if (!getEnrollmentAllowedActions(item).can_reverify) {
       message.warning(
-        getEnrollmentActionReason(item, "can_reverify", "Bu ariza uchun AI qayta tekshiruvi yopilgan."),
+        getEnrollmentActionReason(item, "can_reverify", t('adminEnrollment.reverifyBlocked')),
       );
       return;
     }
@@ -309,7 +311,7 @@ export const useAdminEnrollmentController = () => {
     const role = values.role;
     if (role === "student") {
       if (!values.group_id) {
-        message.warning("Guruh tanlang");
+        message.warning(t('adminEnrollment.selectGroup'));
         return;
       }
       await approveMutation.mutateAsync({
@@ -323,7 +325,7 @@ export const useAdminEnrollmentController = () => {
     }
 
     if (!values.subject_id) {
-      message.warning("Fan tanlang");
+      message.warning(t('adminEnrollment.selectSubject'));
       return;
     }
     await approveMutation.mutateAsync({

@@ -1,4 +1,5 @@
 import { Alert, Form, Input, InputNumber, Modal, Select } from "antd";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminEnrollmentController } from "../hooks/useAdminEnrollmentController";
 
@@ -6,9 +7,11 @@ type Props = {
   controller: AdminEnrollmentController;
 };
 
-const AdminEnrollmentApproveModal = ({ controller }: Props) => (
+const AdminEnrollmentApproveModal = ({ controller }: Props) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title="Arizani tasdiqlash"
+    title={t('adminApproveModal.pageTitle')}
     open={controller.approveOpen}
     onCancel={controller.closeApprove}
     onOk={() => controller.approveForm.submit()}
@@ -21,26 +24,26 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
           <Alert
             type="warning"
             showIcon
-            message="AI avtomatik tasdiqlamadi"
-            description="Admin passport va selfie preview asosida qo'lda qaror qabul qilishi kerak."
+            message={t('adminApproveModal.aiNotApproved')}
+            description={t('adminApproveModal.manualDecision')}
             style={{ marginBottom: 'var(--space-3)' }}
           />
         ) : (
           <Alert
             type="success"
             showIcon
-            message="AI tasdiqladi"
-            description="Ariza approve-ready holatda. Endi rol va biriktirishni tanlang."
+            message={t('adminApproveModal.aiApproved')}
+            description={t('adminApproveModal.approveReady')}
             style={{ marginBottom: 'var(--space-3)' }}
           />
         )}
 
         <Form layout="vertical" form={controller.approveForm} onFinish={controller.submitApprove}>
-          <Form.Item name="role" label="Rol" rules={[{ required: true }]}>
+          <Form.Item name="role" label={t('form.role')} rules={[{ required: true }]}>
             <Select
               options={[
-                { value: "student", label: "Talaba" },
-                { value: "teacher", label: "O'qituvchi" },
+                { value: "student", label: t('form.student') },
+                { value: "teacher", label: t('form.teacher') },
               ]}
             />
           </Form.Item>
@@ -48,13 +51,13 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
           {controller.selectedApplicant.ai_summary.manual_review_required ? (
             <Form.Item
               name="manual_override_reason"
-              label="Qo'lda tasdiqlash sababi"
-              rules={[{ required: true, message: "Tasdiqlash sababini yozing" }]}
-              extra="AI avtomatik tasdiqlamagan arizalarda audit uchun sabab majburiy."
+              label={t('adminApproveModal.overrideReason')}
+              rules={[{ required: true, message: t('adminApproveModal.overridePlaceholder') }]}
+              extra={t('adminApproveModal.overrideRequired')}
             >
               <Input.TextArea
                 rows={4}
-                placeholder="Masalan: passport va selfie preview qo'lda tekshirildi, shaxs mos deb topildi."
+                placeholder={t('adminApproveModal.overrideExample')}
               />
             </Form.Item>
           ) : null}
@@ -65,13 +68,13 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
               if (role === "student") {
                 return (
                   <>
-                    <Form.Item name="group_id" label="Guruh" rules={[{ required: true }]}>
+                    <Form.Item name="group_id" label={t('form.group')} rules={[{ required: true }]}>
                       <Select
                         options={controller.groups.map((group) => ({ value: group.id, label: group.name }))}
-                        placeholder="Guruh tanlang"
+                        placeholder={t('adminApproveModal.selectGroup')}
                       />
                     </Form.Item>
-                    <Form.Item name="admission_year" label="Qabul yili">
+                    <Form.Item name="admission_year" label={t('form.admissionYear')}>
                       <InputNumber min={2000} max={2100} style={{ width: "100%" }} />
                     </Form.Item>
                   </>
@@ -80,17 +83,17 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
 
               return (
                 <>
-                  <Form.Item name="subject_id" label="Fan" rules={[{ required: true }]}>
+                  <Form.Item name="subject_id" label={t('form.subject')} rules={[{ required: true }]}>
                     <Select
                       options={controller.subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
-                      placeholder="Fan tanlang"
+                      placeholder={t('adminApproveModal.selectSubject')}
                     />
                   </Form.Item>
-                  <Form.Item name="group_ids" label="Guruhlar (ixtiyoriy)">
+                  <Form.Item name="group_ids" label={t('adminApproveModal.groupsOptional')}>
                     <Select
                       mode="multiple"
                       options={controller.groups.map((group) => ({ value: group.id, label: group.name }))}
-                      placeholder="Guruhlarni tanlang"
+                      placeholder={t('adminApproveModal.selectGroups')}
                     />
                   </Form.Item>
                 </>
@@ -101,6 +104,7 @@ const AdminEnrollmentApproveModal = ({ controller }: Props) => (
       </>
     ) : null}
   </Modal>
-);
+  );
+};
 
 export default AdminEnrollmentApproveModal;

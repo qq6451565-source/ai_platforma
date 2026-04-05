@@ -1,5 +1,6 @@
 import { Form, Input, Modal, Select, Switch } from "antd";
 import type { FormInstance } from "antd/es/form";
+import { useTranslation } from 'react-i18next';
 
 import type { AdminUser } from "../../../api/admin";
 
@@ -19,9 +20,11 @@ const AdminUserFormModal = ({
   open,
   onCancel,
   onSubmit,
-}: AdminUserFormModalProps) => (
+}: AdminUserFormModalProps) => {
+  const { t } = useTranslation();
+  return (
   <Modal
-    title={editing ? "Foydalanuvchini tahrirlash" : "Yangi foydalanuvchi"}
+    title={editing ? t('adminUserForm.editTitle') : t('adminUserForm.createTitle')}
     open={open}
     onCancel={onCancel}
     onOk={() => form.submit()}
@@ -34,37 +37,38 @@ const AdminUserFormModal = ({
       </Form.Item>
       <Form.Item
         name="password"
-        label="Parol"
-        rules={editing ? [] : [{ required: true, message: "Parol kiriting" }]}
+        label={t('adminUserForm.password')}
+        rules={editing ? [] : [{ required: true, message: t('adminUserForm.passwordRequired') }]}
       >
         <Input.Password />
       </Form.Item>
-      <Form.Item name="first_name" label="Ism">
+      <Form.Item name="first_name" label={t('form.firstName')}>
         <Input />
       </Form.Item>
-      <Form.Item name="last_name" label="Familiya">
+      <Form.Item name="last_name" label={t('form.lastName')}>
         <Input />
       </Form.Item>
-      <Form.Item name="email" label="Email">
+      <Form.Item name="email" label={t('form.email')}>
         <Input />
       </Form.Item>
-      <Form.Item name="phone" label="Telefon">
+      <Form.Item name="phone" label={t('form.phone')}>
         <Input />
       </Form.Item>
-      <Form.Item name="role" label="Rol" rules={[{ required: true }]}>
+      <Form.Item name="role" label={t('form.role')} rules={[{ required: true }]}>
         <Select
           options={[
-            { value: "student", label: "Talaba" },
-            { value: "teacher", label: "O'qituvchi" },
-            { value: "admin", label: "Admin" },
+            { value: "student", label: t('form.student') },
+            { value: "teacher", label: t('form.teacher') },
+            { value: "admin", label: t('form.admin') },
           ]}
         />
       </Form.Item>
-      <Form.Item name="is_active" label="Faol" valuePropName="checked">
+      <Form.Item name="is_active" label={t('adminUserForm.active')} valuePropName="checked">
         <Switch />
       </Form.Item>
     </Form>
   </Modal>
-);
+  );
+};
 
 export default AdminUserFormModal;
