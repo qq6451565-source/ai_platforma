@@ -198,6 +198,7 @@ const App = () => {
   const token = getAccessToken();
   const { data: user, isLoading, isError, error } = useMe();
   const qc = useQueryClient();
+  const location = useLocation();
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
@@ -205,6 +206,9 @@ const App = () => {
   const meStatus = (error as any)?.response?.status;
   const authResolving = !!token && !user && (isLoading || (isError && meStatus !== 401 && meStatus !== 403));
   const isAuthenticated = !!token && !!user;
+
+  // Public routes that should never be blocked by auth resolution
+  const isPublicRoute = ['/', '/login', '/register', '/admin-login'].includes(location.pathname);
 
   useEffect(() => {
     if (!token || !isError) return;
@@ -219,7 +223,9 @@ const App = () => {
     return () => window.clearTimeout(retryId);
   }, [token, isError, meStatus, qc]);
 
-  if (authResolving) {
+  // Only show auth-resolving spinner on protected routes (e.g. /app/*),
+  // never block public pages like Landing, Login, Register
+  if (authResolving && !isPublicRoute) {
     return (
       <div className="flex-center h-screen">
         <Spin size="large" />

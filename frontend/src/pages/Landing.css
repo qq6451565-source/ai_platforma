@@ -3,6 +3,18 @@
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, var(--landing-bg-start) 0%, var(--landing-bg-end) 100%);
+  color: #FFFFFF;
+}
+
+/* Dark translucent cards for the landing page */
+.landing-page .ant-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+}
+.landing-page .ant-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .aurora-bg {
@@ -229,17 +241,17 @@
   margin-bottom: var(--space-6);
   line-height: 1.1;
   letter-spacing: var(--tracking-tight);
+  color: #FFFFFF;
 }
 
 .hero-subtitle {
   font-size: var(--font-size-lg);
-  color: var(--color-text-primary);
+  color: rgba(255, 255, 255, 0.85);
   line-height: var(--leading-wide);
   margin-bottom: 6rem;
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
-  opacity: 0.9;
 }
 
 .cta-buttons {
@@ -285,6 +297,7 @@
   font-size: var(--font-size-4xl);
   margin-bottom: var(--space-4);
   filter: drop-shadow(0 0 10px var(--accent-glow));
+  color: #FFFFFF;
 }
 
 .feature-card h3 {
@@ -300,6 +313,7 @@
 .feature-card p {
   line-height: var(--leading-loose);
   font-size: var(--font-size-norm);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 @media (max-width: 768px) {
