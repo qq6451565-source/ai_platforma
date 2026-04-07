@@ -93,17 +93,8 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     return navItems.map((item: any) => {
       if (!item) return null;
       if ('children' in item && Array.isArray(item.children)) {
-        const groupLabel = (
-          <div className="hemis-nav-group-label">
-            {item.icon && <span className="hemis-nav-icon">{item.icon}</span>}
-            {!collapsed && <span>{item.label}</span>}
-          </div>
-        );
         return (
           <div key={item.key} className="hemis-nav-group">
-            {collapsed ? (
-              <Tooltip title={item.label} placement="right">{groupLabel}</Tooltip>
-            ) : groupLabel}
             {item.children.map((child: any) => {
               const childEl = (
                 <NavLink
@@ -161,10 +152,6 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
                     <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <div className="hemis-logo-text">
-                  <span className="hemis-logo-title">HEMIS</span>
-                  <span className="hemis-logo-subtitle">{title}</span>
-                </div>
               </div>
               <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(true)}>
                 <MenuFoldOutlined />
@@ -185,16 +172,6 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
                 icon={<UserOutlined />}
                 className="hemis-user-avatar"
               />
-              {!collapsed && (
-                <div className="hemis-user-info">
-                  <span className="hemis-user-name">
-                    {user?.first_name && user?.last_name && user.first_name !== user.last_name
-                      ? `${user.first_name} ${user.last_name}`
-                      : user?.first_name || user?.username}
-                  </span>
-                  <span className="hemis-user-role">{title}</span>
-                </div>
-              )}
             </div>
           </Dropdown>
         </div>
