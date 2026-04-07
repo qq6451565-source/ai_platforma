@@ -51,16 +51,12 @@
   overflow: hidden;
 }
 
-.hemis-logo-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-surface);
-  flex-shrink: 0;
+.hemis-logo-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 2px;
+  user-select: none;
 }
 
 .hemis-collapse-btn {
@@ -182,32 +178,6 @@
 .hemis-collapse-center:hover {
   background: var(--bg-elevated-2) !important;
   color: var(--accent) !important;
-}
-
-/* ── SIDEBAR FOOTER (User card) ──────────────────────────── */
-.hemis-sidebar-footer {
-  padding: var(--space-3);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.hemis-user-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2-5);
-  padding: var(--space-2) var(--space-2-5);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.hemis-user-card:hover {
-  background: var(--bg-elevated-2);
-}
-
-.hemis-user-avatar {
-  background: var(--gradient-primary) !important;
-  flex-shrink: 0;
 }
 
 /* ── MAIN AREA ────────────────────────────────────────────── */

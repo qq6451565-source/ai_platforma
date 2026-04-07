@@ -146,12 +146,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           ) : (
             <>
               <div className="hemis-logo" role="button" tabIndex={0} onClick={() => navigate(`/app/${user?.role}/dashboard`)}>
-                <div className="hemis-logo-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </div>
+                <span className="hemis-logo-title">LMS</span>
               </div>
               <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(true)}>
                 <MenuFoldOutlined />
@@ -164,17 +159,6 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           {renderNavItems(items)}
         </nav>
 
-        <div className="hemis-sidebar-footer">
-          <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="topRight">
-            <div className="hemis-user-card">
-              <Avatar
-                size={36}
-                icon={<UserOutlined />}
-                className="hemis-user-avatar"
-              />
-            </div>
-          </Dropdown>
-        </div>
       </aside>
 
       {/* ── MAIN AREA ───────────────────────────────────── */}
