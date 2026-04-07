@@ -13,15 +13,11 @@ const manualVendorChunk = (id: string) => {
   // Heavy SDK — isolated, only loaded by Register face-verify
   if (n.includes("@mediapipe")) return "vision-vendor";
 
-  // UI framework (biggest portion) — changes less often than app code
-  if (n.includes("/antd/") || n.includes("/@ant-design/") || /\/rc-[a-z]/.test(n))
-    return "antd-vendor";
-
   // React core — almost never changes between deploys
   if (n.includes("/react-dom/") || n.includes("/react/") || n.includes("/scheduler/"))
     return "react-vendor";
 
-  // Everything else (axios, i18next, dayjs, react-router, tanstack, etc.)
+  // All other dependencies in a single chunk to avoid circular imports
   return "vendor";
 };
 
@@ -39,6 +35,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: manualVendorChunk,
+        // Force unique chunk names per build to avoid CDN stale-cache issues
+        chunkFileNames: `assets/[name]-[hash].js`,
+        entryFileNames: `assets/[name]-[hash].js`,
+        assetFileNames: `assets/[name]-[hash][extname]`,
       },
     },
   },
