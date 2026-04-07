@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Avatar, Dropdown, Tooltip, Modal, Form, Input, Upload, message } from 'antd';
-import type { UploadRequestOption } from 'rc-upload/lib/interface';
+import { Avatar, Dropdown, Tooltip, Modal, Form, Input, Upload, message, Divider } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -12,13 +11,14 @@ import {
   MenuOutlined,
   CloseOutlined,
   CameraOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import LanguageSwitcher from '../LanguageSwitcher';
 import type { MenuProps } from 'antd';
-import { updateProfile } from '../../api/profile';
+import { updateProfile, changePassword } from '../../api/profile';
 import './HemisLayout.css';
 
 interface LayoutProps {
@@ -107,16 +107,47 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     },
   ];
 
+  const isAdmin = user?.role === 'admin';
+
   const handleProfileSave = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await form.validateFields(['old_password', 'new_password', 'confirm_password']);
       setProfileLoading(true);
-      await updateProfile({ ...values, ...(avatarFile ? { face_image: avatarFile } : {}) });
-      await qc.invalidateQueries({ queryKey: ['me'] });
-      message.success(t('profile.updated'));
+
+      // Save profile info (admin only) or just avatar
+      const profilePayload: any = {};
+      if (isAdmin) {
+        const fields = form.getFieldsValue(['first_name', 'last_name', 'email', 'phone']);
+        Object.assign(profilePayload, fields);
+      }
+      if (avatarFile) profilePayload.face_image = avatarFile;
+
+      if (Object.keys(profilePayload).length > 0) {
+        await updateProfile(profilePayload);
+        await qc.invalidateQueries({ queryKey: ['me'] });
+      }
+
+      // Change password if filled
+      if (values.old_password && values.new_password) {
+        if (values.new_password !== values.confirm_password) {
+          message.error(t('profile.confirmPasswordMismatch'));
+          setProfileLoading(false);
+          return;
+        }
+        await changePassword({ old_password: values.old_password, new_password: values.new_password });
+        form.resetFields(['old_password', 'new_password', 'confirm_password']);
+        message.success(t('profile.passwordUpdated'));
+      } else {
+        message.success(t('profile.updated'));
+      }
+
       setProfileOpen(false);
-    } catch {
-      message.error(t('profile.updateError'));
+    } catch (err: any) {
+      const msg = err?.response?.data?.old_password?.[0]
+        || err?.response?.data?.detail
+        || err?.response?.data?.non_field_errors?.[0]
+        || t('profile.updateError');
+      message.error(msg);
     } finally {
       setProfileLoading(false);
     }
@@ -300,7 +331,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
         okText={t('common.save')}
         cancelText={t('common.cancel')}
         confirmLoading={profileLoading}
-        width={420}
+        width={440}
         centered
       >
         {/* Avatar upload */}
@@ -308,10 +339,10 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           <Upload
             accept="image/*"
             showUploadList={false}
-            customRequest={({ file }: UploadRequestOption) => {
-              const f = file as File;
-              setAvatarFile(f);
-              setAvatarPreview(URL.createObjectURL(f));
+            beforeUpload={(file) => {
+              setAvatarFile(file);
+              setAvatarPreview(URL.createObjectURL(file));
+              return false; // prevent auto-upload
             }}
           >
             <div style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}>
@@ -347,17 +378,33 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
         </div>
 
         <Form form={form} layout="vertical">
+          {/* Profile info — admin only */}
           <Form.Item name="first_name" label={t('profile.firstName')}>
-            <Input />
+            <Input disabled={!isAdmin} />
           </Form.Item>
           <Form.Item name="last_name" label={t('profile.lastName')}>
-            <Input />
+            <Input disabled={!isAdmin} />
           </Form.Item>
           <Form.Item name="email" label={t('profile.email')}>
-            <Input type="email" />
+            <Input type="email" disabled={!isAdmin} />
           </Form.Item>
           <Form.Item name="phone" label={t('profile.phone')}>
-            <Input />
+            <Input disabled={!isAdmin} />
+          </Form.Item>
+
+          {/* Password change — all roles */}
+          <Divider style={{ margin: '12px 0' }}>
+            <LockOutlined style={{ marginRight: 6 }} />
+            {t('profile.changePassword')}
+          </Divider>
+          <Form.Item name="old_password" label={t('profile.oldPassword')}>
+            <Input.Password autoComplete="current-password" />
+          </Form.Item>
+          <Form.Item name="new_password" label={t('profile.newPassword')}>
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+          <Form.Item name="confirm_password" label={t('profile.confirmPassword')}>
+            <Input.Password autoComplete="new-password" />
           </Form.Item>
         </Form>
       </Modal>
