@@ -46,7 +46,7 @@ const TeacherDashboard = () => {
     <div className="hemis-dashboard">
       <div className="hemis-page-header">
         <div>
-          <h1 className="hemis-page-title">{t('dashboard.title')}</h1>
+          <h1 className="hemis-page-title">{t('roles.teacher')}</h1>
         </div>
         <div className="hemis-page-date">{dayjs().format('DD MMMM, YYYY')}</div>
       </div>

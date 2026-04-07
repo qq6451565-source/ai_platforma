@@ -95,7 +95,7 @@ const AdminDashboard = () => {
   return (
     <div className="hemis-dashboard">
       <div className="hemis-page-header">
-        <h1 className="hemis-page-title">Dashboard</h1>
+        <h1 className="hemis-page-title">{t('nav.dashboard')}</h1>
       </div>
 
       {loading ? (
