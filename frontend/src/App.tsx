@@ -102,12 +102,9 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     { key: "student/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
     { key: "student/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
     { key: "student/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
-    { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
   ], [t]);
 
-  const pendingStudentGroup = useMemo((): MenuProps['items'] => [
-    { key: "student/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-  ], [t]);
+  const pendingStudentGroup = useMemo((): MenuProps['items'] => [], [t]);
 
   const teacherGroup = useMemo((): MenuProps['items'] => [
     { key: "teacher/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
@@ -119,7 +116,6 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     { key: "teacher/attendance", label: t('nav.attendance'), icon: <TeamOutlined /> },
     { key: "teacher/materials", label: t('nav.materials'), icon: <ReadOutlined /> },
     { key: "teacher/submissions", label: t('nav.submissions'), icon: <FileDoneOutlined /> },
-    { key: "teacher/profile", label: t('nav.profile'), icon: <UserOutlined /> },
   ], [t]);
 
   const adminGroup = useMemo((): MenuProps['items'] => [
@@ -128,16 +124,8 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     { key: "admin/university", label: t('nav.university'), icon: <BookOutlined /> },
     { key: "admin/learning", label: t('nav.learning'), icon: <CalendarOutlined /> },
     { key: "admin/enrollment", label: t('nav.enrollment'), icon: <FileTextOutlined /> },
-    {
-      key: "settings-group",
-      label: t('nav.settings'),
-      icon: <SettingOutlined />,
-      children: [
-        { key: "admin/profile", label: t('nav.profile'), icon: <UserOutlined /> },
-        { key: "admin/audit-logs", label: t('nav.auditLogs'), icon: <FileDoneOutlined /> },
-        { key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> },
-      ],
-    },
+    { key: "admin/audit-logs", label: t('nav.auditLogs'), icon: <FileDoneOutlined /> },
+    { key: "admin/ai-settings", label: t('nav.aiSettings'), icon: <SettingOutlined /> },
   ], [t]);
 
   const items = isAdmin ? adminGroup : isTeacher ? teacherGroup : isPendingStudent ? pendingStudentGroup : studentGroup;

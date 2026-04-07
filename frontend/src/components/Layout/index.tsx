@@ -72,13 +72,6 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: t('nav.profile'),
-      onClick: () => navigate(`/app/${user?.role}/profile`),
-    },
-    { type: 'divider' },
-    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: t('common.logout'),
@@ -186,6 +179,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
               <div className="hemis-header-user">
                 <Avatar
                   size={32}
+                  src={user?.face_image || undefined}
                   icon={<UserOutlined />}
                   className="hemis-user-avatar"
                 />
