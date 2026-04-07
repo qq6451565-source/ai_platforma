@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Avatar, Dropdown } from 'antd';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Avatar, Dropdown, Tooltip } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -47,8 +47,14 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
   onLogout,
   title,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    try { localStorage.setItem('sidebar_collapsed', String(collapsed)); } catch {}
+  }, [collapsed]);
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -87,27 +93,37 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     return navItems.map((item: any) => {
       if (!item) return null;
       if ('children' in item && Array.isArray(item.children)) {
+        const groupLabel = (
+          <div className="hemis-nav-group-label">
+            {item.icon && <span className="hemis-nav-icon">{item.icon}</span>}
+            {!collapsed && <span>{item.label}</span>}
+          </div>
+        );
         return (
           <div key={item.key} className="hemis-nav-group">
-            <div className="hemis-nav-group-label">
-              {item.icon && <span className="hemis-nav-icon">{item.icon}</span>}
-              {!collapsed && <span>{item.label}</span>}
-            </div>
-            {!collapsed && item.children.map((child: any) => (
-              <NavLink
-                key={child.key}
-                to={`/app/${child.key}`}
-                className={({ isActive }) => `hemis-nav-item ${isActive ? 'active' : ''}`}
-                onClick={onItemClick}
-              >
-                <span className="hemis-nav-icon">{child.icon}</span>
-                <span className="hemis-nav-label">{child.label}</span>
-              </NavLink>
-            ))}
+            {collapsed ? (
+              <Tooltip title={item.label} placement="right">{groupLabel}</Tooltip>
+            ) : groupLabel}
+            {item.children.map((child: any) => {
+              const childEl = (
+                <NavLink
+                  key={child.key}
+                  to={`/app/${child.key}`}
+                  className={({ isActive }) => `hemis-nav-item ${isActive ? 'active' : ''}`}
+                  onClick={onItemClick}
+                >
+                  <span className="hemis-nav-icon">{child.icon}</span>
+                  {!collapsed && <span className="hemis-nav-label">{child.label}</span>}
+                </NavLink>
+              );
+              return collapsed ? (
+                <Tooltip key={child.key} title={child.label} placement="right">{childEl}</Tooltip>
+              ) : childEl;
+            })}
           </div>
         );
       }
-      return (
+      const navEl = (
         <NavLink
           key={item.key}
           to={`/app/${item.key}`}
@@ -118,6 +134,9 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           {!collapsed && <span className="hemis-nav-label">{item.label}</span>}
         </NavLink>
       );
+      return collapsed ? (
+        <Tooltip key={item.key} title={item.label} placement="right">{navEl}</Tooltip>
+      ) : navEl;
     });
   };
 

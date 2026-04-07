@@ -194,13 +194,19 @@
   padding: var(--space-2-5);
 }
 
+.hemis-sidebar.collapsed .hemis-nav-group-label {
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
 .hemis-sidebar.collapsed .hemis-sidebar-header {
   padding: 0 12px;
   justify-content: center;
 }
 
 .hemis-sidebar.collapsed .hemis-collapse-btn {
-  display: none;
+  display: flex;
+  margin: 0 auto;
 }
 
 /* ── SIDEBAR FOOTER (User card) ──────────────────────────── */
