@@ -148,23 +148,29 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
       {/* ── SIDEBAR (Desktop) ───────────────────────────── */}
       <aside className={`hemis-sidebar ${collapsed ? 'collapsed' : ''}`}>
         <div className="hemis-sidebar-header">
-          <div className="hemis-logo" role="button" tabIndex={0} onClick={() => navigate(`/app/${user?.role}/dashboard`)}>
-            <div className="hemis-logo-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2"/>
-                <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            {!collapsed && (
-              <div className="hemis-logo-text">
-                <span className="hemis-logo-title">HEMIS</span>
-                <span className="hemis-logo-subtitle">{title}</span>
+          {collapsed ? (
+            <button type="button" className="hemis-collapse-btn hemis-collapse-center" onClick={() => setCollapsed(false)}>
+              <MenuUnfoldOutlined />
+            </button>
+          ) : (
+            <>
+              <div className="hemis-logo" role="button" tabIndex={0} onClick={() => navigate(`/app/${user?.role}/dashboard`)}>
+                <div className="hemis-logo-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="11" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M8 12h8M12 8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div className="hemis-logo-text">
+                  <span className="hemis-logo-title">HEMIS</span>
+                  <span className="hemis-logo-subtitle">{title}</span>
+                </div>
               </div>
-            )}
-          </div>
-          <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(!collapsed)}>
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          </button>
+              <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(true)}>
+                <MenuFoldOutlined />
+              </button>
+            </>
+          )}
         </div>
 
         <nav className="hemis-sidebar-nav">
