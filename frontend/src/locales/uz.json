@@ -1148,6 +1148,11 @@
     "tokens": "Tokenlar"
   },
   "profile": {
+    "firstName": "Ism",
+    "lastName": "Familiya",
+    "email": "Email",
+    "phone": "Telefon",
+    "clickToChangeAvatar": "Rasmni o'zgartirish uchun bosing",
     "firstNameRequired": "Ismni kiriting",
     "lastNameRequired": "Familiyani kiriting",
     "emailInvalid": "Email noto'g'ri",

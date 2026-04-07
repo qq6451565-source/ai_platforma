@@ -1148,6 +1148,11 @@
     "tokens": "Tokens"
   },
   "profile": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "phone": "Phone",
+    "clickToChangeAvatar": "Click on photo to change",
     "firstNameRequired": "Enter first name",
     "lastNameRequired": "Enter last name",
     "emailInvalid": "Invalid email",

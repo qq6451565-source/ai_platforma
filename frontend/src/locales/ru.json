@@ -1148,6 +1148,11 @@
     "tokens": "Токены"
   },
   "profile": {
+    "firstName": "Имя",
+    "lastName": "Фамилия",
+    "email": "Email",
+    "phone": "Телефон",
+    "clickToChangeAvatar": "Нажмите на фото для смены",
     "firstNameRequired": "Введите имя",
     "lastNameRequired": "Введите фамилию",
     "emailInvalid": "Неверный email",

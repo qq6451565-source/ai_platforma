@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Avatar, Dropdown, Tooltip } from 'antd';
+import { Avatar, Dropdown, Tooltip, Modal, Form, Input, Upload, message } from 'antd';
+import type { UploadRequestOption } from 'rc-upload/lib/interface';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -10,11 +11,14 @@ import {
   RightOutlined,
   MenuOutlined,
   CloseOutlined,
+  CameraOutlined,
 } from '@ant-design/icons';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import LanguageSwitcher from '../LanguageSwitcher';
 import type { MenuProps } from 'antd';
+import { updateProfile } from '../../api/profile';
 import './HemisLayout.css';
 
 interface LayoutProps {
@@ -51,6 +55,12 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
     try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [form] = Form.useForm();
+  const qc = useQueryClient();
 
   useEffect(() => {
     try { localStorage.setItem('sidebar_collapsed', String(collapsed)); } catch {}
@@ -72,6 +82,23 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
 
   const userMenuItems: MenuProps['items'] = [
     {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: t('nav.profile'),
+      onClick: () => {
+        form.setFieldsValue({
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          email: user?.email,
+          phone: user?.phone,
+        });
+        setAvatarPreview(null);
+        setAvatarFile(null);
+        setProfileOpen(true);
+      },
+    },
+    { type: 'divider' },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: t('common.logout'),
@@ -79,6 +106,21 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
       onClick: onLogout,
     },
   ];
+
+  const handleProfileSave = async () => {
+    try {
+      const values = await form.validateFields();
+      setProfileLoading(true);
+      await updateProfile({ ...values, ...(avatarFile ? { face_image: avatarFile } : {}) });
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      message.success(t('profile.updated'));
+      setProfileOpen(false);
+    } catch {
+      message.error(t('profile.updateError'));
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   /* render sidebar nav items */
   const renderNavItems = (navItems: MenuProps['items'], onItemClick?: () => void) => {
@@ -248,6 +290,77 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           </NavLink>
         ))}
       </nav>
+
+      {/* ── PROFILE MODAL ───────────────────────────────── */}
+      <Modal
+        open={profileOpen}
+        title={t('nav.profile')}
+        onCancel={() => setProfileOpen(false)}
+        onOk={handleProfileSave}
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
+        confirmLoading={profileLoading}
+        width={420}
+        centered
+      >
+        {/* Avatar upload */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <Upload
+            accept="image/*"
+            showUploadList={false}
+            customRequest={({ file }: UploadRequestOption) => {
+              const f = file as File;
+              setAvatarFile(f);
+              setAvatarPreview(URL.createObjectURL(f));
+            }}
+          >
+            <div style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}>
+              <Avatar
+                size={80}
+                src={avatarPreview || user?.face_image || undefined}
+                icon={<UserOutlined />}
+                style={{ border: '3px solid var(--accent)' }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: 'var(--accent)',
+                  borderRadius: '50%',
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: 12,
+                }}
+              >
+                <CameraOutlined />
+              </div>
+            </div>
+          </Upload>
+          <div style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: 12 }}>
+            {t('profile.clickToChangeAvatar')}
+          </div>
+        </div>
+
+        <Form form={form} layout="vertical">
+          <Form.Item name="first_name" label={t('profile.firstName')}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="last_name" label={t('profile.lastName')}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label={t('profile.email')}>
+            <Input type="email" />
+          </Form.Item>
+          <Form.Item name="phone" label={t('profile.phone')}>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
