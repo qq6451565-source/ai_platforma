@@ -188,7 +188,9 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
               {!collapsed && (
                 <div className="hemis-user-info">
                   <span className="hemis-user-name">
-                    {user?.first_name} {user?.last_name}
+                    {user?.first_name && user?.last_name && user.first_name !== user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user?.first_name || user?.username}
                   </span>
                   <span className="hemis-user-role">{title}</span>
                 </div>
@@ -227,7 +229,9 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
                   className="hemis-user-avatar"
                 />
                 <span className="hemis-header-username">
-                  {user?.first_name || user?.username}
+                  {user?.first_name && user?.last_name && user.first_name !== user.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.first_name || user?.username}
                 </span>
               </div>
             </Dropdown>

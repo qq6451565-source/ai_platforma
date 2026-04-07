@@ -46,6 +46,9 @@
   gap: var(--space-3);
   cursor: pointer;
   text-decoration: none;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .hemis-logo-icon {
@@ -64,6 +67,8 @@
   display: flex;
   flex-direction: column;
   line-height: var(--leading-tight);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .hemis-logo-title {
@@ -72,6 +77,9 @@
   font-size: var(--font-size-norm);
   color: var(--color-text-primary);
   letter-spacing: var(--tracking-wide);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hemis-logo-subtitle {
@@ -79,6 +87,9 @@
   color: var(--color-text-muted);
   text-transform: capitalize;
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hemis-collapse-btn {
@@ -118,13 +129,13 @@
 .hemis-nav-group-label {
   display: flex;
   align-items: center;
-  gap: var(--space-2-5);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-1);
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-widest);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .hemis-nav-item {
