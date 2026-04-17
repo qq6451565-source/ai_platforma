@@ -1,4 +1,6 @@
 from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 from rest_framework import serializers
@@ -13,6 +15,28 @@ from teacher_subject.models import TeacherSubject
 
 from .admin_registry import set_user_role, upsert_student_placement, upsert_teacher_workload
 from .models import User, PassportData, AuditLog
+
+# ── File upload validatsiya konstantlari ──────────────────────────────────────
+ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+MAX_IMAGE_SIZE_MB = 5
+MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024
+
+
+def validate_image_file(file):
+    """Rasm fayli: faqat JPEG/PNG/WEBP, max 5 MB."""
+    if not file:
+        return file
+    content_type = getattr(file, 'content_type', '')
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        raise serializers.ValidationError(
+            f"Faqat JPEG, PNG yoki WEBP formatlari qabul qilinadi. Yuborilgan: {content_type}"
+        )
+    if file.size > MAX_IMAGE_SIZE_BYTES:
+        raise serializers.ValidationError(
+            f"Fayl hajmi {MAX_IMAGE_SIZE_MB} MB dan oshmasligi kerak. "
+            f"Yuborilgan: {round(file.size / 1024 / 1024, 1)} MB"
+        )
+    return file
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -89,6 +113,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'passport_front_image': {'required': False},
             'face_image': {'required': False},
         }
+
+    def validate_passport_front_image(self, value):
+        return validate_image_file(value)
+
+    def validate_face_image(self, value):
+        return validate_image_file(value)
+
     def update(self, instance, validated_data):
         birth_date = validated_data.get('birth_date')
         if birth_date and not validated_data.get('birth_year'):
@@ -99,12 +130,20 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField()
-    new_password = serializers.CharField(min_length=6)
+    new_password = serializers.CharField(min_length=10)
 
     def validate_old_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Eski parol noto'g'ri.")
+        return value
+
+    def validate_new_password(self, value):
+        user = self.context['request'].user
+        try:
+            validate_password(value, user=user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
         return value
 
     def save(self, **kwargs):
@@ -290,6 +329,15 @@ class PassportDataSerializer(serializers.ModelSerializer):
             "back_image",
             "selfie_image",
         ]
+
+    def validate_front_image(self, value):
+        return validate_image_file(value)
+
+    def validate_back_image(self, value):
+        return validate_image_file(value)
+
+    def validate_selfie_image(self, value):
+        return validate_image_file(value)
 
 
 class AuditLogSerializer(serializers.ModelSerializer):

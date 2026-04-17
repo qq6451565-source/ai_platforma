@@ -1,4 +1,4 @@
-import { Button, Card, List, Typography, Skeleton, Upload, Modal, Tag, message, Empty } from "antd";
+import { Button, Card, List, Typography, Skeleton, Upload, Modal, Tag, message, Empty, Grid } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -179,61 +179,61 @@ const StudentAssignments = () => {
             <Empty description={t('studentAssignments.noAssignments')} />
           ) : (
             <List
-              itemLayout="horizontal"
               dataSource={filteredAssignments}
               renderItem={(item) => {
                 const sub = getSubmission(item.id);
                 const uploadState = getUploadState(item, !!sub, t);
                 return (
-                  <List.Item
-                    actions={[
-                      <Button
-                        type={uploadState.canSubmit ? "link" : "default"}
-                        key="submit"
-                        disabled={!uploadState.canSubmit}
-                        onClick={() => {
-                          if (!uploadState.canSubmit) return;
-                          setSelectedId(item.id);
-                          setFileList([]);
-                          setOpen(true);
-                        }}
-                      >
-                        {uploadState.actionLabel}
-                      </Button>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={item.title}
-                      description={`${t('studentAssignments.lessonLabel')}: ${item.lesson_topic || "-"} | ${t('studentAssignments.deadlineLabel')}: ${dayjs(item.deadline).format(
-                        "DD.MM.YYYY HH:mm"
-                      )}`}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
-                      <span>
-                        <Tag color={uploadState.color}>{uploadState.statusLabel}</Tag>
-                      </span>
-                      <span>{uploadState.reason}</span>
-                      <span>{t('access.attendance')}: {getAttendanceLabel(item.access, t)}</span>
-                      <span>{t('access.participation')}: {formatRatio(item.access?.attendance_joined_ratio)}</span>
-                      <span>{t('access.faceRatio')}: {formatRatio(item.access?.attendance_face_verified_ratio)}</span>
-                      <span>{t('access.final')}: {item.access?.attendance_finalized ? t('common.yes') : t('common.no')}</span>
-                      {item.file ? (
-                        <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                          {t('studentAssignments.assignmentFile')}
-                        </a>
-                      ) : (
-                        <span>-</span>
-                      )}
-                      <span>
-                        {sub ? (
+                  <List.Item>
+                    <div style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
+                        <div>
+                          <Typography.Text strong style={{ fontSize: 'var(--font-size-base)' }}>{item.title}</Typography.Text>
+                          <div className="caption" style={{ marginTop: 'var(--space-0-5)' }}>
+                            {t('studentAssignments.deadlineLabel')}: {dayjs(item.deadline).format('DD.MM.YYYY HH:mm')}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
+                          <Tag color={uploadState.color}>{uploadState.statusLabel}</Tag>
+                          <Button
+                            type={uploadState.canSubmit ? 'primary' : 'default'}
+                            size="small"
+                            disabled={!uploadState.canSubmit}
+                            onClick={() => {
+                              if (!uploadState.canSubmit) return;
+                              setSelectedId(item.id);
+                              setFileList([]);
+                              setOpen(true);
+                            }}
+                          >
+                            {uploadState.actionLabel}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="kv-grid">
+                        <span>{t('studentAssignments.lessonLabel')}</span>
+                        <span>{item.lesson_topic || '-'}</span>
+                        <span>{t('access.attendance')}</span>
+                        <span>{getAttendanceLabel(item.access, t)}</span>
+                        <span>{t('access.participation')}</span>
+                        <span>{formatRatio(item.access?.attendance_joined_ratio)}</span>
+                        <span>{t('access.faceRatio')}</span>
+                        <span>{formatRatio(item.access?.attendance_face_verified_ratio)}</span>
+                        <span>{t('common.status')}</span>
+                        <span>{uploadState.reason}</span>
+                        <span>{t('studentAssignments.submittedAt')}</span>
+                        <span>
+                          {sub ? (
+                            <>{t('studentAssignments.submittedAt')} {sub.submitted_at ? dayjs(sub.submitted_at).format('DD.MM.YYYY HH:mm') : ''}{sub.grade != null ? ` | ${t('studentAssignments.grade')}: ${sub.grade}` : ''}</>
+                          ) : t('studentAssignments.notSubmitted')}
+                        </span>
+                        {item.file && (
                           <>
-                            {t('studentAssignments.submittedAt')} ({sub.submitted_at ? dayjs(sub.submitted_at).format("DD.MM.YYYY HH:mm") : ""})
-                            {sub.grade != null ? ` | ${t('studentAssignments.grade')}: ${sub.grade}` : ""}
+                            <span>{t('studentAssignments.assignmentFile')}</span>
+                            <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">{t('common.download')}</a>
                           </>
-                        ) : (
-                          t('studentAssignments.notSubmitted')
                         )}
-                      </span>
+                      </div>
                     </div>
                   </List.Item>
                 );

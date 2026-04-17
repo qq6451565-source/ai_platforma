@@ -1,5 +1,5 @@
-﻿import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Card, Form, Input, message, Space, Typography } from "antd";
+﻿import { LockOutlined, UserOutlined, BookOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Input, message } from "antd";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import { fetchMe } from "../api/user";
 import { clearTokens, saveTokens } from "../utils/token";
 import { getApiError } from "../utils/getApiError";
 import { getDefaultRedirect } from "../utils/roleRedirect";
+import "./Login.css";
 
 const LoginPage = () => {
   const { t } = useTranslation();
@@ -36,45 +37,54 @@ const LoginPage = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1.5rem",
-        background: "var(--bg-elevated-3)",
-      }}
-    >
-      <div style={{ maxWidth: 420, width: "100%" }}>
-        <Card
-          title={<Typography.Title level={4} style={{ margin: 0 }}>{t("common.login")}</Typography.Title>}
-          extra={<Link to="/register">{t("register.title")}</Link>}
-        >
-          <Form form={form} layout="vertical" onFinish={handleFinish}>
+    <div className="login-page">
+      <div className="login-wrapper">
+        {/* ── Brand ── */}
+        <div className="login-brand">
+          <div className="login-logo">
+            <BookOutlined />
+          </div>
+          <h1 className="login-brand-title">LMS Platform</h1>
+          <p className="login-brand-subtitle">{t("auth.brandSubtitle", "O'quv boshqaruv tizimi")}</p>
+        </div>
+
+        {/* ── Card ── */}
+        <Card className="login-card" bordered={false}>
+          <p className="login-form-title">{t("common.login")}</p>
+          <p className="login-form-subtitle">{t("auth.loginSubtitle", "Hisobingizga kiring")}</p>
+
+          <Form form={form} layout="vertical" onFinish={handleFinish} size="large">
             <Form.Item
               name="username"
               label={t("auth.username")}
               rules={[{ required: true, message: t("auth.usernameRequired") }]}
             >
-              <Input prefix={<UserOutlined />} placeholder={t("auth.usernamePlaceholder")} size="large" />
+              <Input prefix={<UserOutlined />} placeholder={t("auth.usernamePlaceholder")} autoComplete="username" />
             </Form.Item>
             <Form.Item
               name="password"
               label={t("auth.password")}
               rules={[{ required: true, message: t("auth.passwordRequired") }]}
+              style={{ marginBottom: 'var(--space-5)' }}
             >
-              <Input.Password prefix={<LockOutlined />} placeholder="********" size="large" />
+              <Input.Password prefix={<LockOutlined />} placeholder="••••••••" autoComplete="current-password" />
             </Form.Item>
-            <Form.Item style={{ marginBottom: 'var(--space-2)' }}>
-              <Button type="primary" htmlType="submit" block size="large">
-                {t("common.login")}
-              </Button>
-            </Form.Item>
-            <div style={{ textAlign: "center" }}>
-              <Link to="/admin-login"><Typography.Text type="secondary">{t("auth.adminLogin")}</Typography.Text></Link>
-            </div>
+
+            <Button type="primary" htmlType="submit" block size="large">
+              {t("common.login")}
+            </Button>
           </Form>
+
+          <hr className="login-divider" />
+
+          <div className="login-footer">
+            <Link to="/admin-login" className="login-footer-link">
+              {t("auth.adminLogin")}
+            </Link>
+            <Link to="/register" className="login-register-link">
+              {t("register.title")} →
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

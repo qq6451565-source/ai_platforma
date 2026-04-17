@@ -526,9 +526,47 @@ body {
 
 /* ── Layout grids ────────────────────────────────────────────── */
 .grid-cards-wrapper { margin-top: var(--space-6); }
-.lesson-week__grid  { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-4); }
-.lesson-month__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); }
+@media (max-width: 768px) {
+  /* Table cells — smaller padding on mobile */
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px 10px !important;
+    font-size: var(--font-size-xs) !important;
+  }
 
-@media (max-width: 1024px) {
-  .lesson-week__grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  /* Modal — full width on small screens */
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+
+  /* Ant List.Item — stack vertically */
+  .ant-list-item {
+    flex-wrap: wrap !important;
+    gap: var(--space-2) !important;
+  }
+
+  /* Tabs — scrollable on mobile */
+  .ant-tabs-nav-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
 }
+
+@media (max-width: 480px) {
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+

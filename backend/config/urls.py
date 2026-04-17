@@ -57,7 +57,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework.routers import DefaultRouter
 
 from announcements.views import AnnouncementViewSet
-from accounts.jwt import CustomTokenObtainPairView
+from accounts.jwt import CustomTokenObtainPairView, CustomTokenRefreshView
 
 router = DefaultRouter()
 router.register('announcements', AnnouncementViewSet)
@@ -119,7 +119,7 @@ urlpatterns = [
 
     # JWT
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 if settings.DEBUG:

@@ -2,11 +2,27 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from .audit import log_audit
+
+
+class LoginRateThrottle(AnonRateThrottle):
+    """Login urinishlarini cheklaydi: 5 ta/daqiqa (IP bo'yicha)."""
+    scope = 'login'
+
+
+class LoginUserRateThrottle(UserRateThrottle):
+    """Autentifikatsiyalangan so'rovlar uchun (masalan token olish)."""
+    scope = 'login'
+
+
+class TokenRefreshRateThrottle(AnonRateThrottle):
+    """Token yangilashni cheklaydi: 30 ta/daqiqa."""
+    scope = 'token_refresh'
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -29,6 +45,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [LoginRateThrottle, LoginUserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -47,6 +64,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         data = serializer.validated_data
         log_audit(request, "login_success", user=serializer.user, role=getattr(serializer.user, "role", None))
         return Response(data, status=status.HTTP_200_OK)
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    """Token yangilash uchun alohida throttle."""
+    throttle_classes = [TokenRefreshRateThrottle]
 
 
 class CustomTokenRefreshSerializer(TokenRefreshSerializer):

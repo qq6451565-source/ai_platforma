@@ -185,7 +185,7 @@ const StudentProfile = () => {
       label: t('studentProfilePage.personalInfo'),
       children: (
         <Card>
-          <div className="d-flex items-center mb-6 gap-4">
+          <div className="d-flex items-center mb-6 gap-4" style={{ flexWrap: 'wrap' }}>
             <Avatar size={80} src={user?.face_image || undefined}>
               {user?.first_name?.[0] || user?.username?.[0] || "U"}
             </Avatar>
@@ -205,7 +205,7 @@ const StudentProfile = () => {
           <Form form={profileForm} layout="vertical" onFinish={onSaveProfile}>
             <div
               className="d-grid"
-              style={{ gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "var(--space-4)" }}
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "var(--space-3)" }}
             >
             <Form.Item label={t('studentProfilePage.firstName')} name="first_name" rules={[{ required: true, message: t('profile.firstNameRequired') }]}>
                 <Input />

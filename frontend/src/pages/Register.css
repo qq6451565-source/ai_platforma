@@ -3,7 +3,7 @@
   min-height: 100vh;
   padding: var(--space-8) var(--space-4);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background:
     radial-gradient(ellipse at 30% 0%,   rgba(var(--accent-2-rgb), 0.10) 0%, transparent 55%),
@@ -257,8 +257,8 @@
   background: rgba(var(--color-black-rgb), 0.75);
   width: 100%;
   aspect-ratio: 4 / 3;
-  min-height: 260px;
-  max-height: 440px;
+  min-height: 220px;
+  max-height: 400px;
   display: grid;
   place-items: center;
   transition: border-color var(--duration-slower) var(--ease-out);
@@ -498,15 +498,35 @@
 }
 
 /* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .registration-page {
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .wizard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
-  .step-label   { font-size: 0.62rem; max-width: 60px; }
-  .step-circle  { width: 28px; height: 28px; font-size: var(--font-size-tiny); }
-  .step-connector { margin-top: 14px; min-width: 12px; }
+  .registration-page {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .step-label   { font-size: 0.60rem; max-width: 56px; }
+  .step-circle  { width: 26px; height: 26px; font-size: var(--font-size-tiny); }
+  .step-connector { margin-top: 13px; min-width: 8px; }
   .wizard-actions { flex-direction: column; }
   .passport-upload-zone { padding: var(--space-6) var(--space-4); }
-  .scanner-guidance-card { max-width: 84%; padding: 0.8rem 0.95rem; }
-  .scanner-guidance-title { font-size: 0.92rem; }
-  .scanner-guidance-subtitle { font-size: 0.78rem; }
+  .scanner-guidance-card { max-width: 88%; padding: 0.7rem 0.9rem; }
+  .scanner-guidance-title { font-size: 0.88rem; }
+  .scanner-guidance-subtitle { font-size: 0.76rem; }
+  .scanner-frame { min-height: 200px; max-height: 320px; }
+  .wizard-card .ant-card-body { padding: var(--space-4) !important; }
+}
+
+@media (max-height: 700px) and (max-width: 480px) {
+  .scanner-frame { min-height: 180px; max-height: 260px; }
 }
 /* Preview kart */
 .preview-card {

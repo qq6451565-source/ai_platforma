@@ -509,6 +509,16 @@
   .hemis-card-header {
     padding: var(--space-3) var(--space-4);
   }
+
+  .hemis-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .hemis-live-btn {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-2xs);
+  }
 }
 
 /* Mobile */
@@ -522,5 +532,37 @@
 
   .hemis-page-title {
     font-size: var(--font-size-sub);
+  }
+
+  .hemis-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+  }
+
+  .hemis-stat-card {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .hemis-stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: var(--font-size-base);
+  }
+
+  .hemis-stat-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .hemis-assignment-item:hover {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .hemis-grade-item:hover {
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 }

@@ -41,9 +41,22 @@ def get_env_list(name: str, default: list[str] | None = None) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-test-key")
-DEBUG = get_env_bool("DEBUG", True)
-ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", [])
+_secret_key = os.getenv("SECRET_KEY")
+if not _secret_key:
+    import sys
+    if 'test' in sys.argv or os.getenv('CI'):
+        _secret_key = 'django-insecure-ci-test-only'
+    elif get_env_bool("DEBUG", False):
+        _secret_key = 'django-insecure-local-dev-only'
+    else:
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. "
+            "Production deployment requires a strong SECRET_KEY."
+        )
+SECRET_KEY = _secret_key
+
+DEBUG = get_env_bool("DEBUG", False)
+ALLOWED_HOSTS = get_env_list("ALLOWED_HOSTS", ['localhost', '127.0.0.1'] if get_env_bool("DEBUG", False) else [])
 
 TIME_ZONE = "Asia/Tashkent"
 USE_TZ = True
@@ -142,6 +155,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'user': '1000/day',
         'anon': '200/day',
+        'login': '5/min',       # Login urinishlariga: 5 ta/daqiqa
+        'token_refresh': '30/min',  # Token yangilashga: 30 ta/daqiqa
     },
 }
 
@@ -236,6 +251,23 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+# ── Password Validators ───────────────────────────────────────────────────────
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 10},  # Minimal 10 ta belgi
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -270,3 +302,23 @@ LIVEKIT_TOKEN_TTL = int(os.getenv("LIVEKIT_TOKEN_TTL", "3600"))
 AGORA_APP_ID = os.getenv("AGORA_APP_ID")
 AGORA_APP_CERTIFICATE = os.getenv("AGORA_APP_CERTIFICATE")
 AGORA_TOKEN_TTL = int(os.getenv("AGORA_TOKEN_TTL", "3600"))
+
+# ── Security Headers ──────────────────────────────────────────────────────────
+# Clickjacking himoyasi
+X_FRAME_OPTIONS = 'DENY'
+
+# MIME-type sniffing himoyasi
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# XSS filtr (eski brauzerlar uchun)
+SECURE_BROWSER_XSS_FILTER = True
+
+# Production'da HTTPS majburiy (DEBUG=False bo'lganda)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000          # 1 yil
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True            # Cookie faqat HTTPS orqali
+    CSRF_COOKIE_SECURE = True               # CSRF cookie faqat HTTPS
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Render/Heroku proxy

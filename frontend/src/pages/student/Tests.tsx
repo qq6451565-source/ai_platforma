@@ -475,25 +475,27 @@ const StudentTests = () => {
           stopPresenceLoop();
           stopCamera();
         }}
-        footer={[
-          <Button key="verify" onClick={runVerify} disabled={!proctorSessionId || sending}>
-            {t('studentTests.faceVerify')}
-          </Button>,
-          <Button key="finish" onClick={handleFinish} disabled={!studentTestId} loading={sending}>
-            {t('studentTests.finish')}
-          </Button>,
-          <Button key="answer" type="primary" onClick={handleAnswer} disabled={!canAnswer} loading={sending}>
-            {t('studentTests.answerSubmit')}
-          </Button>,
-        ]}
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <Button key="verify" onClick={runVerify} disabled={!proctorSessionId || sending}>
+              {t('studentTests.faceVerify')}
+            </Button>
+            <Button key="finish" onClick={handleFinish} disabled={!studentTestId} loading={sending}>
+              {t('studentTests.finish')}
+            </Button>
+            <Button key="answer" type="primary" onClick={handleAnswer} disabled={!canAnswer} loading={sending}>
+              {t('studentTests.answerSubmit')}
+            </Button>
+          </div>
+        }
       >
         {proctorSessionId && (
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 'var(--space-3)' }}>
             <div
               style={{
                 position: "relative",
-                width: 140,
-                height: 105,
+                width: 'clamp(100px, 30vw, 140px)',
+                height: 'clamp(75px, 22vw, 105px)',
                 borderRadius: 'var(--radius-base)',
                 overflow: "hidden",
                 border: `2.5px solid ${faceStatus === "DETECTED"

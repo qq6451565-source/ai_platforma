@@ -151,7 +151,7 @@ const StudentSchedule = () => {
                 <Card
                   key={key}
                   hoverable={!isOutside}
-                  style={{ opacity: isOutside ? 0.5 : 1, cursor: isOutside ? 'default' : 'pointer', minHeight: '180px' }}
+                  style={{ opacity: isOutside ? 0.5 : 1, cursor: isOutside ? 'default' : 'pointer', minHeight: 'clamp(120px, 22vw, 180px)' }}
                   onClick={() => {
                     if (!isOutside) {
                       setSelectedDate(day);
@@ -226,7 +226,7 @@ const StudentSchedule = () => {
                 {t('common.close')}
               </Button>,
             ]}
-            styles={{ body: { maxHeight: 460, overflowY: "auto" } }}
+            styles={{ body: { maxHeight: 'min(460px, 60vh)', overflowY: "auto" } }}
           >
             <List
               dataSource={selectedLessons}

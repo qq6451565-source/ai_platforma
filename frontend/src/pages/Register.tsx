@@ -3,8 +3,9 @@ import {
   IdcardOutlined,
   PhoneOutlined,
   UserOutlined,
+  BookOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Form, Input, Select, Steps, Typography, message } from "antd";
+import { Button, Card, Form, Input, Select, Steps, Typography, message, Grid } from "antd";
 import type { FaceLandmarker, FaceLandmarkerResult, NormalizedLandmark } from "@mediapipe/tasks-vision";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -220,6 +221,9 @@ const RegisterPage = () => {
     () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
     [t]
   );
+  const { useBreakpoint } = Grid;
+  const screens = useBreakpoint();
+  const isMobileView = !screens.sm;
 
   const livenessInstruction = useMemo(() => {
     if (livenessStage === "align") return t("register.alignFaceHint");
@@ -754,15 +758,29 @@ const RegisterPage = () => {
   return (
     <div className="registration-page">
       <div className="registration-container">
+        {/* ── Brand header (mobile) ── */}
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
+            color: 'var(--accent)', fontFamily: 'var(--font-heading)',
+            fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-lg)',
+          }}>
+            <BookOutlined />
+            <span>LMS Platform</span>
+          </div>
+        </div>
+
         <Card
+          className="wizard-card"
           title={<Typography.Title level={4} style={{ margin: 0 }}>{t("register.title")}</Typography.Title>}
           extra={<Link to="/login">{t("register.loginLink")}</Link>}
         >
           {/* ── Horizontal stepper ─────────────────────────────── */}
           <Steps
             current={currentStep}
-            items={stepTitles.map((title) => ({ title }))}
-            style={{ marginBottom: 'var(--space-6)' }}
+            size={isMobileView ? "small" : "default"}
+            items={stepTitles.map((title) => ({ title: isMobileView ? undefined : title }))}
+            style={{ marginBottom: 'var(--space-5)' }}
           />
 
           {/* ── Step 0: Personal details ─────────────────────── */}
@@ -783,7 +801,7 @@ const RegisterPage = () => {
                   name="full_name"
                   rules={[{ required: true, message: t("register.fullNameRequired") }]}
                 >
-                  <Input prefix={<UserOutlined />} placeholder={t("register.fullNamePlaceholder")} />
+                  <Input prefix={<UserOutlined />} placeholder={t("register.fullNamePlaceholder")} autoComplete="name" />
                 </Form.Item>
 
                 <Form.Item
@@ -804,7 +822,7 @@ const RegisterPage = () => {
                   name="phone"
                   rules={[{ required: true, message: t("register.phoneRequired") }]}
                 >
-                  <Input prefix={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} />
+                  <Input prefix={<PhoneOutlined />} placeholder={t("register.phonePlaceholder")} autoComplete="tel" inputMode="tel" />
                 </Form.Item>
               </div>
 

@@ -31,13 +31,43 @@ class TeacherAdminOnlyViewSet(viewsets.ModelViewSet):
 
 
 class ProctorSessionViewSet(TeacherAdminOnlyViewSet):
-    queryset = ProctorSession.objects.all()
     serializer_class = ProctorSessionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        role = getattr(user, 'role', None)
+        if role == 'admin' or user.is_superuser:
+            return ProctorSession.objects.all()
+        if role == 'teacher':
+            # Teacher faqat o'zi bog'liq guruhlardagi studentlarning sessionlarini ko'radi
+            from teacher_subject.models import TeacherSubject
+            student_ids = TeacherSubject.objects.filter(
+                teacher=user
+            ).values_list('group__students', flat=True)
+            return ProctorSession.objects.filter(
+                attempt__student_id__in=student_ids
+            )
+        # Student faqat o'z sessionlarini
+        return ProctorSession.objects.filter(attempt__student=user)
 
 
 class ProctorEventViewSet(TeacherAdminOnlyViewSet):
-    queryset = ProctorEvent.objects.all()
     serializer_class = ProctorEventSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        role = getattr(user, 'role', None)
+        if role == 'admin' or user.is_superuser:
+            return ProctorEvent.objects.all()
+        if role == 'teacher':
+            from teacher_subject.models import TeacherSubject
+            student_ids = TeacherSubject.objects.filter(
+                teacher=user
+            ).values_list('group__students', flat=True)
+            return ProctorEvent.objects.filter(
+                session__attempt__student_id__in=student_ids
+            )
+        return ProctorEvent.objects.filter(session__attempt__student=user)
 
 
 class StartProctorSessionView(APIView):
