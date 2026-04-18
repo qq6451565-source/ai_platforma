@@ -236,49 +236,9 @@ const TeacherTests = () => {
                   dataSource={filteredTests}
                   pagination={{ pageSize: 5 }}
                   renderItem={(item) => (
-                    <List.Item
-                      actions={[
-                        <Button key="view" type="link" onClick={() => openView(item.id)}>
-                          {t('common.view')}
-                        </Button>,
-                        <Button
-                          key="edit"
-                          type="link"
-                          onClick={() => {
-                            setEditItem(item);
-                            editForm.setFieldsValue({
-                              title: item.title,
-                              description: item.description,
-                              lesson: item.lesson,
-                              time_limit_minutes: item.time_limit_minutes,
-                              total_score: item.total_score,
-                              is_active: item.is_active,
-                            });
-                            setEditOpen(true);
-                          }}
-                        >
-                          {t('common.edit')}
-                        </Button>,
-                        <Button
-                          danger
-                          type="link"
-                          key="delete"
-                          onClick={async () => {
-                            try {
-                              await deleteTest(item.id);
-                              message.success(t('teacherTests.deleted'));
-                              await qc.invalidateQueries({ queryKey: ["tests"] });
-                            } catch {
-                              message.error(t('common.deleteError'));
-                            }
-                          }}
-                        >
-                          {t('common.delete')}
-                        </Button>,
-                      ]}
-                    >
+                    <List.Item>
                       <div style={{ width: "100%" }}>
-                        <div className="kv-grid">
+                        <div className="kv-grid" style={{ marginBottom: 'var(--space-2)' }}>
                           <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.heading')}</span>
                           <Typography.Link onClick={() => openView(item.id)}>{item.title}</Typography.Link>
                           <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.subjectLabel')}</span>
@@ -293,6 +253,45 @@ const TeacherTests = () => {
                           <span>{item.total_score ?? "-"}</span>
                           <span style={{ color: "var(--color-text-muted)" }}>{t('teacherTests.status')}</span>
                           <span>{item.is_active ? t('teacherTests.active') : t('teacherTests.inactive')}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <Button size="small" type="link" onClick={() => openView(item.id)}>
+                            {t('common.view')}
+                          </Button>
+                          <Button
+                            size="small"
+                            type="link"
+                            onClick={() => {
+                              setEditItem(item);
+                              editForm.setFieldsValue({
+                                title: item.title,
+                                description: item.description,
+                                lesson: item.lesson,
+                                time_limit_minutes: item.time_limit_minutes,
+                                total_score: item.total_score,
+                                is_active: item.is_active,
+                              });
+                              setEditOpen(true);
+                            }}
+                          >
+                            {t('common.edit')}
+                          </Button>
+                          <Button
+                            danger
+                            size="small"
+                            type="link"
+                            onClick={async () => {
+                              try {
+                                await deleteTest(item.id);
+                                message.success(t('teacherTests.deleted'));
+                                await qc.invalidateQueries({ queryKey: ["tests"] });
+                              } catch {
+                                message.error(t('common.deleteError'));
+                              }
+                            }}
+                          >
+                            {t('common.delete')}
+                          </Button>
                         </div>
                       </div>
                     </List.Item>

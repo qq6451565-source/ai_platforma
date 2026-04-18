@@ -50,32 +50,32 @@ const TeacherLive = () => {
           <List
             dataSource={lessons || []}
             renderItem={(item) => (
-              <List.Item
-                actions={[
-                  <Button
-                    key="start"
-                    type="link"
-                    onClick={() => handleStart(item.id)}
-                    loading={creating === item.id}
-                  >
-                    {t('teacherLive.start')}
-                  </Button>,
-                  <Button
-                    key="join"
-                    type="link"
-                    onClick={() => handleJoin(item.id)}
-                    loading={joining === item.id}
-                  >
-                    {t('teacherLive.join')}
-                  </Button>,
-                ]}
-              >
+              <List.Item>
                 <List.Item.Meta
                   title={`${item.subject_name || ""} | ${item.topic}`}
                   description={`${item.group_name || ""} | ${new Date(item.start_time).toLocaleString()} - ${new Date(
                     item.end_time
                   ).toLocaleTimeString()}`}
                 />
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <Button
+                    key="start"
+                    type="primary"
+                    size="small"
+                    onClick={() => handleStart(item.id)}
+                    loading={creating === item.id}
+                  >
+                    {t('teacherLive.start')}
+                  </Button>
+                  <Button
+                    key="join"
+                    size="small"
+                    onClick={() => handleJoin(item.id)}
+                    loading={joining === item.id}
+                  >
+                    {t('teacherLive.join')}
+                  </Button>
+                </div>
               </List.Item>
             )}
           />

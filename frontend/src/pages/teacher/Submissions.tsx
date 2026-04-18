@@ -183,39 +183,40 @@ const TeacherSubmissions = () => {
               dataSource={filteredByGroup}
               renderItem={(item) => {
                 return (
-                  <List.Item
-                    actions={[
-                      <Button
-                        key="grade"
-                        type="link"
-                        onClick={() => {
-                          setSelectedId(item.id);
-                          setOpen(true);
-                        }}
-                      >
-                        {t('teacherSubmissions.gradeAction')}
-                      </Button>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={`${item.assignment_title || t('teacherSubmissions.assignment')} | ${
-                        item.student_name || item.student_username || `Student #${item.student}`
-                      }`}
-                      description={`${t('teacherSubmissions.subject')}: ${item.subject_name || "-"} | ${t('teacherSubmissions.lesson')}: ${item.lesson_topic || "-"} | ${t('teacherSubmissions.group')}: ${
-                        item.group_name || item.student_group_name || "-"
-                      } | ${t('teacherSubmissions.submitted')}: ${
-                        item.submitted_at ? dayjs(item.submitted_at).format("DD.MM.YYYY HH:mm") : "-"
-                      }`}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
-                      {item.file ? (
-                        <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                          {t('teacherSubmissions.file')}
-                        </a>
-                      ) : (
-                        <span>-</span>
-                      )}
-                      <span>{item.grade != null ? `${t('teacherSubmissions.score')}: ${item.grade}` : t('teacherSubmissions.ungraded')}</span>
+                  <List.Item>
+                    <div style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                        <List.Item.Meta
+                          title={`${item.assignment_title || t('teacherSubmissions.assignment')} | ${
+                            item.student_name || item.student_username || `Student #${item.student}`
+                          }`}
+                          description={`${t('teacherSubmissions.subject')}: ${item.subject_name || "-"} | ${t('teacherSubmissions.lesson')}: ${item.lesson_topic || "-"} | ${t('teacherSubmissions.group')}: ${
+                            item.group_name || item.student_group_name || "-"
+                          } | ${t('teacherSubmissions.submitted')}: ${
+                            item.submitted_at ? dayjs(item.submitted_at).format("DD.MM.YYYY HH:mm") : "-"
+                          }`}
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)', alignItems: 'flex-end', flexShrink: 0 }}>
+                          {item.file ? (
+                            <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
+                              {t('teacherSubmissions.file')}
+                            </a>
+                          ) : (
+                            <span>-</span>
+                          )}
+                          <span>{item.grade != null ? `${t('teacherSubmissions.score')}: ${item.grade}` : t('teacherSubmissions.ungraded')}</span>
+                          <Button
+                            size="small"
+                            type="link"
+                            onClick={() => {
+                              setSelectedId(item.id);
+                              setOpen(true);
+                            }}
+                          >
+                            {t('teacherSubmissions.gradeAction')}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </List.Item>
                 );

@@ -323,43 +323,7 @@ const TeacherMaterials = () => {
                       dataSource={filtered}
                       pagination={{ pageSize: 5 }}
                       renderItem={(item) => (
-                        <List.Item
-                          actions={[
-                            <Button
-                              key="edit"
-                              type="link"
-                              onClick={() => {
-                                setEditItem(item);
-                                editForm.setFieldsValue({
-                                  title: item.title,
-                                  subject: item.subject,
-                                  groups: item.group_ids || [],
-                                });
-                                setEditFileList([]);
-                                setEditOpen(true);
-                              }}
-                            >
-                              {t('common.edit')}
-                            </Button>,
-                            <Popconfirm
-                              key="delete"
-                              title={t('teacherMaterials.deleteConfirm')}
-                              onConfirm={async () => {
-                                try {
-                                  await deleteMaterial(item.id);
-                                  message.success(t('teacherMaterials.deleted'));
-                                  await qc.invalidateQueries({ queryKey: ["materials"] });
-                                } catch {
-                                  message.error(t('common.deleteError'));
-                                }
-                              }}
-                            >
-                              <Button danger type="link">
-                                {t('common.delete')}
-                              </Button>
-                            </Popconfirm>,
-                          ]}
-                        >
+                        <List.Item>
                           {(() => {
                             const currentResources = (item.resources?.length
                               ? item.resources
@@ -383,22 +347,56 @@ const TeacherMaterials = () => {
                                   <span style={{ color: "var(--color-text-muted)" }}>{t('teacherMaterials.file')}</span>
                                   {renderFileLinks(currentResources)}
                                 </div>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                  <Button
+                                    size="small"
+                                    type="link"
+                                    onClick={() => {
+                                      setEditItem(item);
+                                      editForm.setFieldsValue({
+                                        title: item.title,
+                                        subject: item.subject,
+                                        groups: item.group_ids || [],
+                                      });
+                                      setEditFileList([]);
+                                      setEditOpen(true);
+                                    }}
+                                  >
+                                    {t('common.edit')}
+                                  </Button>
+                                  <Popconfirm
+                                    title={t('teacherMaterials.deleteConfirm')}
+                                    onConfirm={async () => {
+                                      try {
+                                        await deleteMaterial(item.id);
+                                        message.success(t('teacherMaterials.deleted'));
+                                        await qc.invalidateQueries({ queryKey: ["materials"] });
+                                      } catch {
+                                        message.error(t('common.deleteError'));
+                                      }
+                                    }}
+                                  >
+                                    <Button danger size="small" type="link">
+                                      {t('common.delete')}
+                                    </Button>
+                                  </Popconfirm>
+                                </div>
+                                {item.versions && item.versions.length > 1 ? (
+                                  <details style={{ marginTop: 'var(--space-2)' }}>
+                                    <summary>{t('teacherMaterials.versions')} ({item.versions.length})</summary>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
+                                      {item.versions.map((ver) => (
+                                        <div key={ver.version}>
+                                          <strong>v{ver.version}</strong>
+                                          {renderResources(ver.resources)}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                ) : null}
                               </div>
                             );
                           })()}
-                          {item.versions && item.versions.length > 1 ? (
-                            <details style={{ marginTop: 'var(--space-2)' }}>
-                              <summary>{t('teacherMaterials.versions')} ({item.versions.length})</summary>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 'var(--space-2)', marginTop: 'var(--space-1-5)' }}>
-                                {item.versions.map((ver) => (
-                                  <div key={ver.version}>
-                                    <strong>v{ver.version}</strong>
-                                    {renderResources(ver.resources)}
-                                  </div>
-                                ))}
-                              </div>
-                            </details>
-                          ) : null}
                         </List.Item>
                       )}
                     />

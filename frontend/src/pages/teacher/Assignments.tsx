@@ -213,10 +213,23 @@ const TeacherAssignments = () => {
               dataSource={filteredAssignments}
               pagination={{ pageSize: 6 }}
               renderItem={(item) => (
-                <List.Item
-                  actions={[
+                <List.Item>
+                  <List.Item.Meta
+                    title={item.title}
+                    description={`Dars: ${item.lesson_topic || "-"} | Guruhlar: ${
+                      item.group_names?.join(", ") || "-"
+                    } | Topshirish: ${dayjs(item.deadline).format("DD.MM.YYYY HH:mm")}`}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {item.file ? (
+                      <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
+                        Fayl
+                      </a>
+                    ) : (
+                      <span>-</span>
+                    )}
                     <Button
-                      key="edit"
+                      size="small"
                       type="link"
                       onClick={() => {
                         setEditItem(item);
@@ -229,9 +242,8 @@ const TeacherAssignments = () => {
                       }}
                     >
                       {t('common.edit')}
-                    </Button>,
+                    </Button>
                     <Popconfirm
-                      key="delete"
                       title={t('teacherAssignments.deleteConfirm')}
                       onConfirm={async () => {
                         try {
@@ -243,25 +255,11 @@ const TeacherAssignments = () => {
                         }
                       }}
                     >
-                      <Button danger type="link">
+                      <Button danger size="small" type="link">
                         {t('common.delete')}
                       </Button>
-                    </Popconfirm>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={item.title}
-                    description={`Dars: ${item.lesson_topic || "-"} | Guruhlar: ${
-                      item.group_names?.join(", ") || "-"
-                    } | Topshirish: ${dayjs(item.deadline).format("DD.MM.YYYY HH:mm")}`}
-                  />
-                  {item.file ? (
-                    <a href={toAbsoluteUrl(item.file)} target="_blank" rel="noreferrer">
-                      Fayl
-                    </a>
-                  ) : (
-                    <span>-</span>
-                  )}
+                    </Popconfirm>
+                  </div>
                 </List.Item>
               )}
             />
