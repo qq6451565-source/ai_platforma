@@ -214,121 +214,75 @@ const AdminLessonsPage = () => {
           {t('adminLessons.clearFilters')}
         </Button>
       </div>
-      <div className="lesson-calendar">
-        <div className="lesson-calendar__left">
-          <div className="lesson-week">
-            <div className="lesson-week__header">
-              <div>
-                <div className="lesson-week__title">{viewMode === "week" ? t('adminLessons.weekView') : t('adminLessons.monthView')}</div>
-                <div className="lesson-week__range">{viewMode === "week" ? weekLabel : monthLabel}</div>
+      <div className="lesson-week__controls" style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', alignItems: 'center' }}>
+        <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', marginRight: 'auto' }}>
+          {viewMode === "week" ? weekLabel : monthLabel}
+        </div>
+        <Button size="small" type="text" onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))}>{"<"}</Button>
+        <Button size="small" type="text" onClick={() => setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))}>{">"}</Button>
+        <Button size="small" onClick={() => setSelectedDate(dayjs())}>{t('adminLessons.todayBtn')}</Button>
+        <Button size="small" type={viewMode === "week" ? "primary" : "default"} onClick={() => setViewMode("week")}>{t('adminLessons.weekView')}</Button>
+        <Button size="small" type={viewMode === "month" ? "primary" : "default"} onClick={() => setViewMode("month")}>{t('adminLessons.monthView')}</Button>
+        <Button size="small" type="primary" onClick={() => openCreateForDate(selectedDate)}>{t('adminLessons.addLesson')}</Button>
+      </div>
+
+      <div className={viewMode === "week" ? "schedule-week-grid" : "schedule-month-grid"}>
+        {(viewMode === "week" ? weekDays : monthDays).map((day) => {
+          const key = day.format("YYYY-MM-DD");
+          const dayLessons = (lessonsByDate[key] || [])
+            .slice()
+            .sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
+          const isToday = day.isSame(dayjs(), "day");
+          const isSelected = day.isSame(selectedDate, "day");
+          const isOutside = viewMode === "month" && day.month() !== selectedDate.month();
+          const weekdayIndex = day.day() === 0 ? null : day.day() - 1;
+          return (
+            <div
+              key={key}
+              style={{
+                background: isSelected ? 'var(--accent-10)' : 'var(--color-surface)',
+                border: `1px solid ${isToday ? 'var(--accent)' : 'var(--color-border)'}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-3)',
+                opacity: isOutside ? 0.4 : 1,
+                cursor: isOutside ? 'default' : 'pointer',
+                transition: 'border-color var(--transition-fast)',
+              }}
+              onClick={() => { if (!isOutside) { setSelectedDate(day); setDayOpen(true); } }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                <span style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)' }}>
+                  {weekdayIndex !== null ? weekdayNames[weekdayIndex] : ''}
+                  <span style={{ marginLeft: 'var(--space-2)', color: 'var(--color-text-secondary)' }}>
+                    {viewMode === "month" ? day.format("D") : day.format("DD.MM")}
+                  </span>
+                </span>
+                {isToday && <span style={{ fontSize: 'var(--font-size-tiny)', background: 'var(--accent)', color: '#fff', borderRadius: 'var(--radius-xs)', padding: '1px 6px' }}>{t('common.today')}</span>}
               </div>
-              <div className="lesson-week__controls">
-                <Button
-                  size="small"
-                  type="text"
-                  onClick={() =>
-                    setSelectedDate(viewMode === "week" ? selectedDate.subtract(1, "week") : selectedDate.subtract(1, "month"))
-                  }
-                >
-                  {"<"}
-                </Button>
-                <Button
-                  size="small"
-                  type="text"
-                  onClick={() =>
-                    setSelectedDate(viewMode === "week" ? selectedDate.add(1, "week") : selectedDate.add(1, "month"))
-                  }
-                >
-                  {">"}
-                </Button>
-                <Button size="small" onClick={() => setSelectedDate(dayjs())}>
-                  {t('adminLessons.todayBtn')}
-                </Button>
-                <Button
-                  size="small"
-                  type={viewMode === "week" ? "primary" : "default"}
-                  onClick={() => setViewMode("week")}
-                >
-                  {t('adminLessons.weekView')}
-                </Button>
-                <Button
-                  size="small"
-                  type={viewMode === "month" ? "primary" : "default"}
-                  onClick={() => setViewMode("month")}
-                >
-                  {t('adminLessons.monthView')}
-                </Button>
-                <Button size="small" type="primary" onClick={() => openCreateForDate(selectedDate)}>
-                  {t('adminLessons.addLesson')}
-                </Button>
-              </div>
-            </div>
-            <div className="lesson-week__grid-wrap">
-              <div className={viewMode === "week" ? "lesson-week__grid" : "lesson-month__grid"}>
-                {(viewMode === "week" ? weekDays : monthDays).map((day) => {
-                  const key = day.format("YYYY-MM-DD");
-                  const dayLessons = (lessonsByDate[key] || [])
-                    .slice()
-                    .sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
-                  const isToday = day.isSame(dayjs(), "day");
-                  const isSelected = day.isSame(selectedDate, "day");
-                  const isOutside = viewMode === "month" && day.month() !== selectedDate.month();
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1-5)' }}>
+                {dayLessons.map((l) => {
+                  const meta = teacherSubjectMap.get(l.teacher_subject);
+                  const subjectLabel = l.subject_name || subjectMap.get(meta?.subject || 0) || (meta?.subject ? `Fan #${meta.subject}` : "Fan");
+                  const groupLabel = groupMap.get(l.group) || `Guruh #${l.group}`;
+                  const timeLabel = l.start_time && l.end_time ? `${dayjs(l.start_time).format("HH:mm")} - ${dayjs(l.end_time).format("HH:mm")}` : "-";
                   return (
-                    <div
-                      key={key}
-                      className={`lesson-week__day${viewMode === "month" ? " lesson-month__day" : ""}${
-                        isToday ? " is-today" : ""
-                      }${isSelected ? " is-selected" : ""}${isOutside ? " is-outside" : ""}`}
-                      onClick={() => {
-                        setSelectedDate(day);
-                        setDayOpen(true);
-                      }}
+                    <button
+                      key={l.id}
+                      type="button"
+                      className="lesson-chip"
+                      style={{ textAlign: 'left', width: '100%', background: 'none', border: '1px solid var(--color-border)', cursor: 'pointer' }}
+                      onClick={(e) => { e.stopPropagation(); openEditLesson(l); }}
                     >
-                      <div className={`lesson-week__day-header${viewMode === "month" ? " lesson-month__day-header" : ""}`}>
-                        <div className="lesson-week__weekday">{weekdayNames[day.day()]}</div>
-                        <div className="lesson-week__date">
-                          {viewMode === "month" ? day.format("D") : day.format("DD.MM")}
-                        </div>
-                      </div>
-                      <div className={`lesson-week__items${viewMode === "month" ? " lesson-month__items" : ""}`}>
-                        {dayLessons.map((l) => {
-                          const meta = teacherSubjectMap.get(l.teacher_subject);
-                          const subjectLabel =
-                            l.subject_name ||
-                            subjectMap.get(meta?.subject || 0) ||
-                            (meta?.subject ? `Fan #${meta.subject}` : "Fan");
-                          const groupLabel = groupMap.get(l.group) || `Guruh #${l.group}`;
-                          const timeLabel =
-                            l.start_time && l.end_time
-                              ? `${dayjs(l.start_time).format("HH:mm")} - ${dayjs(l.end_time).format("HH:mm")}`
-                              : "-";
-                          return (
-                            <button
-                              key={l.id}
-                              type="button"
-                              className="lesson-week__chip lesson-week__chip--clickable"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setDayOpen(false);
-                                openEditLesson(l);
-                              }}
-                            >
-                              <div className="lesson-week__chip-title">
-                                {subjectLabel} - {groupLabel}
-                              </div>
-                              <div className="lesson-week__chip-time">{timeLabel}</div>
-                            </button>
-                          );
-                        })}
-                        {!dayLessons.length && <div className="lesson-week__empty">{t('adminLessons.emptyDay')}</div>}
-                      </div>
-                    </div>
+                      <span className="lesson-chip-title">{subjectLabel} — {groupLabel}</span>
+                      <span className="lesson-chip-time">{timeLabel}</span>
+                    </button>
                   );
                 })}
+                {!dayLessons.length && <span style={{ fontSize: 'var(--font-size-tiny)', color: 'var(--color-text-muted)' }}>{t('adminLessons.emptyDay')}</span>}
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       <Modal

@@ -151,7 +151,7 @@ const StudentSchedule = () => {
                 <Card
                   key={key}
                   hoverable={!isOutside}
-                  style={{ opacity: isOutside ? 0.5 : 1, cursor: isOutside ? 'default' : 'pointer', minHeight: 'clamp(120px, 22vw, 180px)' }}
+                  style={{ opacity: isOutside ? 0.5 : 1, cursor: isOutside ? 'default' : 'pointer' }}
                   onClick={() => {
                     if (!isOutside) {
                       setSelectedDate(day);
@@ -184,7 +184,7 @@ const StudentSchedule = () => {
                     {day.format("DD.MM")}
                   </Typography.Text>
                   <div className="d-flex flex-column gap-2">
-                    {dayLessons.slice(0, 3).map((item) => {
+                    {dayLessons.map((item) => {
                       const subjectLabel = item.subject_name || t('schedule.subject');
                       const timeLabel =
                         item.start_time && item.end_time
@@ -201,11 +201,6 @@ const StudentSchedule = () => {
                         </div>
                       );
                     })}
-                    {dayLessons.length > 3 && (
-                      <Typography.Text style={{ fontSize: 'var(--font-size-tiny)' }}>
-                        +{dayLessons.length - 3} {t('schedule.moreLessons')}
-                      </Typography.Text>
-                    )}
                     {!dayLessons.length && (
                       <Typography.Text style={{ fontSize: 'var(--font-size-tiny)' }}>
                         {t('schedule.empty')}

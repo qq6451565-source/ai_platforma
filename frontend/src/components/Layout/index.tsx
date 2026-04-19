@@ -212,7 +212,7 @@ export const ResponsiveLayout: React.FC<LayoutProps> = ({
           ) : (
             <>
               <div className="hemis-logo" role="button" tabIndex={0} onClick={() => navigate(`/app/${user?.role}/dashboard`)}>
-                <span className="hemis-logo-title">LMS</span>
+                <span className="hemis-logo-title">MTP</span>
               </div>
               <button type="button" className="hemis-collapse-btn" onClick={() => setCollapsed(true)}>
                 <MenuFoldOutlined />

@@ -54,15 +54,15 @@
 .schedule-week-grid,
 .schedule-month-grid {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-3);
 }
 
 .schedule-week-grid {
-  grid-template-columns: repeat(6, minmax(180px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .schedule-month-grid {
-  grid-template-columns: repeat(6, minmax(160px, 1fr));
+  grid-template-columns: repeat(6, minmax(140px, 1fr));
 }
 
 /* lesson-chip and badge-neon classes are defined in index.css */
@@ -144,17 +144,15 @@
 }
 
 @media (max-width: 1200px) {
-  .schedule-week-grid,
   .schedule-month-grid {
-    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  .schedule-week-grid,
   .schedule-month-grid {
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
-    gap: var(--space-4);
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    gap: var(--space-3);
   }
 }
 
@@ -180,9 +178,8 @@
 }
 
 @media (max-width: 640px) {
-  .schedule-week-grid,
   .schedule-month-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .card-grid {

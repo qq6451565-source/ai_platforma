@@ -766,7 +766,7 @@ const RegisterPage = () => {
             fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-lg)',
           }}>
             <BookOutlined />
-            <span>LMS Platform</span>
+            <span>MTP Platform</span>
           </div>
         </div>
 

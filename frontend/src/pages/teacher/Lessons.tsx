@@ -149,7 +149,6 @@ const TeacherLessons = () => {
                 style={{
                   opacity: isOutside ? 0.5 : 1,
                   cursor: isOutside ? 'default' : 'pointer',
-                  minHeight: viewMode === 'week' ? '300px' : '150px'
                 }}
                 onClick={() => {
                   if (!isOutside) {

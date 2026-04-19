@@ -14,7 +14,7 @@ const Landing: React.FC = () => {
   return (
     <div className="landing-page">
       <div className="landing-header">
-        <div className="landing-logo">LMS</div>
+        <div className="landing-logo">MTP</div>
         <LanguageSwitcher />
       </div>
 
