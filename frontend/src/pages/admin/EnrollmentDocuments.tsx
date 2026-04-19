@@ -104,6 +104,7 @@ const EnrollmentDocumentsPage = () => {
         rowKey="id"
         loading={isLoading}
         dataSource={docs || []}
+        scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 10 }}
         columns={[
           {

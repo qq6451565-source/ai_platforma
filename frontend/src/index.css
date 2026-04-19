@@ -545,6 +545,36 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* ── Global: inline forms wrap on mobile ────────────────────── */
+.ant-form-inline {
+  flex-wrap: wrap !important;
+  gap: var(--space-2) !important;
+}
+.ant-form-inline .ant-form-item {
+  flex: 1 1 auto !important;
+  min-width: 120px !important;
+  margin-right: 0 !important;
+  margin-bottom: 8px !important;
+}
+.ant-form-inline .ant-form-item .ant-input,
+.ant-form-inline .ant-form-item .ant-select {
+  width: 100% !important;
+}
+
+/* ── Global: cards never overflow viewport ──────────────────── */
+.ant-card {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ── Global: list actions wrap on small screens ─────────────── */
+.ant-list-item-action {
+  flex-wrap: wrap !important;
+}
+.ant-list-item-action > li {
+  padding: 2px 4px !important;
+}
+
 /* ── Admin page shell helper: replaces padding div ───────────── */
 .admin-page {
   display: flex;

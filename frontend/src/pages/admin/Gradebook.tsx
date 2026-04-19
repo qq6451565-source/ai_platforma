@@ -395,11 +395,11 @@ const AdminGradebookPage = () => {
             </Typography.Title>
           </div>
 
-          <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
+          <div className="filters-row" style={{ marginBottom: 'var(--space-3)' }}>
             <Select
               allowClear
               placeholder={t('form.group')}
-              style={{ width: 200 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={groupFilter ?? undefined}
               onChange={(v) => setGroupFilter(v ?? null)}
               options={groupOptions}
@@ -407,7 +407,7 @@ const AdminGradebookPage = () => {
             <Select
               allowClear
               placeholder={t('adminSchedule.language')}
-              style={{ width: 140 }}
+              style={{ flex: '1 1 100px', minWidth: 0 }}
               value={languageFilter ?? undefined}
               onChange={(v) => setLanguageFilter(v ?? null)}
               options={[
@@ -419,7 +419,7 @@ const AdminGradebookPage = () => {
             <Select
               allowClear
               placeholder={t('adminGroups.level')}
-              style={{ width: 140 }}
+              style={{ flex: '1 1 100px', minWidth: 0 }}
               value={levelFilter ?? undefined}
               onChange={(v) => setLevelFilter(v ?? null)}
               options={Array.from({ length: 10 }).map((_, idx) => ({
@@ -429,11 +429,11 @@ const AdminGradebookPage = () => {
             />
             <Input
               placeholder={t('common.search')}
-              style={{ width: 220 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </Space>
+          </div>
 
           {isLoading ? (
             <Skeleton active />
@@ -478,7 +478,7 @@ const AdminGradebookPage = () => {
               <div style={{ display: "grid", gap: 'var(--space-3)' }}>
                 {lessonBuckets.map((bucket) => (
                   <Card key={bucket.lesson} size="small" title={bucket.lesson}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 'var(--space-3)' }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 'var(--space-3)' }}>
                       <div>
                         <Typography.Text type="secondary">{t('adminAssignments.pageTitle')}</Typography.Text>
                         {bucket.submissions.length ? (

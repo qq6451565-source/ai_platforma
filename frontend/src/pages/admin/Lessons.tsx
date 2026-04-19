@@ -188,11 +188,11 @@ const AdminLessonsPage = () => {
 
   return (
     <Card title={t('adminLessons.pageTitle')} style={{ marginBottom: 'var(--space-4)' }} loading={isLoading}>
-      <Space size={12} wrap style={{ marginBottom: 'var(--space-3)' }}>
+      <div className="filters-row" style={{ marginBottom: 'var(--space-3)' }}>
         <Select
           allowClear
           placeholder={t('adminLessons.subjectFilter')}
-          style={{ minWidth: 220 }}
+          style={{ flex: '1 1 180px', minWidth: 0 }}
           value={filterSubject ?? undefined}
           onChange={(value) => setFilterSubject(value ?? null)}
           options={(subjects || []).map((s) => ({ value: s.id, label: s.name }))}
@@ -200,7 +200,7 @@ const AdminLessonsPage = () => {
         <Select
           allowClear
           placeholder={t('adminLessons.groupFilter')}
-          style={{ minWidth: 220 }}
+          style={{ flex: '1 1 180px', minWidth: 0 }}
           value={filterGroup ?? undefined}
           onChange={(value) => setFilterGroup(value ?? null)}
           options={(groups || []).map((g) => ({ value: g.id, label: g.name }))}
@@ -213,7 +213,7 @@ const AdminLessonsPage = () => {
         >
           {t('adminLessons.clearFilters')}
         </Button>
-      </Space>
+      </div>
       <div className="lesson-calendar">
         <div className="lesson-calendar__left">
           <div className="lesson-week">

@@ -68,12 +68,12 @@ const AuditLogsPage = () => {
 
   return (
     <Card title={t('adminAudit.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
-      <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
+      <div className="filters-row" style={{ marginBottom: 'var(--space-3)' }}>
         <Input
           placeholder={t('adminAudit.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 280 }}
+          style={{ flex: '1 1 180px', minWidth: 0 }}
         />
         <Select
           value={domain}
@@ -82,7 +82,7 @@ const AuditLogsPage = () => {
             if (value === "auth" && action.startsWith("enrollment_")) setAction("all");
             if (value === "enrollment" && !action.startsWith("enrollment_") && action !== "all") setAction("all");
           }}
-          style={{ width: 180 }}
+          style={{ flex: '1 1 120px', minWidth: 0 }}
           options={[
             { value: "all", label: t('adminAudit.allDomains') },
             { value: "auth", label: "Auth" },
@@ -92,14 +92,14 @@ const AuditLogsPage = () => {
         <Select
           value={action}
           onChange={setAction}
-          style={{ width: 260 }}
+          style={{ flex: '1 1 160px', minWidth: 0 }}
           options={actionOptions.filter((option) => {
             if (domain === "enrollment") return option.value === "all" || option.value.startsWith("enrollment_");
             if (domain === "auth") return option.value === "all" || !option.value.startsWith("enrollment_");
             return true;
           })}
         />
-      </Space>
+      </div>
 
       <Table
         rowKey="id"

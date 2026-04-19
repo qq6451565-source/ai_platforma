@@ -84,22 +84,22 @@ const AdminAttendancePage = () => {
             </Typography.Title>
           </div>
 
-          <Space wrap style={{ marginBottom: 'var(--space-3)' }}>
+          <div className="filters-row" style={{ marginBottom: 'var(--space-3)' }}>
             <Select
               allowClear
               placeholder={t('adminAttendance.groupPlaceholder')}
-              style={{ width: 200 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={controller.groupFilter ?? undefined}
               onChange={(value) => controller.setGroupFilter(value ?? null)}
               options={controller.groupOptions}
             />
             <Input
               placeholder={t('adminAttendance.searchPlaceholder')}
-              style={{ width: 220 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={controller.search}
               onChange={(event) => controller.setSearch(event.target.value)}
             />
-          </Space>
+          </div>
 
           {controller.loadingAttendance ? (
             <Empty description="Yuklanmoqda..." />

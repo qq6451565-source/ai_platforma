@@ -122,7 +122,7 @@ const AdminTestsPage = () => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          style={{ maxWidth: 520, marginBottom: 'var(--space-6)' }}
+          style={{ maxWidth: 520, width: '100%', marginBottom: 'var(--space-6)' }}
           initialValues={{ is_active: true, time_limit_minutes: 20, total_score: 100 }}
         >
           <Form.Item name="title" label={t('adminTests.title')}>
@@ -358,7 +358,7 @@ const AdminTestsPage = () => {
         open={viewOpen}
         onCancel={() => setViewOpen(false)}
         footer={null}
-        width={700}
+        width="min(700px, calc(100vw - 32px))"
       >
         {viewLoading ? (
           <Skeleton active />

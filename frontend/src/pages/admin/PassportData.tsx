@@ -159,6 +159,7 @@ const PassportDataPage = () => {
         rowKey="id"
         loading={isLoading}
         dataSource={data || []}
+        scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 10 }}
         columns={[
           {

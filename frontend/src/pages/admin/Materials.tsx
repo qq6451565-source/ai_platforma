@@ -237,7 +237,7 @@ const AdminMaterialsPage = () => {
   return (
     <Card title={t('adminMaterials.pageTitle')} style={{ marginBottom: 'var(--space-4)' }}>
       {filterSubject ? (
-        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 680, marginBottom: 'var(--space-4)' }}>
+        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 680, width: '100%', marginBottom: 'var(--space-4)' }}>
           <Form.Item name="title" label={t('adminMaterials.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>

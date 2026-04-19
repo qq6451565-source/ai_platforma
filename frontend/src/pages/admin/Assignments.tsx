@@ -147,7 +147,7 @@ const AdminAssignmentsPage = () => {
               style={{ marginBottom: 'var(--space-4)' }}
             />
           ) : null}
-          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
+          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, width: '100%', marginBottom: 'var(--space-6)' }}>
             <Form.Item name="lesson" label={t('adminAssignments.lesson')} rules={[{ required: true }]}>
               <Select showSearch placeholder={t('adminAssignments.selectLesson')} options={lessonOptions} />
             </Form.Item>
