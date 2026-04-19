@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f0fe"/>
+      <stop offset="100%" style="stop-color:#dce8fc"/>
+    </linearGradient>
+    <linearGradient id="letterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3a6bb5"/>
+      <stop offset="40%" style="stop-color:#1d3d6e"/>
+      <stop offset="100%" style="stop-color:#0f2347"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="rgba(15,35,71,0.3)"/>
+    </filter>
+    <filter id="inner" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset dx="0" dy="-3" result="offsetBlur"/>
+      <feComposite in="SourceGraphic" in2="offsetBlur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+  <!-- MTP text -->
+  <text
+    x="256"
+    y="320"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-weight="900"
+    font-size="210"
+    text-anchor="middle"
+    fill="url(#letterGrad)"
+    filter="url(#shadow)"
+    letter-spacing="-4"
+  >MTP</text>
+
+  <!-- Top shine highlight -->
+  <text
+    x="256"
+    y="320"
+    font-family="'Arial Black', Arial, sans-serif"
+    font-weight="900"
+    font-size="210"
+    text-anchor="middle"
+    fill="none"
+    stroke="#6fa3e8"
+    stroke-width="3"
+    stroke-opacity="0.4"
+    letter-spacing="-4"
+  >MTP</text>
+</svg>
