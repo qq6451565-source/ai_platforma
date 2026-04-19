@@ -8,6 +8,7 @@
   display: flex;
   min-height: 100vh;
   background: var(--bg-elevated-2);
+  overflow-x: hidden;
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────── */
@@ -437,6 +438,7 @@
 @media (max-width: 768px) {
   .hemis-layout {
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
   }
 
   .hemis-bottom-nav {
@@ -446,17 +448,75 @@
   .hemis-header {
     padding: 0 var(--space-3);
     height: 56px;
+    overflow: hidden;
+  }
+
+  .hemis-header-left {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .hemis-header-right {
+    gap: var(--space-1);
+    flex-shrink: 0;
   }
 
   .hemis-header-username {
     display: none;
   }
 
+  .hemis-notification-btn {
+    width: 30px;
+    height: 30px;
+    font-size: var(--font-size-mid);
+  }
+
   .hemis-content {
     padding: var(--space-3);
+    overflow-x: hidden;
+  }
+
+  .hemis-breadcrumb {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .hemis-breadcrumb-current {
     font-size: var(--font-size-sm);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .hemis-header {
+    padding: 0 var(--space-2);
+    gap: var(--space-1);
+  }
+
+  .hemis-header-right {
+    gap: 4px;
+  }
+
+  .hemis-notification-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hemis-user-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+  }
+
+  .hemis-content {
+    padding: var(--space-2);
+  }
+
+  .hemis-breadcrumb-current {
+    max-width: 80px;
   }
 }
