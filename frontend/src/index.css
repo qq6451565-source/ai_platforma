@@ -538,6 +538,22 @@ body {
 
 /* ── Layout grids ────────────────────────────────────────────── */
 .grid-cards-wrapper { margin-top: var(--space-6); }
+
+/* ── Global: all tables scrollable on mobile ─────────────────── */
+.ant-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Admin page shell helper: replaces padding div ───────────── */
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  max-width: 1600px;
+}
+
 @media (max-width: 768px) {
   /* Table cells — smaller padding on mobile */
   .ant-table-thead > tr > th,
@@ -562,6 +578,29 @@ body {
   .ant-tabs-nav-list {
     flex-wrap: nowrap;
     overflow-x: auto;
+  }
+
+  /* Admin page padding reduce */
+  .admin-page {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  /* Space/row wrapping in forms/filters */
+  .ant-space-horizontal {
+    flex-wrap: wrap !important;
+  }
+
+  /* Form items full width */
+  .ant-form-item {
+    margin-bottom: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-page {
+    padding: var(--space-2);
+    gap: var(--space-2);
   }
 }
 

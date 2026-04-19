@@ -9,7 +9,7 @@ const AdminAnalyticsPage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 'var(--space-6)' }}>
+      <div className="admin-page">
         <Spin />
       </div>
     );

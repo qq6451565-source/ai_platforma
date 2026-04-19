@@ -47,7 +47,7 @@ const AdminProfile = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
+    <div className="admin-page">
       <Row gutter={[16, 16]}>
         <Col xs={24} md={12}>
           <Card title={t('adminProfile.profileInfo')}>

@@ -443,6 +443,7 @@ const AdminGradebookPage = () => {
               dataSource={tableData}
               pagination={{ pageSize: 10 }}
               rowKey="key"
+              scroll={{ x: 'max-content' }}
               onRow={(record) => ({
                 onClick: () => openEdit(record.student),
                 className: "clickable-row",

@@ -31,6 +31,7 @@ const LiveParticipantsPage = () => {
         loading={isLoading}
         dataSource={participants || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           { title: t('adminLive.user'), dataIndex: "user_name", render: (v: string) => v || "-" },
           {

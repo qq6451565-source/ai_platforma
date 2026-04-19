@@ -54,6 +54,7 @@ const AuthTokensPage = () => {
         loading={isLoading}
         dataSource={tokens || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           { title: t('adminAuth.token'), dataIndex: "key" },
           { title: t('adminAuth.user'), dataIndex: "user_username", render: (v: string) => v || "-" },

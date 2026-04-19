@@ -91,6 +91,7 @@ const StudentPlacementPage = () => {
             columns={columns}
             dataSource={controller.filteredUsers}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 'max-content' }}
           />
         ) : (
           <Empty description="Studentlar topilmadi" />

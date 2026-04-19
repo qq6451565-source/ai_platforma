@@ -106,6 +106,7 @@ const AuditLogsPage = () => {
         loading={isLoading}
         dataSource={data || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           {
             title: t('adminAudit.action'),

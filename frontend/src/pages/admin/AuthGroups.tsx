@@ -84,6 +84,7 @@ const AuthGroupsPage = () => {
         loading={isLoading}
         dataSource={groups || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           { title: t('form.name'), dataIndex: "name" },
           {

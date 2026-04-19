@@ -88,6 +88,7 @@ const TestQuestionsPage = () => {
         loading={isLoading}
         dataSource={questions || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           { title: t('studentTests.test'), dataIndex: "test", render: (v: number) => testOptions.find((t) => t.value === v)?.label || v },
           { title: t('adminTestQuestions.question'), dataIndex: "text" },

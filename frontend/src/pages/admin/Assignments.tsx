@@ -120,7 +120,7 @@ const AdminAssignmentsPage = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
+    <div className="admin-page">
       <Typography.Title level={4}>{t('adminAssignments.pageTitle')}</Typography.Title>
       {!selectedSubject ? (
         <div style={{ display: "grid", gap: 'var(--space-3)', gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>

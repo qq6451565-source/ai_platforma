@@ -169,7 +169,7 @@ export const LiveMonitoring: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
+    <div className="admin-page">
       <Title level={2}>Live Face Verification Monitoring</Title>
       <Text type="secondary">{data.lesson_topic}</Text>
 
@@ -231,6 +231,7 @@ export const LiveMonitoring: React.FC = () => {
           dataSource={data.sessions}
           rowKey="id"
           pagination={false}
+          scroll={{ x: 'max-content' }}
         />
       </Card>
 
@@ -241,6 +242,7 @@ export const LiveMonitoring: React.FC = () => {
             dataSource={data.recent_alerts}
             rowKey="id"
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 'max-content' }}
           />
         </Card>
       )}

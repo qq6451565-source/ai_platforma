@@ -90,6 +90,7 @@ const TestOptionsPage = () => {
         loading={isLoading}
         dataSource={options || []}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         columns={[
           {
             title: t('adminTestQuestions.question'),

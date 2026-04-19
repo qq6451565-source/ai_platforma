@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   Form,
@@ -45,7 +45,7 @@ const AdminAISettingsPage = () => {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 'var(--space-6)' }}>
+      <div className="admin-page">
         <Spin />
       </div>
     );

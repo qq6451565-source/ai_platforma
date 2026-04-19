@@ -115,7 +115,7 @@ const AdminTestsPage = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
+    <div className="admin-page">
       <Typography.Title level={4}>{t('adminTests.pageTitle')}</Typography.Title>
       {selectedSubject ? (
         <Form

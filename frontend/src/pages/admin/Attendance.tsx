@@ -104,7 +104,7 @@ const AdminAttendancePage = () => {
           {controller.loadingAttendance ? (
             <Empty description="Yuklanmoqda..." />
           ) : controller.rows.length ? (
-            <Table rowKey="studentId" columns={columns} dataSource={controller.rows} pagination={{ pageSize: 10 }} />
+            <Table rowKey="studentId" columns={columns} dataSource={controller.rows} pagination={{ pageSize: 10 }} scroll={{ x: 'max-content' }} />
           ) : (
             <Empty description={t('common.noData')} />
           )}

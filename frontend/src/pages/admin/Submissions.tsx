@@ -53,7 +53,7 @@ const AdminSubmissionsPage = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--space-6)' }}>
+    <div className="admin-page">
       <Typography.Title level={4}>{t('adminSubmissions.pageTitle')}</Typography.Title>
       {!selectedSubject ? (
         isLoading ? (

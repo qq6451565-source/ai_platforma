@@ -138,6 +138,7 @@ const EnrollmentPage = () => {
         loading={controller.isLoading}
         dataSource={controller.applicants}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
         locale={{ emptyText: <Empty description={t('adminEnrollment.noApplications')} /> }}
         columns={columns}
       />

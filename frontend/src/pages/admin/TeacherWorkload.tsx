@@ -92,6 +92,7 @@ const TeacherWorkloadPage = () => {
             columns={columns}
             dataSource={controller.filteredTeachers}
             pagination={{ pageSize: 10 }}
+            scroll={{ x: 'max-content' }}
           />
         ) : (
           <Empty description={t('adminWorkload.noTeachersFound')} />
