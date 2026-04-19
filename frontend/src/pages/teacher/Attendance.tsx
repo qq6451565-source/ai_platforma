@@ -336,7 +336,7 @@ const TeacherAttendancePage = () => {
           <div className="filters-row">
             <Select
               placeholder={t('teacherAttendance.selectLesson')}
-              style={{ minWidth: 280 }}
+              style={{ flex: '1 1 240px', minWidth: 0 }}
               value={selectedLessonId ?? undefined}
               onChange={(value) => setSelectedLessonId(value)}
               options={subjectLessons.map((lesson: LessonItem) => ({
@@ -348,7 +348,7 @@ const TeacherAttendancePage = () => {
             />
             <Input
               placeholder={t('teacherAttendance.searchStudent')}
-              style={{ width: 220 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -401,7 +401,7 @@ const TeacherAttendancePage = () => {
         open={!!historyTarget}
         onCancel={() => setHistoryTarget(null)}
         footer={null}
-        width={760}
+        width="min(760px, calc(100vw - 32px))"
       >
         {loadingOverrideHistory ? (
           <Empty description={t('common.loading')} />

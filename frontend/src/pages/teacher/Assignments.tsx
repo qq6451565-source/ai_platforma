@@ -177,7 +177,7 @@ const TeacherAssignments = () => {
               style={{ marginBottom: 'var(--space-4)' }}
             />
           ) : null}
-          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
+          <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, width: '100%', marginBottom: 'var(--space-6)' }}>
             <Form.Item name="lesson" label={t('form.lesson')} rules={[{ required: true }]}>
               <Select showSearch placeholder={t('teacherAssignments.selectLesson')} options={lessonOptions} />
             </Form.Item>

@@ -373,7 +373,7 @@ const TeacherTests = () => {
         open={viewOpen}
         onCancel={() => setViewOpen(false)}
         footer={null}
-        width={700}
+        width="min(700px, calc(100vw - 32px))"
       >
         {viewLoading ? (
           <Skeleton active />

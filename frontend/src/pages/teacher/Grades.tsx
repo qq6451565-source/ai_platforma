@@ -8,7 +8,6 @@ import {
   Button,
   Select,
   Input,
-  Space,
   Empty,
   Skeleton,
   Modal,
@@ -352,11 +351,11 @@ const TeacherGradesPage = () => {
               {selectedSubject.name}
             </Typography.Title>
           </div>
-          <Space wrap className="filters-row">
+          <div className="filters-row">
             <Select
               allowClear
               placeholder={t('teacherGrades.groupFilter')}
-              style={{ width: 200 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={groupFilter ?? undefined}
               onChange={(v) => setGroupFilter(v ?? null)}
               options={groupOptions}
@@ -364,7 +363,7 @@ const TeacherGradesPage = () => {
             <Select
               allowClear
               placeholder={t('teacherGrades.langFilter')}
-              style={{ width: 140 }}
+              style={{ flex: '1 1 100px', minWidth: 0 }}
               value={languageFilter ?? undefined}
               onChange={(v) => setLanguageFilter(v ?? null)}
               options={[
@@ -376,7 +375,7 @@ const TeacherGradesPage = () => {
             <Select
               allowClear
               placeholder={t('teacherGrades.levelFilter')}
-              style={{ width: 140 }}
+              style={{ flex: '1 1 100px', minWidth: 0 }}
               value={levelFilter ?? undefined}
               onChange={(v) => setLevelFilter(v ?? null)}
               options={Array.from({ length: 10 }).map((_, idx) => ({
@@ -386,11 +385,11 @@ const TeacherGradesPage = () => {
             />
             <Input
               placeholder={t('teacherGrades.search')}
-              style={{ width: 220 }}
+              style={{ flex: '1 1 160px', minWidth: 0 }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </Space>
+          </div>
           {isLoading ? (
             <Skeleton active />
           ) : filteredStudents.length ? (

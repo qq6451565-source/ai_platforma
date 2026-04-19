@@ -202,7 +202,7 @@ const TeacherMaterials = () => {
             return (
               <div key={res.id} style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
                 {isVideo(fileUrl) ? (
-                  <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
+                  <video src={fileUrl} controls style={{ maxWidth: 240, width: '100%', borderRadius: 'var(--radius-sm)' }} />
                 ) : null}
                 <a href={fileUrl} target="_blank" rel="noreferrer">
                   {t('common.download')}
@@ -229,7 +229,7 @@ const TeacherMaterials = () => {
         />
       ) : null}
       {filterSubject ? (
-        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, marginBottom: 'var(--space-6)' }}>
+        <Form layout="vertical" form={form} onFinish={onFinish} style={{ maxWidth: 620, width: '100%', marginBottom: 'var(--space-6)' }}>
           <Form.Item name="title" label={t('form.title')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
