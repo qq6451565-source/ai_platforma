@@ -2,6 +2,7 @@ import logging
 import re
 from time import perf_counter
 from django.conf import settings
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -37,6 +38,7 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 AI_REVERIFY_COOLDOWN_SECONDS = 90
+USERNAME_RETRY_LIMIT = 20
 
 
 def _latest_verification(applicant: Applicant) -> VerificationResult | None:
@@ -135,6 +137,53 @@ def _is_registration_open():
     return RegistrationWindow.objects.filter(is_active=True).exists()
 
 
+def _split_full_name(full_name: str) -> tuple[str, str]:
+    name_parts = full_name.split()
+    first_name = name_parts[0] if name_parts else ""
+    last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+    return first_name, last_name
+
+
+def _create_registration_user_and_applicant(
+    *,
+    full_name: str,
+    email: str,
+    phone: str,
+    direction_id,
+) -> tuple[User, Applicant, str]:
+    password = re.sub(r"\s+", "", phone) or "123456"
+    first_name, last_name = _split_full_name(full_name)
+
+    for _ in range(USERNAME_RETRY_LIMIT):
+        username = _build_username(full_name)
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    role="student",
+                    phone=phone,
+                )
+                applicant = Applicant.objects.create(
+                    user=user,
+                    full_name=full_name,
+                    phone=phone,
+                    email=email,
+                    direction_choice_id=direction_id or None,
+                    status="pending",
+                )
+            return user, applicant, password
+        except IntegrityError as exc:
+            if "username" not in str(exc).lower():
+                raise
+            logger.warning("register username collision, retrying username=%s", username)
+
+    raise ValidationError({"username": "Login yaratishda xatolik. Qayta urinib ko'ring."})
+
+
 class ApplicantRegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -167,30 +216,11 @@ class ApplicantRegisterView(APIView):
             raise ValidationError({"documents": "Passport va selfie majburiy."})
 
         ai_warning = None
-        username = _build_username(full_name)
-        password = re.sub(r"\s+", "", phone) or "123456"
-
-        parts = full_name.split()
-        first_name = parts[0] if parts else ""
-        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
-
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            role="student",
-            phone=phone,
-        )
-
-        applicant = Applicant.objects.create(
-            user=user,
+        user, applicant, password = _create_registration_user_and_applicant(
             full_name=full_name,
-            phone=phone,
             email=email,
-            direction_choice_id=direction_id or None,
-            status="pending",
+            phone=phone,
+            direction_id=direction_id,
         )
 
         document = ApplicantDocument.objects.create(
@@ -256,29 +286,11 @@ class ApplicantRegisterStartView(APIView):
             except Direction.DoesNotExist:
                 raise ValidationError({"direction_choice": "Direction topilmadi."})
 
-            username = _build_username(full_name)
-            password = re.sub(r"\s+", "", phone) or "123456"
-            name_parts = full_name.split()
-            first_name = name_parts[0] if name_parts else ""
-            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-
-            user = User.objects.create_user(
-                username=username,
-                password=password,
-                first_name=first_name,
-                last_name=last_name,
-                email=email,
-                role="student",
-                phone=phone,
-            )
-
-            applicant = Applicant.objects.create(
-                user=user,
+            user, applicant, password = _create_registration_user_and_applicant(
                 full_name=full_name,
-                phone=phone,
                 email=email,
-                direction_choice_id=direction_id or None,
-                status="pending",
+                phone=phone,
+                direction_id=direction_id,
             )
             applicant_id = applicant.id
 

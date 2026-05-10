@@ -154,7 +154,11 @@ const normalizeApiError = (error: unknown, fallback: string): string => {
   if (!axios.isAxiosError(error)) return fallback;
   const data = error.response?.data;
   if (!data) return fallback;
-  if (typeof data === "string") return data;
+  if (typeof data === "string") {
+    const trimmed = data.trim();
+    if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) return fallback;
+    return data;
+  }
   if (typeof data?.detail === "string") return data.detail;
 
   if (typeof data === "object") {
@@ -216,6 +220,7 @@ const RegisterPage = () => {
   const blinkClosedFramesRef = useRef(0);
   const yawDirectionRef = useRef<1 | -1>(1);
   const autoScanStartedRef = useRef(false);
+  const profileSubmitInFlightRef = useRef(false);
 
   const stepTitles = useMemo(
     () => [t("register.steps.personal"), t("register.steps.passport"), t("register.steps.face")],
@@ -390,6 +395,8 @@ const RegisterPage = () => {
       message.error(t("register.directionRequired"));
       return;
     }
+    if (profileSubmitInFlightRef.current) return;
+    profileSubmitInFlightRef.current = true;
     const preparedProfile = {
       full_name: (values.full_name || "").trim(),
       phone: (values.phone || "").trim(),
@@ -416,6 +423,7 @@ const RegisterPage = () => {
     } catch (error: unknown) {
       message.error(normalizeApiError(error, t("register.profileError")));
     } finally {
+      profileSubmitInFlightRef.current = false;
       setLoading(false);
     }
   };
@@ -826,7 +834,7 @@ const RegisterPage = () => {
                 </Form.Item>
               </div>
 
-              <Button type="primary" htmlType="submit" block loading={loading} size="large" onClick={() => form.submit()}>
+              <Button type="primary" htmlType="submit" block loading={loading} disabled={loading} size="large">
                 {t("common.next")}
               </Button>
             </Form>
