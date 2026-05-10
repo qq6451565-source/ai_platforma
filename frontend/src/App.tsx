@@ -7,7 +7,6 @@ import {
   FileDoneOutlined,
   FileTextOutlined,
   ExperimentOutlined,
-  PlayCircleOutlined,
   BookOutlined,
   TeamOutlined,
   UserOutlined,
@@ -109,7 +108,6 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const teacherGroup = useMemo((): MenuProps['items'] => [
     { key: "teacher/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
     { key: "teacher/lessons", label: t('nav.schedule'), icon: <CalendarOutlined /> },
-    { key: "teacher/live", label: t('nav.live'), icon: <PlayCircleOutlined /> },
     { key: "teacher/assignments", label: t('nav.assignments'), icon: <FileTextOutlined /> },
     { key: "teacher/tests", label: t('nav.tests'), icon: <ExperimentOutlined /> },
     { key: "teacher/grades", label: t('nav.grades'), icon: <FileDoneOutlined /> },
