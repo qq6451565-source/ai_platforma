@@ -22,7 +22,7 @@
   <!-- Background -->
   <rect width="512" height="512" rx="80" fill="url(#bg)"/>
 
-  <!-- MTP text -->
+  <!-- LMS text -->
   <text
     x="256"
     y="320"
@@ -33,7 +33,7 @@
     fill="url(#letterGrad)"
     filter="url(#shadow)"
     letter-spacing="-4"
-  >MTP</text>
+  >LMS</text>
 
   <!-- Top shine highlight -->
   <text
@@ -48,5 +48,5 @@
     stroke-width="3"
     stroke-opacity="0.4"
     letter-spacing="-4"
-  >MTP</text>
+  >LMS</text>
 </svg>

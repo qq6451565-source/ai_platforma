@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-const APP_NAME = "HEMIS LMS";
+const APP_NAME = "LMS";
 
 export function usePageTitle(titleKey?: string) {
   const { t } = useTranslation();

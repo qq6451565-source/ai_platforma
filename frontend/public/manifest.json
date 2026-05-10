@@ -1,6 +1,6 @@
 {
-  "name": "HEMIS LMS",
-  "short_name": "HEMIS",
+  "name": "LMS",
+  "short_name": "LMS",
   "description": "Ta'lim boshqaruv tizimi — darslar, baholar, davomat, testlar",
   "start_url": "/",
   "display": "standalone",

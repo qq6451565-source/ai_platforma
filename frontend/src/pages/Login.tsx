@@ -44,7 +44,7 @@ const LoginPage = () => {
           <div className="login-logo">
             <BookOutlined />
           </div>
-          <h1 className="login-brand-title">MTP Platform</h1>
+          <h1 className="login-brand-title">LMS</h1>
           <p className="login-brand-subtitle">{t("auth.brandSubtitle", "O'quv boshqaruv tizimi")}</p>
         </div>
 
