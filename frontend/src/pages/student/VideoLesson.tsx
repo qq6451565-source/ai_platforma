@@ -8,6 +8,7 @@ import { fetchMaterialById } from "../../api/materials";
 import { trackMaterialViewed, trackLessonOpen } from "../../api/attendance";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useMe } from "../../hooks/useMe";
+import { toAbsoluteUrl } from "../../api/client";
 
 const { Title, Text } = Typography;
 
@@ -78,12 +79,20 @@ const StudentVideoLesson = () => {
 
     // Materialdagi faylni qidiramiz
     let videoUrl = material?.file;
-    if (!videoUrl && material?.resources?.length) {
-        const vidRes = material.resources.find(r => r.resource_type === 'video' || (r.file && r.file.match(/\.(mp4|webm)$/)));
-        if (vidRes?.file) {
-            videoUrl = vidRes.file;
+    // Agar asosiy material file bo'sh bo'lsa yoki video bo'lmasa, resurslardan qidiramiz
+    if (!videoUrl || !videoUrl.match(/\.(mp4|webm|mov|avi|m4v)$/i)) {
+        if (material?.resources?.length) {
+            const vidRes = material.resources.find(r =>
+                r.resource_type === 'video' ||
+                (r.file && r.file.match(/\.(mp4|webm|mov|avi|m4v)$/i))
+            );
+            if (vidRes?.file) {
+                videoUrl = vidRes.file;
+            }
         }
     }
+
+    const absoluteVideoUrl = videoUrl ? toAbsoluteUrl(videoUrl) : null;
 
     return (
         <div className="page-shell page-container animate-fade-in">
@@ -102,15 +111,19 @@ const StudentVideoLesson = () => {
                     <Text type="secondary">{lesson?.subject_name} - {lesson?.group_name}</Text>
                 </div>
 
-                {videoUrl ? (
+                {absoluteVideoUrl ? (
                     <div>
                         <video
                             ref={videoRef}
-                            src={videoUrl}
+                            src={absoluteVideoUrl}
                             controls
                             onTimeUpdate={handleTimeUpdate}
                             onSeeking={handleSeeking}
-                            controlsList="nodownload noplaybackrate" // try to disable some controls
+                            onError={(e) => {
+                                console.error("Video error:", e);
+                                message.error("Video ijro etishda xatolik! Fayl formati brauzerga mos kelmasligi mumkin.");
+                            }}
+                            controlsList="nodownload noplaybackrate"
                             disablePictureInPicture
                             style={{
                                 width: "100%",
@@ -122,9 +135,14 @@ const StudentVideoLesson = () => {
                             }}
                         />
 
-                        <div style={{ marginTop: 'var(--space-4)' }}>
-                            <Text strong>Darsni ko'zdan kechirish jarayoni (To'liq bal uchun kamida 90% ko'rish talab qilinadi)</Text>
-                            <Progress percent={progress} status={completed ? "success" : "active"} />
+                        <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ flex: 1, marginRight: '16px' }}>
+                                <Text strong>Darsni ko'zdan kechirish jarayoni (To'liq bal uchun kamida 90% ko'rish talab qilinadi)</Text>
+                                <Progress percent={progress} status={completed ? "success" : "active"} />
+                            </div>
+                            <Button href={absoluteVideoUrl} download target="_blank" type="default" size="small">
+                                Videoni yuklab olish
+                            </Button>
                         </div>
                     </div>
                 ) : (
