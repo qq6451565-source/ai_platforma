@@ -85,13 +85,23 @@ const TeacherDashboard = () => {
                           {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
                         </span>
                       </div>
-                      {liveStatus.canJoin && (
-                        <button
-                          className="hemis-live-btn"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/app/live/${item.id}`); }}
-                        >
-                          {liveStatus.label}
-                        </button>
+                      {item.lesson_type === 'live' ? (
+                        liveStatus.canJoin && (
+                          <button
+                            className="hemis-live-btn"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/app/live/${item.id}`); }}
+                          >
+                            {liveStatus.label}
+                          </button>
+                        )
+                      ) : item.lesson_type === 'video' ? (
+                        <span className="hemis-badge hemis-badge-info" style={{ background: 'var(--color-info)', color: 'white', padding: '4px 8px', borderRadius: '4px' }}>
+                          Videodars
+                        </span>
+                      ) : (
+                        <span className="hemis-badge" style={{ background: 'var(--color-muted)', padding: '4px 8px', borderRadius: '4px' }}>
+                          Kutilyapti
+                        </span>
                       )}
                     </div>
                   );

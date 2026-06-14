@@ -72,7 +72,7 @@ const StudentDashboard = () => {
           <div className="hemis-card-header">
             <h3 className="hemis-card-title">{t('dashboard.todayAssignments')}</h3>
             <button type="button" className="hemis-card-action" onClick={() => navigate("/app/student/assignments")}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
           <div className="hemis-card-body">
@@ -101,7 +101,7 @@ const StudentDashboard = () => {
                           ? t('assignments.submitted') || 'Topshirilgan'
                           : t('assignments.pending') || 'Kutilmoqda'}
                       </span>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </div>
                   </div>
                 ))}
@@ -155,14 +155,33 @@ const StudentDashboard = () => {
                         <span className="hemis-schedule-time">
                           {dayjs(item.start_time).format("HH:mm")} - {dayjs(item.end_time).format("HH:mm")}
                           {(item as any).room && ` · ${(item as any).room}`}
+                          <span style={{ marginLeft: '8px', color: item.lesson_type === 'live' ? 'var(--color-success)' : item.lesson_type === 'video' ? 'var(--color-primary)' : 'var(--color-text-muted)', fontWeight: 600 }}>
+                            ( {item.lesson_type === 'live' ? 'Jonli dars' : item.lesson_type === 'video' ? 'Videodars' : 'Kutilyapti'} )
+                          </span>
                         </span>
                       </div>
-                      {liveStatus.canJoin && (
+                      {item.lesson_type === 'live' ? (
+                        liveStatus.canJoin ? (
+                          <button
+                            className="hemis-live-btn"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/app/live/${item.id}`); }}
+                          >
+                            {liveStatus.label}
+                          </button>
+                        ) : (
+                          <span className="hemis-badge hemis-badge-warning">{liveStatus.label}</span>
+                        )
+                      ) : item.lesson_type === 'video' ? (
                         <button
                           className="hemis-live-btn"
-                          onClick={(e) => { e.stopPropagation(); navigate(`/app/live/${item.id}`); }}
+                          style={{ background: 'var(--color-primary)' }}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/app/lesson-video/${item.id}`); }}
                         >
-                          {liveStatus.label}
+                          Videodarsni ko'rish
+                        </button>
+                      ) : (
+                        <button className="hemis-live-btn" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                          Kutilyapti
                         </button>
                       )}
                     </div>
@@ -178,7 +197,7 @@ const StudentDashboard = () => {
           <div className="hemis-card-header">
             <h3 className="hemis-card-title">{t('nav.grades')}</h3>
             <button type="button" className="hemis-card-action" onClick={() => navigate("/app/student/grades")}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
           <div className="hemis-card-body">
@@ -197,7 +216,7 @@ const StudentDashboard = () => {
                     <span className={`hemis-grade-score ${((item as any).score || 0) >= 60 ? 'hemis-score-good' : 'hemis-score-low'}`}>
                       {(item as any).score ?? '–'} / 100
                     </span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </div>
                 ))}
               </div>
@@ -210,7 +229,7 @@ const StudentDashboard = () => {
           <div className="hemis-card-header">
             <h3 className="hemis-card-title">{t('nav.attendance')}</h3>
             <button type="button" className="hemis-card-action" onClick={() => navigate("/app/student/attendance")}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 12l4-4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
           <div className="hemis-card-body">
