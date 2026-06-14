@@ -93,6 +93,15 @@ class Attendance(models.Model):
             "face_verified_ratio", "joined_seconds", "joined_ratio",
             "status", "finalized", "finalized_at",
         ])
+        
+        # Jonli dars tugashi bilan Activity log ni ham qayta hisoblash
+        try:
+            log, _ = LessonActivityLog.objects.get_or_create(
+                lesson=self.lesson, student=self.student
+            )
+            log.save_computed()
+        except Exception:
+            pass
 
 
 class AttendanceOverrideLog(models.Model):
@@ -195,12 +204,28 @@ class LessonActivityLog(models.Model):
     def compute_score(self) -> float:
         """Ball hisobi va statusni yangilaydi."""
         score = 0.0
-
-        if self.lesson_opened:
-            score += ACTIVITY_SCORE_LESSON_OPEN
-
-        if self.material_viewed:
-            score += ACTIVITY_SCORE_MATERIAL_VIEW
+        lesson_type = getattr(self.lesson, "lesson_type", "pending")
+        
+        if lesson_type == "live":
+            # Jonli dars: Davomat (Attendance) ijobiy bo'lsagina 50 ball beriladi.
+            try:
+                attendance = Attendance.objects.get(lesson=self.lesson, student=self.student)
+                if attendance.status == "present":
+                    score += 50.0
+            except Attendance.DoesNotExist:
+                pass
+                
+        elif lesson_type == "video":
+            # Video dars: Video to'liq ko'rib bo'lingandan so'ng 50 ball beriladi.
+            if self.material_viewed:
+                score += 50.0
+                
+        else:
+            # Kutilyotgan yoki eski darslar uchun klassik holat (20 + 30)
+            if self.lesson_opened:
+                score += ACTIVITY_SCORE_LESSON_OPEN
+            if self.material_viewed:
+                score += ACTIVITY_SCORE_MATERIAL_VIEW
 
         # Test: proporsional (faqat 60%+ bo'lsa to'liq ball)
         if self.test_attended:

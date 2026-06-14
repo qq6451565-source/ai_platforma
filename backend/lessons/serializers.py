@@ -8,7 +8,10 @@ class LessonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ['id', 'teacher_subject', 'group', 'group_name', 'subject_name', 'topic', 'start_time', 'end_time']
+        fields = [
+            'id', 'teacher_subject', 'group', 'group_name', 'subject_name', 
+            'topic', 'start_time', 'end_time', 'lesson_type', 'video_material'
+        ]
 
     def validate(self, attrs):
         teacher_subject = attrs.get("teacher_subject") or getattr(self.instance, "teacher_subject", None)
