@@ -217,7 +217,7 @@ const StudentSchedule = () => {
             open={dayOpen}
             onCancel={() => setDayOpen(false)}
             footer={[
-            <Button key="close" onClick={() => setDayOpen(false)}>
+              <Button key="close" onClick={() => setDayOpen(false)}>
                 {t('common.close')}
               </Button>,
             ]}
@@ -237,20 +237,37 @@ const StudentSchedule = () => {
                 return (
                   <List.Item
                     actions={[
-                      <Button
-                        key="live"
-                        size="small"
-                        type={liveStatus.canJoin ? "primary" : "default"}
-                        disabled={!liveStatus.canJoin}
-                        onClick={() => navigate(`/app/live/${item.id}`)}
-                      >
-                        {liveStatus.label}
-                      </Button>,
+                      item.lesson_type === 'live' ? (
+                        <Button
+                          key="live"
+                          size="small"
+                          type={liveStatus.canJoin ? "primary" : "default"}
+                          disabled={!liveStatus.canJoin}
+                          onClick={() => navigate(`/app/live/${item.id}`)}
+                        >
+                          {liveStatus.label}
+                        </Button>
+                      ) : item.lesson_type === 'video' ? (
+                        <Button
+                          key="video"
+                          size="small"
+                          type="primary"
+                          onClick={() => navigate(`/app/lesson-video/${item.id}`)}
+                        >
+                          Videodarsni ko'rish
+                        </Button>
+                      ) : (
+                        <Button key="pending" size="small" disabled>
+                          Kutilyapti
+                        </Button>
+                      )
                     ]}
                   >
                     <Space direction="vertical" size={0}>
                       <div style={{ color: 'var(--color-text-primary)' }}>{`${subjectLabel} - ${groupLabel}`}</div>
-                      <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>{timeLabel}</div>
+                      <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>
+                        {timeLabel} | {item.lesson_type === 'live' ? 'Jonli efir' : item.lesson_type === 'video' ? 'Videodars' : 'Rejim tanlanmagan'}
+                      </div>
                     </Space>
                   </List.Item>
                 );

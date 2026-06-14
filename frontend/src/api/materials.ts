@@ -6,6 +6,11 @@ export async function fetchMaterials(): Promise<Material[]> {
   return res.data;
 }
 
+export async function fetchMaterialById(id: string | number): Promise<Material> {
+  const res = await api.get<Material>(`/api/materials/${id}/`);
+  return res.data;
+}
+
 export async function createMaterial(payload: {
   title: string;
   lesson?: number;

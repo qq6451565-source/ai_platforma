@@ -46,6 +46,7 @@ const StudentTests = lazy(() => import("./pages/student/Tests"));
 const StudentGrades = lazy(() => import("./pages/student/Grades"));
 const StudentProfile = lazy(() => import("./pages/student/Profile"));
 const StudentAttendance = lazy(() => import("./pages/student/Attendance"));
+const StudentVideoLesson = lazy(() => import("./pages/student/VideoLesson"));
 const TeacherDashboard = lazy(() => import("./pages/teacher/Dashboard"));
 const TeacherLessons = lazy(() => import("./pages/teacher/Lessons"));
 const TeacherLive = lazy(() => import("./pages/teacher/Live"));
@@ -136,7 +137,7 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
     if (!canSync || liveRouteActive) return;
 
     const runSync = async () => {
-      try { await syncLiveRooms(); } catch {}
+      try { await syncLiveRooms(); } catch { }
     };
     runSync();
     const timer = setInterval(runSync, 60_000);
@@ -147,7 +148,7 @@ const AppLayout = ({ user, isLoading }: { user: any; isLoading: boolean }) => {
   const isLiveRoute = selectedPath.startsWith("live/");
 
   const handleLogout = async () => {
-    try { await logout(); } catch {}
+    try { await logout(); } catch { }
     clearTokens();
     qc.clear();
     window.location.href = isAdmin ? "/admin-login" : "/login";
@@ -222,55 +223,56 @@ const App = () => {
   return (
     <ErrorBoundary>
       <ToastProvider>
-      <Routes>
-        <Route path="/" element={<LazyPageRoute component={LandingPage} fullscreen />} />
-        <Route path="/login" element={<LazyPageRoute component={LoginPage} fullscreen />} />
-        <Route path="/admin-login" element={<LazyPageRoute component={AdminLoginPage} fullscreen />} />
-        <Route path="/register" element={<LazyPageRoute component={RegisterPage} fullscreen />} />
-        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
-          <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
-            <Route path="live/:lessonId" element={<LiveRoomPage />} />
-            <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} isPending={isPendingStudent} />}>
-              <Route path="dashboard" element={<StudentDashboard />} />
-              <Route path="schedule" element={<StudentSchedule />} />
-              <Route path="materials" element={<StudentMaterials />} />
-              <Route path="assignments" element={<StudentAssignments />} />
-              <Route path="tests" element={<StudentTests />} />
-              <Route path="grades" element={<StudentGrades />} />
-              <Route path="attendance" element={<StudentAttendance />} />
-              <Route path="profile" element={<StudentProfile />} />
-              <Route path="*" element={<Navigate to="/app/student/dashboard" replace />} />
+        <Routes>
+          <Route path="/" element={<LazyPageRoute component={LandingPage} fullscreen />} />
+          <Route path="/login" element={<LazyPageRoute component={LoginPage} fullscreen />} />
+          <Route path="/admin-login" element={<LazyPageRoute component={AdminLoginPage} fullscreen />} />
+          <Route path="/register" element={<LazyPageRoute component={RegisterPage} fullscreen />} />
+          <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} loading={isLoading} />}>
+            <Route path="/app" element={<AppLayout user={user} isLoading={isLoading} />}>
+              <Route path="live/:lessonId" element={<LiveRoomPage />} />
+              <Route path="lesson-video/:lessonId" element={<StudentVideoLesson />} />
+              <Route path="student" element={<StudentRoute role={user?.role} loading={isLoading} isPending={isPendingStudent} />}>
+                <Route path="dashboard" element={<StudentDashboard />} />
+                <Route path="schedule" element={<StudentSchedule />} />
+                <Route path="materials" element={<StudentMaterials />} />
+                <Route path="assignments" element={<StudentAssignments />} />
+                <Route path="tests" element={<StudentTests />} />
+                <Route path="grades" element={<StudentGrades />} />
+                <Route path="attendance" element={<StudentAttendance />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="*" element={<Navigate to="/app/student/dashboard" replace />} />
+              </Route>
+              <Route path="teacher" element={<TeacherRoute isTeacher={isTeacher} role={user?.role} loading={isLoading} />}>
+                <Route path="dashboard" element={<TeacherDashboard />} />
+                <Route path="lessons" element={<TeacherLessons />} />
+                <Route path="live" element={<TeacherLive />} />
+                <Route path="assignments" element={<TeacherAssignments />} />
+                <Route path="tests" element={<TeacherTests />} />
+                <Route path="grades" element={<TeacherGrades />} />
+                <Route path="attendance" element={<TeacherAttendance />} />
+                <Route path="materials" element={<TeacherMaterials />} />
+                <Route path="submissions" element={<TeacherSubmissions />} />
+                <Route path="profile" element={<TeacherProfile />} />
+                <Route path="*" element={<Navigate to="/app/teacher/dashboard" replace />} />
+              </Route>
+              <Route path="admin" element={<AdminRoute isAdmin={isAdmin} role={user?.role} loading={isLoading} />}>
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="profile" element={<AdminProfile />} />
+                <Route path="users" element={<AdminUsersHub />} />
+                <Route path="enrollment" element={<AdminEnrollmentHub />} />
+                <Route path="university" element={<AdminUniversityHub />} />
+                <Route path="learning" element={<AdminLearningHub />} />
+                <Route path="ai-settings" element={<AdminAISettings />} />
+                <Route path="audit-logs" element={<AdminAuditLogs />} />
+                <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
+              </Route>
+              <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
             </Route>
-            <Route path="teacher" element={<TeacherRoute isTeacher={isTeacher} role={user?.role} loading={isLoading} />}>
-              <Route path="dashboard" element={<TeacherDashboard />} />
-              <Route path="lessons" element={<TeacherLessons />} />
-              <Route path="live" element={<TeacherLive />} />
-              <Route path="assignments" element={<TeacherAssignments />} />
-              <Route path="tests" element={<TeacherTests />} />
-              <Route path="grades" element={<TeacherGrades />} />
-              <Route path="attendance" element={<TeacherAttendance />} />
-              <Route path="materials" element={<TeacherMaterials />} />
-              <Route path="submissions" element={<TeacherSubmissions />} />
-              <Route path="profile" element={<TeacherProfile />} />
-              <Route path="*" element={<Navigate to="/app/teacher/dashboard" replace />} />
-            </Route>
-            <Route path="admin" element={<AdminRoute isAdmin={isAdmin} role={user?.role} loading={isLoading} />}>
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="profile" element={<AdminProfile />} />
-              <Route path="users" element={<AdminUsersHub />} />
-              <Route path="enrollment" element={<AdminEnrollmentHub />} />
-              <Route path="university" element={<AdminUniversityHub />} />
-              <Route path="learning" element={<AdminLearningHub />} />
-              <Route path="ai-settings" element={<AdminAISettings />} />
-              <Route path="audit-logs" element={<AdminAuditLogs />} />
-              <Route path="*" element={<Navigate to="/app/admin/dashboard" replace />} />
-            </Route>
-            <Route index element={<Navigate to={getDefaultRedirect(user?.role, isPendingStudent)} replace />} />
           </Route>
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </ToastProvider>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ToastProvider>
     </ErrorBoundary>
   );
 };

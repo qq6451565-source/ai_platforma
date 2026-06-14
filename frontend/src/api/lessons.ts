@@ -9,10 +9,17 @@ export type Lesson = {
   topic: string;
   start_time: string;
   end_time: string;
+  lesson_type?: "pending" | "live" | "video";
+  video_material?: number | null;
 };
 
 export async function fetchLessons(): Promise<Lesson[]> {
   const res = await api.get<Lesson[]>("/api/lessons/");
+  return res.data;
+}
+
+export async function fetchLessonById(id: string | number): Promise<Lesson> {
+  const res = await api.get<Lesson>(`/api/lessons/${id}/`);
   return res.data;
 }
 
@@ -43,5 +50,16 @@ export async function updateLesson(
   }
 ) {
   const res = await api.patch(`/api/lessons/${id}/`, payload);
+  return res.data;
+}
+
+export async function setLessonDeliveryMode(
+  id: number,
+  payload: {
+    lesson_type: "pending" | "live" | "video";
+    video_material_id?: number | null;
+  }
+) {
+  const res = await api.post(`/api/lessons/${id}/delivery-mode/`, payload);
   return res.data;
 }

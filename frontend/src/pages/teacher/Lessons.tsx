@@ -1,6 +1,7 @@
-import { Button, Card, List, Modal, Space, Grid } from "antd";
-import { useQuery } from "@tanstack/react-query";
-import { fetchLessons } from "../../api/lessons";
+import { Button, Card, List, Modal, Space, Grid, Select, message } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchLessons, setLessonDeliveryMode } from "../../api/lessons";
+import { fetchMaterials } from "../../api/materials";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -10,9 +11,14 @@ import dayjs from "dayjs";
 const TeacherLessons = () => {
   const { t } = useTranslation();
   usePageTitle('nav.lessons');
+  const qc = useQueryClient();
   const { data: lessons } = useQuery({
     queryKey: ["lessons"],
     queryFn: fetchLessons,
+  });
+  const { data: materials } = useQuery({
+    queryKey: ["materials"],
+    queryFn: fetchMaterials,
   });
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -21,6 +27,10 @@ const TeacherLessons = () => {
   });
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [dayOpen, setDayOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [activeLesson, setActiveLesson] = useState<any>(null);
+  const [deliveryMode, setDeliveryMode] = useState<"pending" | "live" | "video">("pending");
+  const [selectedVideo, setSelectedVideo] = useState<number | null>(null);
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const weekdayNames = [
@@ -76,6 +86,25 @@ const TeacherLessons = () => {
     if (now.isBefore(start)) return { canJoin: false, label: t('schedule.waitForStart') };
     if (now.isAfter(end)) return { canJoin: false, label: t('schedule.lessonEnded') };
     return { canJoin: true, label: t('schedule.joinLive') };
+  };
+
+  const handleSaveConfig = async () => {
+    if (!activeLesson) return;
+    if (deliveryMode === 'video' && !selectedVideo) {
+      message.error("Iltimos, video materialni tanlang");
+      return;
+    }
+    try {
+      await setLessonDeliveryMode(activeLesson.id, {
+        lesson_type: deliveryMode,
+        video_material_id: deliveryMode === 'video' ? selectedVideo : null,
+      });
+      message.success("Dars rejimi muvaffaqiyatli saqlandi!");
+      setConfigOpen(false);
+      qc.invalidateQueries({ queryKey: ["lessons"] });
+    } catch (err) {
+      message.error("Xatolik yuz berdi");
+    }
   };
 
   return (
@@ -215,25 +244,89 @@ const TeacherLessons = () => {
             return (
               <List.Item
                 actions={[
+                  item.lesson_type === 'live' ? (
+                    <Button
+                      key="live"
+                      size="small"
+                      type={liveStatus.canJoin ? "primary" : "default"}
+                      disabled={!liveStatus.canJoin}
+                      onClick={() => navigate(`/app/live/${item.id}`)}
+                    >
+                      {liveStatus.label}
+                    </Button>
+                  ) : item.lesson_type === 'video' ? (
+                    <Button key="video" size="small" disabled>Videodars orqali</Button>
+                  ) : null,
                   <Button
-                    key="live"
+                    key="config"
                     size="small"
-                    type={liveStatus.canJoin ? "primary" : "default"}
-                    disabled={!liveStatus.canJoin}
-                    onClick={() => navigate(`/app/live/${item.id}`)}
+                    onClick={() => {
+                      setActiveLesson(item);
+                      setDeliveryMode(item.lesson_type || "pending");
+                      setSelectedVideo(item.video_material || null);
+                      setConfigOpen(true);
+                      setDayOpen(false);
+                    }}
                   >
-                    {liveStatus.label}
-                  </Button>,
+                    Sozlash
+                  </Button>
                 ]}
               >
                 <Space direction="vertical" size={0}>
                   <div>{`${subjectLabel} - ${groupLabel}`}</div>
-                  <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>{timeLabel}</div>
+                  <div style={{ fontSize: 'var(--font-size-tiny)', color: "var(--color-text-secondary)" }}>
+                    {timeLabel} | {item.lesson_type === 'live' ? 'Jonli efir' : item.lesson_type === 'video' ? 'Videodars' : 'Kutilyapti'}
+                  </div>
                 </Space>
               </List.Item>
             );
           }}
         />
+      </Modal>
+
+      <Modal
+        title="Dars rejimini tanlash"
+        open={configOpen}
+        onCancel={() => {
+          setConfigOpen(false);
+          setDayOpen(true);
+        }}
+        onOk={handleSaveConfig}
+        okText="Saqlash"
+        cancelText="Bekor qilish"
+      >
+        <Space direction="vertical" style={{ width: '100%', marginTop: 'var(--space-4)' }} size="large">
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>Rejim:</div>
+            <Select
+              style={{ width: '100%' }}
+              value={deliveryMode}
+              onChange={(v) => setDeliveryMode(v)}
+              options={[
+                { value: 'pending', label: 'Kutilyapti (hal qilinmagan)' },
+                { value: 'live', label: 'Jonli efir (Videokonferensiya)' },
+                { value: 'video', label: 'Tayyor videodars' }
+              ]}
+            />
+          </div>
+          {deliveryMode === 'video' && (
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 'var(--space-2)' }}>Video Materialni tanlang:</div>
+              <Select
+                style={{ width: '100%' }}
+                value={selectedVideo}
+                onChange={(v) => setSelectedVideo(v)}
+                placeholder="Bu fanga tegishli videolardan tanlang"
+                options={(materials || [])
+                  .filter(m => m.subject === activeLesson?.teacher_subject?.subject?.id || true) // ideally we check subject match
+                  .map(m => ({ value: m.id, label: m.title }))}
+              />
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
+                Agar video ro'yxatda yo'q bo'lsa, "Materiallar" sahifasiga kirib yuklashingiz kerak.
+              </div>
+            </div>
+          )}
+        </Space>
       </Modal>
     </div>
   );
