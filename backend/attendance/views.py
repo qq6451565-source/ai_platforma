@@ -13,8 +13,13 @@ from rest_framework.exceptions import NotFound, ValidationError
 from ai.clients import presence_check
 from ai.models import AISettings
 from lessons.models import Lesson
-from .models import Attendance, AttendanceOverrideLog
-from .serializers import AttendanceOverrideLogSerializer, AttendanceSerializer, MarkAttendanceSerializer
+from .models import Attendance, AttendanceOverrideLog, LessonActivityLog
+from .serializers import (
+    AttendanceOverrideLogSerializer,
+    AttendanceSerializer,
+    LessonActivityLogSerializer,
+    MarkAttendanceSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -222,3 +227,199 @@ class PresenceCheckView(APIView):
                 "finalized": attendance.finalized,
             }
         )
+
+
+# ─────────────────────────────────────────────────────────
+#  Dars Faoliyati (LessonActivityLog) Views
+# ─────────────────────────────────────────────────────────
+
+def _get_or_create_activity_log(student, lesson_id: int) -> LessonActivityLog:
+    """Talaba uchun LessonActivityLog oladi yoki yaratadi."""
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        raise NotFound("Dars topilmadi.")
+    log, _ = LessonActivityLog.objects.get_or_create(
+        lesson=lesson,
+        student=student,
+    )
+    return log
+
+
+class LessonOpenView(APIView):
+    """
+    Talaba dars sahifasini ochganini qayd qiladi (20 ball).
+    POST /attendance/activity/lesson-open/
+    Body: { "lesson_id": <int> }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request.user, "role", None) != "student":
+            raise PermissionDenied("Faqat talabalar uchun.")
+
+        lesson_id = request.data.get("lesson_id")
+        if not lesson_id:
+            raise ValidationError({"lesson_id": "lesson_id majburiy."})
+
+        log = _get_or_create_activity_log(request.user, lesson_id)
+
+        # Guruh tekshiruvi
+        if getattr(request.user, "group_id", None) != log.lesson.group_id:
+            raise PermissionDenied("Bu dars sizning guruhingizga tegishli emas.")
+
+        if not log.lesson_opened:
+            log.lesson_opened = True
+            log.lesson_opened_at = timezone.now()
+            log.save_computed()
+
+        return Response({
+            "detail": "Dars ochildi.",
+            "total_score": log.total_score,
+            "status": log.status,
+        })
+
+
+class MaterialViewedView(APIView):
+    """
+    Talaba material/video ko'rganini qayd qiladi (30 ball).
+    POST /attendance/activity/material-viewed/
+    Body: { "lesson_id": <int> }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request.user, "role", None) != "student":
+            raise PermissionDenied("Faqat talabalar uchun.")
+
+        lesson_id = request.data.get("lesson_id")
+        if not lesson_id:
+            raise ValidationError({"lesson_id": "lesson_id majburiy."})
+
+        log = _get_or_create_activity_log(request.user, lesson_id)
+
+        if getattr(request.user, "group_id", None) != log.lesson.group_id:
+            raise PermissionDenied("Bu dars sizning guruhingizga tegishli emas.")
+
+        if not log.material_viewed:
+            log.material_viewed = True
+            log.material_viewed_at = timezone.now()
+            log.save_computed()
+
+        return Response({
+            "detail": "Material ko'rildi.",
+            "total_score": log.total_score,
+            "status": log.status,
+        })
+
+
+class MyActivityLogView(APIView):
+    """
+    Talaba o'z faoliyat jurnalini ko'radi.
+    GET /attendance/activity/my/          → barcha darslar
+    GET /attendance/activity/my/?lesson_id=<id>  → bitta dars
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if getattr(request.user, "role", None) != "student":
+            raise PermissionDenied("Faqat talabalar uchun.")
+
+        qs = LessonActivityLog.objects.filter(student=request.user).select_related("lesson")
+        lesson_id = request.query_params.get("lesson_id")
+        if lesson_id:
+            qs = qs.filter(lesson_id=lesson_id)
+        return Response(LessonActivityLogSerializer(qs, many=True).data)
+
+
+class LessonActivityListView(APIView):
+    """
+    O'qituvchi/Admin bitta dars uchun barcha talabalar faoliyatini ko'radi.
+    GET /attendance/activity/lesson/<lesson_id>/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, lesson_id):
+        role = getattr(request.user, "role", None)
+        if not (request.user.is_superuser or role in ["teacher", "admin"]):
+            raise PermissionDenied("Ruxsat yo'q.")
+
+        try:
+            lesson = Lesson.objects.select_related("teacher_subject__teacher").get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            raise NotFound("Dars topilmadi.")
+
+        # O'qituvchi faqat o'z darsini ko'ra oladi
+        if role == "teacher":
+            if not (lesson.teacher_subject_id and lesson.teacher_subject.teacher_id == request.user.id):
+                raise PermissionDenied("Bu dars sizga tegishli emas.")
+
+        logs = LessonActivityLog.objects.filter(lesson=lesson).select_related("student", "lesson")
+        serializer = LessonActivityLogSerializer(logs, many=True)
+
+        # Statistika
+        total = logs.count()
+        active = logs.filter(status="active").count()
+        partial = logs.filter(status="partial").count()
+        absent = logs.filter(status="absent").count()
+
+        return Response({
+            "lesson_id": lesson_id,
+            "lesson_topic": lesson.topic,
+            "summary": {
+                "total": total,
+                "active": active,
+                "partial": partial,
+                "absent": absent,
+            },
+            "records": serializer.data,
+        })
+
+
+class ActivityReportView(APIView):
+    """
+    O'qituvchi/Admin: guruh bo'yicha yoki umumiy hisobot.
+    GET /attendance/activity/report/?lesson_id=<id>
+    GET /attendance/activity/report/?group_id=<id>
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        role = getattr(request.user, "role", None)
+        if not (request.user.is_superuser or role in ["teacher", "admin"]):
+            raise PermissionDenied("Ruxsat yo'q.")
+
+        qs = LessonActivityLog.objects.select_related("student", "lesson", "lesson__group")
+
+        lesson_id = request.query_params.get("lesson_id")
+        group_id = request.query_params.get("group_id")
+
+        if lesson_id:
+            qs = qs.filter(lesson_id=lesson_id)
+        if group_id:
+            qs = qs.filter(lesson__group_id=group_id)
+
+        # O'qituvchi faqat o'z darslarini ko'radi
+        if role == "teacher":
+            qs = qs.filter(lesson__teacher_subject__teacher=request.user)
+
+        logs = qs.order_by("lesson__start_time", "student__last_name")
+        serializer = LessonActivityLogSerializer(logs, many=True)
+
+        total = logs.count()
+        active = logs.filter(status="active").count()
+        partial = logs.filter(status="partial").count()
+        absent = logs.filter(status="absent").count()
+
+        return Response({
+            "summary": {
+                "total": total,
+                "active": active,
+                "partial": partial,
+                "absent": absent,
+                "active_pct": round(active / total * 100, 1) if total else 0,
+                "partial_pct": round(partial / total * 100, 1) if total else 0,
+                "absent_pct": round(absent / total * 100, 1) if total else 0,
+            },
+            "records": serializer.data,
+        })

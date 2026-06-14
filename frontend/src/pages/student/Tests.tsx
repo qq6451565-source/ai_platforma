@@ -10,6 +10,7 @@ import type { LessonAccessSnapshot, TestItem } from "../../types/test";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
 import type { TFunction } from "i18next";
+import { trackLessonOpen } from "../../api/attendance";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -206,8 +207,11 @@ const StudentTests = () => {
     }
   };
 
-  const handleStart = async (testId: number) => {
+  const handleStart = async (testId: number, lessonId?: number) => {
     try {
+      if (lessonId) {
+        trackLessonOpen(lessonId).catch(() => { });
+      }
       const resp = await startTest(testId);
       setStudentTestId(resp.student_test_id);
       setProctorVerified(false);
@@ -417,7 +421,7 @@ const StudentTests = () => {
                         type={startState.canStart ? "primary" : "default"}
                         key="start"
                         disabled={!startState.canStart}
-                        onClick={() => handleStart(item.id)}
+                        onClick={() => handleStart(item.id, item.lesson ?? undefined)}
                       >
                         {startState.label}
                       </Button>,
@@ -499,10 +503,10 @@ const StudentTests = () => {
                 borderRadius: 'var(--radius-base)',
                 overflow: "hidden",
                 border: `2.5px solid ${faceStatus === "DETECTED"
-                    ? "var(--color-success)"
-                    : faceStatus === "NOT_DETECTED"
-                      ? "var(--color-error)"
-                      : "rgba(var(--live-border-rgb),0.35)"
+                  ? "var(--color-success)"
+                  : faceStatus === "NOT_DETECTED"
+                    ? "var(--color-error)"
+                    : "rgba(var(--live-border-rgb),0.35)"
                   }`,
                 boxShadow:
                   faceStatus === "DETECTED"

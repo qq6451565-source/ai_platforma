@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from accounts.models import User
 from lessons.models import Lesson
-from .models import Attendance, AttendanceOverrideLog
+from .models import Attendance, AttendanceOverrideLog, LessonActivityLog
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -68,3 +68,43 @@ class AttendanceOverrideLogSerializer(serializers.ModelSerializer):
         if not user:
             return None
         return user.get_full_name() or user.username
+
+
+class LessonActivityLogSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    lesson_topic = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonActivityLog
+        fields = [
+            "id",
+            "lesson",
+            "lesson_topic",
+            "student",
+            "student_name",
+            "lesson_opened",
+            "lesson_opened_at",
+            "material_viewed",
+            "material_viewed_at",
+            "test_attended",
+            "test_score",
+            "assignment_submitted",
+            "assignment_submitted_at",
+            "total_score",
+            "status",
+            "status_display",
+            "computed_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_student_name(self, obj):
+        u = obj.student
+        return u.get_full_name() or u.username
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_lesson_topic(self, obj):
+        return getattr(obj.lesson, "topic", None)

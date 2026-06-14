@@ -32,6 +32,7 @@ class TeacherAdminOnlyViewSet(viewsets.ModelViewSet):
 
 class ProctorSessionViewSet(TeacherAdminOnlyViewSet):
     serializer_class = ProctorSessionSerializer
+    queryset = ProctorSession.objects.none()  # get_queryset override qiladi
 
     def get_queryset(self):
         user = self.request.user
@@ -53,6 +54,7 @@ class ProctorSessionViewSet(TeacherAdminOnlyViewSet):
 
 class ProctorEventViewSet(TeacherAdminOnlyViewSet):
     serializer_class = ProctorEventSerializer
+    queryset = ProctorEvent.objects.none()  # get_queryset override qiladi
 
     def get_queryset(self):
         user = self.request.user

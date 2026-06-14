@@ -12,6 +12,7 @@ import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { getApiError } from "../../utils/getApiError";
 import { useTranslation } from "react-i18next";
+import { trackLessonOpen } from "../../api/attendance";
 
 const PENDING_ACCESS_POLL_MS = 10000;
 
@@ -204,6 +205,9 @@ const StudentAssignments = () => {
                               setSelectedId(item.id);
                               setFileList([]);
                               setOpen(true);
+                              if (item.lesson) {
+                                trackLessonOpen(item.lesson).catch(() => { });
+                              }
                             }}
                           >
                             {uploadState.actionLabel}

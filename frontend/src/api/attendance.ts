@@ -76,3 +76,86 @@ export const sendPresence = async (lessonId: number, frame: Blob) => {
   });
   return res.data;
 };
+
+// ─────────────────────────────────────────────────────────
+//  LessonActivityLog — Dars Faoliyati Davomati
+// ─────────────────────────────────────────────────────────
+
+export type ActivityStatus = "active" | "partial" | "absent";
+
+export type LessonActivityLog = {
+  id: number;
+  lesson: number;
+  lesson_topic?: string;
+  student: number;
+  student_name?: string;
+  lesson_opened: boolean;
+  lesson_opened_at?: string | null;
+  material_viewed: boolean;
+  material_viewed_at?: string | null;
+  test_attended: boolean;
+  test_score: number;
+  assignment_submitted: boolean;
+  assignment_submitted_at?: string | null;
+  total_score: number;
+  status: ActivityStatus;
+  status_display?: string;
+  computed_at?: string | null;
+  updated_at?: string;
+};
+
+export type LessonActivitySummary = {
+  total: number;
+  active: number;
+  partial: number;
+  absent: number;
+  active_pct?: number;
+  partial_pct?: number;
+  absent_pct?: number;
+};
+
+export type LessonActivityReport = {
+  summary: LessonActivitySummary;
+  records: LessonActivityLog[];
+};
+
+export type LessonActivityDetail = {
+  lesson_id: number;
+  lesson_topic?: string;
+  summary: LessonActivitySummary;
+  records: LessonActivityLog[];
+};
+
+/** Talaba dars sahifasini ochganida chaqiriladi (20 ball) */
+export const trackLessonOpen = async (lessonId: number) => {
+  const res = await api.post("/api/attendance/activity/lesson-open/", { lesson_id: lessonId });
+  return res.data;
+};
+
+/** Talaba material/video ko'rib bo'lganida chaqiriladi (30 ball) */
+export const trackMaterialViewed = async (lessonId: number) => {
+  const res = await api.post("/api/attendance/activity/material-viewed/", { lesson_id: lessonId });
+  return res.data;
+};
+
+/** Talaba o'z faoliyat jurnalini oladi */
+export const fetchMyActivityLogs = async (lessonId?: number): Promise<LessonActivityLog[]> => {
+  const params = lessonId ? { lesson_id: lessonId } : {};
+  const res = await api.get<LessonActivityLog[]>("/api/attendance/activity/my/", { params });
+  return res.data;
+};
+
+/** O'qituvchi/Admin: bitta dars bo'yicha barcha talabalar faoliyati */
+export const fetchLessonActivityDetail = async (lessonId: number): Promise<LessonActivityDetail> => {
+  const res = await api.get<LessonActivityDetail>(`/api/attendance/activity/lesson/${lessonId}/`);
+  return res.data;
+};
+
+/** O'qituvchi/Admin: hisobot (lesson_id yoki group_id bo'yicha filter) */
+export const fetchActivityReport = async (params?: {
+  lesson_id?: number;
+  group_id?: number;
+}): Promise<LessonActivityReport> => {
+  const res = await api.get<LessonActivityReport>("/api/attendance/activity/report/", { params });
+  return res.data;
+};

@@ -3,6 +3,19 @@ from django.utils import timezone
 from lessons.models import Lesson
 from accounts.models import User
 
+# Ball taqsimoti konstantalari
+ACTIVITY_SCORE_LESSON_OPEN = 20       # Dars sahifasini ochganlik
+ACTIVITY_SCORE_MATERIAL_VIEW = 30     # Material/video ko'rganlik
+ACTIVITY_SCORE_TEST = 30              # Test ishlash (to'liq)
+ACTIVITY_SCORE_ASSIGNMENT = 20       # Topshiriq yuborish
+
+ACTIVITY_STATUS_ACTIVE = "active"           # 70+
+ACTIVITY_STATUS_PARTIAL = "partial"         # 40-69
+ACTIVITY_STATUS_ABSENT = "absent"           # <40
+
+ACTIVITY_THRESHOLD_ACTIVE = 70
+ACTIVITY_THRESHOLD_PARTIAL = 40
+
 
 class Attendance(models.Model):
     ATTEND_CHOICES = (
@@ -119,3 +132,103 @@ class AttendanceOverrideLog(models.Model):
 
     def __str__(self):
         return f"AttendanceOverrideLog(attendance={self.attendance_id}, new_status={self.new_status})"
+
+
+class LessonActivityLog(models.Model):
+    """
+    Mavjud dars ichida talabaning faoliyatini qayd etadi.
+    To'rtta ko'rsatkich bo'yicha 0-100 ball hisoblanadi:
+      lesson_opened      → 20 ball
+      material_viewed    → 30 ball
+      test_score (≥60%) → 30 ball (proporsional)
+      assignment_submitted → 20 ball
+    """
+
+    ACTIVITY_STATUS_CHOICES = [
+        (ACTIVITY_STATUS_ACTIVE, "Faol qatnashdi"),
+        (ACTIVITY_STATUS_PARTIAL, "Qisman qatnashdi"),
+        (ACTIVITY_STATUS_ABSENT, "Qatnashmadi"),
+    ]
+
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="activity_logs",
+    )
+    student = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        limit_choices_to={"role": "student"},
+        related_name="activity_logs",
+    )
+
+    # Ko'rsatkichlar
+    lesson_opened = models.BooleanField(default=False)
+    material_viewed = models.BooleanField(default=False)
+    material_viewed_at = models.DateTimeField(null=True, blank=True)
+    test_score = models.FloatField(default=0.0)       # 0.0 – 100.0
+    test_attended = models.BooleanField(default=False)
+    assignment_submitted = models.BooleanField(default=False)
+
+    # Hisoblangan natija
+    total_score = models.FloatField(default=0.0)      # 0 – 100
+    status = models.CharField(
+        max_length=10,
+        choices=ACTIVITY_STATUS_CHOICES,
+        default=ACTIVITY_STATUS_ABSENT,
+    )
+
+    # Metadata
+    lesson_opened_at = models.DateTimeField(null=True, blank=True)
+    assignment_submitted_at = models.DateTimeField(null=True, blank=True)
+    computed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("lesson", "student")
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.student.username} | {self.lesson_id} | {self.status} ({self.total_score:.0f}pts)"
+
+    def compute_score(self) -> float:
+        """Ball hisobi va statusni yangilaydi."""
+        score = 0.0
+
+        if self.lesson_opened:
+            score += ACTIVITY_SCORE_LESSON_OPEN
+
+        if self.material_viewed:
+            score += ACTIVITY_SCORE_MATERIAL_VIEW
+
+        # Test: proporsional (faqat 60%+ bo'lsa to'liq ball)
+        if self.test_attended:
+            test_contribution = (self.test_score / 100.0) * ACTIVITY_SCORE_TEST
+            score += test_contribution
+
+        if self.assignment_submitted:
+            score += ACTIVITY_SCORE_ASSIGNMENT
+
+        self.total_score = round(min(score, 100.0), 2)
+
+        if self.total_score >= ACTIVITY_THRESHOLD_ACTIVE:
+            self.status = ACTIVITY_STATUS_ACTIVE
+        elif self.total_score >= ACTIVITY_THRESHOLD_PARTIAL:
+            self.status = ACTIVITY_STATUS_PARTIAL
+        else:
+            self.status = ACTIVITY_STATUS_ABSENT
+
+        self.computed_at = timezone.now()
+        return self.total_score
+
+    def save_computed(self):
+        """Ballni hisoblab bazaga yozadi."""
+        self.compute_score()
+        self.save(update_fields=[
+            "total_score", "status", "computed_at",
+            "lesson_opened", "lesson_opened_at",
+            "material_viewed", "material_viewed_at",
+            "test_score", "test_attended",
+            "assignment_submitted", "assignment_submitted_at",
+        ])

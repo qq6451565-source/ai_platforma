@@ -7,10 +7,16 @@ import type { MaterialResource } from "../../types/material";
 import { toAbsoluteUrl } from "../../api/client";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useTranslation } from "react-i18next";
+import { trackMaterialViewed } from "../../api/attendance";
 
 const isVideo = (url?: string | null) => !!url && /\.(mp4|webm|ogg)$/i.test(url);
 
-const renderResources = (resources: MaterialResource[], fallbackFile: string | null | undefined, t: (k: string) => string) => {
+const renderResources = (
+  resources: MaterialResource[],
+  fallbackFile: string | null | undefined,
+  t: (k: string) => string,
+  lessonId?: number
+) => {
   const items = resources?.length
     ? resources
     : fallbackFile
@@ -28,9 +34,23 @@ const renderResources = (resources: MaterialResource[], fallbackFile: string | n
           return (
             <div key={key} style={{ display: "flex", flexDirection: "column", gap: 'var(--space-1-5)' }}>
               {isVideo(fileUrl) ? (
-                <video src={fileUrl} controls style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }} />
+                <video
+                  src={fileUrl}
+                  controls
+                  style={{ maxWidth: 240, borderRadius: 'var(--radius-sm)' }}
+                  onPlay={() => {
+                    if (lessonId) trackMaterialViewed(lessonId).catch(() => { });
+                  }}
+                />
               ) : null}
-              <a href={fileUrl} target="_blank" rel="noreferrer">
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  if (lessonId) trackMaterialViewed(lessonId).catch(() => { });
+                }}
+              >
                 {t('common.download')}
               </a>
             </div>
@@ -79,7 +99,7 @@ const StudentMaterials = () => {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [materials, lessons]);
 
-  const renderFileLinks = (resources: MaterialResource[]) => {
+  const renderFileLinks = (resources: MaterialResource[], lessonId?: number) => {
     const files = resources.filter((r) => r.resource_type === "file" && r.file);
     if (!files.length) return "-";
     return (
@@ -88,7 +108,15 @@ const StudentMaterials = () => {
           const fileUrl = toAbsoluteUrl(res.file);
           const name = res.title || fileUrl.split("/").pop() || t('studentMaterials.file');
           return (
-            <a key={res.id ?? res.file} href={fileUrl} target="_blank" rel="noreferrer">
+            <a
+              key={res.id ?? res.file}
+              href={fileUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => {
+                if (lessonId) trackMaterialViewed(lessonId).catch(() => { });
+              }}
+            >
               {name}
             </a>
           );
@@ -160,7 +188,7 @@ const StudentMaterials = () => {
                                 {(item.group_names || []).join(", ") || item.group_name || "-"}
                               </span>
                               <span>{t('studentMaterials.file')}</span>
-                              {renderFileLinks(currentResources)}
+                              {renderFileLinks(currentResources, item.lesson ?? undefined)}
                             </div>
                           </div>
                         );
@@ -172,7 +200,7 @@ const StudentMaterials = () => {
                             {item.versions.map((ver) => (
                               <div key={ver.version}>
                                 <strong>v{ver.version}</strong>
-                                {renderResources(ver.resources || [], undefined, t)}
+                                {renderResources(ver.resources || [], undefined, t, item.lesson ?? undefined)}
                               </div>
                             ))}
                           </div>
