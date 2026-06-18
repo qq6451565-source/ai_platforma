@@ -5,7 +5,7 @@ import { Card, Button, Typography, message, Spin, Progress } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { fetchLessonById } from "../../api/lessons";
 import { fetchMaterialById } from "../../api/materials";
-import { trackMaterialViewed, trackLessonOpen } from "../../api/attendance";
+import { trackMaterialViewed, trackLessonOpen, trackVideoProgress } from "../../api/attendance";
 import { usePageTitle } from "../../hooks/usePageTitle";
 import { useMe } from "../../hooks/useMe";
 import { toAbsoluteUrl } from "../../api/client";
@@ -22,6 +22,11 @@ const StudentVideoLesson = () => {
     const [maxTimeWatched, setMaxTimeWatched] = useState(0);
     const [completed, setCompleted] = useState(false);
     const [progress, setProgress] = useState(0);
+
+    // Heartbeat uchun: oxirgi serverga yuborilgan watch-time va video davomiyligi
+    const lastSentRef = useRef(0);
+    const durationRef = useRef(0);
+    const completedRef = useRef(false);
 
     const { data: lesson, isLoading: lessonLoading } = useQuery({
         queryKey: ["lesson", lessonId],
@@ -41,24 +46,55 @@ const StudentVideoLesson = () => {
         }
     }, [lesson?.id, user?.role]);
 
+    // Serverga watch-time heartbeat yuborish (real progress manbai server hisoblanadi)
+    const sendProgress = (watchSeconds: number) => {
+        if (!lessonId || user?.role !== 'student') return;
+        trackVideoProgress(Number(lessonId), watchSeconds, durationRef.current || undefined)
+            .then((res) => {
+                if (res.video_completed && !completedRef.current) {
+                    completedRef.current = true;
+                    setCompleted(true);
+                    message.success("Siz videoni yakunladingiz! Faollik balingiz (50 ball) hisoblandi.");
+                }
+            })
+            .catch(() => { });
+    };
+
+    // Sahifa yopilganda/komponent unmount bo'lganda oxirgi progressni yuborish
+    useEffect(() => {
+        return () => {
+            if (maxTimeWatched > lastSentRef.current) {
+                sendProgress(maxTimeWatched);
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const handleTimeUpdate = () => {
         if (!videoRef.current) return;
         const currentTime = videoRef.current.currentTime;
         const duration = videoRef.current.duration;
+        if (duration && !isNaN(duration)) {
+            durationRef.current = duration;
+        }
 
         if (!videoRef.current.seeking && currentTime > maxTimeWatched) {
             setMaxTimeWatched(currentTime);
             const percent = Math.floor((currentTime / duration) * 100);
             setProgress(percent);
 
-            // Talaba videoning 90% qismini ko'rgach ball beriladi
-            if (percent >= 90 && !completed) {
-                setCompleted(true);
-                if (lessonId && user?.role === 'student') {
-                    trackMaterialViewed(Number(lessonId)).then(() => {
-                        message.success("Siz videoni yakunladingiz! Faollik balingiz (50 ball) hisoblandi.");
-                    }).catch(() => { });
-                }
+            // Har ~10 sekundda serverga heartbeat yuboramiz (real watch-time)
+            if (currentTime - lastSentRef.current >= 10) {
+                lastSentRef.current = currentTime;
+                sendProgress(currentTime);
+            }
+
+            // 90% ga yetganda darhol yakuniy progressni yuboramiz (server tasdiqlaydi)
+            if (percent >= 90 && !completedRef.current) {
+                lastSentRef.current = currentTime;
+                sendProgress(currentTime);
+                // material_viewed bilan ham moslashtiramiz (eski mantiq bilan mosligi uchun)
+                trackMaterialViewed(Number(lessonId)).catch(() => { });
             }
         }
     };

@@ -86,6 +86,13 @@ const ActivityCard = ({ record }: { record: LessonActivityLog }) => {
         ? "#faad14"
         : "#ff4d4f";
 
+  // Asinxron (video) dars uchun ko'rilgan foiz
+  const hasVideoData = (record.video_duration_seconds ?? 0) > 0;
+  const videoPercent = Math.round((record.video_progress_ratio ?? 0) * 100);
+  const materialExtra = hasVideoData
+    ? `Video: ${videoPercent}% ko'rildi ${record.video_completed ? "✓" : ""}`
+    : "+30 ball";
+
   return (
     <Card
       style={{
@@ -178,8 +185,8 @@ const ActivityCard = ({ record }: { record: LessonActivityLog }) => {
         <IndicatorRow
           icon={<PlayCircleFilled style={{ color: "#722ed1" }} />}
           label="Material / video ko'rildi"
-          done={record.material_viewed}
-          extra="+30 ball"
+          done={record.material_viewed || !!record.video_completed}
+          extra={materialExtra}
         />
         <IndicatorRow
           icon={<TrophyFilled style={{ color: "#fa8c16" }} />}

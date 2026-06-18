@@ -8,9 +8,11 @@ from .views import (
     # Activity tracking
     LessonOpenView,
     MaterialViewedView,
+    VideoProgressView,
     MyActivityLogView,
     LessonActivityListView,
     ActivityReportView,
+    UnifiedReportView,
 )
 
 urlpatterns = [
@@ -23,7 +25,9 @@ urlpatterns = [
     # LessonActivityLog — dars faoliyati davomati
     path('activity/lesson-open/', LessonOpenView.as_view()),
     path('activity/material-viewed/', MaterialViewedView.as_view()),
+    path('activity/video-progress/', VideoProgressView.as_view()),
     path('activity/my/', MyActivityLogView.as_view()),
     path('activity/lesson/<int:lesson_id>/', LessonActivityListView.as_view()),
     path('activity/report/', ActivityReportView.as_view()),
+    path('report/unified/', UnifiedReportView.as_view()),
 ]

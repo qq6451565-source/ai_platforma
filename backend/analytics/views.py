@@ -11,7 +11,7 @@ from rest_framework.exceptions import PermissionDenied
 from accounts.models import User
 from groups.models import Group
 from student_tests.models import StudentTest
-from attendance.models import Attendance
+from attendance.services import combined_attendance_counts
 from assignments.models import Assignment, Submission
 from teacher_subject.models import TeacherSubject
 from lessons.models import Lesson
@@ -54,10 +54,9 @@ class StudentStatsView(APIView):
         total_tests = tests.count()
         avg_score = tests.aggregate(avg=models.Avg("score_percent"))["avg"] or 0
 
-        attendance_qs = Attendance.objects.filter(student=student)
-        total_attendance = attendance_qs.count()
-        present = attendance_qs.filter(status="present").count()
-        attendance_rate = (present / total_attendance * 100) if total_attendance else 0
+        # Sinxron (live) + asinxron (video) birlashtirilgan davomat
+        att = combined_attendance_counts(student=student)
+        attendance_rate = att["attendance_rate"]
 
         submissions = Submission.objects.filter(student=student)
         submitted = submissions.count()
@@ -70,6 +69,12 @@ class StudentStatsView(APIView):
             "avg_score": round(avg_score, 2),
             "total_tests": total_tests,
             "attendance_rate": round(attendance_rate, 2),
+            "attendance_breakdown": {
+                "live_total": att["live_total"],
+                "live_present": att["live_present"],
+                "video_total": att["video_total"],
+                "video_completed": att["video_completed"],
+            },
             "submitted_assignments": submitted,
             "assignment_submit_rate": round(submit_rate, 2),
         })
@@ -130,10 +135,10 @@ class GroupStatsView(APIView):
         students = group.students.all()
         total_students = students.count()
 
-        attendance_qs = Attendance.objects.filter(student__in=students)
-        total_attendance = attendance_qs.count()
-        present = attendance_qs.filter(status="present").count()
-        attendance_rate = (present / total_attendance * 100) if total_attendance else 0
+        # Sinxron + asinxron birlashtirilgan guruh davomati
+        student_ids = list(students.values_list("id", flat=True))
+        att = combined_attendance_counts(student_ids=student_ids)
+        attendance_rate = att["attendance_rate"]
 
         tests = StudentTest.objects.filter(student__in=students)
         avg_score = tests.aggregate(avg=models.Avg("score_percent"))["avg"] or 0
@@ -143,6 +148,12 @@ class GroupStatsView(APIView):
             "group_name": group.name,
             "total_students": total_students,
             "attendance_rate": round(attendance_rate, 2),
+            "attendance_breakdown": {
+                "live_total": att["live_total"],
+                "live_present": att["live_present"],
+                "video_total": att["video_total"],
+                "video_completed": att["video_completed"],
+            },
             "avg_test_score": round(avg_score, 2),
         })
 
@@ -165,10 +176,7 @@ class StudentDashboardView(APIView):
         total_tests = tests.count()
         avg_score = tests.aggregate(avg=models.Avg("score_percent"))["avg"] or 0
 
-        attendance_qs = Attendance.objects.filter(student=student)
-        total_attendance = attendance_qs.count()
-        present = attendance_qs.filter(status="present").count()
-        attendance_rate = (present / total_attendance * 100) if total_attendance else 0
+        attendance_rate = combined_attendance_counts(student=student)["attendance_rate"]
 
         upcoming_lessons = []
         if student.group:

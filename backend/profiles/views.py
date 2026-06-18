@@ -29,15 +29,16 @@ class StudentProgressStatsView(APIView):
         total_assignments = submissions.count()
         completed_assignments = submissions.exclude(grade__isnull=True).count()
         assignment_completion = (completed_assignments / total_assignments * 100) if total_assignments else 0
-        # Darsga qatnashish foizi
-        attendance = Attendance.objects.filter(student=user)
-        total_lessons = attendance.count()
-        attended = attendance.filter(status='present').count()
-        attendance_percent = (attended / total_lessons * 100) if total_lessons else 0
+        # Darsga qatnashish foizi (sinxron live + asinxron video birlashtirilgan)
+        from attendance.services import combined_attendance_counts
+        att = combined_attendance_counts(student=user)
+        total_lessons = att["total"]
+        attended = att["attended"]
+        attendance_percent = att["attendance_rate"]
         # Missed lessons
-        missed = attendance.filter(status='absent').count()
-        # Progress grafigi uchun oxirgi 10 dars bo'yicha attendance
-        last10 = attendance.order_by('-timestamp')[:10]
+        missed = total_lessons - attended
+        # Progress grafigi uchun oxirgi 10 dars bo'yicha attendance (live)
+        last10 = Attendance.objects.filter(student=user).order_by('-timestamp')[:10]
         last10_stats = [
             {'lesson': getattr(a.lesson, "id", None), 'date': getattr(a, "timestamp", None), 'status': a.status}
             for a in last10

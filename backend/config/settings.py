@@ -291,6 +291,8 @@ FACE_ATTENDANCE_PRESENT_RATIO = float(os.getenv("FACE_ATTENDANCE_PRESENT_RATIO",
 LIVE_ATTENDANCE_MIN_DURATION_RATIO = float(os.getenv("LIVE_ATTENDANCE_MIN_DURATION_RATIO", "0.70"))
 LIVE_PARTICIPANT_STALE_SECONDS = int(os.getenv("LIVE_PARTICIPANT_STALE_SECONDS", "30"))
 PROCTOR_MIN_FACE_RATIO = float(os.getenv("PROCTOR_MIN_FACE_RATIO", "0.50"))
+# Asinxron (video) dars: keyingi bosqichga ruxsat uchun minimal ko'rilgan foiz
+VIDEO_COMPLETION_RATIO = float(os.getenv("VIDEO_COMPLETION_RATIO", "0.90"))
 
 # LiveKit (live dars WebRTC)
 LIVEKIT_URL = os.getenv("LIVEKIT_URL", "ws://127.0.0.1:7880")

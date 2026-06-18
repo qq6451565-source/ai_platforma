@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
 
 from tests_app.permissions import IsAdmin
 
@@ -88,65 +87,3 @@ class AIHealthView(APIView):
             "data": health.get("data"),
         }
         return Response(payload, status=status.HTTP_200_OK)
-
-
-class FaceMatchView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        settings = AISettings.get_active()
-        if not settings.enable_face_match:
-            return Response({"error": "Face match AI o'chirilgan (admin)"},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        passport_file = request.FILES.get("passport_image")
-        selfie_file = request.FILES.get("selfie_image")
-        if not passport_file or not selfie_file:
-            raise ValidationError({"detail": "passport_image va selfie_image talab qilinadi"})
-
-        try:
-            # .read() ishlatmaymiz
-            result = clients.face_match(passport_file, selfie_file)
-            if not result:
-                return Response({"error": "Yuzni solishtirishda xatolik (yuz topilmadi)"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Threshold tekshiruvi
-            confidence = result.get("confidence")
-            if confidence is not None and confidence < settings.face_match_threshold:
-                result["verified"] = False
-            return Response(result, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except clients.AIConnectionError:
-            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
-
-class PresenceCheckView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        settings = AISettings.get_active()
-        if not settings.enable_presence:
-            return Response({"error": "Presence AI o'chirilgan (admin)"},
-                            status=status.HTTP_403_FORBIDDEN)
-
-        session_id = request.data.get("session_id")
-        frame = request.FILES.get("frame")
-        if not session_id or not frame:
-            raise ValidationError({"detail": "session_id va frame talab qilinadi"})
-
-        try:
-            # .read() ishlatmaymiz
-            result = clients.presence_check(session_id, frame)
-            if not result:
-                return Response({"error": "Yuzni aniqlashda xatolik"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Threshold tekshiruvi (agar backend qaytarsa)
-            confidence = result.get("confidence")
-            if confidence is not None and confidence < settings.presence_threshold:
-                result["present"] = False
-            return Response(result, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except clients.AIConnectionError:
-            return Response({"error": "AI xizmati vaqtincha ishlamayapti"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

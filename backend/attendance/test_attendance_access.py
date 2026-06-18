@@ -344,3 +344,103 @@ class AttendanceOverrideApiTests(AcademicFixtureMixin, TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(AttendanceOverrideLog.objects.count(), 0)
+
+
+@override_settings(VIDEO_COMPLETION_RATIO=0.90)
+class VideoLessonAccessTests(AcademicFixtureMixin, TestCase):
+    """Asinxron (video) dars: video tugatilmaguncha keyingi bosqich bloklanadi."""
+
+    def setUp(self) -> None:
+        self.create_academic_context()
+        # Darsni video turiga o'tkazamiz
+        self.lesson.lesson_type = "video"
+        self.lesson.save(update_fields=["lesson_type"])
+        self.factory = APIRequestFactory()
+        self.lesson_test = self.create_lesson_test()
+        self.start_view = StartStudentTestView.as_view()
+
+    def _progress(self, watch_seconds, duration_seconds=600):
+        from attendance.models import LessonActivityLog
+
+        log, _ = LessonActivityLog.objects.get_or_create(
+            lesson=self.lesson, student=self.student
+        )
+        log.record_video_progress(
+            watch_seconds=watch_seconds,
+            duration_seconds=duration_seconds,
+            completion_threshold=0.90,
+        )
+        return log
+
+    def test_video_not_completed_blocks_access(self) -> None:
+        from attendance.services import get_lesson_access_snapshot
+
+        # 50% ko'rilgan — yetarli emas
+        self._progress(watch_seconds=300, duration_seconds=600)
+        snapshot = get_lesson_access_snapshot(self.student, self.lesson.id)
+        self.assertFalse(snapshot["allowed"])
+        self.assertEqual(snapshot["status"], "blocked_video_pending")
+        self.assertEqual(snapshot["lesson_mode"], "video")
+
+    def test_video_completed_opens_access(self) -> None:
+        from attendance.services import get_lesson_access_snapshot
+
+        # 95% ko'rilgan — threshold (90%) dan oshdi
+        log = self._progress(watch_seconds=570, duration_seconds=600)
+        self.assertTrue(log.video_completed)
+
+        snapshot = get_lesson_access_snapshot(self.student, self.lesson.id)
+        self.assertTrue(snapshot["allowed"])
+        self.assertEqual(snapshot["status"], "open")
+
+    def test_watch_seconds_cannot_exceed_duration_or_decrease(self) -> None:
+        # Soxta: duration'dan ko'p watch yuborilsa cheklanadi
+        log = self._progress(watch_seconds=99999, duration_seconds=600)
+        self.assertEqual(log.video_watch_seconds, 600)
+        self.assertTrue(log.video_completed)
+
+        # Orqaga qaytarish qabul qilinmaydi
+        log.record_video_progress(watch_seconds=10, duration_seconds=600, completion_threshold=0.90)
+        self.assertEqual(log.video_watch_seconds, 600)
+
+    def test_start_test_blocked_until_video_completed(self) -> None:
+        self._progress(watch_seconds=120, duration_seconds=600)  # 20%
+
+        request = self.factory.post(
+            "/api/student-tests/start/",
+            {"test_id": self.lesson_test.id},
+            format="json",
+        )
+        force_authenticate(request, user=self.student)
+        response = self.start_view(request)
+        self.assertEqual(response.status_code, 400)
+
+    def test_start_test_allowed_after_video_completed(self) -> None:
+        self._progress(watch_seconds=600, duration_seconds=600)  # 100%
+
+        request = self.factory.post(
+            "/api/student-tests/start/",
+            {"test_id": self.lesson_test.id},
+            format="json",
+        )
+        force_authenticate(request, user=self.student)
+        response = self.start_view(request)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn("student_test_id", response.data)
+
+    def test_combined_attendance_counts_includes_video(self) -> None:
+        from attendance.services import combined_attendance_counts
+
+        # Video tugatilmagan — attended 0
+        self._progress(watch_seconds=120, duration_seconds=600)
+        stats = combined_attendance_counts(student=self.student)
+        self.assertEqual(stats["video_total"], 1)
+        self.assertEqual(stats["video_completed"], 0)
+        self.assertEqual(stats["attended"], 0)
+
+        # Video tugatilgach — video davomati hisobga olinadi
+        self._progress(watch_seconds=600, duration_seconds=600)
+        stats = combined_attendance_counts(student=self.student)
+        self.assertEqual(stats["video_completed"], 1)
+        self.assertEqual(stats["attended"], 1)
+        self.assertEqual(stats["attendance_rate"], 100.0)

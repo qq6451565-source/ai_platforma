@@ -179,6 +179,13 @@ class LessonActivityLog(models.Model):
     test_attended = models.BooleanField(default=False)
     assignment_submitted = models.BooleanField(default=False)
 
+    # Asinxron (video) dars progressi
+    video_watch_seconds = models.PositiveIntegerField(default=0)     # ko'rilgan sekundlar (real watch-time)
+    video_duration_seconds = models.PositiveIntegerField(default=0)  # video umumiy davomiyligi
+    video_progress_ratio = models.FloatField(default=0.0)            # 0.0 – 1.0
+    video_completed = models.BooleanField(default=False)             # threshold (default 90%) bajarilgan
+    video_completed_at = models.DateTimeField(null=True, blank=True)
+
     # Hisoblangan natija
     total_score = models.FloatField(default=0.0)      # 0 – 100
     status = models.CharField(
@@ -217,7 +224,9 @@ class LessonActivityLog(models.Model):
                 
         elif lesson_type == "video":
             # Video dars: Video to'liq ko'rib bo'lingandan so'ng 50 ball beriladi.
-            if self.material_viewed:
+            # video_completed (real watch-time bilan tasdiqlangan) ustuvor,
+            # eski ma'lumotlar uchun material_viewed ham qabul qilinadi.
+            if self.video_completed or self.material_viewed:
                 score += 50.0
                 
         else:
@@ -247,6 +256,52 @@ class LessonActivityLog(models.Model):
         self.computed_at = timezone.now()
         return self.total_score
 
+    def record_video_progress(
+        self,
+        *,
+        watch_seconds: float,
+        duration_seconds: float | None = None,
+        completion_threshold: float = 0.90,
+    ) -> None:
+        """
+        Asinxron video ko'rish progressini qayd qiladi (heartbeat).
+
+        Anti-cheat: ko'rilgan vaqt faqat oshishi mumkin (kamaymaydi) va
+        video davomiyligidan oshib keta olmaydi. video_completed faqat
+        haqiqiy ko'rilgan vaqt threshold (default 90%) dan oshganda True.
+        """
+        watch_seconds = max(0, int(watch_seconds or 0))
+
+        # Davomiylik: birinchi marta yoki kattaroq qiymat kelganda yangilanadi
+        if duration_seconds:
+            duration_seconds = max(0, int(duration_seconds))
+            if duration_seconds > self.video_duration_seconds:
+                self.video_duration_seconds = duration_seconds
+
+        duration = self.video_duration_seconds
+        if duration > 0:
+            watch_seconds = min(watch_seconds, duration)
+
+        # Faqat oldinga (monotonik) — orqaga qaytishni qabul qilmaymiz
+        if watch_seconds > self.video_watch_seconds:
+            self.video_watch_seconds = watch_seconds
+
+        if duration > 0:
+            self.video_progress_ratio = round(self.video_watch_seconds / duration, 4)
+        else:
+            self.video_progress_ratio = 0.0
+
+        threshold = max(0.1, min(1.0, float(completion_threshold)))
+        if not self.video_completed and duration > 0 and self.video_progress_ratio >= threshold:
+            self.video_completed = True
+            self.video_completed_at = timezone.now()
+            # Video ko'rilgani material_viewed bilan ham moslashtiriladi (ball uchun)
+            if not self.material_viewed:
+                self.material_viewed = True
+                self.material_viewed_at = timezone.now()
+
+        self.save_computed()
+
     def save_computed(self):
         """Ballni hisoblab bazaga yozadi."""
         self.compute_score()
@@ -256,4 +311,6 @@ class LessonActivityLog(models.Model):
             "material_viewed", "material_viewed_at",
             "test_score", "test_attended",
             "assignment_submitted", "assignment_submitted_at",
+            "video_watch_seconds", "video_duration_seconds",
+            "video_progress_ratio", "video_completed", "video_completed_at",
         ])
