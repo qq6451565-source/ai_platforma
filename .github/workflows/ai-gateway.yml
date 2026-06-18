@@ -59,11 +59,11 @@ jobs:
 
           cd "$WORK"
           git init -q
-          git checkout -q -b main
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add -A
           git commit -q -m "Sync from GitHub @ ${GITHUB_SHA::7}"
+          git branch -M main
 
           # HF Space repo'ga majburiy push (Space avtomatik qayta quriladi)
           git push -f "https://github-actions:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}.git" main
