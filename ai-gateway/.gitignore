@@ -1,0 +1,28 @@
+# Secrets
+.env
+*.env
+.env.*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# Virtual env
+venv/
+.venv/
+env/
+
+# Model files (large binary files)
+*.task
+*.tflite
+*.pb
+models/
+
+# Local dev artifacts
+.tmp_agora/

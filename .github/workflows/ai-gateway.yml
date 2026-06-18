@@ -1,51 +1,72 @@
-name: Build and Push AI Gateway
+name: Deploy AI Gateway to Hugging Face Space
+
+# 'ai-gateway/' papkasidagi o'zgarishlar master'ga push qilinganda
+# kod avtomatik ravishda HF Space git reposiga ko'chiriladi va Space qayta quriladi.
+#
+# Talab: GitHub repo Settings > Secrets and variables > Actions da
+#   HF_TOKEN  — Hugging Face write-token (https://huggingface.co/settings/tokens)
+# secret sifatida qo'shilgan bo'lishi kerak.
 
 on:
   push:
+    branches: [master]
     paths:
-      - 'backend/ai-gateway/**'
+      - 'ai-gateway/**'
       - '.github/workflows/ai-gateway.yml'
-  pull_request:
-    paths:
-      - 'backend/ai-gateway/**'
+  workflow_dispatch: {}
+
+# Bir vaqtda faqat bitta deploy ishlasin
+concurrency:
+  group: hf-ai-gateway-deploy
+  cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      HF_SPACE: qwertyu6451565/ai-gataware
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend/ai-gateway
-          file: ./backend/ai-gateway/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ai-gateway:latest
-
-      - name: Compose up for test
+      - name: Validate HF_TOKEN
         run: |
-          docker-compose -f ./backend/ai-gateway/docker-compose.yml up -d
-          sleep 10
-          docker ps
+          if [ -z "${{ secrets.HF_TOKEN }}" ]; then
+            echo "::error::HF_TOKEN secret o'rnatilmagan. Repo Settings > Secrets > Actions da qo'shing."
+            exit 1
+          fi
 
-      - name: Health check
+      - name: Push ai-gateway to HF Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          curl --fail http://localhost:8000/health || exit 1
+          set -euo pipefail
 
-      - name: Compose down
-        run: |
-          docker-compose -f ./backend/ai-gateway/docker-compose.yml down
+          WORK="$RUNNER_TEMP/hf-gateway"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+
+          # Faqat kerakli fayllarni nusxalaymiz; secret/junk fayllar chiqarib tashlanadi
+          rsync -a --delete \
+            --exclude '.git' \
+            --exclude '__pycache__' \
+            --exclude '.pytest_cache' \
+            --exclude 'logs' \
+            --exclude '*.log' \
+            --exclude '.env' \
+            --exclude '*.env' \
+            ai-gateway/ "$WORK/"
+
+          cd "$WORK"
+          git init -q
+          git checkout -q -b main
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add -A
+          git commit -q -m "Sync from GitHub @ ${GITHUB_SHA::7}"
+
+          # HF Space repo'ga majburiy push (Space avtomatik qayta quriladi)
+          git push -f "https://github-actions:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}.git" main
+
+      - name: Done
+        run: echo "✅ ai-gateway HF Space (${HF_SPACE}) ga deploy qilindi."
