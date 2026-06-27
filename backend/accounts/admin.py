@@ -1,3 +1,9 @@
+# --------------------------------------------------------
+# Author: Ravshanbek
+# Project: AI Platforma
+# Year: 2026
+# License: MIT License
+# --------------------------------------------------------
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
